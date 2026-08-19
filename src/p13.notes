@@ -1,0 +1,220 @@
+# Anotaciones de F-1 Spirit (Konami, 1987, RC-752): pagina 13 de 16, que el
+# mapper pone en 0x6000-0x7FFF. ES LA PAGINA DEL SONIDO: el reproductor para
+# el PSG y el SCC, la tabla de sonidos y sus cabeceras. La interrupcion la
+# mapea (D/E/F) en cada fotograma para llamar a 0x6AA5, y las ordenes de
+# sonido entran por 0x6000 con el numero en A.
+#
+# Directivas: L=etiqueta, C=comentario de linea, B=cabecera de bloque,
+# D=rango de datos (con nombre y explicacion), F=anchura de fila de un bloque
+# de datos. Todo anclado a direccion. Sin acentos a proposito.
+#
+# RAM del sonido (lo leido en 0x6000-0x60E1): ocho canales de 0x2C bytes en
+# E001, E02D, E059, E085, E0B1, E0DD, E109 y E135 (tres del PSG y cinco del
+# SCC, por el numero; cual es cual, pendiente); E160 banderas; E161 ultima
+# orden; E162-E173 la cabecera del sonido pedido (18 bytes copiados); E174/
+# E175 a cero en las ordenes 0x80/0x81.
+
+B 0x6000 Entrada de ordenes: A = numero de sonido (1..70). 0x80-0x83 son
+B 0x6000 ordenes de control (banderas de E160). Para las demas copia la
+B 0x6000 cabecera del sonido (18 bytes) a E162 y, canal a canal segun la
+B 0x6000 mascara del primer byte, arranca la pista si su prioridad gana a la
+B 0x6000 que suena (0x60C2).
+L 0x6000 SONIDO_ORDEN      A = numero de sonido; 0x80..0x83 control
+L 0x60C2 SONIDO_CANAL      arranca la pista en el canal HL si la prioridad A gana a la suya
+D 0x6120 0x61AC tabla_sonidos punteros a las cabeceras de los sonidos 1..70 (`ld hl,611Eh` en 0x6019 y 2*A: la entrada 0, en 0x611E, son los bytes 2D C9 del codigo; el sonido 0 no existe)
+F 0x6120 w8
+D 0x61AC 0x6422 cabeceras_sonidos las cabeceras de los 70 sonidos: mascara de canales y, por canal, prioridad y puntero a la pista (formato exacto pendiente de leer en 0x6023-0x60E1)
+L 0x6422 SONIDO_6422       desde la interrupcion (0x4061), tras vaciar la cola de ordenes; que hace, pendiente
+L 0x6AA5 SONIDO_PASO       el paso del reproductor, una vez por interrupcion (desde 0x4046)
+L 0x6CE9 SONIDO_INIT       desde INIT (0x42DE): inicializa los canales y el SCC (0x9880)
+L 0x6853 PARTITURA_ORDEN   byte >= 0xE0 del flujo: orden (A & 1F) por la tabla de 0x6868
+D 0x6868 0x68A6 tabla_partitura 31 palabras: las ordenes 0xE0..0xFE del interprete de la partitura (jp (hl) en 0x6867)
+F 0x6868 w1
+L 0x6DA1 SCC_ESCRIBE_BYTE  mapea 0x3F en 0x8000, escribe (hl) en (de) del SCC y vuelve a poner la pagina 2
+L 0x6DB0 SCC_FORMAS_ONDA   por cada canal con el bit 7 de su bandera: copia su forma de onda al SCC (0x9800/20/40/60)
+L 0x6E04 SCC_COPIA_ONDA    32 bytes de HL a DE (0x98x0) con 0x3F en 0x8000; 0x988F = (E18F); vuelve a la pagina 2
+D 0x60E2 0x60EE tabla_60D9 12 bytes que lee 0x60D9 (`ld hl,60E2h`); formato pendiente
+D 0x6557 0x6564 tabla_6522 13 bytes que lee 0x6522 (`ld hl,6557h`); formato pendiente
+D 0x6B79 0x6B85 tabla_6B49 12 bytes que lee 0x6B49 (`ld hl,6B79h`); formato pendiente
+
+# --- BLOQUES IDENTIFICADOS POR tools/sonido.py (las cabeceras de los 70 sonidos, las envolventes, las formas de onda del
+# SCC y el COMIENZO de cada pista; el final de cada pista es donde empieza
+# la siguiente, no lo dice ningun byte: falta el lector de la partitura). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0x6e23 0x6e37 tabla_envolventes 10 punteros (0x65E4, por el numero de envolvente x 2) a las envolventes de abajo
+F 0x6e23 w1
+D 0x6e37 0x6e3d envolvente_0 envolvente 0: 5 bytes y 0xFF al final; la recorre 0x65F5 byte a byte ((ix+17,18) es el puntero)
+F 0x6e37 16
+D 0x6e3d 0x6e4a envolvente_1 envolvente 1: 12 bytes y 0xFF al final; la recorre 0x65F5 byte a byte ((ix+17,18) es el puntero)
+F 0x6e3d 16
+D 0x6e4a 0x6e63 envolvente_2 envolvente 2: 24 bytes y 0xFF al final; la recorre 0x65F5 byte a byte ((ix+17,18) es el puntero)
+F 0x6e4a 16
+D 0x6e63 0x6e78 envolvente_3 envolvente 3: 20 bytes y 0xFF al final; la recorre 0x65F5 byte a byte ((ix+17,18) es el puntero)
+F 0x6e63 16
+D 0x6e78 0x6e91 envolvente_4 envolvente 4: 24 bytes y 0xFF al final; la recorre 0x65F5 byte a byte ((ix+17,18) es el puntero)
+F 0x6e78 16
+D 0x6e91 0x6eaa envolvente_5 envolvente 5: 24 bytes y 0xFF al final; la recorre 0x65F5 byte a byte ((ix+17,18) es el puntero)
+F 0x6e91 16
+D 0x6eaa 0x6ec5 envolvente_6 envolvente 6: 26 bytes y 0xFF al final; la recorre 0x65F5 byte a byte ((ix+17,18) es el puntero)
+F 0x6eaa 16
+D 0x6ec5 0x6ee2 envolvente_7 envolvente 7: 28 bytes y 0xFF al final; la recorre 0x65F5 byte a byte ((ix+17,18) es el puntero)
+F 0x6ec5 16
+D 0x6ee2 0x6ef1 envolvente_8 envolvente 8: 14 bytes y 0xFF al final; la recorre 0x65F5 byte a byte ((ix+17,18) es el puntero)
+F 0x6ee2 16
+D 0x6ef1 0x6f04 envolvente_9 envolvente 9: 18 bytes y 0xFF al final; la recorre 0x65F5 byte a byte ((ix+17,18) es el puntero)
+F 0x6ef1 16
+D 0x6f04 0x6f8e tabla_ondas 69 punteros (0x6A20, por el numero de instrumento x 2) a las 28 formas de onda del SCC de abajo
+F 0x6f04 w1
+D 0x6f8e 0x730e ondas_scc 28 formas de onda del SCC de 32 bytes (una por fila): SCC_COPIA_ONDA las sube a 0x9800/20/40/60 cuando la pista cambia de instrumento
+F 0x6f8e 32
+D 0x7370 0x7371 pista_7370 pista de la partitura (sonido 1 canal 2, sonido 1 canal 3); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7370 16
+D 0x7371 0x737d pista_7371 pista de la partitura (sonido 4 canal 2, sonido 6 canal 2, sonido 7 canal 2, sonido 10 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7371 16
+D 0x737d 0x7387 pista_737D pista de la partitura (sonido 4 canal 4, sonido 6 canal 3, sonido 7 canal 4, sonido 10 canal 3); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x737d 16
+D 0x7387 0x73c8 pista_7387 pista de la partitura (sonido 5 canal 2, sonido 8 canal 2, sonido 9 canal 2, sonido 11 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7387 16
+D 0x73c8 0x7409 pista_73C8 pista de la partitura (sonido 5 canal 4, sonido 8 canal 3, sonido 9 canal 4, sonido 11 canal 3); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x73c8 16
+D 0x7409 0x7444 pista_7409 pista de la partitura (sonido 2 canal 0); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7409 16
+D 0x7444 0x747f pista_7444 pista de la partitura (sonido 2 canal 1); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7444 16
+D 0x747f 0x748f pista_747F pista de la partitura (sonido 2 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x747f 16
+D 0x748f 0x749d pista_748F pista de la partitura (sonido 2 canal 3); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x748f 16
+D 0x749d 0x74af pista_749D pista de la partitura (sonido 2 canal 4); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x749d 16
+D 0x74af 0x74c1 pista_74AF pista de la partitura (sonido 2 canal 5); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x74af 16
+D 0x74c1 0x74d3 pista_74C1 pista de la partitura (sonido 2 canal 6); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x74c1 16
+D 0x74d3 0x74e5 pista_74D3 pista de la partitura (sonido 2 canal 7); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x74d3 16
+D 0x74e5 0x74f1 pista_74E5 pista de la partitura (sonido 3 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x74e5 16
+D 0x74f1 0x74ff pista_74F1 pista de la partitura (sonido 3 canal 3); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x74f1 16
+D 0x74ff 0x750f pista_74FF pista de la partitura (sonido 3 canal 4); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x74ff 16
+D 0x750f 0x75a4 pista_750F pista de la partitura (sonido 12 canal 2, sonido 13 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x750f 16
+D 0x75a4 0x7601 pista_75A4 pista de la partitura (sonido 12 canal 3, sonido 13 canal 4); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x75a4 16
+D 0x7601 0x76ae pista_7601 pista de la partitura (sonido 14 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7601 16
+D 0x76ae 0x7747 pista_76AE pista de la partitura (sonido 15 canal 2, sonido 16 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x76ae 16
+D 0x7747 0x779a pista_7747 pista de la partitura (sonido 15 canal 3, sonido 16 canal 4); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7747 16
+D 0x779a 0x77b6 pista_779A pista de la partitura (sonido 17 canal 2, sonido 18 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x779a 16
+D 0x77b6 0x77f7 pista_77B6 pista de la partitura (sonido 19 canal 2, sonido 20 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x77b6 16
+D 0x77f7 0x77fe pista_77F7 pista de la partitura (sonido 17 canal 3, sonido 18 canal 4); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x77f7 16
+D 0x77fe 0x7838 pista_77FE pista de la partitura (sonido 19 canal 3, sonido 20 canal 4); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x77fe 16
+D 0x7838 0x7897 pista_7838 pista de la partitura (sonido 21 canal 2, sonido 22 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7838 16
+D 0x7897 0x78f6 pista_7897 pista de la partitura (sonido 21 canal 3, sonido 22 canal 4); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7897 16
+D 0x78f6 0x793f pista_78F6 pista de la partitura (sonido 23 canal 2, sonido 24 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x78f6 16
+D 0x793f 0x798e pista_793F pista de la partitura (sonido 23 canal 3, sonido 24 canal 4); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x793f 16
+D 0x798e 0x79dd pista_798E pista de la partitura (sonido 25 canal 2, sonido 26 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x798e 16
+D 0x79dd 0x7a1f pista_79DD pista de la partitura (sonido 25 canal 3, sonido 26 canal 4); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x79dd 16
+D 0x7a1f 0x7a74 pista_7A1F pista de la partitura (sonido 27 canal 2, sonido 28 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7a1f 16
+D 0x7a74 0x7ae5 pista_7A74 pista de la partitura (sonido 27 canal 3, sonido 28 canal 4); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7a74 16
+D 0x7ae5 0x7b52 pista_7AE5 pista de la partitura (sonido 29 canal 2, sonido 30 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7ae5 16
+D 0x7b52 0x7bbd pista_7B52 pista de la partitura (sonido 29 canal 3, sonido 30 canal 4); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7b52 16
+D 0x7bbd 0x7c22 pista_7BBD pista de la partitura (sonido 31 canal 2, sonido 32 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7bbd 16
+D 0x7c22 0x7c85 pista_7C22 pista de la partitura (sonido 31 canal 3, sonido 32 canal 4); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7c22 16
+D 0x7c85 0x7d1c pista_7C85 pista de la partitura (sonido 33 canal 2, sonido 34 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7c85 16
+D 0x7d1c 0x7d7f pista_7D1C pista de la partitura (sonido 33 canal 3, sonido 34 canal 4); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7d1c 16
+D 0x7d7f 0x7dbe pista_7D7F pista de la partitura (sonido 35 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7d7f 16
+D 0x7dbe 0x7dbf pista_7DBE pista de la partitura (sonido 36 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7dbe 16
+D 0x7dbf 0x7df4 pista_7DBF pista de la partitura (sonido 37 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7dbf 16
+D 0x7df4 0x7e29 pista_7DF4 pista de la partitura (sonido 37 canal 3); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7df4 16
+D 0x7e29 0x7e62 pista_7E29 pista de la partitura (sonido 38 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7e29 16
+D 0x7e62 0x7e97 pista_7E62 pista de la partitura (sonido 38 canal 3); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7e62 16
+D 0x7e97 0x7e98 pista_7E97 pista de la partitura (sonido 39 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7e97 16
+D 0x7e98 0x7e99 pista_7E98 pista de la partitura (sonido 39 canal 3); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7e98 16
+D 0x7e99 0x7e9a pista_7E99 pista de la partitura (sonido 40 canal 0); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7e99 16
+D 0x7e9a 0x7e9b pista_7E9A pista de la partitura (sonido 40 canal 1); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7e9a 16
+D 0x7e9b 0x7e9c pista_7E9B pista de la partitura (sonido 40 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7e9b 16
+D 0x7e9c 0x7e9d pista_7E9C pista de la partitura (sonido 40 canal 3); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7e9c 16
+D 0x7e9d 0x7e9e pista_7E9D pista de la partitura (sonido 40 canal 4); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7e9d 16
+D 0x7e9e 0x7e9f pista_7E9E pista de la partitura (sonido 40 canal 5); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7e9e 16
+D 0x7e9f 0x7ea0 pista_7E9F pista de la partitura (sonido 40 canal 6); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7e9f 16
+D 0x7ea0 0x7ea1 pista_7EA0 pista de la partitura (sonido 40 canal 7); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7ea0 16
+D 0x7ea1 0x7eb8 pista_7EA1 pista de la partitura (sonido 41 canal 0); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7ea1 16
+D 0x7eb8 0x7ec0 pista_7EB8 pista de la partitura (sonido 41 canal 1); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7eb8 16
+D 0x7ec0 0x7ec8 pista_7EC0 pista de la partitura (sonido 41 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7ec0 16
+D 0x7ec8 0x7ef1 pista_7EC8 pista de la partitura (sonido 41 canal 5); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7ec8 16
+D 0x7ef1 0x7ef9 pista_7EF1 pista de la partitura (sonido 41 canal 6); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7ef1 16
+D 0x7ef9 0x7f01 pista_7EF9 pista de la partitura (sonido 41 canal 7); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7ef9 16
+D 0x7f01 0x7f1a pista_7F01 pista de la partitura (sonido 42 canal 0); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7f01 16
+D 0x7f1a 0x7f22 pista_7F1A pista de la partitura (sonido 42 canal 1); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7f1a 16
+D 0x7f22 0x7f2a pista_7F22 pista de la partitura (sonido 42 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7f22 16
+D 0x7f2a 0x7f53 pista_7F2A pista de la partitura (sonido 42 canal 5); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7f2a 16
+D 0x7f53 0x7f5b pista_7F53 pista de la partitura (sonido 42 canal 6); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7f53 16
+D 0x7f5b 0x7f63 pista_7F5B pista de la partitura (sonido 42 canal 7); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7f5b 16
+D 0x7f63 0x7f64 pista_7F63 pista de la partitura (sonido 43 canal 1); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7f63 16
+D 0x7f64 0x7f65 pista_7F64 pista de la partitura (sonido 43 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7f64 16
+D 0x7f65 0x7f6d pista_7F65 pista de la partitura (sonido 43 canal 6); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7f65 16
+D 0x7f6d 0x7f77 pista_7F6D pista de la partitura (sonido 43 canal 5); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7f6d 16
+D 0x7f77 0x7f78 pista_7F77 pista de la partitura (sonido 43 canal 7); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0x7f77 16
+D 0x7f78 0x8000 pista_7F78 pista de la partitura (sonido 43 canal 0, sonido 44 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir (sigue en la pagina siguiente)
+F 0x7f78 16
+# --- fin de los bloques de sonido.py ---
+
+# --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
+D 0x730e 0x7370 pendiente_de_trazar Sin trazar ni identificar todavia (98 bytes)
+# --- fin de la seccion pendiente ---

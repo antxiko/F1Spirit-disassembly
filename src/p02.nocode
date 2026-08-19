@@ -1,0 +1,8 @@
+# Zonas de la pagina 2 (org 0x8000) que el trazador NO debe leer como codigo:
+# tablas de palabras detras de un `call` del despachador, graficos alcanzados
+# por un salto muerto... Cada una con su explicacion.
+0x8215 0x823B   tabla de 19 palabras del despachador (call 0x40DA en 0x8212) -- el call aun no esta trazado; la tabla se declara por la forma
+0x8B12 0x8B26   tabla de 10 palabras del despachador (call 0x40DA en 0x8B0F)
+0x9111 0x9123   tabla de 9 palabras del despachador (call 0x40DA en 0x910E)
+0x94C3 0x94CF   tabla de 6 palabras del despachador (call 0x40DA en 0x94C0) -- el call aun no esta trazado; la tabla se declara por la forma
+0x9F53 0x9F71   tabla de 15 palabras del despachador (call 0x40DA en 0x9F50)

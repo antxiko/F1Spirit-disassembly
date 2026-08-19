@@ -1,0 +1,187 @@
+# Anotaciones de F-1 Spirit (Konami, 1987, RC-752): pagina 15 de 16, que el
+# mapper pone en 0xA000-0xBFFF (la ultima del grupo D/E/F, el del sonido).
+# Lo unico trazado: la busqueda de otros cartuchos que hace INIT.
+#
+# Directivas: L, C, B, D, F como en el resto. Sin acentos a proposito.
+
+B 0xBF50 Busca en las ranuras (y subranuras) otro cartucho Konami comparando
+B 0xBF50 con RDSLT tres firmas: 5 bytes en 0x4010, 6 en 0xBFFA y 6 en
+B 0xBF50 0x7FFA. Deja en E1DE el identificador de la ranura encontrada (0 si
+B 0xBF50 no hay). Que desbloquea: pendiente (pregunta abierta).
+L 0xBF50 BUSCA_CARTUCHOS    desde INIT (0x4138) con D/E/F mapeadas
+L 0xBF6D BUSCA_EN_RANURA    C = ranura; si esta expandida prueba sus 4 subranuras
+L 0xBF83 COMPARA_FIRMAS     carry si alguna de las tres firmas coincide
+L 0xBF95 FIRMA_4010         5 bytes en 0x4010 contra 0xBFD2
+L 0xBF9F FIRMA_BFFA         6 bytes en 0xBFFA contra 0xBFCC
+L 0xBFA9 FIRMA_7FFA         6 bytes en 0x7FFA contra 0xBFC6
+L 0xBFB1 COMPARA_B_BYTES    B bytes leidos con RDSLT (ranura C) contra (DE)
+D 0xBFC6 0xBFCC firma_7FFA 00 30 31 13 35 AA: lo que tiene que haber en 0x7FFA del otro cartucho
+F 0xBFC6 6
+D 0xBFCC 0xBFD2 firma_BFFA BA B2 86 07 46 AA: lo que tiene que haber en 0xBFFA del otro cartucho
+F 0xBFCC 6
+D 0xBFD2 0xBFD7 firma_4010 "CD" 07 "E" FF: lo que tiene que haber en 0x4010 del otro cartucho (este lleva "CD" 07 "R" FF)
+F 0xBFD2 5
+D 0xBFD7 0xC000 relleno_FF 41 bytes a 0xFF hasta el final de la ROM
+
+# =============================================================================
+# TABLAS QUE LEE LA PAGINA 2 CON ESTA PAGINA EN 0xA000 (p02 0x8059: `ld a,0Fh /
+# call MAPEA_A_EN_A000`; la 15 no es solo sonido y graficos). Formato leido
+# en p02 0x8105-0x8161; que significan los registros, por ver (van con IY =
+# el bloque de un coche: (iy-18), (iy-17), (iy-2) son los indices).
+# =============================================================================
+D 0xB8BD 0xB8DD tabla_B8BD 16 punteros: p02 0x814E lee el de (E25B) y luego el byte (iy-2) de su fila; los 6 primeros van a filas de 9 bytes y los 10 siguientes a listas de registros de 3 bytes terminadas en 0xFF
+F 0xB8BD w1
+D 0xB8DD 0xB913 filas_B8DD 6 filas de 9 bytes (una por categoria (E25B)): el byte (iy-2) de la fila elegida va a (iy-16)
+F 0xB8DD 9
+D 0xB913 0xB9C3 listas_B913 10 listas de registros de 3 bytes terminadas en 0xFF (las entradas 6..15 de la tabla 0xB8BD; 6 registros cada una salvo la ultima: 4 bytes y 0xFF)
+F 0xB913 3,3,3,3,3,3,1,3,3,3,3,3,3,1,3,3,3,3,3,3,1,3,3,3,3,3,3,1,3,3,3,3,3,3,1,3,3,3,3,3,3,1,3,3,3,3,3,3,1,3,3,3,3,3,3,1,3,3,3,3,3,3,1,3,1
+D 0xB9C3 0xB9D5 tabla_B9C3 9 punteros por (iy-18) (p02 0x8105) a las listas de abajo; de la lista coge el registro (iy-17) (x3): [0] -> D, [1] -> C...; 0xFF = fin
+F 0xB9C3 w1
+D 0xB9D5 0xBAB9 listas_B9D5 9 listas de 8 registros de 3 bytes (la ultima 9) terminadas en 0xFF, para p02 0x8105
+F 0xB9D5 3,3,3,3,3,3,3,3,1,3,3,3,3,3,3,3,3,1,3,3,3,3,3,3,3,3,1,3,3,3,3,3,3,3,3,1,3,3,3,3,3,3,3,3,1,3,3,3,3,3,3,3,3,1,3,3,3,3,3,3,3,3,1,3,3,3,3,3,3,3,3,1,3,3,3,3,3,3,3,3,3,1
+
+# --- BLOQUES IDENTIFICADOS POR tools/graficos.py (los recorre desde la ROM como hace el cargador de la pagina 0 y los
+# verifica: RLE que termina, patrones y colores de la misma longitud,
+# alineacion de los fotogramas). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0xa81d 0xaa4b rle_pat_A81D patrones RLE: 81 tiles desde el 1 (lista 0x6d6b)
+F 0xa81d 16
+D 0xaa4b 0xaaad rle_pat_AA4B patrones RLE: 15 tiles desde el 97 (lista 0x6d6b)
+F 0xaa4b 16
+D 0xaaad 0xaab3 rle_pat_AAAD patrones RLE: 1 tiles desde el 113 (lista 0x6d6b)
+F 0xaaad 16
+D 0xaab3 0xaba5 rle_pat_AAB3 patrones RLE: 38 tiles desde el 0 (lista 0x6d6b)
+F 0xaab3 16
+D 0xaba5 0xac54 rle_pat_ABA5 patrones RLE: 27 tiles desde el 65 (lista 0x6d6b)
+F 0xaba5 16
+D 0xac54 0xac59 rle_pat_AC54 patrones RLE: 2 tiles desde el 94 (lista 0x6d6b)
+F 0xac54 16
+D 0xac59 0xacaf rle_col_AC59 colores RLE: 81 tiles desde el 1 (lista 0x6d6b)
+F 0xac59 16
+D 0xacaf 0xacb2 rle_col_ACAF colores RLE: 15 tiles desde el 97 (lista 0x6d6b)
+F 0xacaf 16
+D 0xacb2 0xacb5 rle_col_ACB2 colores RLE: 1 tiles desde el 113 (lista 0x6d6b)
+F 0xacb2 16
+D 0xacb5 0xacd6 rle_col_ACB5 colores RLE: 38 tiles desde el 0 (lista 0x6d6b)
+F 0xacb5 16
+D 0xacd6 0xacf1 rle_col_ACD6 colores RLE: 27 tiles desde el 65 (lista 0x6d6b)
+F 0xacd6 16
+D 0xacf1 0xacf6 rle_col_ACF1 colores RLE: 2 tiles desde el 94 (lista 0x6d6b)
+F 0xacf1 16
+D 0xacf6 0xacf9 rle_pat_ACF6 patrones RLE: 1 tiles desde el 255 (lista 0x6dae)
+F 0xacf6 16
+D 0xacf9 0xacfc rle_col_ACF9 colores RLE: 1 tiles desde el 255 (lista 0x6dae)
+F 0xacf9 16
+D 0xacfc 0xae0f rle_pat_ACFC patrones RLE: 44 tiles desde el 1 (lista 0x6dbc)
+F 0xacfc 16
+D 0xae0f 0xae31 rle_pat_AE0F patrones RLE: 6 tiles desde el 45 (lista 0x6dc3)
+F 0xae0f 16
+D 0xae31 0xaebd rle_pat_AE31 patrones RLE: 26 tiles desde el 57 (lista 0x6dc3)
+F 0xae31 16
+D 0xaebd 0xb087 rle_pat_AEBD patrones RLE: 70 tiles desde el 80 (lista 0x6dd6)
+F 0xaebd 16
+D 0xb087 0xb29e rle_pat_B087 patrones RLE: 72 tiles desde el 150 (lista 0x6de3)
+F 0xb087 16
+D 0xb29e 0xb2d1 rle_col_B29E colores RLE: 44 tiles desde el 1 (lista 0x6dbc)
+F 0xb29e 16
+D 0xb2d1 0xb2e6 rle_col_B2D1 colores RLE: 6 tiles desde el 45 (lista 0x6dc3)
+F 0xb2d1 16
+D 0xb2e6 0xb2ed rle_col_B2E6 colores RLE: 26 tiles desde el 57 (lista 0x6dc3)
+F 0xb2e6 16
+D 0xb2ed 0xb396 rle_col_B2ED colores RLE: 70 tiles desde el 80 (lista 0x6dd6)
+F 0xb2ed 16
+D 0xb396 0xb412 rle_col_B396 colores RLE: 70 tiles desde el 149 (lista 0x6dd6)
+F 0xb396 16
+D 0xb412 0xb463 rle_col_B412 colores RLE: 72 tiles desde el 150 (lista 0x6de3)
+F 0xb412 16
+D 0xb463 0xb5a3 rle_pat_B463 patrones RLE: 47 tiles desde el 1 (lista 0x6cd1)
+F 0xb463 16
+D 0xb5a3 0xb5b5 rle_pat_B5A3 patrones RLE: 3 tiles desde el 48 (lista 0x6cd1)
+F 0xb5a3 16
+D 0xb5b5 0xb61b rle_pat_B5B5 patrones RLE: 14 tiles desde el 65 (lista 0x6cd1)
+F 0xb5b5 16
+D 0xb61b 0xb620 rle_pat_B61B patrones RLE: 1 tiles desde el 79 (lista 0x6cd1)
+F 0xb61b 16
+D 0xb620 0xb6db rle_col_B620 colores RLE: 47 tiles desde el 1 (lista 0x6cd1)
+F 0xb620 16
+D 0xb6db 0xb6e2 rle_col_B6DB colores RLE: 3 tiles desde el 48 (lista 0x6cd1)
+F 0xb6db 16
+D 0xb6e2 0xb6f9 rle_col_B6E2 colores RLE: 14 tiles desde el 65 (lista 0x6cd1)
+F 0xb6e2 16
+D 0xb6f9 0xb6fc rle_col_B6F9 colores RLE: 1 tiles desde el 79 (lista 0x6cd1)
+F 0xb6f9 16
+D 0xb777 0xb8af rle_pat_B777 patrones RLE: 43 tiles desde el 16 (lista 0x6db5)
+F 0xb777 16
+D 0xb8af 0xb8b6 rle_col_B8AF colores RLE: 43 tiles desde el 16 (lista 0x6db5)
+F 0xb8af 16
+D 0xb8b6 0xb8bd rle_col_B8B6 colores RLE: 43 tiles desde el 96 (lista 0x6d6b)
+F 0xb8b6 16
+# --- fin de los bloques de graficos.py ---
+
+# --- BLOQUES IDENTIFICADOS POR tools/textos.py (los textos (ASCII + macros de la tabla 0xA6DE) y las pantallas
+# comprimidas (RLE_A_RAM de p01 0x637A), leidos desde la ROM). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0xb6fc 0xb737 pantalla_B6FC pantalla comprimida para RLE_A_RAM (p01 0x637A): 8 filas de 8 tiles; tabla p01 0x68D9 (entradas 0,2,5,7,8,10)
+F 0xb6fc 16
+D 0xb737 0xb764 pantalla_B737 pantalla comprimida para RLE_A_RAM (p01 0x637A): 8 filas de 8 tiles; tabla p01 0x68D9 (entradas 1,3,4,6,9,11)
+F 0xb737 16
+# --- fin de los bloques de textos.py ---
+
+# --- BLOQUES IDENTIFICADOS POR tools/sonido.py (las cabeceras de los 70 sonidos, las envolventes, las formas de onda del
+# SCC y el COMIENZO de cada pista; el final de cada pista es donde empieza
+# la siguiente, no lo dice ningun byte: falta el lector de la partitura). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0xa000 0xa002 pista_9FD3 pista de la partitura (sonido 62 canal 3); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa000 16
+D 0xa002 0xa048 pista_A002 pista de la partitura (sonido 62 canal 4); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa002 16
+D 0xa048 0xa094 pista_A048 pista de la partitura (sonido 62 canal 5); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa048 16
+D 0xa094 0xa0fa pista_A094 pista de la partitura (sonido 62 canal 6); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa094 16
+D 0xa0fa 0xa15a pista_A0FA pista de la partitura (sonido 62 canal 7); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa0fa 16
+D 0xa15a 0xa193 pista_A15A pista de la partitura (sonido 63 canal 0); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa15a 16
+D 0xa193 0xa1d7 pista_A193 pista de la partitura (sonido 63 canal 1); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa193 16
+D 0xa1d7 0xa217 pista_A1D7 pista de la partitura (sonido 63 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa1d7 16
+D 0xa217 0xa23a pista_A217 pista de la partitura (sonido 63 canal 3); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa217 16
+D 0xa23a 0xa29f pista_A23A pista de la partitura (sonido 63 canal 4); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa23a 16
+D 0xa29f 0xa301 pista_A29F pista de la partitura (sonido 63 canal 5); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa29f 16
+D 0xa301 0xa348 pista_A301 pista de la partitura (sonido 63 canal 6); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa301 16
+D 0xa348 0xa36e pista_A348 pista de la partitura (sonido 63 canal 7); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa348 16
+D 0xa36e 0xa37d pista_A36E pista de la partitura (sonido 64 canal 0); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa36e 16
+D 0xa37d 0xa3f0 pista_A37D pista de la partitura (sonido 64 canal 1); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa37d 16
+D 0xa3f0 0xa45f pista_A3F0 pista de la partitura (sonido 64 canal 2); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa3f0 16
+D 0xa45f 0xa493 pista_A45F pista de la partitura (sonido 64 canal 3); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa45f 16
+D 0xa493 0xa503 pista_A493 pista de la partitura (sonido 64 canal 4); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa493 16
+D 0xa503 0xa537 pista_A503 pista de la partitura (sonido 64 canal 5); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa503 16
+D 0xa537 0xa5ab pista_A537 pista de la partitura (sonido 64 canal 6); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa537 16
+D 0xa5ab 0xa5de pista_A5AB pista de la partitura (sonido 64 canal 7); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa5ab 16
+D 0xa5de 0xa5df pista_A5DE pista de la partitura (sonido 70 canal 0, sonido 70 canal 1, sonido 70 canal 2, sonido 70 canal 3, sonido 70 canal 4, sonido 70 canal 5, sonido 70 canal 6, sonido 70 canal 7); hasta donde empieza la pista siguiente: el final exacto lo dira el lector de la partitura, por escribir
+F 0xa5de 16
+# --- fin de los bloques de sonido.py ---
+
+D 0xbab9 0xbc84 mandos_grabados 229 pares (mascara de mandos, cuadros que dura) que suman 2178 cuadros: 43,6 s a 50 Hz. Las mascaras que aparecen -00 01 02 04 08 10 11 14 18 20 24 28 4F- son combinaciones de los bits 0-5, la forma de las direcciones y los dos botones. Nadie lo referencia con una direccion literal, asi que quien lo lee esta por encontrar: lo que encaja es una partida grabada para la demo (hipotesis fundada, sin medir en el emulador)
+F 0xbab9 2
+D 0xbc84 0xbf50 relleno_BC84 716 bytes a 0xFF: espacio libre del cartucho, comprobado byte a byte
+F 0xbc84 16
+
+# --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
+D 0xb764 0xb777 pendiente_de_trazar Sin trazar ni identificar todavia (19 bytes)
+# --- fin de la seccion pendiente ---

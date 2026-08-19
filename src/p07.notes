@@ -1,0 +1,163 @@
+# Anotaciones de F-1 Spirit (Konami, 1987, RC-752): pagina 7 de 16, que el
+# mapper pone en 0x6000-0x7fff (ver tools/paginas.py).
+#
+# Directivas: L=etiqueta, C=comentario de linea, B=cabecera de bloque,
+# D=rango de datos (con nombre y explicacion), F=anchura de fila de un bloque
+# de datos. Todo anclado a direccion, asi que sobrevive a un retrazado. Sin
+# acentos a proposito.
+#
+# ESTADO: pagina sin trazar. El rango D de abajo es un marcador: dice que NADA
+# de esta pagina esta explicado todavia. Se va recortando segun el trazado
+# convierte bytes en codigo y las lecturas ponen nombre a los datos.
+
+# --- BLOQUES IDENTIFICADOS POR tools/graficos.py (los recorre desde la ROM como hace el cargador de la pagina 0 y los
+# verifica: RLE que termina, patrones y colores de la misma longitud,
+# alineacion de los fotogramas). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0x7747 0x77e1 rle_pat_7747 patrones RLE: 20 tiles desde el 21 (lista 0x6d00)
+F 0x7747 16
+D 0x77e1 0x782b rle_pat_77E1 patrones RLE: 10 tiles desde el 41 (lista 0x6d00)
+F 0x77e1 16
+D 0x782b 0x7839 rle_pat_782B patrones RLE: 2 tiles desde el 53 (lista 0x6d00)
+F 0x782b 16
+D 0x7839 0x7842 rle_pat_7839 patrones RLE: 3 tiles desde el 58 (lista 0x6d00)
+F 0x7839 16
+D 0x7842 0x7858 rle_pat_7842 patrones RLE: 6 tiles desde el 61 (lista 0x6d00)
+F 0x7842 16
+D 0x7858 0x78aa rle_col_7858 colores RLE: 20 tiles desde el 1 (lista 0x6d00)
+F 0x7858 16
+D 0x78aa 0x78fc rle_col_78AA colores RLE: 20 tiles desde el 21 (lista 0x6d00)
+F 0x78aa 16
+D 0x78fc 0x7913 rle_col_78FC colores RLE: 10 tiles desde el 41 (lista 0x6d00)
+F 0x78fc 16
+D 0x7913 0x7916 rle_col_7913 colores RLE: 2 tiles desde el 53 (lista 0x6d00)
+F 0x7913 16
+D 0x7916 0x7919 rle_col_7916 colores RLE: 3 tiles desde el 58 (lista 0x6d00)
+F 0x7916 16
+D 0x7919 0x7920 rle_col_7919 colores RLE: 6 tiles desde el 61 (lista 0x6d00)
+F 0x7919 16
+D 0x7920 0x7b34 rle_pat_7920 patrones RLE: 66 tiles desde el 1 (lista 0x6dea)
+F 0x7920 16
+D 0x7b34 0x7b3f rle_col_7B34 colores RLE: 66 tiles desde el 1 (lista 0x6dea)
+F 0x7b34 16
+D 0x7b3f 0x7b42 rle_pat_7B3F patrones RLE: 1 tiles desde el 247 (lista 0x6c36)
+F 0x7b3f 16
+D 0x7b42 0x7b45 rle_col_7B42 colores RLE: 1 tiles desde el 247 (lista 0x6c36)
+F 0x7b42 16
+D 0x7b45 0x7b4f rle_pat_7B45 patrones RLE: 1 tiles desde el 255 (lista 0x6c36)
+F 0x7b45 16
+D 0x7b4f 0x7b52 rle_col_7B4F colores RLE: 1 tiles desde el 255 (lista 0x6c36)
+F 0x7b4f 16
+D 0x7b52 0x7b5b rle_pat_7B52 patrones RLE: 2 tiles desde el 220 (lista 0x6c7c)
+F 0x7b52 16
+D 0x7b5b 0x7b5e rle_pat_7B5B patrones RLE: 1 tiles desde el 223 (lista 0x6c7c)
+F 0x7b5b 16
+D 0x7b5e 0x7b87 rle_pat_7B5E patrones RLE: 5 tiles desde el 239 (lista 0x6c7c)
+F 0x7b5e 16
+D 0x7b87 0x7b91 rle_pat_7B87 patrones RLE: 1 tiles desde el 245 (lista 0x6c7c)
+F 0x7b87 16
+D 0x7b91 0x7b99 rle_pat_7B91 patrones RLE: 1 tiles desde el 248 (lista 0x6c7c)
+F 0x7b91 16
+D 0x7b99 0x7b9e rle_pat_7B99 patrones RLE: 1 tiles desde el 247 (lista 0x6c7c)
+F 0x7b99 16
+D 0x7b9e 0x7bb4 rle_pat_7B9E patrones RLE: 3 tiles desde el 249 (lista 0x6c7c)
+F 0x7b9e 16
+D 0x7bb4 0x7bb7 rle_col_7BB4 colores RLE: 2 tiles desde el 220 (lista 0x6c7c)
+F 0x7bb4 16
+D 0x7bb7 0x7bba rle_col_7BB7 colores RLE: 1 tiles desde el 248 (lista 0x6c7c)
+F 0x7bb7 16
+D 0x7bba 0x7bbd rle_col_7BBA colores RLE: 3 tiles desde el 249 (lista 0x6c7c)
+F 0x7bba 16
+D 0x7bbd 0x7bc0 rle_col_7BBD colores RLE: 5 tiles desde el 239 (lista 0x6c7c)
+F 0x7bbd 16
+D 0x7bc0 0x7bfa rle_pat_7BC0 patrones RLE: 8 tiles desde el 232 (lista 0x6bbd)
+F 0x7bc0 16
+D 0x7bfa 0x7c14 rle_pat_7BFA patrones RLE: 3 tiles desde el 248 (lista 0x6c36)
+F 0x7bfa 16
+D 0x7c14 0x7c17 rle_col_7C14 colores RLE: 8 tiles desde el 232 (lista 0x6bbd)
+F 0x7c14 16
+D 0x7c17 0x7c1a rle_col_7C17 colores RLE: 3 tiles desde el 248 (lista 0x6c36)
+F 0x7c17 16
+D 0x7c1a 0x7c37 rle_pat_7C1A patrones RLE: 8 tiles desde el 210 (lista 0x6bbd)
+F 0x7c1a 16
+D 0x7c37 0x7c40 rle_col_7C37 colores RLE: 8 tiles desde el 210 (lista 0x6bbd)
+F 0x7c37 16
+D 0x7c40 0x7c5a rle_pat_7C40 patrones RLE: 3 tiles desde el 253 (lista 0x6c6f)
+F 0x7c40 16
+D 0x7c5a 0x7c74 rle_pat_7C5A patrones RLE: 3 tiles desde el 253 (lista 0x6c55)
+F 0x7c5a 16
+D 0x7c74 0x7c8e rle_pat_7C74 patrones RLE: 3 tiles desde el 253 (lista 0x6c62)
+F 0x7c74 16
+D 0x7c8e 0x7c91 rle_col_7C8E colores RLE: 3 tiles desde el 253 (lista 0x6c55)
+F 0x7c8e 16
+D 0x7c91 0x7c96 rle_pat_7C91 patrones RLE: 2 tiles desde el 210 (lista 0x6bbd)
+F 0x7c91 16
+D 0x7c96 0x7c99 rle_col_7C96 colores RLE: 2 tiles desde el 210 (lista 0x6bbd)
+F 0x7c96 16
+D 0x7c99 0x7d8b rle_pat_7C99 patrones RLE: 43 tiles desde el 212 (lista 0x6bbd)
+F 0x7c99 16
+D 0x7d8b 0x7dc0 rle_col_7D8B colores RLE: 43 tiles desde el 212 (lista 0x6bbd)
+F 0x7d8b 16
+D 0x7dc0 0x7ea3 rle_pat_7DC0 patrones RLE: 32 tiles desde el 212 (lista 0x6bbd)
+F 0x7dc0 16
+D 0x7ea3 0x7ec6 rle_col_7EA3 colores RLE: 32 tiles desde el 212 (lista 0x6bbd)
+F 0x7ea3 16
+D 0x7ec6 0x7ffb rle_pat_7EC6 patrones RLE: 44 tiles desde el 212 (lista 0x6c36)
+F 0x7ec6 16
+D 0x7ffb 0x8000 rle_col_7FFB colores RLE: 44 tiles desde el 212 (lista 0x6c36)
+F 0x7ffb 16
+# --- fin de los bloques de graficos.py ---
+
+# --- BLOQUES IDENTIFICADOS POR tools/circuitos.py (la cadena secuencia -> piezas -> metatiles de la pagina 0 y los objetos
+# de la pista, recorridos desde la ROM; los tamanos de las tablas salen del
+# indice maximo que usa cada carrera y cada tabla acaba donde empieza la
+# siguiente). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0x6000 0x602a tabla_circuitos 21 punteros (por la carrera (E25C)) a la secuencia de cada circuito
+F 0x6000 w1
+D 0x602a 0x616b circuito_00 secuencia del circuito de la carrera 0 (RALLY): 160 pares (pieza, flags) y 0xFF; piezas hasta la 64, 160 con desplazamiento de columna (bit 6)
+F 0x602a 2
+D 0x616b 0x62ac circuito_02 secuencia del circuito de la carrera 2 (ENDURANCE): 160 pares (pieza, flags) y 0xFF; piezas hasta la 81, 160 con desplazamiento de columna (bit 6)
+F 0x616b 2
+D 0x62ac 0x63ed circuito_04 secuencia del circuito de la carrera 4 (F3000): 160 pares (pieza, flags) y 0xFF; piezas hasta la 87, 160 con desplazamiento de columna (bit 6)
+F 0x62ac 2
+D 0x63ed 0x6506 circuito_03 secuencia del circuito de la carrera 3 (F3): 140 pares (pieza, flags) y 0xFF; piezas hasta la 87, 140 con desplazamiento de columna (bit 6)
+F 0x63ed 2
+D 0x6506 0x6607 circuito_01 secuencia del circuito de la carrera 1 (STOCK): 128 pares (pieza, flags) y 0xFF; piezas hasta la 52, 128 con desplazamiento de columna (bit 6)
+F 0x6506 2
+D 0x6607 0x6748 circuito_05 secuencia del circuito de la carrera 5 (F1 ROUND 1): 160 pares (pieza, flags) y 0xFF; piezas hasta la 87, 160 con desplazamiento de columna (bit 6)
+F 0x6607 2
+D 0x6748 0x6859 circuito_06 secuencia del circuito de la carrera 6 (F1 ROUND 2): 136 pares (pieza, flags) y 0xFF; piezas hasta la 93, 136 con desplazamiento de columna (bit 6)
+F 0x6748 2
+D 0x6859 0x6972 circuito_07 secuencia del circuito de la carrera 7 (F1 ROUND 3): 140 pares (pieza, flags) y 0xFF; piezas hasta la 99, 140 con desplazamiento de columna (bit 6)
+F 0x6859 2
+D 0x6972 0x6a6b circuito_08 secuencia del circuito de la carrera 8 (F1 ROUND 4): 124 pares (pieza, flags) y 0xFF; piezas hasta la 68, 124 con desplazamiento de columna (bit 6)
+F 0x6972 2
+D 0x6a6b 0x6b7c circuito_09 secuencia del circuito de la carrera 9 (F1 ROUND 5): 136 pares (pieza, flags) y 0xFF; piezas hasta la 55, 136 con desplazamiento de columna (bit 6)
+F 0x6a6b 2
+D 0x6b7c 0x6c6d circuito_10 secuencia del circuito de la carrera 10 (F1 ROUND 6): 120 pares (pieza, flags) y 0xFF; piezas hasta la 102, 120 con desplazamiento de columna (bit 6)
+F 0x6b7c 2
+D 0x6c6d 0x6d6e circuito_11 secuencia del circuito de la carrera 11 (F1 ROUND 7): 128 pares (pieza, flags) y 0xFF; piezas hasta la 101, 128 con desplazamiento de columna (bit 6)
+F 0x6c6d 2
+D 0x6d6e 0x6e8f circuito_12 secuencia del circuito de la carrera 12 (F1 ROUND 8): 144 pares (pieza, flags) y 0xFF; piezas hasta la 96, 144 con desplazamiento de columna (bit 6)
+F 0x6d6e 2
+D 0x6e8f 0x6fb0 circuito_13 secuencia del circuito de la carrera 13 (F1 ROUND 9): 144 pares (pieza, flags) y 0xFF; piezas hasta la 111, 144 con desplazamiento de columna (bit 6)
+F 0x6e8f 2
+D 0x6fb0 0x70d1 circuito_14 secuencia del circuito de la carrera 14 (F1 ROUND 10): 144 pares (pieza, flags) y 0xFF; piezas hasta la 99, 144 con desplazamiento de columna (bit 6)
+F 0x6fb0 2
+D 0x70d1 0x71d2 circuito_15 secuencia del circuito de la carrera 15 (F1 ROUND 11): 128 pares (pieza, flags) y 0xFF; piezas hasta la 111, 128 con desplazamiento de columna (bit 6)
+F 0x70d1 2
+D 0x71d2 0x72f3 circuito_16 secuencia del circuito de la carrera 16 (F1 ROUND 12): 144 pares (pieza, flags) y 0xFF; piezas hasta la 111, 144 con desplazamiento de columna (bit 6)
+F 0x71d2 2
+D 0x72f3 0x741c circuito_17 secuencia del circuito de la carrera 17 (F1 ROUND 13): 148 pares (pieza, flags) y 0xFF; piezas hasta la 99, 148 con desplazamiento de columna (bit 6)
+F 0x72f3 2
+D 0x741c 0x751d circuito_18 secuencia del circuito de la carrera 18 (F1 ROUND 14): 128 pares (pieza, flags) y 0xFF; piezas hasta la 99, 128 con desplazamiento de columna (bit 6)
+F 0x741c 2
+D 0x751d 0x7646 circuito_19 secuencia del circuito de la carrera 19 (F1 ROUND 15): 148 pares (pieza, flags) y 0xFF; piezas hasta la 110, 148 con desplazamiento de columna (bit 6)
+F 0x751d 2
+D 0x7646 0x7747 circuito_20 secuencia del circuito de la carrera 20 (F1 ROUND 16): 128 pares (pieza, flags) y 0xFF; piezas hasta la 80, 128 con desplazamiento de columna (bit 6)
+F 0x7646 2
+# --- fin de los bloques de circuitos.py ---
+
+# --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
+# --- fin de la seccion pendiente ---

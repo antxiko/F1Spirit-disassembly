@@ -1,0 +1,8 @@
+# Zonas de la pagina 0 (org 0x4000) que el trazador NO debe leer como codigo:
+# tablas de palabras detras de un `call` del despachador, graficos alcanzados
+# por un salto muerto... Cada una con su explicacion.
+0x41A0 0x41B2   tabla de 9 palabras del despachador de estados (call 0x40DA en 0x419D)
+0x4E37 0x4E3F   tabla de 4 palabras (call 0x40DA en 0x4E34)
+0x54EF 0x54FF   tabla de 8 palabras (call 0x40DA en 0x54EC)
+0x5A40 0x5A80   tabla de 32 palabras (call 0x40DA en 0x5A3D)
+0x5D29 0x5D3F   tabla de 11 palabras (call 0x40DA en 0x5D26)

@@ -1,0 +1,363 @@
+# Anotaciones de F-1 Spirit (Konami, 1987, RC-752): pagina 6 de 16, que el
+# mapper pone en 0xa000-0xbfff (ver tools/paginas.py).
+#
+# Directivas: L=etiqueta, C=comentario de linea, B=cabecera de bloque,
+# D=rango de datos (con nombre y explicacion), F=anchura de fila de un bloque
+# de datos. Todo anclado a direccion, asi que sobrevive a un retrazado. Sin
+# acentos a proposito.
+#
+# ESTADO: pagina sin trazar. El rango D de abajo es un marcador: dice que NADA
+# de esta pagina esta explicado todavia. Se va recortando segun el trazado
+# convierte bytes en codigo y las lecturas ponen nombre a los datos.
+
+# =============================================================================
+# PLANTILLAS DE 7x4 TILES (p01 0x70E6 las lee con la 5/6 mapeadas: por cada
+# entrada de la lista de E928 copia las 7 filas de 4 tiles de 0xAF57 al buffer
+# de nombres, sumando 21*c a los tiles menores de 0x82; los 0x82..0x88 de la
+# cuarta columna van tal cual).
+# =============================================================================
+D 0xAF57 0xAF73 plantilla_AF57 plantilla de 7 filas x 4 tiles que copia p01 0x70E6 (tiles + 21*c; los >= 0x82 tal cual)
+F 0xAF57 4
+D 0xAF73 0xAFAB plantillas_AF73 dos plantillas mas de la misma forma (7 x 4, tiles 0x58-0x81 seguidos y 0x82-0x88 en la cuarta columna); quien las lee, por ver
+F 0xAF73 4
+
+
+
+# Las dos listas de atributos de sprite de la SECUENCIA FINAL (comprobadas
+# byte a byte contra la ROM: 37 entradas de 4 bytes y un 0xFF cada una, la
+# segunda pegada a la primera). Quien las lee: p02 0x85BB pone esta pagina en
+# 0xA000 (`ld a,6 / call 0x4457`) y p02 0x85C6 saca UNA entrada cada cuatro
+# interrupciones ((E1C3) & 3) al bloque de atributos EA80, avanzando (E823) de
+# 4 en 4 hasta el 0xFF; cual de las dos lo decide el bit 0 de 0x5513 en (E822),
+# que indexa la tabla p02 0x8639.
+D 0xbc97 0xbd2c atributos_final_A 37 atributos de sprite (y, x, patron, color) y 0xFF: la primera lista de la secuencia final (p02 0x8639[0]); los patrones van 0x24, 0x10, 0x14, 0x18, 0x1C, 0x20 y la posicion baja y se va a la izquierda
+F 0xbc97 4
+D 0xbd2c 0xbdc1 atributos_final_B 37 atributos de sprite (y, x, patron, color) y 0xFF: la segunda (p02 0x8639[1]), la misma figura unos 15 pixeles a la derecha
+F 0xbd2c 4
+
+# --- BLOQUES IDENTIFICADOS POR tools/graficos.py (los recorre desde la ROM como hace el cargador de la pagina 0 y los
+# verifica: RLE que termina, patrones y colores de la misma longitud,
+# alineacion de los fotogramas). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0xa000 0xa020 rle_col_9FEF colores RLE: 12 tiles desde el 47 (lista 0x6485)
+F 0xa000 16
+D 0xa020 0xa056 rle_col_A020 colores RLE: 12 tiles desde el 47 (lista 0x6485)
+F 0xa020 16
+D 0xa056 0xa08a rle_col_A056 colores RLE: 12 tiles desde el 47 (lista 0x6485)
+F 0xa056 16
+D 0xa08a 0xa0bb rle_col_A08A colores RLE: 12 tiles desde el 29 (lista 0x62a3)
+F 0xa08a 16
+D 0xa0bb 0xa0f1 rle_col_A0BB colores RLE: 12 tiles desde el 29 (lista 0x62a3)
+F 0xa0bb 16
+D 0xa0f1 0xa125 rle_col_A0F1 colores RLE: 12 tiles desde el 29 (lista 0x62a3)
+F 0xa0f1 16
+D 0xa125 0xa12a rle_col_A125 colores RLE: 4 tiles desde el 123 (lista 0x6415)
+F 0xa125 16
+D 0xa12a 0xa12f rle_col_A12A colores RLE: 4 tiles desde el 97 (lista 0x62a3)
+F 0xa12a 16
+D 0xa12f 0xa13e rle_col_A12F colores RLE: 12 tiles desde el 17 (lista 0x62a3)
+F 0xa12f 16
+D 0xa13e 0xa14f rle_col_A13E colores RLE: 12 tiles desde el 17 (lista 0x62a3)
+F 0xa13e 16
+D 0xa14f 0xa15c rle_col_A14F colores RLE: 12 tiles desde el 17 (lista 0x62a3)
+F 0xa14f 16
+D 0xa15c 0xa15f rle_col_A15C colores RLE: 2 tiles desde el 203 (tabla85[56])
+F 0xa15c 16
+D 0xa15f 0xa164 rle_col_A15F colores RLE: 2 tiles desde el 154 (tabla85[57])
+F 0xa15f 16
+D 0xa164 0xa167 rle_col_A164 colores RLE: 1 tiles desde el 205 (lista 0x6415)
+F 0xa164 16
+D 0xa167 0xa172 rle_col_A167 colores RLE: 16 tiles desde el 15 (lista 0x65ab)
+F 0xa167 16
+D 0xa172 0xa17d rle_col_A172 colores RLE: 16 tiles desde el 15 (lista 0x65ab)
+F 0xa172 16
+D 0xa17d 0xa188 rle_col_A17D colores RLE: 16 tiles desde el 15 (lista 0x65ab)
+F 0xa17d 16
+D 0xa188 0xa193 rle_col_A188 colores RLE: 14 tiles desde el 1 (lista 0x6568)
+F 0xa188 16
+D 0xa193 0xa1a0 rle_col_A193 colores RLE: 14 tiles desde el 1 (lista 0x6568)
+F 0xa193 16
+D 0xa1a0 0xa1af rle_col_A1A0 colores RLE: 14 tiles desde el 1 (lista 0x6568)
+F 0xa1a0 16
+D 0xa1af 0xa1b8 rle_col_A1AF colores RLE: 2 tiles desde el 93 (lista 0x68b9)
+F 0xa1af 16
+D 0xa1b8 0xa1c1 rle_col_A1B8 colores RLE: 2 tiles desde el 93 (lista 0x68cf)
+F 0xa1b8 16
+D 0xa1c1 0xa1d0 rle_col_A1C1 colores RLE: 10 tiles desde el 9 (lista 0x71d4)
+F 0xa1c1 16
+D 0xa1d0 0xa1dd rle_col_A1D0 colores RLE: 10 tiles desde el 9 (lista 0x71d4)
+F 0xa1d0 16
+D 0xa1dd 0xa1ec rle_col_A1DD colores RLE: 10 tiles desde el 9 (lista 0x71d4)
+F 0xa1dd 16
+D 0xa1ec 0xa1f3 rle_col_A1EC colores RLE: 3 tiles desde el 35 (lista 0x6605)
+F 0xa1ec 16
+D 0xa1f3 0xa1fa rle_col_A1F3 colores RLE: 3 tiles desde el 35 (lista 0x6673)
+F 0xa1f3 16
+D 0xa1fa 0xa201 rle_col_A1FA colores RLE: 3 tiles desde el 35 (lista 0x66e1)
+F 0xa1fa 16
+D 0xa201 0xa208 rle_col_A201 colores RLE: 3 tiles desde el 38 (lista 0x6605)
+F 0xa201 16
+D 0xa208 0xa20f rle_col_A208 colores RLE: 3 tiles desde el 38 (lista 0x6673)
+F 0xa208 16
+D 0xa20f 0xa216 rle_col_A20F colores RLE: 3 tiles desde el 38 (lista 0x66e1)
+F 0xa20f 16
+D 0xa216 0xa21d rle_col_A216 colores RLE: 3 tiles desde el 97 (lista 0x7113)
+F 0xa216 16
+D 0xa21d 0xa224 rle_col_A21D colores RLE: 3 tiles desde el 97 (lista 0x73b8)
+F 0xa21d 16
+D 0xa224 0xa227 rle_col_A224 colores RLE: 2 tiles desde el 95 (lista 0x68b9)
+F 0xa224 16
+D 0xa227 0xa22a rle_col_A227 colores RLE: 2 tiles desde el 95 (lista 0x68cf)
+F 0xa227 16
+D 0xa22a 0xa239 rle_col_A22A colores RLE: 12 tiles desde el 3 (lista 0x6529)
+F 0xa22a 16
+D 0xa239 0xa248 rle_col_A239 colores RLE: 12 tiles desde el 3 (lista 0x6513)
+F 0xa239 16
+D 0xa248 0xa259 rle_col_A248 colores RLE: 12 tiles desde el 3 (lista 0x6529)
+F 0xa248 16
+D 0xa259 0xa26a rle_col_A259 colores RLE: 12 tiles desde el 3 (lista 0x6513)
+F 0xa259 16
+D 0xa26a 0xa277 rle_col_A26A colores RLE: 12 tiles desde el 3 (lista 0x6529)
+F 0xa26a 16
+D 0xa277 0xa284 rle_col_A277 colores RLE: 12 tiles desde el 3 (lista 0x6513)
+F 0xa277 16
+D 0xa284 0xa291 rle_col_A284 colores RLE: 16 tiles desde el 15 (lista 0x6585)
+F 0xa284 16
+D 0xa291 0xa29e rle_col_A291 colores RLE: 16 tiles desde el 15 (lista 0x6598)
+F 0xa291 16
+D 0xa29e 0xa2a9 rle_col_A29E colores RLE: 16 tiles desde el 15 (lista 0x6585)
+F 0xa29e 16
+D 0xa2a9 0xa2b6 rle_col_A2A9 colores RLE: 16 tiles desde el 15 (lista 0x6598)
+F 0xa2a9 16
+D 0xa2b6 0xa2c1 rle_col_A2B6 colores RLE: 16 tiles desde el 15 (lista 0x6585)
+F 0xa2b6 16
+D 0xa2c1 0xa2ce rle_col_A2C1 colores RLE: 16 tiles desde el 15 (lista 0x6598)
+F 0xa2c1 16
+D 0xa2ce 0xa2d9 rle_col_A2CE colores RLE: 14 tiles desde el 1 (lista 0x653f)
+F 0xa2ce 16
+D 0xa2d9 0xa2e6 rle_col_A2D9 colores RLE: 14 tiles desde el 1 (lista 0x653f)
+F 0xa2d9 16
+D 0xa2e6 0xa2f5 rle_col_A2E6 colores RLE: 14 tiles desde el 1 (lista 0x653f)
+F 0xa2e6 16
+D 0xa2f5 0xa2f8 rle_col_A2F5 colores RLE: 8 tiles desde el 1 (lista 0x71d4)
+F 0xa2f5 16
+D 0xa2f8 0xa307 rle_col_A2F8 colores RLE: 6 tiles desde el 62 (lista 0x67ea)
+F 0xa2f8 16
+D 0xa307 0xa316 rle_col_A307 colores RLE: 6 tiles desde el 62 (lista 0x6834)
+F 0xa307 16
+D 0xa316 0xa325 rle_col_A316 colores RLE: 6 tiles desde el 62 (lista 0x6859)
+F 0xa316 16
+D 0xa325 0xa334 rle_col_A325 colores RLE: 6 tiles desde el 62 (lista 0x680f)
+F 0xa325 16
+D 0xa334 0xa343 rle_col_A334 colores RLE: 6 tiles desde el 62 (lista 0x67ea)
+F 0xa334 16
+D 0xa343 0xa352 rle_col_A343 colores RLE: 6 tiles desde el 62 (lista 0x6834)
+F 0xa343 16
+D 0xa352 0xa361 rle_col_A352 colores RLE: 6 tiles desde el 62 (lista 0x6859)
+F 0xa352 16
+D 0xa361 0xa370 rle_col_A361 colores RLE: 6 tiles desde el 62 (lista 0x680f)
+F 0xa361 16
+D 0xa370 0xa381 rle_col_A370 colores RLE: 6 tiles desde el 62 (lista 0x67ea)
+F 0xa370 16
+D 0xa381 0xa392 rle_col_A381 colores RLE: 6 tiles desde el 62 (lista 0x6834)
+F 0xa381 16
+D 0xa392 0xa3a3 rle_col_A392 colores RLE: 6 tiles desde el 62 (lista 0x6859)
+F 0xa392 16
+D 0xa3a3 0xa3b4 rle_col_A3A3 colores RLE: 6 tiles desde el 62 (lista 0x680f)
+F 0xa3a3 16
+D 0xa4ed 0xa583 rle_pat_A4ED patrones RLE: 21 tiles desde el 67 (lista 0x7010)
+F 0xa4ed 16
+D 0xa583 0xa613 rle_pat_A583 patrones RLE: 21 tiles desde el 67 (lista 0x7029)
+F 0xa583 16
+D 0xa613 0xa696 rle_pat_A613 patrones RLE: 21 tiles desde el 67 (lista 0x7042)
+F 0xa613 16
+D 0xa696 0xa71b rle_pat_A696 patrones RLE: 21 tiles desde el 67 (lista 0x705b)
+F 0xa696 16
+D 0xa71b 0xa7a7 rle_pat_A71B patrones RLE: 21 tiles desde el 67 (lista 0x7074)
+F 0xa71b 16
+D 0xa7a7 0xa82c rle_pat_A7A7 patrones RLE: 21 tiles desde el 67 (lista 0x708d)
+F 0xa7a7 16
+D 0xa82c 0xa83f rle_pat_A82C patrones RLE: 7 tiles desde el 130 (lista 0x7010)
+F 0xa82c 16
+D 0xa83f 0xa854 rle_pat_A83F patrones RLE: 7 tiles desde el 130 (lista 0x7029)
+F 0xa83f 16
+D 0xa854 0xa863 rle_pat_A854 patrones RLE: 7 tiles desde el 130 (lista 0x7042)
+F 0xa854 16
+D 0xa863 0xa870 rle_pat_A863 patrones RLE: 7 tiles desde el 130 (lista 0x705b)
+F 0xa863 16
+D 0xa870 0xa87d rle_pat_A870 patrones RLE: 7 tiles desde el 130 (lista 0x7074)
+F 0xa870 16
+D 0xa87d 0xa88a rle_pat_A87D patrones RLE: 7 tiles desde el 130 (lista 0x708d)
+F 0xa87d 16
+D 0xa88a 0xa8e1 rle_col_A88A colores RLE: 21 tiles desde el 88 (lista 0x7010)
+F 0xa88a 16
+D 0xa8e1 0xa93a rle_col_A8E1 colores RLE: 21 tiles desde el 109 (lista 0x7010)
+F 0xa8e1 16
+D 0xa93a 0xa993 rle_col_A93A colores RLE: 21 tiles desde el 67 (lista 0x7010)
+F 0xa93a 16
+D 0xa993 0xa9f7 rle_col_A993 colores RLE: 21 tiles desde el 67 (lista 0x7029)
+F 0xa993 16
+D 0xa9f7 0xaa5b rle_col_A9F7 colores RLE: 21 tiles desde el 88 (lista 0x7029)
+F 0xa9f7 16
+D 0xaa5b 0xaabf rle_col_AA5B colores RLE: 21 tiles desde el 109 (lista 0x7029)
+F 0xaa5b 16
+D 0xaabf 0xab1f rle_col_AABF colores RLE: 21 tiles desde el 88 (lista 0x7042)
+F 0xaabf 16
+D 0xab1f 0xab7f rle_col_AB1F colores RLE: 21 tiles desde el 67 (lista 0x7042)
+F 0xab1f 16
+D 0xab7f 0xabdf rle_col_AB7F colores RLE: 21 tiles desde el 109 (lista 0x7042)
+F 0xab7f 16
+D 0xabdf 0xac3d rle_col_ABDF colores RLE: 21 tiles desde el 88 (lista 0x705b)
+F 0xabdf 16
+D 0xac3d 0xac9a rle_col_AC3D colores RLE: 21 tiles desde el 109 (lista 0x705b)
+F 0xac3d 16
+D 0xac9a 0xacf8 rle_col_AC9A colores RLE: 21 tiles desde el 67 (lista 0x705b)
+F 0xac9a 16
+D 0xacf8 0xad5d rle_col_ACF8 colores RLE: 21 tiles desde el 67 (lista 0x7074)
+F 0xacf8 16
+D 0xad5d 0xadc2 rle_col_AD5D colores RLE: 21 tiles desde el 109 (lista 0x7074)
+F 0xad5d 16
+D 0xadc2 0xae27 rle_col_ADC2 colores RLE: 21 tiles desde el 88 (lista 0x7074)
+F 0xadc2 16
+D 0xae27 0xae8c rle_col_AE27 colores RLE: 21 tiles desde el 67 (lista 0x708d)
+F 0xae27 16
+D 0xae8c 0xaeef rle_col_AE8C colores RLE: 21 tiles desde el 88 (lista 0x708d)
+F 0xae8c 16
+D 0xaeef 0xaf54 rle_col_AEEF colores RLE: 21 tiles desde el 109 (lista 0x708d)
+F 0xaeef 16
+D 0xaf54 0xaf57 rle_col_AF54 colores RLE: 7 tiles desde el 130 (lista 0x708d)
+F 0xaf54 16
+D 0xb0e9 0xb114 rle_pat_B0E9 patrones RLE: 6 tiles desde el 35 (lista 0x64cf)
+F 0xb0e9 16
+D 0xb114 0xb13f rle_pat_B114 patrones RLE: 6 tiles desde el 41 (lista 0x64cf)
+F 0xb114 16
+D 0xb13f 0xb161 rle_pat_B13F patrones RLE: 4 tiles desde el 96 (lista 0x7415)
+F 0xb13f 16
+D 0xb161 0xb171 rle_pat_B161 patrones RLE: 4 tiles desde el 112 (lista 0x6415)
+F 0xb161 16
+D 0xb171 0xb1b4 rle_pat_B171 patrones RLE: 12 tiles desde el 162 (lista 0x6415)
+F 0xb171 16
+D 0xb1b4 0xb1d1 rle_pat_B1B4 patrones RLE: 5 tiles desde el 186 (lista 0x6415)
+F 0xb1b4 16
+D 0xb1d1 0xb1ec rle_col_B1D1 colores RLE: 6 tiles desde el 35 (lista 0x64cf)
+F 0xb1d1 16
+D 0xb1ec 0xb203 rle_col_B1EC colores RLE: 6 tiles desde el 41 (lista 0x64cf)
+F 0xb1ec 16
+D 0xb203 0xb223 rle_col_B203 colores RLE: 4 tiles desde el 96 (lista 0x7415)
+F 0xb203 16
+D 0xb223 0xb226 rle_col_B223 colores RLE: 4 tiles desde el 112 (lista 0x6415)
+F 0xb223 16
+D 0xb226 0xb22b rle_col_B226 colores RLE: 12 tiles desde el 162 (lista 0x6415)
+F 0xb226 16
+D 0xb22b 0xb22e rle_col_B22B colores RLE: 5 tiles desde el 186 (lista 0x6415)
+F 0xb22b 16
+# --- fin de los bloques de graficos.py ---
+
+# --- BLOQUES IDENTIFICADOS POR tools/circuitos.py (la cadena secuencia -> piezas -> metatiles de la pagina 0 y los objetos
+# de la pista, recorridos desde la ROM; los tamanos de las tablas salen del
+# indice maximo que usa cada carrera y cada tabla acaba donde empieza la
+# siguiente). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0xb22e 0xb27f minimapa_00 camino del minimapa de la carrera 0 (RALLY): 81 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=157, y=36); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb22e 16
+D 0xb27f 0xb2c0 minimapa_01 camino del minimapa de la carrera 1 (STOCK): 65 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=193, y=24); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb27f 16
+D 0xb2c0 0xb311 minimapa_02 camino del minimapa de la carrera 2 (ENDURANCE): 81 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=181, y=8); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb2c0 16
+D 0xb311 0xb358 minimapa_03 camino del minimapa de la carrera 3 (F3): 71 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=183, y=8); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb311 16
+D 0xb358 0xb3a9 minimapa_04 camino del minimapa de la carrera 4 (F3000): 81 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=205, y=29); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb358 16
+D 0xb3a9 0xb3fa minimapa_05 camino del minimapa de la carrera 5 (F1 ROUND 1): 81 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=173, y=16); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb3a9 16
+D 0xb3fa 0xb43f minimapa_06 camino del minimapa de la carrera 6 (F1 ROUND 2): 69 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=181, y=41); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb3fa 16
+D 0xb43f 0xb486 minimapa_07 camino del minimapa de la carrera 7 (F1 ROUND 3): 71 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=173, y=40); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb43f 16
+D 0xb486 0xb4c5 minimapa_08 camino del minimapa de la carrera 8 (F1 ROUND 4): 63 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=169, y=10); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb486 16
+D 0xb4c5 0xb50a minimapa_09 camino del minimapa de la carrera 9 (F1 ROUND 5): 69 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=209, y=45); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb4c5 16
+D 0xb50a 0xb547 minimapa_10 camino del minimapa de la carrera 10 (F1 ROUND 6): 61 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=173, y=41); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb50a 16
+D 0xb547 0xb588 minimapa_11 camino del minimapa de la carrera 11 (F1 ROUND 7): 65 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=164, y=44); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb547 16
+D 0xb588 0xb5d1 minimapa_12 camino del minimapa de la carrera 12 (F1 ROUND 8): 73 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=149, y=29); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb588 16
+D 0xb5d1 0xb61a minimapa_13 camino del minimapa de la carrera 13 (F1 ROUND 9): 73 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=197, y=49); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb5d1 16
+D 0xb61a 0xb663 minimapa_14 camino del minimapa de la carrera 14 (F1 ROUND 10): 73 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=205, y=44); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb61a 16
+D 0xb663 0xb6a4 minimapa_15 camino del minimapa de la carrera 15 (F1 ROUND 11): 65 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=213, y=37); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb663 16
+D 0xb6a4 0xb6ed minimapa_16 camino del minimapa de la carrera 16 (F1 ROUND 12): 73 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=197, y=52); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb6a4 16
+D 0xb6ed 0xb738 minimapa_17 camino del minimapa de la carrera 17 (F1 ROUND 13): 75 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=189, y=16); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb6ed 16
+D 0xb738 0xb779 minimapa_18 camino del minimapa de la carrera 18 (F1 ROUND 14): 65 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=209, y=30); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb738 16
+D 0xb779 0xb7c4 minimapa_19 camino del minimapa de la carrera 19 (F1 ROUND 15): 75 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=173, y=41); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb779 16
+D 0xb7c4 0xb805 minimapa_20 camino del minimapa de la carrera 20 (F1 ROUND 16): 65 pasos, cada byte dos nibbles con signo (0x784E: el ALTO a la x del marcador, el BAJO a la y) que p01 0x7827 va sumando desde (x=161, y=16); los deltas suman cero en los dos ejes, o sea el trazado cierra
+F 0xb7c4 16
+# --- fin de los bloques de circuitos.py ---
+
+# --- BLOQUES IDENTIFICADOS POR tools/textos.py (los textos (ASCII + macros de la tabla 0xA6DE) y las pantallas
+# comprimidas (RLE_A_RAM de p01 0x637A), leidos desde la ROM). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0xa3b4 0xa4ed pantalla_A3B4 pantalla comprimida para RLE_A_RAM (p01 0x637A): 16 filas de 32 tiles, destino 0xe400 en la cabecera; p00 0x5F9B (con 5/6)
+F 0xa3b4 16
+D 0xb805 0xb841 pantalla_B805 pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[0]
+F 0xb805 16
+D 0xb841 0xb872 pantalla_B841 pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[2]
+F 0xb841 16
+D 0xb872 0xb8a8 pantalla_B872 pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[3]
+F 0xb872 16
+D 0xb8a8 0xb8e5 pantalla_B8A8 pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[4]
+F 0xb8a8 16
+D 0xb8e5 0xb90e pantalla_B8E5 pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[1]
+F 0xb8e5 16
+D 0xb90e 0xb94a pantalla_B90E pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[5]
+F 0xb90e 16
+D 0xb94a 0xb97d pantalla_B94A pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[6]
+F 0xb94a 16
+D 0xb97d 0xb9b8 pantalla_B97D pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[7]
+F 0xb97d 16
+D 0xb9b8 0xb9ef pantalla_B9B8 pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[8]
+F 0xb9b8 16
+D 0xb9ef 0xba2a pantalla_B9EF pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[9]
+F 0xb9ef 16
+D 0xba2a 0xba52 pantalla_BA2A pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[10]
+F 0xba2a 16
+D 0xba52 0xba89 pantalla_BA52 pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[11]
+F 0xba52 16
+D 0xba89 0xbab9 pantalla_BA89 pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[12]
+F 0xba89 16
+D 0xbab9 0xbaf2 pantalla_BAB9 pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[13]
+F 0xbab9 16
+D 0xbaf2 0xbb26 pantalla_BAF2 pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[14]
+F 0xbaf2 16
+D 0xbb26 0xbb5b pantalla_BB26 pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[15]
+F 0xbb26 16
+D 0xbb5b 0xbb93 pantalla_BB5B pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[16]
+F 0xbb5b 16
+D 0xbb93 0xbbd0 pantalla_BB93 pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[17]
+F 0xbb93 16
+D 0xbbd0 0xbc09 pantalla_BBD0 pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[18]
+F 0xbbd0 16
+D 0xbc09 0xbc3f pantalla_BC09 pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[19]
+F 0xbc09 16
+D 0xbc3f 0xbc6d pantalla_BC3F pantalla comprimida para RLE_A_RAM (p01 0x637A): 6 filas de 11 tiles; tabla 0xBC6D[20]
+F 0xbc3f 16
+D 0xbc6d 0xbc97 tabla_pantallas_BC6D 21 punteros a pantallas comprimidas de 11 de ancho; p01 0x61B5/0x75F3 (con 5/6), por (E25C): al buffer E423
+F 0xbc6d w1
+# --- fin de los bloques de textos.py ---
+
+D 0xbdc1 0xbfdc mandos_grabados_BDC1 269 pares (mascara de mandos, cuadros que dura) que suman 4199 cuadros: 84 s a 50 Hz. Mismo formato que p15 0xBAB9, con mas mascaras distintas (39). Nadie lo referencia con una direccion literal: lo que encaja es una partida grabada para la demo (hipotesis fundada, sin medir en el emulador)
+F 0xbdc1 2
+D 0xbfdc 0xc000 relleno_BFDC 36 bytes a 0xFF hasta el final de la pagina: espacio libre, comprobado byte a byte
+F 0xbfdc 16
+
+# --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
+D 0xafab 0xb0e9 pendiente_de_trazar Sin trazar ni identificar todavia (318 bytes)
+# --- fin de la seccion pendiente ---

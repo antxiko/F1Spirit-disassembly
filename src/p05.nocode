@@ -1,0 +1,3 @@
+# Zonas de la pagina 5 (org 0x8000) que el trazador NO debe leer como codigo:
+# tablas de palabras detras de un `call` del despachador, graficos alcanzados
+# por un salto muerto... Cada una con su explicacion.

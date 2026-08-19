@@ -1,0 +1,155 @@
+# Puntos de entrada de la pagina 1 de F-1 Spirit (org 0x6000).
+#
+# Cada semilla lleva su justificacion: de donde se llama y con que pagina
+# mapeada. Una semilla sin justificar es la via mas rapida a un trazado falso.
+# Las llamadas que salen de otra pagina se ven en work/p01.trace.json
+# ("externos") y con tools/externos.py.
+
+# --- Llamadas desde otras paginas MEDIDAS en el emulador (hecho-verificado):
+# tools/omsx_bancos.tcl, 90 s de demo de titulo, 2026-08-19 (work/omsx/bancos.log).
+# Punto de ruptura en cada origen y lectura del depurable 'romblocks' de
+# openMSX en el destino: en esa direccion estaba mapeada ESTA pagina.
+0x6049   # desde p00:5AC6 p00:5F87 (medido)
+0x604C   # desde p00:5BA6 (medido)
+0x60F3   # desde p00:5FE3 (medido)
+0x626C   # desde p00:5FF2 (medido)
+0x62AC   # desde p00:5FF5 (medido)
+0x62D3   # desde p00:5FDA (medido)
+0x6342   # desde p00:5F75 (medido)
+0x637A   # desde p00:5D02 (medido)
+0x637F   # desde p00:5FD4 (medido)
+0x63F7   # desde p00:5A9A (medido)
+0x6452   # desde p00:5A9D (medido)
+0x662A   # desde p00:5FD7 (medido)
+0x680C   # desde p00:5A80 (medido)
+0x6877   # desde p00:5A83 (medido)
+0x690A   # desde p00:4B90 p00:4B9A (medido)
+0x6EF8   # desde p00:5C51 (medido)
+0x7583   # desde p00:59F6 (medido)
+0x760D   # desde p00:5C54 (medido)
+0x7DCA   # desde p00:5BF8 (medido)
+0x7F3C   # desde p00:59F3 (medido)
+0x7F62   # desde p00:5ABA (medido)
+
+# --- Los despachadores de esta pagina (`call 0x40DA` seguido de tabla; el
+# tamano de cada tabla = distancia hasta su destino mas bajo dentro de la
+# pagina; las tablas van en el .nocode).
+# 0x7618: tabla de 0x761B hasta 0x762A: 8 palabras.
+0x762B   # entrada 0 de la tabla de 0x761B
+0x762E   # entrada 1 de la tabla de 0x761B
+0x7631   # entrada 2 de la tabla de 0x761B
+0x7634   # entrada 3 de la tabla de 0x761B
+0x7637   # entrada 4 de la tabla de 0x761B
+0x763A   # entrada 5 de la tabla de 0x761B
+0x7640   # entrada 6 de la tabla de 0x761B
+0x7643   # entrada 7 de la tabla de 0x761B
+# 0x7DD0: tabla de 0x7DD3 hasta 0x7DE6: 10 palabras.
+0x7DE7   # entrada 0 de la tabla de 0x7DD3
+0x7E28   # entrada 1 de la tabla de 0x7DD3
+0x7E4C   # entrada 2 de la tabla de 0x7DD3
+0x7E50   # entrada 3 de la tabla de 0x7DD3
+0x7E54   # entrada 4 de la tabla de 0x7DD3
+0x7E89   # entrada 5 de la tabla de 0x7DD3
+0x7EA2   # entrada 6 de la tabla de 0x7DD3
+0x7ECB   # entrada 7 de la tabla de 0x7DD3
+0x7ED9   # entrada 8 de la tabla de 0x7DD3
+0x7EF2   # entrada 9 de la tabla de 0x7DD3
+
+# --- Llamadas desde otras paginas MEDIDAS en el emulador (hecho-verificado):
+# tools/omsx_bancos.tcl -> work/omsx/bancos.log. Punto de ruptura en cada
+# origen y lectura del depurable 'romblocks' de openMSX en el destino: en
+# esa direccion estaba mapeada ESTA pagina.
+0x7646   # desde p02:8E13 (medido)
+0x7FF6   # desde p03:B564 (medido)
+0x7FFC   # desde p02:9E40 (medido)
+
+# --- Llamadas desde otras paginas MEDIDAS en el emulador (hecho-verificado):
+# tools/omsx_bancos.tcl -> work/omsx/bancos.log. Punto de ruptura en cada
+# origen y lectura del depurable 'romblocks' de openMSX en el destino: en
+# esa direccion estaba mapeada ESTA pagina.
+0x6565   # desde p00:584A (medido)
+0x70D9   # desde p00:5219 (medido)
+0x70DF   # desde p00:5C96 (medido)
+0x7134   # desde p00:520D p00:5C5F (medido)
+0x71CD   # desde p00:5A97 (medido)
+0x74B2   # desde p00:57F4 (medido)
+0x77A7   # desde p00:56EF (medido)
+0x7886   # desde p02:8C04 (medido)
+0x788F   # desde p00:4FDA (medido)
+
+# --- Destinos de tablas de despachador (`call 0x40DA` + tabla) MEDIDOS en el
+# emulador (hecho-verificado): bp en el `jp (hl)` de 0x40E3; HL = destino,
+# DE-1 = la entrada de la tabla que lo apuntaba; romblocks en el destino = ESTA pagina.
+0x68A7   # entrada de tabla p01:71E6 (medido, despachador)
+0x71F2   # entrada de tabla p01:71E4 (medido, despachador)
+
+# --- DEDUCIDAS, SIN MEDIR (2026-08-19): entradas del despachador de carrera
+# 0x5A3D (tabla 0x5A40, indice (E250)&0x7F) que la partida grabada no alcanzo.
+# Modelo: en el nivel de los despachadores hay SIEMPRE 1/2/3 (toda rutina que
+# toca el mapper vuelve a 1/2/3 antes de retornar); contrastado con 302
+# medidas sin una discrepancia (work/agentes/agenteB_bancos.md) y con las 14
+# entradas de 0x5A3D ya medidas (todas 1/2/3). Confirmar en cuanto se midan.
+0x6B49   # desde p00:5B20 (entrada 14 de 0x5A3D; MEDIDO 2026-08-19 forzando E250, bancos_fuerza.log)
+0x7162   # desde p00:5A94 (entrada 4 de 0x5A3D; MEDIDO 2026-08-19 forzando E250, bancos_fuerza.log)
+0x7CD0   # desde p00:5B6C (entrada 26 de 0x5A3D; MEDIDO 2026-08-19 forzando E250, bancos_fuerza.log)
+0x7CFD   # desde p00:5B6F (entrada 27 de 0x5A3D; MEDIDO 2026-08-19 forzando E250, bancos_fuerza.log)
+
+# --- Llamadas desde otras paginas MEDIDAS en el emulador (hecho-verificado):
+# tools/omsx_bancos.tcl -> work/omsx/bancos.log. Punto de ruptura en cada
+# origen y lectura del depurable 'romblocks' de openMSX en el destino: en
+# esa direccion estaba mapeada ESTA pagina.
+0x6970   # desde p00:5B4F (medido)
+
+# --- Llamadas desde otras paginas MEDIDAS en el emulador (hecho-verificado):
+# tools/omsx_bancos.tcl -> work/omsx/bancos.log. Punto de ruptura en cada
+# origen y lectura del depurable 'romblocks' de openMSX en el destino: en
+# esa direccion estaba mapeada ESTA pagina.
+0x666E   # desde p02:838C (medido)
+
+# --- Entradas de tabla de despachador EN ESTA MISMA PAGINA (no hace falta
+# medir banco: el `call 0x40DA` de 0x71E1 esta trazado en esta pagina y su
+# tabla de 7 palabras esta en el .nocode; las 7 caen en 0x6000-0x7FFF).
+# Las que no salieron en las partidas medidas se siembran por la tabla.
+0x7224   # entrada 1 de la tabla 0x71E4 del despachador 0x71E1 (misma pagina)
+0x72A8   # entrada 2 de la tabla 0x71E4 del despachador 0x71E1 (misma pagina)
+0x7351   # entrada 3 de la tabla 0x71E4 del despachador 0x71E1 (misma pagina)
+0x7450   # entrada 4 de la tabla 0x71E4 del despachador 0x71E1 (misma pagina)
+0x7458   # entrada 5 de la tabla 0x71E4 del despachador 0x71E1 (misma pagina)
+
+# --- La pagina 0 ACABA EN MITAD DE UNA RUTINA (2026-08-19, lo vio el agente
+# anotador): 0x5FD7 (estado E250 = 3) llega a 0x5FFD `ld a,(E27E)` y el flujo
+# sigue en 0x6000, que con 1/2/3 es ESTA pagina. Que en ese punto esta la
+# pagina 1 en 0x6000 esta MEDIDO: los `call 0x626C` y `call 0x62AC` de p00
+# 0x5FF2/0x5FF5, dos instrucciones antes, resolvieron en p01 (bancos.log), y
+# entre medias no se toca el mapper.
+0x6000   # cae desde p00:5FFD (fin de la pagina 0; la 1 medida en 0x5FF2/0x5FF5)
+
+# --- Los seis "trucos" de la pantalla INPUT PASSWORD (2026-08-19, lo vio el
+# agente anotador; comprobado sobre la ROM): 0x7474 compara el texto tecleado
+# (EA52) con cada entrada de la tabla 0x7497 (MAXPOINT, " UJM3EDC",
+# MITAIYOENDDEMO, HYPEROFF, ESCON, ESCOFF; acaban en 0xFF) y si casa hace
+# `jp (hl)` (0x748F) al byte que sigue al 0xFF, con 0x7490 como retorno
+# (push de,0x7490 en 0x748B). Las seis direcciones salen de la ROM.
+0x7490   # retorno empujado por 0x748B (`xor a / ret`): Z = contrasena especial aceptada
+0x74AC   # jp (hl) de 0x748F tras "MAXPOINT" (0x74A3, FF en 0x74AB)
+0x74C4   # jp (hl) de 0x748F tras " UJM3EDC" (0x74BB, FF en 0x74C3)
+0x74F1   # jp (hl) de 0x748F tras "MITAIYOENDDEMO" (0x74E2, FF en 0x74F0)
+0x7504   # jp (hl) de 0x748F tras "HYPEROFF" (0x74FB, FF en 0x7503)
+0x7510   # jp (hl) de 0x748F tras "ESCON" (0x750A, FF en 0x750F)
+0x751D   # jp (hl) de 0x748F tras "ESCOFF" (0x7516, FF en 0x751C)
+
+# --- Mas cosas que vio el agente anotador (2026-08-19), comprobadas en la ROM:
+0x6057   # desde p00:5FE1 (`jr z,$+118` = 0x6057: un salto relativo que CRUZA de la pagina 0 a esta, con 1/2/3 como en 0x5FF2)
+0x7C4F   # entrada 1 de la tabla de 3 palabras de 0x7C49 del `call 0x4ACB` de 0x7C46 (DESPACHA_AF: como 0x40DA pero con A' y exx)
+0x7C56   # entradas 0 y 2 de la tabla de 0x7C49 (idem)
+
+# --- CODIGO SIN LLAMADOR CONOCIDO (2026-08-19): igual que en la pagina 2, son
+# huecos entre bloques trazados que se leen como codigo bien formado. Se
+# siembran para verlos desensamblados en el listado.
+0x67FC   # sin llamador: IX = E29C o E35C segun (E25F), como 0x67F0 con HL
+0x70CC   # sin llamador: si (ix+31) ... and 0xFE -> (ix+31)
+0x740C   # sin llamador: E1C4 = 0x3C y sigue en 0x73C9 (E252++)
+0x7492   # sin llamador: cp (hl) / inc hl / ret nz / jr 0x7481 (cola de 0x748B)
+0x7FE9   # sin llamador: C si (E208) es 0 o 4
+0x6B3D   # sin llamador: E29D = E35D = 0 y estado 0x10 (jp 0x6049)
+0x7BE9   # sin llamador: HL = A*256, por 0x4A6D, x5 (H:L*5) con tope 0xFF

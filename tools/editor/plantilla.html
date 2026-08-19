@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>F-1 Spirit — editor de circuitos</title>
+<style>
+  :root {
+    --fondo: #12141a; --panel: #1b1e27; --borde: #2e3342;
+    --texto: #d7dae3; --suave: #8f97ab; --acento: #ffcc44; --aviso: #ff5f7a;
+    --bien: #62d09a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--fondo); color: var(--texto);
+    font: 13px/1.5 "Segoe UI", system-ui, sans-serif;
+    display: grid; grid-template-columns: 340px 1fr; height: 100vh;
+  }
+  aside { background: var(--panel); border-right: 1px solid var(--borde);
+          padding: 14px; overflow-y: auto; }
+  h1 { font-size: 15px; margin: 0 0 2px; letter-spacing: .04em; }
+  h1 small { display: block; font-weight: 400; color: var(--suave); font-size: 11px; }
+  h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+       color: var(--suave); margin: 16px 0 6px; border-bottom: 1px solid var(--borde);
+       padding-bottom: 4px; }
+  select, button, input { font: inherit; background: #262b38; color: var(--texto);
+                          border: 1px solid var(--borde); border-radius: 4px; padding: 4px 7px; }
+  select { width: 100%; }
+  button { cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--acento); }
+  button:disabled { opacity: .4; cursor: default; }
+  label.linea { display: flex; align-items: center; gap: 7px; margin: 5px 0; cursor: pointer; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 2px 0; vertical-align: top; }
+  td.k { color: var(--suave); white-space: nowrap; padding-right: 8px; }
+  td.v { text-align: right; font-variant-numeric: tabular-nums; }
+  .mono { font-family: Consolas, "DejaVu Sans Mono", monospace; }
+  .aviso { color: var(--aviso); }
+  .bien { color: var(--bien); }
+  .nota { color: var(--suave); font-size: 11px; margin: 6px 0 0; }
+  main { overflow: auto; padding: 14px; position: relative; }
+  #pista { image-rendering: pixelated; display: block; background: #000;
+           border: 1px solid var(--borde); cursor: crosshair; }
+  #mapa, #previa { image-rendering: pixelated; background: #000;
+                   border: 1px solid var(--borde); width: 100%; }
+  .barra { display: flex; gap: 8px; align-items: center; margin-bottom: 10px;
+           position: sticky; top: 0; background: var(--fondo); padding: 0 0 8px; z-index: 2; }
+  .fila { display: flex; gap: 6px; margin: 6px 0; }
+  .fila > * { flex: 1; }
+  .medidor { height: 6px; background: #262b38; border-radius: 3px; overflow: hidden; margin: 4px 0; }
+  .medidor > i { display: block; height: 100%; background: var(--bien); }
+  .medidor.lleno > i { background: var(--aviso); }
+  #lupa { position: fixed; top: 14px; right: 14px; width: min(560px, 46vw);
+          background: var(--panel); border: 1px solid var(--acento);
+          border-radius: 6px; padding: 10px; z-index: 10;
+          box-shadow: 0 8px 30px rgba(0,0,0,.55); }
+  #lupa[hidden] { display: none; }
+  #lupa h3 { margin: 0 0 6px; font-size: 12px; letter-spacing: .06em;
+             text-transform: uppercase; color: var(--acento); }
+  #lupa canvas { cursor: grab; }
+  #lupa canvas:active { cursor: grabbing; }
+</style>
+</head>
+<body>
+<aside>
+  <h1>F-1 Spirit<small>editor de circuitos — datos leídos de la ROM</small></h1>
+  <p class="nota"><a href="../../docs/es/EL-EDITOR.html" style="color:var(--acento)">manual</a>
+     · <a href="../../docs/THE-EDITOR.html" style="color:var(--acento)">in English</a></p>
+
+  <h2>Carrera</h2>
+  <select id="carrera"></select>
+
+  <h2>Minimapa</h2>
+  <div id="sitioMapa"><canvas id="mapa" width="256" height="192"></canvas></div>
+  <p class="nota" id="notaMapa"></p>
+  <label class="linea"><input type="checkbox" id="editaMapa"> editar el trazado (arrastra los puntos)</label>
+  <label class="linea"><input type="checkbox" id="mapaFull"> ver la pantalla entera</label>
+  <div class="fila"><button id="revierteMapa">revertir trazado</button></div>
+  <p class="nota">El trazado se colorea con la dirección de las piezas de cada
+    tramo, en vivo: <span style="color:#ff5f7a">izquierda</span>,
+    <span style="color:#62d09a">derecha</span>,
+    <span style="color:#65DBEF">recto</span>. Un tramo = 2 piezas.</p>
+  <p class="nota">Va en <b>coordenadas de pantalla</b>, no desde 0: los 21
+    trazados caen en x 140–242, y 3–53. Por defecto se muestra esa zona; marca
+    la casilla para ver dónde queda dentro de la pantalla de 256×192.</p>
+  <p class="nota">El minimapa es un dato APARTE (p06) y su FORMA no sale de la
+    secuencia: si cambias los desplazamientos, aquí no se mueve nada (y en el
+    juego tampoco). Pero la LONGITUD sí está atada: en las 21 carreras de la
+    ROM se cumple <span class="mono">pasos = piezas/2 + 1</span>, o sea un paso
+    cada dos piezas. Si añades o quitas piezas, el aviso de "minimapa" te dice
+    cuántos pasos pediría la vuelta.</p>
+
+  <h2>Pieza seleccionada</h2>
+  <p class="nota" id="sinSel">Pincha una franja del circuito para editarla.</p>
+  <p class="nota">Teclas: <span class="mono">↑ ↓</span> avanzar por la pista,
+    <span class="mono">← →</span> girar la pista,
+    <span class="mono">+ −</span> cambiar de pieza, <span class="mono">Supr</span>
+    borrar, <span class="mono">Inicio/Fin</span> ir a la salida o al final.</p>
+  <div id="edicion" hidden>
+    <canvas id="previa" width="256" height="96"></canvas>
+    <div class="fila">
+      <label class="linea" style="flex:2">pieza
+        <input type="number" id="numPieza" min="0" style="width:70px;margin-left:auto"></label>
+    </div>
+    <div class="fila">
+      <button id="izq" title="una columna a la izquierda (tecla ←)">← izquierda</button>
+      <button id="recto" title="sin desplazamiento (0x40)">recto</button>
+      <button id="der" title="una columna a la derecha (tecla →)">derecha →</button>
+    </div>
+    <label class="linea">desplazamiento
+      <select id="despPieza" style="width:auto;margin-left:auto"></select></label>
+    <p class="nota">Rota la fila de 8 metatiles con la que se pinta la pieza
+      (1 metatile = 4 tiles = 32 px) y se ACUMULA de una pieza a la siguiente:
+      es lo que hace serpentear la pista. Al ser módulo 8, 5/6/7 son lo mismo
+      que −3/−2/−1. <b>No toca al coche</b>: el acumulador (ix−0x19) solo lo
+      usan las tres instrucciones que pintan la fila (p00 0x5685/0x568A/0x56A9).
+      En la ROM: 2194 piezas van rectas, y de las que desplazan la más usada es
+      0x47 (229 veces).</p>
+    <div class="fila">
+      <button id="antes" title="insertar una copia antes">+ antes</button>
+      <button id="despues" title="insertar una copia después">+ después</button>
+    </div>
+    <div class="fila">
+      <button id="sube">↑ subir</button>
+      <button id="baja">↓ bajar</button>
+      <button id="borra">⌫ borrar</button>
+    </div>
+  </div>
+
+  <h2>Presupuesto</h2>
+  <div class="medidor" id="medidor"><i></i></div>
+  <table id="presu"></table>
+  <p class="nota">Las 21 secuencias van contiguas en p07 0x602A–0x7747 y la ROM
+    original las deja LLENAS (0 bytes libres): para añadir una pieza hay que
+    quitar otra, aquí o en otra carrera.</p>
+  <div class="fila">
+    <button id="deshacer">deshacer</button>
+    <button id="revertir">revertir carrera</button>
+  </div>
+  <div class="fila">
+    <button id="bajaRom">⬇ ROM parcheada</button>
+    <button id="bajaParche">⬇ proyecto .json</button>
+  </div>
+  <div class="fila">
+    <button id="abre">⬆ abrir .json</button>
+    <button id="tirar">empezar de cero</button>
+  </div>
+  <input type="file" id="ficheroProyecto" accept=".json" hidden>
+  <p class="nota" id="guardado">sin cambios</p>
+  <p class="nota">El <span class="mono">.json</span> lo aplica
+    <span class="mono">tools/parchea_circuitos.py</span>, que es lo que
+    comprueban los tests.</p>
+
+  <h2>Datos</h2>
+  <table id="datos"></table>
+
+  <h2>Render</h2>
+  <label class="linea">tercio de pantalla
+    <select id="tercio" style="width:auto;margin-left:auto">
+      <option value="2" selected>2 · cerca (abajo)</option>
+      <option value="1">1 · medio</option>
+      <option value="0">0 · lejos (arriba)</option>
+      <option value="p">los tres (como se ve)</option>
+    </select></label>
+  <label class="linea"><input type="checkbox" id="desp" checked> aplicar el desplazamiento de columna</label>
+  <label class="linea"><input type="checkbox" id="invMeta" checked> filas de metatile 2,1,0</label>
+  <label class="linea"><input type="checkbox" id="invPieza" checked> salida abajo</label>
+  <label class="linea"><input type="checkbox" id="rejilla"> rejilla de piezas</label>
+  <label class="linea"><input type="checkbox" id="empalme" checked> ver el empalme de la vuelta</label>
+  <p class="nota"><b>Los tres tercios.</b> En SCREEN 2 la tabla de patrones tiene
+    tres bancos, uno por tercio de pantalla, y F-1 Spirit carga <i>dibujos
+    distintos con el mismo índice</i> arriba y abajo: así hace la profundidad de
+    la pista. Los bits 7/6/5 de los flags del cargador dicen a qué tercio va cada
+    tile.</p>
+</aside>
+
+<div id="lupa" hidden>
+  <h3>Trazado del minimapa</h3>
+  <div id="huecoLupa"></div>
+  <p class="nota" id="notaLupa">Arrastra los puntos. Cada tramo tiene que caber
+    en dos nibbles con signo (−7..7): si no cabe, el punto no se mueve. Al mover
+    un vértice solo cambian los dos tramos que lo tocan, así que el trazado
+    sigue cerrando.</p>
+</div>
+
+<main>
+  <div id="pideRom" style="padding:24px;max-width:560px">
+    <h2 style="border:0">Carga tu ROM de F-1 Spirit</h2>
+    <p class="nota">Este editor no lleva el juego dentro: pon tu copia de
+      <span class="mono">f1spirit.rom</span> (131.072 bytes) y saca de ella los
+      circuitos, los gráficos y los minimapas aquí mismo, en tu navegador. No se
+      sube nada a ningún sitio.</p>
+    <p><input type="file" id="ficheroRom" accept=".rom,.bin"></p>
+  </div>
+  <div class="barra">
+    <button id="menos">−</button><span id="zoomTxt" class="mono">×2</span><button id="mas">+</button>
+    <span class="nota" id="pos"></span>
+  </div>
+  <canvas id="pista" width="256" height="96"></canvas>
+</main>
+
+<script>
+let DATOS = /*DATOS*/;
+let ROM_B64 = /*ROM*/;
+/*LECTOR*/
+
+// paleta del TMS9918 (la que usa openMSX); el 0 es transparente y aquí se
+// pinta con el negro del fondo
+const PAL = ["#000000","#000000","#3EB849","#74D07D","#5955E0","#8076F1","#B95E51",
+             "#65DBEF","#DB6559","#FF897D","#CCC35E","#DED087","#3AA241","#B766B5",
+             "#CCCCCC","#FFFFFF"];
+const RGB = PAL.map(h => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)]);
+
+const $ = id => document.getElementById(id);
+const hex = (s, i) => parseInt(s.substr(i*2, 2), 16);
+
+let zoom = 2, sel = -1;
+const editado = {};          // carrera -> pares editados
+const editadoMapa = {};      // carrera -> {pasos, inicio} del camino del minimapa
+let PTS = [], arrastra = -1, ZONA_MAPA = {x: 0, y: 0, w: 256, h: 192};
+const historia = [];         // para deshacer: [{i, pares}]
+
+const original = c => c.pares;
+const pares = c => editado[c.i] || c.pares;
+const mapaDe = c => editadoMapa[c.i] || DATOS.minimapas[c.i];
+const carreraActual = () => DATOS.carreras[+$("carrera").value];
+
+/* NO PERDER EL TRABAJO: cada cambio se guarda en este navegador, y el proyecto
+   se puede bajar y volver a abrir como .json. El fichero es la copia de
+   seguridad de verdad: el almacen del navegador puede no persistir al abrir la
+   página desde el disco, según el navegador. */
+const CLAVE = "f1spirit-editor-circuitos";
+function guardaLocal() {
+  try {
+    localStorage.setItem(CLAVE, JSON.stringify({editado: editado, editadoMapa: editadoMapa}));
+    marcaGuardado(true);
+  } catch (e) { marcaGuardado(false); }
+}
+function recuperaLocal() {
+  try {
+    const t = localStorage.getItem(CLAVE);
+    if (!t) return 0;
+    const d = JSON.parse(t);
+    Object.assign(editado, d.editado || {});
+    Object.assign(editadoMapa, d.editadoMapa || {});
+    return Object.keys(editado).length + Object.keys(editadoMapa).length;
+  } catch (e) { return 0; }
+}
+function marcaGuardado(ok) {
+  const n = Object.keys(editado).length, m = Object.keys(editadoMapa).length;
+  $("guardado").innerHTML = (n || m)
+      ? (ok ? "guardado en este navegador: " : '<span class="aviso">SIN guardar (baja el .json): </span>') +
+        n + " pista(s), " + m + " trazado(s)"
+      : "sin cambios";
+}
+
+function apunta(c) {         // guarda el estado antes de tocar
+  historia.push({i: c.i, pares: pares(c).map(p => p.slice())});
+  if (historia.length > 200) historia.shift();
+}
+
+/* ------------------------------------------------------------------ pintado */
+
+function pintaTile(img, x0, y0, tile) {
+  const d = img.data, W = img.width;
+  for (let f = 0; f < 8; f++) {
+    const pat = tile ? hex(tile.pat, f) : 0, c = tile ? hex(tile.col, f) : 0;
+    const fg = c >> 4, bg = c & 15;
+    for (let b = 0; b < 8; b++) {
+      const x = x0 + b, y = y0 + f;
+      if (x >= W) continue;
+      let r, g, bl;
+      if (!tile) { const t = ((x0 + b + y0 + f) & 4) ? 1 : 0;
+                   [r, g, bl] = t ? [255, 95, 122] : [60, 20, 30]; }
+      else { [r, g, bl] = RGB[(pat & (0x80 >> b)) ? fg : bg]; }
+      const o = (y * W + x) * 4;
+      d[o] = r; d[o+1] = g; d[o+2] = bl; d[o+3] = 255;
+    }
+  }
+}
+
+/* Pinta la pieza `ip` con la rotación `col` en el ImageData, en la fila yPieza. */
+function pintaPieza(img, yPieza, ip, col, c, tercioSel, invMeta) {
+  const piezas = DATOS.piezas[c.piezas].datos, metas = DATOS.metatiles[c.metatiles].datos;
+  const juego = DATOS.tiles[c.tiles], pieza = piezas[ip];
+  if (!pieza) return;
+  for (let fr = 0; fr < 12; fr++) {
+    const filaMeta = invMeta ? 2 - (fr >> 2) : (fr >> 2), dentro = fr & 3;
+    for (let j = 0; j < 8; j++) {
+      const meta = metas[pieza[filaMeta * 8 + ((col + j) & 7)]];
+      for (let t = 0; t < 4; t++) {
+        const it = meta ? meta[dentro * 4 + t] : -1;
+        const yPix = yPieza + fr * 8;
+        const ter = tercioSel === "p" ? Math.min(2, Math.floor(yPix / 64) % 3) : +tercioSel;
+        pintaTile(img, (j * 4 + t) * 8, yPix, (it >= 0 && juego[ter][it]) ? juego[ter][it] : null);
+      }
+    }
+  }
+}
+
+/* Las rotaciones acumuladas de cada franja: se necesitan para pintar y para
+   la previsualización de una pieza suelta. */
+function columnas(c, usarDesp) {
+  let col = 0;
+  return pares(c).map(([, flags]) => {
+    if (usarDesp && (flags & 0x40)) col = (col + (flags & 0x3F)) & 7;
+    return col;
+  });
+}
+
+function pinta() {
+  const c = carreraActual(), ps = pares(c);
+  const tercioSel = $("tercio").value, invMeta = $("invMeta").checked;
+  const invPieza = $("invPieza").checked, rejilla = $("rejilla").checked;
+  const cols = columnas(c, $("desp").checked);
+
+  const n = ps.length, H = 96;
+  // EL EMPALME DE LA VUELTA: al llegar al final, p00 FIN_DE_VUELTA vuelve a la
+  // pieza 0 pero NO reinicia la columna acumulada (ix-0x19), asi que la vuelta
+  // siguiente empieza donde acabo la anterior. Se pinta esa primera pieza como
+  // franja extra para ver la costura.
+  const empalme = $("empalme").checked && n > 0;
+  const colTrasVuelta = empalme && (ps[0][1] & 0x40)
+      ? (cols[n - 1] + (ps[0][1] & 0x3F)) & 7 : cols[n - 1];
+  const filas = n + (empalme ? 1 : 0);
+
+  const cv = $("pista");
+  cv.width = 256; cv.height = Math.max(H, filas * H);
+  const ctx = cv.getContext("2d");
+  const img = ctx.createImageData(256, cv.height);
+  const filaDe = k => (invPieza ? (filas - 1 - k) : k) * H;
+  for (let k = 0; k < n; k++)
+    pintaPieza(img, filaDe(k), ps[k][0], cols[k], c, tercioSel, invMeta);
+  if (empalme)
+    pintaPieza(img, filaDe(n), ps[0][0], colTrasVuelta, c, tercioSel, invMeta);
+  ctx.putImageData(img, 0, 0);
+  if (empalme) {                       // la franja de la vuelta siguiente, atenuada
+    ctx.fillStyle = "rgba(18,20,26,.45)";
+    ctx.fillRect(0, filaDe(n), 256, H);
+    ctx.fillStyle = "#ffcc44"; ctx.font = "9px monospace";
+    ctx.fillText("↻ vuelta siguiente · pieza " + ps[0][0] + " con columna " + colTrasVuelta,
+                 4, filaDe(n) + (invPieza ? H - 5 : 11));
+    ctx.strokeStyle = "#ffcc44"; ctx.setLineDash([4, 3]); ctx.lineWidth = 1;
+    const yCostura = invPieza ? filaDe(n) + H : filaDe(n);
+    ctx.beginPath(); ctx.moveTo(0, yCostura + .5); ctx.lineTo(256, yCostura + .5);
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  if (rejilla) {
+    ctx.strokeStyle = "rgba(255,204,68,.55)"; ctx.lineWidth = 1;
+    ctx.font = "8px monospace"; ctx.fillStyle = "rgba(255,204,68,.9)";
+    for (let k = 0; k < n; k++) {
+      const y = filaDe(k) + .5;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(256, y); ctx.stroke();
+      ctx.fillText(k + ":" + ps[k][0] + " col" + cols[k], 2, y + 9);
+    }
+  }
+  if (sel >= 0 && sel < n) {          // marco de la franja seleccionada
+    const y = filaDe(sel);
+    ctx.strokeStyle = "#ffcc44"; ctx.lineWidth = 2;
+    ctx.strokeRect(1, y + 1, 254, H - 2);
+  }
+  cv.style.width = (256 * zoom) + "px";
+  cv.style.height = (cv.height * zoom) + "px";
+
+  pintaMapa(); tabla(); panelEdicion(); presupuesto();
+}
+
+function pintaMapa() {
+  const c = carreraActual(), m = mapaDe(c);
+  const cv = $("mapa"), ctx = cv.getContext("2d");
+  // EN SU SITIO: el marcador vive en coordenadas de PANTALLA (256x192), en el
+  // hueco del HUD de la esquina superior derecha. Se pinta la pantalla entera
+  // para que se vea el offset real, no el trazado suelto desde 0.
+  // Se pinta la ZONA DEL HUD (donde caen de verdad los 21 trazados: x 140-242,
+  // y 3-53), no la pantalla entera, o el mapa queda diminuto en una esquina.
+  // El offset se conserva: las coordenadas siguen siendo las de pantalla.
+  const Z = $("mapaFull").checked ? {x: 0, y: 0, w: 256, h: 192}
+                                  : {x: 138, y: 0, w: 118, h: 60};
+  const e = cv.width / Z.w;
+  cv.height = Math.round(Z.h * e);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.setTransform(e, 0, 0, e, -Z.x * e, -Z.y * e);
+
+  ctx.fillStyle = "#05070b"; ctx.fillRect(Z.x, Z.y, Z.w, Z.h);
+  ctx.strokeStyle = "#2e3342"; ctx.lineWidth = 1 / e;
+  ctx.strokeRect(.5, .5, 255, 191);                 // el borde de la pantalla
+
+  let [x, y] = m.inicio;
+  const pts = [[x, y]];
+  m.pasos.forEach(([dx, dy]) => { x += dx; y += dy; pts.push([x, y]); });
+  PTS = pts; ZONA_MAPA = Z;
+  // EL TRAZADO, TRAMO A TRAMO Y EN VIVO: cada paso del camino son DOS piezas de
+  // la secuencia (pasos = piezas/2 + 1, medido en las 21), asi que el tramo j
+  // se pinta con la direccion que llevan las piezas 2j y 2j+1. Al girar una
+  // pieza con ← o → se ve al momento en que parte del circuito estas.
+  const ps = pares(c);
+  const s6 = v => (v & 0x3F) >= 5 ? (v & 0x3F) - 8 : (v & 0x3F);
+  for (let j = 0; j < pts.length - 1; j++) {
+    const d = (ps[2 * j] ? s6(ps[2 * j][1]) : 0) + (ps[2 * j + 1] ? s6(ps[2 * j + 1][1]) : 0);
+    ctx.beginPath();
+    ctx.moveTo(pts[j][0], pts[j][1]); ctx.lineTo(pts[j + 1][0], pts[j + 1][1]);
+    ctx.strokeStyle = d < 0 ? "#ff5f7a" : d > 0 ? "#62d09a" : "#65DBEF";
+    ctx.lineWidth = (d ? 1.5 + Math.min(2, Math.abs(d)) : 1.5) / e;
+    ctx.stroke();
+  }
+
+  if ($("editaMapa").checked) {                     // los vertices, para cogerlos
+    ctx.fillStyle = "rgba(101,219,239,.85)";
+    pts.slice(0, -1).forEach(([px, py], i) =>
+        { ctx.beginPath(); ctx.arc(px, py, (i === arrastra ? 3 : 1.6) / e, 0, 7); ctx.fill(); });
+  }
+  ctx.fillStyle = "#ffcc44";                        // la salida
+  ctx.beginPath(); ctx.arc(m.inicio[0], m.inicio[1], 2.5 / e, 0, 7); ctx.fill();
+
+  // DONDE ESTAS EDITANDO, y es EXACTO: en las 21 carreras de la ROM se cumple
+  // pasos = piezas/2 + 1, o sea que cada paso del minimapa son DOS piezas de
+  // la secuencia. (La FORMA del camino no se deriva de los desplazamientos:
+  // eso se midio y no correlaciona.)
+  const n = pares(c).length;
+  if (sel >= 0 && n) {
+    const j = Math.min(pts.length - 1, sel >> 1);
+    const [px, py] = pts[j];
+    ctx.strokeStyle = "#ff5f7a"; ctx.lineWidth = 2 / e;
+    ctx.beginPath(); ctx.arc(px, py, 4 / e, 0, 7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px - 7, py); ctx.lineTo(px - 3, py);
+    ctx.moveTo(px + 3, py); ctx.lineTo(px + 7, py); ctx.stroke();
+  }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  $("notaMapa").innerHTML = m.pasos.length + " pasos desde <span class='mono'>(x=" +
+      m.inicio[0] + ", y=" + m.inicio[1] + ")</span>, " + m.camino + "–" + m.fin +
+      ". Amarillo la salida" + (sel >= 0 ? ", rojo <b>donde editas</b> (proporcional)" : "") + ".";
+}
+
+/* ----------------------------------------------------------------- edición */
+
+function panelEdicion() {
+  const c = carreraActual(), ps = pares(c);
+  const hay = sel >= 0 && sel < ps.length;
+  $("edicion").hidden = !hay; $("sinSel").hidden = hay;
+  if (!hay) return;
+  const [ip, flags] = ps[sel];
+  const nPiezas = DATOS.piezas[c.piezas].n;
+  $("numPieza").max = nPiezas - 1;
+  $("numPieza").value = ip;
+  const d = $("despPieza");
+  if (d.options.length !== 8) {
+    // El valor rota la fila de 8 metatiles con la que se pinta la pieza
+    // (p00 0x5683-0x568A), y un metatile son 4 tiles = 32 px. Como es modulo
+    // 8, 5/6/7 equivalen a -3/-2/-1: por eso 0x47 es "una columna al otro
+    // lado" y es el segundo valor mas usado de la ROM.
+    const DESP = ["recto", "+1 · 32 px", "+2 · 64 px", "+3 · 96 px",
+                  "±4 · 128 px (media pantalla)", "−3 · 96 px al otro lado",
+                  "−2 · 64 px al otro lado", "−1 · 32 px al otro lado"];
+    d.innerHTML = DESP.map((t, v) =>
+        '<option value="' + v + '">' + t + "  (0x4" + v + ")</option>").join("");
+  }
+  d.value = flags & 0x3F;
+
+  // la previsualización usa la rotación que le toca a esa franja
+  const cv = $("previa"), ctx = cv.getContext("2d");
+  const img = ctx.createImageData(256, 96);
+  pintaPieza(img, 0, ip, columnas(c, $("desp").checked)[sel], c,
+             $("tercio").value, $("invMeta").checked);
+  ctx.putImageData(img, 0, 0);
+  $("sube").disabled = sel === 0;
+  $("baja").disabled = sel === ps.length - 1;
+  $("borra").disabled = ps.length <= 1;
+}
+
+function cambia(fn) {
+  const c = carreraActual();
+  apunta(c);
+  const ps = pares(c).map(p => p.slice());
+  fn(ps);
+  editado[c.i] = ps;
+  guardaLocal();
+  pinta();
+}
+
+function bytesDe(c) { return 2 * pares(c).length + 1; }
+
+function presupuesto() {
+  const Z = DATOS.zona, cabe = Z.fin - Z.ini;
+  const total = DATOS.carreras.reduce((s, c) => s + bytesDe(c), 0);
+  const c = carreraActual();
+  const pct = Math.min(100, total * 100 / cabe);
+  $("medidor").className = "medidor" + (total > cabe ? " lleno" : "");
+  $("medidor").firstElementChild.style.width = pct + "%";
+  const dif = total - cabe;
+  $("presu").innerHTML = [
+    ["esta carrera", bytesDe(c) + " B <span class='mono' style='color:var(--suave)'>(" +
+        pares(c).length + " piezas)</span>"],
+    ["las 21", total + " / " + cabe + " B"],
+    ["margen", dif > 0 ? '<span class="aviso">se pasa ' + dif + " B</span>"
+             : '<span class="bien">' + (-dif) + " B libres</span>"],
+    ["caminos del mapa", (() => {
+        const ZM = DATOS.zona_mapa, cabeM = ZM.fin - ZM.ini;
+        const tm = DATOS.minimapas.reduce(
+            (s2, m) => s2 + (editadoMapa[m.i] || m).pasos.length, 0);
+        return tm + " / " + cabeM + " B" + (tm > cabeM
+            ? ' <span class="aviso">se pasa</span>' : "");
+      })()],
+  ].map(([k, v]) => '<tr><td class="k">' + k + '</td><td class="v">' + v + "</td></tr>").join("");
+  $("bajaRom").disabled = $("bajaParche").disabled = total > cabe;
+  $("deshacer").disabled = !historia.length;
+  $("revertir").disabled = !editado[c.i];
+}
+
+function tabla() {
+  const c = carreraActual();
+  const tocada = !!editado[c.i];
+  const f = [
+    ["categoría", DATOS.categorias[c.categoria]],
+    ["secuencia", '<span class="mono">' + c.secuencia + "–" + c.fin + "</span> (p" +
+        String(c.pagina).padStart(2,"0") + ")" + (tocada ? ' <span class="aviso">·editada</span>' : "")],
+    ["piezas de la vuelta", pares(c).length + (tocada ? " <span class='mono' style='color:var(--suave)'>(era " +
+        original(c).length + ")</span>" : "")],
+    ["tabla de piezas", '<span class="mono">' + c.piezas + "</span> (" + DATOS.piezas[c.piezas].n + ")"],
+    ["tabla de metatiles", '<span class="mono">' + c.metatiles + "</span> (" + DATOS.metatiles[c.metatiles].n + ")"],
+    ["lista de tiles", '<span class="mono">' + c.tiles + "</span> (p04 0x61A9)"],
+    ["minimapa", (() => {
+        const m = DATOS.minimapas[c.i].pasos.length, hacen = (pares(c).length >> 1) + 1;
+        return m + " pasos" + (m === hacen
+            ? " <span class='bien'>cuadra</span>"
+            : " <span class='aviso'>la vuelta pide " + hacen + "</span>");
+      })()],
+    ["empalme de la vuelta", (() => {
+        const cs = columnas(c, true), n2 = pares(c).length;
+        const suma = pares(c).reduce((s, [, f]) => s + (f & 0x3F), 0);
+        return "columna " + cs[n2 - 1] + " → " + cs[0] +
+            (suma % 8 ? " <span class='aviso'>salta " + (suma % 8) + "</span>"
+                      : " <span class='bien'>casa</span>");
+      })()],
+  ];
+  $("datos").innerHTML = f.map(([k, v]) =>
+      '<tr><td class="k">' + k + '</td><td class="v">' + v + "</td></tr>").join("");
+}
+
+/* ------------------------------------------------------- minimapa editable */
+
+const mapaXY = ev => {
+  const r = $("mapa").getBoundingClientRect();
+  return [ZONA_MAPA.x + (ev.clientX - r.left) / r.width * ZONA_MAPA.w,
+          ZONA_MAPA.y + (ev.clientY - r.top) / r.height * ZONA_MAPA.h];
+};
+
+/* Mueve el vertice j a (x, y) recalculando SOLO los dos pasos que lo tocan: asi
+   la suma de deltas no cambia y el trazado sigue cerrando. Si algun paso se
+   saliera de los nibbles con signo (-7..7 es lo que usa la ROM), no se aplica. */
+function mueveVertice(j, x, y) {
+  const c = carreraActual(), m = mapaDe(c), M = m.pasos.length;
+  const pasos = m.pasos.map(p => p.slice()), inicio = m.inicio.slice();
+  const cabe = v => v >= -7 && v <= 7;
+  let a, b;
+  if (j === 0) { a = PTS[M - 1]; b = PTS[1];
+                 var p1 = [x - a[0], y - a[1]], p2 = [b[0] - x, b[1] - y];
+                 if (!p1.every(cabe) || !p2.every(cabe)) return false;
+                 pasos[M - 1] = p1; pasos[0] = p2; inicio[0] = x; inicio[1] = y; }
+  else { a = PTS[j - 1]; b = PTS[j + 1];
+         const q1 = [x - a[0], y - a[1]], q2 = [b[0] - x, b[1] - y];
+         if (!q1.every(cabe) || !q2.every(cabe)) return false;
+         pasos[j - 1] = q1; pasos[j] = q2; }
+  editadoMapa[c.i] = {i: c.i, inicio: inicio, pasos: pasos,
+                      camino: m.camino, fin: m.fin};
+  guardaLocal();
+  pinta();
+  return true;
+}
+
+$("mapa").addEventListener("mousedown", ev => {
+  if (!$("editaMapa").checked) return;
+  const [x, y] = mapaXY(ev);
+  let mejor = -1, d2 = 16;
+  PTS.slice(0, -1).forEach(([px, py], i) => {
+    const d = (px - x) * (px - x) + (py - y) * (py - y);
+    if (d < d2) { d2 = d; mejor = i; }
+  });
+  arrastra = mejor;
+  if (mejor >= 0) { ev.preventDefault(); pinta(); }
+});
+$("mapa").addEventListener("mousemove", ev => {
+  if (arrastra < 0) return;
+  const [x, y] = mapaXY(ev);
+  const ok = mueveVertice(arrastra, Math.round(x), Math.round(y));
+  $("notaLupa").innerHTML = "punto " + arrastra + " de " + (PTS.length - 1) +
+      " · <span class='mono'>x=" + Math.round(x) + " y=" + Math.round(y) + "</span>" +
+      (ok ? "" : " · <span class='aviso'>ese tramo no cabe en un paso (−7..7)</span>");
+});
+document.addEventListener("mouseup", () => {
+  if (arrastra >= 0) { arrastra = -1; pinta(); }
+});
+$("revierteMapa").onclick = () => { delete editadoMapa[carreraActual().i]; guardaLocal(); pinta(); };
+
+/* ZOOM PARA ELEGIR EL PUNTO: al editar, el minimapa se va a un panel grande y
+   al doble de resolucion; el calculo de coordenadas usa getBoundingClientRect,
+   asi que funciona igual sea cual sea el tamano. */
+function colocaMapa() {
+  const edita = $("editaMapa").checked, cv = $("mapa");
+  $("lupa").hidden = !edita;
+  (edita ? $("huecoLupa") : $("sitioMapa")).appendChild(cv);
+  cv.width = edita ? 512 : 256;
+  pinta();
+}
+$("editaMapa").addEventListener("change", colocaMapa);
+
+/* -------------------------------------------------------------- exportación
+   La misma aritmética que tools/parchea_circuitos.py: las 21 secuencias se
+   recolocan CONTIGUAS desde 0x602A en el orden en que están en la ROM, y la
+   tabla de punteros de 0x6000 se regenera. */
+
+function romParcheada() {
+  const bin = atob(ROM_B64), rom = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) rom[i] = bin.charCodeAt(i);
+  const Z = DATOS.zona, off = a => Z.pagina * 0x2000 + (a - Z.org);
+  const orden = DATOS.carreras.slice().sort(
+      (a, b) => parseInt(a.secuencia, 16) - parseInt(b.secuencia, 16));
+  let a = Z.ini;
+  for (const c of orden) {
+    rom[off(Z.tabla + 2 * c.i)] = a & 255;
+    rom[off(Z.tabla + 2 * c.i) + 1] = a >> 8;
+    for (const [p, f] of pares(c)) { rom[off(a)] = p; rom[off(a) + 1] = f; a += 2; }
+    rom[off(a)] = 0xFF; a += 1;
+  }
+  if (a > Z.fin) throw new Error("las secuencias no caben");
+
+  // y los CAMINOS DEL MINIMAPA, con la misma receta que tools/parchea_minimapas.py
+  const ZM = DATOS.zona_mapa;
+  const offT = x => ZM.tabla_pagina * 0x2000 + (x - ZM.tabla_org);
+  const offC = x => ZM.pagina * 0x2000 + (x - ZM.org);
+  const ordenM = DATOS.minimapas.slice().sort(
+      (p, q) => parseInt(p.camino, 16) - parseInt(q.camino, 16));
+  let am = ZM.ini;
+  for (const m0 of ordenM) {
+    const m = editadoMapa[m0.i] || m0, t = offT(ZM.tabla + 4 * m0.i);
+    rom[t] = m.inicio[1] & 255;          // E2BA = y
+    rom[t + 1] = m.inicio[0] & 255;      // E2BB = x
+    rom[t + 2] = am & 255; rom[t + 3] = am >> 8;
+    for (const [dx, dy] of m.pasos) { rom[offC(am)] = ((dx & 15) << 4) | (dy & 15); am++; }
+  }
+  if (am > ZM.fin) throw new Error("los caminos del minimapa no caben");
+  return rom;
+}
+
+function baja(nombre, datos, tipo) {
+  const url = URL.createObjectURL(new Blob([datos], {type: tipo}));
+  const el = document.createElement("a");
+  el.href = url; el.download = nombre; el.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+/* --------------------------------------------------------------- arranque */
+
+function arranca() {
+  $("carrera").innerHTML = "";
+  DATOS.carreras.forEach(c => {
+    const o = document.createElement("option");
+    o.value = c.i; o.textContent = c.i.toString().padStart(2,"0") + " · " + c.nombre;
+    $("carrera").appendChild(o);
+  });
+  $("pos").textContent = "ROM " + DATOS.rom;
+  if (recuperaLocal()) $("pos").textContent += " · trabajo recuperado de este navegador";
+  marcaGuardado(true);
+  $("pideRom").hidden = true;
+  pinta();
+}
+
+["carrera","tercio","desp","invMeta","invPieza","rejilla","empalme","mapaFull"].forEach(id =>
+    $(id).addEventListener("change", () => { if (id === "carrera") sel = -1; pinta(); }));
+
+$("pista").addEventListener("click", ev => {
+  const c = carreraActual(), n = pares(c).length;
+  const filas = n + ($("empalme").checked ? 1 : 0);
+  const k = Math.floor(ev.offsetY / (96 * zoom));
+  sel = $("invPieza").checked ? filas - 1 - k : k;
+  if (sel < 0 || sel >= n) sel = -1;
+  pinta();
+});
+
+$("numPieza").addEventListener("change", e => {
+  const v = Math.max(0, Math.min(+e.target.value, DATOS.piezas[carreraActual().piezas].n - 1));
+  cambia(ps => ps[sel][0] = v);
+});
+$("despPieza").addEventListener("change", e =>
+    cambia(ps => ps[sel][1] = 0x40 | (+e.target.value & 0x3F)));
+/* La DIRECCION de la pista, que es como la codifica el juego: el
+   desplazamiento es modulo 8, asi que "izquierda" es restar uno y "derecha"
+   sumar uno; 0x47 (=-1) y 0x41 (=+1) son los dos valores mas usados de la ROM. */
+function gira(d) {
+  if (sel < 0) return;
+  cambia(ps => ps[sel][1] = 0x40 | (((ps[sel][1] & 0x3F) + d) & 7));
+}
+$("izq").onclick   = () => gira(-1);
+$("der").onclick   = () => gira(1);
+$("recto").onclick = () => { if (sel >= 0) cambia(ps => ps[sel][1] = 0x40); };
+
+$("antes").onclick   = () => cambia(ps => ps.splice(sel, 0, ps[sel].slice()));
+$("despues").onclick = () => { cambia(ps => ps.splice(sel + 1, 0, ps[sel].slice())); sel++; pinta(); };
+$("borra").onclick   = () => { cambia(ps => ps.splice(sel, 1)); if (sel >= pares(carreraActual()).length) sel--; pinta(); };
+$("sube").onclick    = () => { cambia(ps => ps.splice(sel - 1, 0, ps.splice(sel, 1)[0])); sel--; pinta(); };
+$("baja").onclick    = () => { cambia(ps => ps.splice(sel + 1, 0, ps.splice(sel, 1)[0])); sel++; pinta(); };
+
+$("deshacer").onclick = () => {
+  const h = historia.pop(); if (!h) return;
+  editado[h.i] = h.pares;
+  $("carrera").value = h.i; pinta();
+};
+$("revertir").onclick = () => {
+  const c = carreraActual(); apunta(c); delete editado[c.i]; guardaLocal(); pinta();
+};
+
+$("bajaRom").onclick = () => {
+  try { baja("f1spirit_editada.rom", romParcheada(), "application/octet-stream"); }
+  catch (e) { alert(e.message); }
+};
+$("bajaParche").onclick = () => {
+  const cs = Object.keys(editado).map(i => ({i: +i, pares: editado[i]}));
+  const ms = Object.keys(editadoMapa).map(i =>
+      ({i: +i, inicio: editadoMapa[i].inicio, pasos: editadoMapa[i].pasos}));
+  if (!cs.length && !ms.length) { alert("no has cambiado nada todavía"); return; }
+  baja("circuitos_parche.json",
+       JSON.stringify({rom: DATOS.rom, carreras: cs, minimapas: ms}, null, 1),
+       "application/json");
+};
+
+/* teclado: avanzar por la pista sin soltar el raton */
+document.addEventListener("keydown", ev => {
+  if (ev.target.tagName === "INPUT" || ev.target.tagName === "SELECT") return;
+  const c = carreraActual(), n = pares(c).length;
+  const arriba = $("invPieza").checked ? 1 : -1;   // "arriba" en pantalla
+  let hecho = true;
+  switch (ev.key) {
+    // circular: tras la ultima pieza viene la primera, que es lo que hace el
+    // juego al cerrar la vuelta (p00 FIN_DE_VUELTA vuelve a la pieza 0)
+    case "ArrowUp":    sel = (((sel < 0 ? 0 : sel) + arriba) % n + n) % n; break;
+    case "ArrowDown":  sel = (((sel < 0 ? 0 : sel) - arriba) % n + n) % n; break;
+    case "ArrowLeft":  gira(-1); ev.preventDefault(); return;
+    case "ArrowRight": gira(1);  ev.preventDefault(); return;
+    case "Home":       sel = 0; break;
+    case "End":        sel = n - 1; break;
+    case "Delete":     if (sel >= 0 && n > 1) $("borra").onclick(); return;
+    case "+": case "=":  if (sel >= 0) cambia(ps => ps[sel][0] =
+                            Math.min(DATOS.piezas[c.piezas].n - 1, ps[sel][0] + 1)); return;
+    case "-":            if (sel >= 0) cambia(ps => ps[sel][0] = Math.max(0, ps[sel][0] - 1)); return;
+    default: hecho = false;
+  }
+  if (!hecho) return;
+  ev.preventDefault();
+  pinta();
+  // dejar la franja seleccionada a la vista
+  const filas = n + ($("empalme").checked ? 1 : 0);
+  const y = ($("invPieza").checked ? (filas - 1 - sel) : sel) * 96 * zoom;
+  document.querySelector("main").scrollTop = y - 200;
+});
+
+$("abre").onclick = () => $("ficheroProyecto").click();
+$("ficheroProyecto").addEventListener("change", ev => {
+  const f = ev.target.files[0];
+  if (!f) return;
+  const lector = new FileReader();
+  lector.onload = () => {
+    try {
+      const d = JSON.parse(lector.result);
+      (d.carreras || []).forEach(c => { editado[c.i] = c.pares; });
+      (d.minimapas || []).forEach(m => {
+        const o = DATOS.minimapas[m.i];
+        editadoMapa[m.i] = {i: m.i, inicio: m.inicio || o.inicio, pasos: m.pasos,
+                            camino: o.camino, fin: o.fin};
+      });
+      guardaLocal(); sel = -1; pinta();
+    } catch (e) { alert("ese fichero no es un proyecto válido: " + e.message); }
+  };
+  lector.readAsText(f);
+  ev.target.value = "";
+});
+$("tirar").onclick = () => {
+  if (!confirm("¿Tirar todos los cambios y volver a la ROM original?")) return;
+  Object.keys(editado).forEach(k => delete editado[k]);
+  Object.keys(editadoMapa).forEach(k => delete editadoMapa[k]);
+  historia.length = 0; guardaLocal(); sel = -1; pinta();
+};
+
+$("mas").onclick   = () => { zoom = Math.min(6, zoom + 1); $("zoomTxt").textContent = "×" + zoom; pinta(); };
+$("menos").onclick = () => { zoom = Math.max(1, zoom - 1); $("zoomTxt").textContent = "×" + zoom; pinta(); };
+/* Con los datos dentro (el HTML del repo) arranca solo; en la version portable
+   DATOS es null y se espera a que el usuario cargue SU ROM: asi el fichero que
+   se reparte no lleva nada del cartucho. */
+$("ficheroRom").addEventListener("change", ev => {
+  const f = ev.target.files[0];
+  if (!f) return;
+  const lector = new FileReader();
+  lector.onload = () => {
+    const bytes = new Uint8Array(lector.result);
+    try {
+      if (bytes.length !== 131072) throw new Error("la ROM tiene " + bytes.length + " bytes y son 131072");
+      DATOS = leeROM(bytes);
+      DATOS.rom = f.name;
+      let b = "";
+      for (let i = 0; i < bytes.length; i++) b += String.fromCharCode(bytes[i]);
+      ROM_B64 = btoa(b);
+      arranca();
+    } catch (e) { alert("no se puede leer esa ROM: " + e.message); }
+  };
+  lector.readAsArrayBuffer(f);
+});
+if (DATOS) arranca();
+</script>
+</body>
+</html>

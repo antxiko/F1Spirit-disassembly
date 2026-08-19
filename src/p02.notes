@@ -1,0 +1,600 @@
+# Anotaciones de F-1 Spirit (Konami, 1987, RC-752): pagina 2 de 16, que el
+# mapper pone en 0x8000-0x9fff (ver tools/paginas.py).
+#
+# Directivas: L=etiqueta, C=comentario de linea, B=cabecera de bloque,
+# D=rango de datos (con nombre y explicacion), F=anchura de fila de un bloque
+# de datos. Todo anclado a direccion, asi que sobrevive a un retrazado. Sin
+# acentos a proposito.
+#
+# ESTADO: pagina sin trazar. El rango D de abajo es un marcador: dice que NADA
+# de esta pagina esta explicado todavia. Se va recortando segun el trazado
+# convierte bytes en codigo y las lecturas ponen nombre a los datos.
+
+
+D 0x8000 0x8001 operando_sub el operando 0xD4 del `sub` que empieza en p01 0x7FFF (la rutina p01 0x7FFC cruza la frontera y sigue aqui en 0x8001)
+F 0x8000 1
+
+# Anotaciones de F-1 Spirit, pagina 2 (org 0x8000), escritas por el agente
+# anotador (2026-08-19) leyendo src/f1spirit_p02.asm y la ROM. Sin acentos.
+# Aqui viven la fisica del coche del jugador, su maquina de estados, los
+# rivales, los sonidos del motor y la secuencia final. El bloque del coche
+# (IX = E2C0 / E380) y el de cada objeto (E800.. / E928.., 5 de 0x38 bytes):
+# (ix+0) tipo (objetos: 0 libre, bits 0-3 tipo, bit 4/5 estados), (ix+1)
+# flags (bit 0 fuera de pista este fotograma, bit 1 termino, bit 3 choque,
+# bit 6/7 derrape), (ix+3,4) x (alto en +4), (ix+5,6) y, (ix+7,8) vx,
+# (ix+A,B) vy (16 bits con signo), (ix+C,D) angulo (0x40 = un cuarto de
+# vuelta), (ix+E) fotograma, (ix+F) color, (ix+10,11) velocidad, (ix+12)
+# aceleracion (con signo), (ix+13) giro del volante, (ix+18) carroceria,
+# (ix+19) terreno anterior, (ix+22) terreno bajo el coche (0..15, 0x9641),
+# (ix+2B/2C) contador y estado de efecto, (ix+2F) sprite extra, (ix+31)
+# flags de sprite, (ix+33) patron, (ix+38) contador, (ix+39) angulo del
+# derrape, (ix+3A/3B) flancos del mando, (ix+43,44) avance de la pista por
+# fotograma (max 0x1500), (ix+4B) camara, (ix+50) combustible, (ix+53)
+# contador, (ix+58) rampa del volante (0..16), (ix+59) revoluciones, (ix+5C)
+# contador, (ix+5D) ESTADO del coche (0..9, despachador 0x8B0C), (ix+5F),
+# (ix+64) desgaste, (ix+66) carrera en marcha, (ix+68) bits de neumaticos,
+# (ix+69) MARCHA 0..3, (ix+70), (ix+72) tope de revoluciones, (ix+74..77) y
+# (ix+75) los 5 bytes del coche elegido (E297: motor, carroceria, +77, +76,
+# caja de cambios). E190 = mascara de canales del sonido del motor; E199/E19A
+# y E19E/E19F = revoluciones filtradas (16 bits) de cada coche; E197/E198 =
+# volumen del motor; E217/E218 y E20A = la musica en curso; E244 = modo
+# (2 = repeticion); E1FC = vueltas de la carrera (tabla 0x91DB por E25B).
+
+B 0x8000 La pagina empieza con el final de p01 0x7FFC (`sub 0xD4` cruza la
+B 0x8000 frontera): ld a,0 / jp p,0x8007 / inc a / ld (E208),a / ret.
+L 0x8001 E208_POR_X_COLA     cola de p01 0x7FFC: E208 = 0 si (ix+4) >= 0xD4, si no 1
+L 0x800B E20F_CADA_64        cada 64 fotogramas E20F++ (tope 0xFF) (desde p01 0x7F62)
+
+# =============================================================================
+# LOS RIVALES QUE APARECEN (0x801A/0x8059, desde p03): con la pagina 15 en
+# A000. (iy-16) = tramo de la tabla p15 0xB8BD[E25B] por vuelta (iy-2);
+# p15 0xB8C9[tramo] = entradas de 4 bytes (d, e, b|c, fin 0xFF) -> (iy-18),
+# (iy-14), (iy+56), (iy-13)/(iy-0F); p15 0xB9C3[(iy-18)] = entradas de 3
+# bytes (tipo, c, b; 0xFF vuelve al principio) por (iy-17) -> (iy+48) tipo,
+# (iy+61) cuenta atras. Hipotesis: la cadencia con que salen los rivales.
+# =============================================================================
+L 0x801A INICIA_RIVALES      pagina 15 en A000; 0x8025; 1/2/3
+L 0x8025 INICIA_RIVALES_VA   E2AD, E2B1, E36D, E2AC, E36C, E321, E3E1, E308, E3C8, E208 = 5; tramo (0x814E) del coche 1 y, con dos jugadores, del 2
+L 0x8059 PASO_RIVALES        pagina 15 en A000; 0x8064; 1/2/3 (desde p03 0xA150)
+L 0x8064 PASO_RIVALES_VA     0x80DE; cada 8 fotogramas 0x8129; (iy+61)-- (0x819D): al pasar por 0 lee la entrada siguiente (0x80FA), 0x8084, sonido 0x2C si E1DA != 0; C = ha tocado
+L 0x8084 RIVAL_NUEVO         E209-- (si > 0); a cero 0x80AF (C = nada); si (iy+7E)+7 < (iy+71): (iy-13) = (iy-0F) (+1 si < E91C) y (iy+56) = 0
+L 0x808B RIVAL_NUEVO_E209    E209 = A
+L 0x80A7 RIVAL_GUARDA_13     (iy-13) = A, (iy+56) = 0
+L 0x80AF RIVAL_POR_E208      un jugador: E208 = 3 -> C = 8, E208 = 6, E209 = 10, carry; E208 = 4 -> C = 9, E208 = 7, E209 = 10, carry; si no NC
+L 0x80C2 RIVAL_E208_3        E208 = 6, E209 = 10
+L 0x80D0 RIVAL_E208_4        E208 = 7, E209 = 10
+L 0x80DE E208_6_7_A_3_4      si E209 = 0 y E208 es 6 o 7: E208 -= 3
+# (sin trazar: no es una etiqueta L_ del listado) L 0x80F4 E208_2              E208 = 2 (p03 0xB984 lo referencia)
+L 0x80FA RIVAL_SIGUIENTE     (iy+48) = tipo D de la entrada (0x8105), (iy+61) = 8
+L 0x8105 ENTRADA_RIVAL       HL = p15 0xB9C3[(iy-18)] + 3*(iy-17): D = tipo, C, B; 0xFF -> (iy-17) = 0 y repite
+L 0x8123 ENTRADA_RIVAL_REINICIA  (iy-17) = 0
+L 0x8129 TRAMO_RIVALES       cada 32 fotogramas: tramo (0x814E); (iy-14)-- a cero: entrada de 4 bytes (0x8162) -> (iy-13), (iy-0F), (iy-18), (iy-14), (iy+56); (iy-17) = 0
+L 0x814E TRAMO_POR_VUELTA    (iy-16) = p15 0xB8BD[E25B][(iy-2) vueltas]
+L 0x8162 ENTRADA_TRAMO       HL = p15 0xB8C9[(iy-16)] + 3*(iy-15); (iy-15)++; D, E, C = byte&0x0F, B = bit 4; si el 4o byte es 0xFF, (iy-15) = 0
+L 0x8193 RIVAL_OTRA_VEZ      (iy-17)++ y (iy+61) = (iy+48) (desde p03 0xA13D)
+L 0x819D CUENTA_RIVAL        (iy+61)--; C al pasar de 0
+
+# =============================================================================
+# ESTADOS E250 = 16 (0x81A6), 17 (0x81F7) Y 18 (0x83BC): LA SECUENCIA FINAL.
+# 17 recorre 19 pasos (E251, tabla 0x8215): imagenes RLE de p09 (0xB217,
+# 0xB266, 0xB2E3, 0xB360, 0xB3BF) en E50C (16 columnas), el texto p09
+# 0xAFCF en E62C (3 filas x 16), listas de tiles p04 0x6DB5/0x6DBC/0x6DC3/
+# 0x6DD6/0x6DE3, fundidos a negro por bandas (0x83BA), los sprites de 0x8537
+# y los creditos (0x848A: STAFF, PROGRAM, GRAPHIC, SOUND). Acaba en E250 = 0x1D.
+# E25D = espera en fotogramas, E252 = banda del fundido.
+# =============================================================================
+L 0x81A6 FINAL_16            E251 = 0: E252 = 0, musica 0x40 (0x884C) y paso siguiente; 1: fundido (0x83BA) y paso; 2: E300 = 0, colores 0x8..0x52F a 0xFF (0x83FB), E400 lleno de 0xFE, colores del tile 254 (0x7F0) a 0xFF, vuelca, E25E = EA6D = E25D = E251 = 0 y p00 0x5BA2 (E250 = 17)
+L 0x81E4 FINAL_16_FUNDIDO    0x83BA hasta acabar y paso siguiente
+L 0x81EB FINAL_16_ARRANCA    E252 = 0, musica 0x40, paso siguiente
+L 0x81F7 FINAL_17            pagina 9 en A000; p00 0x477C; vuelca E400 si E251 < 14; despacha por E251 (tabla 0x8215, 19 pasos) y vuelve a 1/2/3 (retorno 0x43FE empujado)
+L 0x823B FINAL_PASO_0        tiles p04 0x6DB5 y 0x6DBC, sprites p04 0x7502, limpia, 16x8 de tile 0xFF en E50C (p00 0x4B6C), texto (0x8370), vuelca, tiles 0x6DAE por filas, 0x8367, sprites (0x851D); E25D = 1 y paso siguiente
+L 0x8275 FINAL_PASO_1        espera 0x32 fotogramas (0x83E6)
+L 0x827A FINAL_PASO_2        sprites (0x8537) y espera 1
+L 0x8282 FINAL_PASO_3        imagen p09 0xB217 en E50C (0x82C4), p00 0x543C, espera 0xF0
+L 0x8290 FINAL_PASO_4        sprites (0x8537), p00 0x545E, espera 1
+L 0x829B FINAL_PASO_5        fundido y la imagen p09 0xB266 con la lista 0x6DD6 (0x8390); espera 0x64
+L 0x82AA FINAL_PASO_6        espera 0x8C
+L 0x82AF FINAL_PASO_7        parpadeo: (E1C3 & 0x15) != 0 -> imagen 0xB266 y espera 1; si no imagen 0xB2E3
+L 0x82C1 FINAL_IMAGEN_B2E3   DE = p09 0xB2E3
+L 0x82C4 FINAL_IMAGEN        descomprime DE (16 columnas) en E50C (p01 0x637A)
+L 0x82CC FINAL_PASO_8        fundido y p09 0xB360 con la lista 0x6DC3; E821..E823 = 0 (0x85B0); espera 0xFA
+L 0x82DE FINAL_PASO_9        sprites de la tabla p06 0x8639 (0x85BB) y espera 1
+L 0x82E6 FINAL_PASO_10       fundido y p09 0xB3BF con la lista 0x6DE3; limpia sprites; espera 0xB4
+L 0x82F8 FINAL_PASO_11       sprites (0x851D) y espera 1
+L 0x8300 FINAL_PASO_12       fundido y p09 0xB217 con la lista 0x6DBC; sprites; p00 0x543C; espera 0xFA
+L 0x8315 FINAL_PASO_13       sprites (0x8537), p00 0x545E, espera 0x14
+L 0x8320 FINAL_PASO_14       limpia sprites; fundido; nombres a cero, tiles 16..58 con 0xF0 (p00 0x4474), 1/2/3; los creditos 0x848A (p00 0x480D); espera 0x96
+L 0x8342 FINAL_PASO_15       fundido con tiles 0xFE (0x83C1 con C = 0xFE, B = 0xFF) y paso
+L 0x834F FINAL_PASO_16       espera 0x64 y sonido 0x81
+L 0x835A FINAL_PASO_17       fundido con tiles 0 (0x83C1) y paso
+L 0x8367 CARGA_6DB5_POR_FILAS  lista p04 0x6DB5 por filas (p00 0x4C93) con espera 0x100
+L 0x8370 TEXTO_FINAL         E62C.. 16x3 de tile 0xFE; pagina 9 en A000; texto p09 0xAFCF expandido (p01 0x691B) y pintado en E62C (3 filas x 16, fuente 0xE0; p01 0x666E)
+L 0x8390 FINAL_FUNDE_Y_PINTA  limpia sprites; fundido (0x83BA) hasta acabar (NZ mientras); imagen DE en E50C; texto (0x8370); vuelca; lista HL por filas y 0x8367; Z
+L 0x83BA FUNDIDO_FF          C = 0xFF (blanco sobre blanco) y 0x83BC
+L 0x83BC FUNDIDO_FF_B0       B = 0 (256 tiles), HL = 0 (desde la tabla de colores) (E250 = 18 entra aqui desde p00 0x5B5A)
+L 0x83C1 FUNDIDO_BANDA       escribe C en el byte E252 (fila de 8 px) de la entrada de colores de B tiles (0 = 256) desde HL, en los 3 tercios; E252++; Z al llegar a 8 (las 8 filas hechas)
+L 0x83C7 FUNDIDO_BANDA_TILE  un tile por vuelta (tres WRTVRM)
+L 0x83E6 ESPERA_E25D         E25D--; si no es 0 vuelve (NZ); si no E25D = A, E25E = 0 y paso siguiente
+L 0x83EB PASO_SIGUIENTE_CON_ESPERA  E25D = A, E25E = 0, E251++, E252 = 0
+L 0x83F2 PASO_SIGUIENTE      E251++, E252 = 0, Z
+L 0x83FB COLORES_A_FF        0x520 bytes de 0xFF desde la tabla de colores 0x0008, 3 tercios
+L 0x8406 FUNDIDO_RANKING     por E252 (0x10..0x28): bandas de la tabla 0x8431 (pares de filas x 8 px) con C = bits de tercio (0x844F); en 0x14 espera E25D (3C); (desde p01 0x6AC1, C = 7)
+L 0x8417 FUNDIDO_RANKING_BANDA  A = fila de la tabla 0x8431[E252 o 0x28-E252], B = la anterior
+L 0x8423 FUNDIDO_RANKING_SIGUE  E252++
+L 0x8428 FUNDIDO_RANKING_ESPERA  E25D-- a cero -> E25D = 0x3C y E252++
+D 0x8431 0x8445 tabla_bandas_ranking 20 bytes: filas de colores (0x10, 0x40, 0x50, 0x70, 0xC0, 0x30, 0xA0, 0xB0, 0xE0, 0xF0, cada una dos veces) que el fundido 0x8406 va escribiendo
+F 0x8431 2
+L 0x8445 ESPERA_E25D_E252   E25D-- a cero -> E252 = 0
+L 0x844F PINTA_BANDA_TERCIOS  por cada bit 0/1/2 de C: la fila de colores HL (+0x80) del tercio 0/1/2 con A y B (0x846C)
+L 0x846C PINTA_BANDA_AB      0xAC tiles: byte A en L y B en L+1 (0x8473)
+L 0x8473 PINTA_BANDA_AC      B = 0xAC y el bucle
+L 0x847F FINAL_PASO_18       espera E25D y E250 = 0x1D
+D 0x848A 0x851D creditos flujo para p00 0x480D (ASCII): STAFF; PROGRAM: T.ADACHI, M.OZAWA, R.SAGISAKA; GRAPHIC: H.MAKITANI, T.SHIMIZU, B.KINOSHITA; SOUND: K.UEHARA, M.SASAKI, M.FURUKAWA
+F 0x848A 8,11,11,10,13,11,13,12,14,9,11,11,13
+L 0x851D SPRITES_FINAL_4     4 atributos (0x0E, 0x60, 0x0C, 0x0F) de 0x8533 en EA80..; EA81 = 0x82
+L 0x8522 SPRITES_FINAL_BUCLE  uno por vuelta
+D 0x8533 0x8537 atributo_final (y 0x0E, x 0x60, patron 0x0C, color 0x0F)
+F 0x8533 4
+L 0x8537 SPRITES_FINAL_MUEVE  D/E = 0xD8 (o 0x9E/0xA0 con E251 >= 4): dos grupos de 2 sprites (EA80 y EA88) que se mueven en x (+2/+1 cada 4 fotogramas) con el color 5/10 alternando; al pasar D, color 0 o vuelta a x = 0x60 (E803++)
+L 0x8546 SPRITES_FINAL_VA    0x854A
+L 0x854A SPRITES_FINAL_GRUPOS  patrones 0x4B (IY = E811, IX = EA80, C = 2) y 0x5B (E812, EA88, C = 1)
+L 0x856A SPRITE_FINAL        patron A, color 5/10 por bit 0 de E1C3, x += C cada 4 fotogramas; si x >= D -> 0x85A6
+L 0x857A SPRITE_FINAL_COLOR  color D
+L 0x858D SPRITE_FINAL_X      compara con D
+L 0x859C SPRITE_FINAL_REINICIA  x = 0x60 y E803++
+L 0x85A6 SPRITE_FINAL_PASA   x >= 0xD8 -> 0x859C; si no color 0
+L 0x85B0 E821_E823_CERO      E821 = E822 = E823 = 0
+L 0x85BB SPRITES_FINAL_TABLA  pagina 6 en A000; 0x85C6; 1/2/3
+L 0x85C6 SPRITES_FINAL_TABLA_VA  cada 4 fotogramas: si E821 = 0, cada 32 fotogramas E822 = p00 0x5513 (azar) & 1; lee desde la tabla p06 0x8639[E822] + E823 atributos de 4 bytes (0xFF fin: limpia) hasta uno con bit 7 en el 4o byte
+L 0x85E0 SPRITES_TABLA_LEE   HL = p06 (0x8639[E822]) + E823
+L 0x85F8 SPRITES_TABLA_BUCLE  un atributo por vuelta: E821 = y; color = byte & 0x0F; bit 7 = para
+L 0x861E SPRITES_TABLA_COLOR  color
+L 0x862E SPRITES_TABLA_FIN   E821 = E823 = 0 y limpia sprites
+D 0x8639 0x863D tabla_sprites_final 2 punteros (E822) a listas de atributos en p06 (0xBC97, 0xBD2C)
+F 0x8639 w1
+
+# =============================================================================
+# SONIDO DEL MOTOR Y MUSICA. E190 = mascara de canales (bits 0-3 jugador 1,
+# 4-7 jugador 2; 0x0B un jugador, 0xBB dos); 0x8666 espera a la interrupcion
+# (bit 7 de E1C5); 0x8674 suma el jugador al numero de sonido.
+# =============================================================================
+L 0x863D PAUSA_SONIDO_MOTOR  E1DB = E190, E190 = 0 y sonido 0x83 (desde p00 0x5B86)
+L 0x864B REANUDA_SONIDO_MOTOR  sonido 0x82, espera la interrupcion, E190 = E1DB y la musica de la carrera (0x881D) (desde p00 0x5B7E)
+L 0x865C CUENTA_ATRAS_ACABADA  Z si F0F7/F0F8 = 0
+L 0x8666 ESPERA_INTERRUPCION  bit 7 de E1C5 y espera a que la interrupcion lo quite
+L 0x866D ESPERA_INTERRUPCION_BUCLE  ei y comprueba
+L 0x8674 SONIDO_JUGADOR      ENCOLA_SONIDO A + (ix+9) - 1
+L 0x867B SONIDO_JUGADOR_B    idem
+L 0x8682 MUSICA_META         di; canales del jugador fuera (0x8744); sonido 2; E217 = 0, E218 = 8; musica 0x3D; ei
+L 0x869A PARA_MUSICA         E20A = 0, E217 = E218 = 0, E190 = 0, sonidos 0x46 y 0x80 (desde p00 0x42AE y p01)
+L 0x86B1 SONIDO_2C_JUGADOR   di; canales fuera; sonido 0x2C; ei
+# (sin trazar: no es una etiqueta L_ del listado) L 0x86BC RUTINA_86BC         sin referencia (codigo muerto): E217 = 0, E218 = 8, sonido 0x2B, ei; y en 0x86CB E190 = 0
+L 0x86D0 CANAL_MOTOR         si el coche esta parado ((iy+10,11) = 0) y E221 >= 7: E190 |= mascara del jugador (0x86FA); si se mueve y E190 & 0x44: E190 &= ~mascara
+L 0x86ED CANAL_MOTOR_QUITA   mascara fuera
+L 0x86FA MASCARA_JUGADOR     D = 4 (jugador 1) o 0x40 (jugador 2)
+L 0x8704 CANALES_INICIALES   E190 = 0x0B (un jugador) o 0xBB (dos) (desde p01 0x7E17)
+L 0x8711 CANALES_DOS         E190 = 0xBB
+L 0x8717 REVS_A_FRECUENCIA   p00 0x4A8A (desde 0x89EC)
+L 0x871B REVS_A_FRECUENCIA_B  p00 0x4A86
+L 0x871F CANALES_BOXES       E190 = (E190 & 0xF0) | 0x0B (jugador 1) o (& 0x0F) | 0xB0 (jugador 2)
+L 0x872C CANALES_BOXES_APLICA  E190 = (E190 & L) | H
+L 0x8735 E190_CERO           E190 = 0
+L 0x873A SONIDO_46_Y_CANALES  sonido 0x46 si un jugador y 0x8744
+L 0x8744 CANALES_JUGADOR_FUERA  E190 &= 0 (un jugador), 0x0F o 0xF0 segun el jugador (ix+9)
+L 0x874F CANALES_MASCARA_2J  0x0F (jugador 2 fuera) o 0xF0
+L 0x8759 CANALES_AND         E190 &= A
+# (sin trazar: no es una etiqueta L_ del listado) L 0x875F E21A_CERO           A = 0 y 0x8764: E21A = 0, E217 = 0 (p02 0x8111?, p13/p14 lo referencian)
+L 0x8762 E21A_UNO            E21A = 1, (E217) = 0 (desde p00 0x59B1)
+L 0x876E SONIDO_CARRERA      F0FB pendiente (0x87D0), volumen del motor de cada coche (0x877D); si E21A: musica (0x880B)
+L 0x877D VOLUMEN_MOTORES     E197 = volumen del coche 1 (0x879A), E198 = del 2; (ix-1C) = 0
+L 0x879A VOLUMEN_MOTOR       (ix-1C) != 0 -> objetivo 0xFF; si no 0x0A si (ix+12) en -16..15, si no 0xA0; (ix-1B) sube 15 o baja 2 hacia el objetivo; A = (ix-1B)
+L 0x87A8 VOLUMEN_OBJETIVO    por la aceleracion (ix+12)
+L 0x87B5 VOLUMEN_A0          D = 0xA0
+L 0x87B7 VOLUMEN_ACERCA      (ix-1B) hacia D
+L 0x87C2 VOLUMEN_GUARDA_BAJA (ix-1B) = A
+L 0x87C6 VOLUMEN_SUBE        += 15, tope 0xFF
+L 0x87CC VOLUMEN_GUARDA_SUBE (ix-1B) = A
+L 0x87D0 SONIDO_F0FB         si F0FB != 0: ENCOLA_SONIDO F0FB y F0FB = 0
+# (sin trazar: no es una etiqueta L_ del listado) L 0x87DD SONIDO_46           sin referencia: ENCOLA_SONIDO 0x46
+L 0x87E2 MUSICA_CARRERA      sonido 0x80, espera la interrupcion, E217 = 1, E218 = 0, E20A = 1 y la musica de la categoria (tabla 0x8804) (desde p01 0x7ED3)
+D 0x8804 0x880B tabla_musica_carrera 7 numeros de sonido por E25B: 0x41, 0x36, 0x43, 0x36, 0x37, 0x38, 0x36
+F 0x8804 7
+L 0x880B MUSICA_PENDIENTE    cada 8 fotogramas: si E217 = 0 y E218 > 0: E218-- y a cero la musica (0x881D)
+L 0x881D MUSICA_CARRERA_B    como 0x87E2 con la tabla 0x883F (desde p00 0x50A3)
+D 0x883F 0x8846 tabla_musica_carrera_b 7 numeros de sonido por E25B: 0x42, 0x39, 0x44, 0x39, 0x3A, 0x3B, 0x39
+F 0x883F 7
+# (sin trazar: no es una etiqueta L_ del listado) L 0x8846 RUTINA_8846         sin referencia: como 0x884C
+L 0x884C MUSICA_A            E20A = 0 y ENCOLA_SONIDO A (desde p00 0x424B, 0x5A88, 0x5D13)
+L 0x8852 E20A_CERO           E20A = 0
+# (sin trazar: no es una etiqueta L_ del listado) L 0x885A ESTADOS_DESDE_3     sin referencia (codigo muerto): bits de (E31D >= 3) y (E3DD >= 3)
+
+# =============================================================================
+# INICIO DE LA CARRERA (0x887A, desde p00 0x59DF): borra los dos bloques de
+# coche (0x90 bytes desde ix-0x20), posicion, estado y los parametros del
+# coche elegido (0x8943). Tablas 0x88D7 (color por carroceria), 0x88E9
+# ((ix-21) por carroceria), 0x88FB (36 palabras por motor -> (ix-20,-1F)):
+# las declara y las cruza con la eleccion tools/coches.py (18 carrocerias y
+# 36 motores, que son exactamente los valores elegibles de p03 0xBC45).
+# =============================================================================
+L 0x887A INICIA_COCHES       coche 1: 0x88B8, jugador 1, patron 0, (ix+61) = 0x50, (ix+30) = 4; coche 2: jugador 2, patron 8; E199 = E19C = E19E = E1A1 = 0x0FFF
+L 0x88B8 INICIA_COCHE        0x90 bytes desde ix-0x20 a cero; (ix-1E) = 0; combustible (ix+50) = 0xFF; (ix+49) = 0; 0x8943
+L 0x8943 PARAMETROS_COCHE    (ix+15) = 0x3C, x = y = 0x80, (ix+5C) = 0x20, estado 0, angulo 0, fotograma 2, (ix+3E) = 3; los 5 bytes de ix-0x29: (ix+74) motor, (ix+18) carroceria, (ix+77), (ix+76), (ix+75) = byte & 0x7F (bit 7 -> (ix+70) = 1); color (ix+F) = 0x88D7[carroceria]; (ix-20,-1F) = 0x88FB[motor]; (ix-21) = 0x88E9[carroceria]; tope de revoluciones (ix+72) = 4*C+1 con el primer C cuyo 0x9C1F da 0
+L 0x898E PARAMETROS_TABLAS   las tablas por carroceria y motor
+L 0x89BA TOPE_REVS_BUCLE     prueba C = 1..0x20 en 0x9C1F (p09 0xB72E)
+L 0x89CB TOPE_REVS_GUARDA    (ix+72) = 4*C + 1
+L 0x89D3 COCHE_SIGUE_OBJETO  (ix+4,6,7,8) copiados de/al objeto E800 (repeticion) y 0x8D21
+
+# =============================================================================
+# EL COCHE DEL JUGADOR, CADA FOTOGRAMA (0x89EC, desde p00 0x5C27): la
+# maquina de estados (0x8B0C por ix+5D), p03 0xB5D3, 0x8CCC, p00 0x54D4,
+# mando y sonidos (0x8A8B); y las revoluciones filtradas para el sonido del
+# motor (E199.., E19E..) y el indicador del panel (E19A/E19F).
+# =============================================================================
+L 0x89EC COCHE_JUGADOR       coche 1 (0x8A75); E199 = filtro de (ix+59) (0x8A56); E19C = frecuencia (0x8A4C, 0x8717); E19B = 1 si el terreno (ix+22) < 10; lo mismo para el coche 2 (E19E, E1A1, E1A0) si hay dos jugadores
+L 0x8A16 COCHE_1_E19B        E19B = A
+L 0x8A48 COCHE_2_E1A0        E1A0 = A
+L 0x8A4C REVS_MENOS_TOPE     HL = (ix+72)*256 - HL
+L 0x8A56 FILTRA_REVS         A = min(A, 0x7F); HL = (3*HL + A*256) / 4 (filtro hacia A)
+L 0x8A5C FILTRA_REVS_VA      el calculo
+L 0x8A75 COCHE_PASO          estado (0x8B0C), p03 0xB5D3, 0x8CCC, p00 0x54D4, mando (0x8A8B); (ix+19) = (ix+22)
+L 0x8A8B MANDO_COCHE         (ix+3A) = flancos de (ix+1) respecto a (ix+3B); 0x8AA2; bit 0 de (ix+1) = 0
+L 0x8AA2 MANDO_SONIDOS       canal del motor (0x86D0); terreno 8/9 -> sonido 0x1B si antes no (0x8AF9); estado < 3: bits 0/6/7 de (ix+1) (fuera de pista, derrape) -> FFE3++ y sonidos 0x15 (bit 0 nuevo), 0x0F (bit 6), 0x0C/0x0E (bit 7, cada 4)
+L 0x8AE4 SONIDO_0C           0x0C
+L 0x8AE6 SONIDO_A            ENCOLA_SONIDO A
+L 0x8AE9 SONIDO_0F_CADA_4    bit 6: sonido 0x0F cada 4
+L 0x8AF4 SONIDO_15           bit 0 nuevo: sonido 0x15 + jugador
+L 0x8AF9 SONIDO_TERRENO_1B   si el terreno anterior (ix+19) no era 8/9: sonido 0x1B + jugador
+L 0x8B06 FFE3_FF             FFE3 = 0xFF
+L 0x8B0C ESTADO_COCHE        despacha por (ix+5D) con la tabla 0x8B12: 0 normal 0x8C70, 1 entra en boxes 0x8C04, 2 en boxes 0x8D65, 3 meta 0x8C21, 4 choque 0x8D88, 5 tras el choque 0x8E0B, 6 parado 0x8E1E, 7 reaparece 0x8B26, 8 0x8B50, 9 0x8B6A
+L 0x8B26 COCHE_ESTADO_7      reinicia los parametros (0x8943), (ix+5C) = 0, sin sprite, estado 8, velocidad/vx/vy/aceleracion a cero, (ix+38) = 10
+L 0x8B50 COCHE_ESTADO_8      10 fotogramas sin sprite; luego (ix-1) = (ix+1) = 0, estado 9, (ix-3) = 0 y FOTOGRAMAS_COCHES (p00 0x4689)
+L 0x8B6A COCHE_ESTADO_9      (ix+38)-- (a cero: estado 6, 0x8E17); avanza 8 px (0x8BD2) hasta que el terreno bajo el coche (0x9550) sea 9..14; luego hasta que deje de serlo; si el tile es 0xB5 avanza otro; (ix-1) = 0, sin sprite, (ix+1) &= 2, estado 0, (ix-1E) = 1, marcha 0, canales de boxes; (ix+55) = 1 si E240 = 0
+L 0x8B7C COCHE_ESTADO_9_BUSCA  avanza mientras el terreno no sea 9..14
+L 0x8BA0 COCHE_ESTADO_9_COLOCA  reaparece en la pista
+L 0x8BD2 AVANZA_8_PX         (ix+54) += 8 -> (ix+4B) (camara) y (ix+6) = (ix+54) + E1FE
+L 0x8BE5 REVS_POR_BOTON      (ix+59) = (ix+72) si el boton del jugador esta pulsado, si no 0; marcha 0
+L 0x8BF1 REVS_POR_BOTON_BIT  bit 4
+L 0x8BFC REVS_GUARDA         (ix+59) = A, (ix+69) = 0
+L 0x8C04 COCHE_ESTADO_1      entra en boxes: p01 0x7886, marcha 0; un jugador: E250 = 0x0C y estado 0; dos: estado 2
+L 0x8C1C COCHE_ESTADO_1_2J   estado 2
+L 0x8C21 COCHE_ESTADO_3      meta: angulo 0, aceleracion 0x10, 0x8CC1; (ix+43,44) -= p00 0x4A8A de si mismo (frena el avance); x (0x9D89); cuando x < 0x10: estado 6, avance y velocidad a cero, x = 0xE0, y = 0xFF
+# (sin trazar: no es una etiqueta L_ del listado) L 0x8C64 RUTINA_8C64         sin referencia: (ix+13) = 0, (ix+12) = 0xE0, 0x8CC1
+L 0x8C70 COCHE_ESTADO_0      normal: repeticion (E244 = 2) -> 0x89D3; si no: boxes/combustible (0x8E52), volante (0x92A0), marchas (0x8F66), acelerador (0x8FD4), neumaticos (0x8F11), mando en la salida (E221 < 7: 0x8D11), derrape (0x8CE0), fisica (0x8CC1), avance (0x8D21), posicion (0x8D5F); choque (bit 3 de ix+1): estado 4, (ix+38) = 0, objeto 0x0F en (x, y) (0x9FCC) y sonido 0x2C
+L 0x8C8B COCHE_ESTADO_0_SIGUE  tras el acelerador
+L 0x8CA2 COCHE_CHOCA         bit 3 de (ix+1): estado 4, explosion (0x9FCC con A = 0x0F) y sonido 0x2C (0x86B1)
+L 0x8CC1 FISICA_COCHE        0x9408 y, si (ix+0) != 0 (hipotesis: un objeto), frenada por categoria (0x94B4)
+L 0x8CCC TERRENO_P03         p03 0xB34F; si C, (ix-1A) = A
+# (sin trazar: no es una etiqueta L_ del listado) L 0x8CD4 RUTINA_8CD4         sin referencia (codigo muerto): HL = E380 si el jugador es el 1, si no E2C0
+L 0x8CE0 DERRAPE             bit 6 de (ix+1): angulo += (ix+39), bit 7; sale del derrape (bits 6/7 fuera) si el angulo vuelve a -0x20..0x20 y la velocidad o el volante lo permiten
+L 0x8D08 DERRAPE_FIN         bits 6 y 7 de (ix+1) fuera
+L 0x8D11 MANDO_SALIDA        antes de la salida: revoluciones por el boton (0x8BE5), aceleracion 0, angulo 0, (ix-1C) = 0xFF
+L 0x8D21 AVANCE_PISTA        D = 0x80; 0x8D23
+L 0x8D23 AVANCE_PISTA_D      si (ix-1E) != 0: HL = p00 0x4A86(((ix+4) - D)/2); si no HL = 0; (ix+43,44) = max(0, min(0x1500, HL + vx (ix+7,8)))
+L 0x8D3B AVANCE_SUMA_VX      HL += vx; negativo -> 0; > 0x1500 -> 0x1500
+L 0x8D4D AVANCE_CERO         HL = 0
+L 0x8D50 AVANCE_TOPE         tope 0x1500
+L 0x8D58 AVANCE_GUARDA       (ix+43,44) = HL
+L 0x8D5F POSICION_COCHE      x (0x9D89) y y (0x9AFE)
+L 0x8D65 COCHE_ESTADO_2      en boxes (p01 0x788F): al salir (C) estado 0 y 0x8CA2
+L 0x8D70 GUARDA_TIEMPO       (ix+4D..4F) = cronometro E210..E212; (ix+16) = x
+L 0x8D88 COCHE_ESTADO_4      choque: bit 6 de (ix-1) = bit 7; fotograma (0x9A01); frena vx/vy (0x8DD1); (ix+38)++ hasta 0xFF; avance por D = 0x80 - (ix+38)/... (0x8D23); posicion; marchas; a los 0x5A fotogramas: p00 0x54DF, avance 0, estado 5, (ix+38) = 10
+L 0x8DA3 CHOQUE_AVANCE       D = min(0x60, 0x60 - A) + 0x20
+L 0x8DAB CHOQUE_AVANCE_D     D = A + 0x20
+L 0x8DD1 FRENA_VX_VY         vy -= vy/8 (p00 0x4A7E), vx -= vx/8; a cero si el byte alto se anula
+L 0x8DE7 FRENA_VX            la parte de vx
+L 0x8E04 FRENA_VX_GUARDA     (ix+7,8) = HL
+L 0x8E0B COCHE_ESTADO_5      (ix+38)-- a cero: estado 7 y combustible -= 0x18 (p01 0x7646)
+L 0x8E17 COCHE_ESTADO_9_FIN  estado 6 y guarda el tiempo (0x8D70)
+L 0x8E1E COCHE_ESTADO_6      parado: aceleracion 0 y sin sprite
+# (sin trazar: no es una etiqueta L_ del listado) L 0x8E27 RUTINA_8E27         sin referencia (codigo muerto): (ix+2B) por terreno 11 / contador y angulo += E1C3 & 7
+L 0x8E52 BOXES_Y_COMBUSTIBLE  sin combustible y parado -> estado 6 (0x8EB5); (ix+5C) baja con las filas avanzadas (ix+4C); a cero y parado: si el cronometro pasa de 0x80 (0x8E8E) y la casilla de boxes esta bajo el coche (0x8E98; o E244 = 2 con un jugador) -> estado 1
+L 0x8E6C BOXES_PARADO        velocidad 0: comprueba boxes
+L 0x8E85 BOXES_CASILLA       0x8E98: NC no
+L 0x8E89 A_ESTADO_1          estado 1 (entra en boxes)
+L 0x8E8E CRONOMETRO_PASA_80  NC si (E211) >= 0x80
+L 0x8E98 BAJO_BOXES          casilla del buffer de nombres en (x-8, y-0x20) (p00 0x4A9D); C si alguno de los 5x2 tiles esta entre E276 y E276+E277 (p00 0x4B0C)
+L 0x8EB5 SIN_COMBUSTIBLE     vx = 0 y combustible 0: si esta en boxes -> estado 1; si no estado 6, guarda el tiempo y sonido 0x46 (0x873A)
+L 0x8F11 NEUMATICOS_EFECTO   bits 1, 2, 3 de (ix+68) (0x8F29, 0x8F46, 0x8F56)
+L 0x8F19 NEUMATICO_0         bit 0 de (ix+68): cada 4 fotogramas el volante (ix+13) = 0
+L 0x8F29 NEUMATICO_1         bit 1: a velocidad >= 0x400 y azar (p00 0x5513) >= 0xD0: angulo += azar&7 - 4
+L 0x8F46 NEUMATICO_2         bit 2: la aceleracion positiva a la mitad
+L 0x8F56 NEUMATICO_3         bit 3: la aceleracion negativa a la mitad
+L 0x8F66 MARCHAS             (ix+70) != 0: cambio automatico cada 0x1E fotogramas por revoluciones (< 0x20 baja, >= 0x38 sube); si no arriba (bit 0 del mando) sube (0x8F9A) y abajo (bit 1) baja (0x8FB9)
+L 0x8F73 MARCHA_AUTOMATICA   (ix+70) = 0x1E y decide por (ix+59)
+L 0x8F84 MARCHA_MANUAL       flancos del mando del jugador (ix+9)
+L 0x8F90 MARCHA_MANUAL_BITS  bit 0 sube, bit 1 baja
+L 0x8F9A SUBE_MARCHA         (ix+69)++ (tope 3); E19A/E19F = (ix+72), E199/E19E = 0; sprite extra 2 si acelera (0x8FC5)
+L 0x8FB0 SUBE_MARCHA_REVS    el filtro de revoluciones al tope
+L 0x8FB9 BAJA_MARCHA         bit 0 de (ix-1C); (ix+69)-- (minimo 0)
+L 0x8FC5 MARCHA_SPRITE       si (ix+12) > 0: (ix+2F) = 2 y bit 6 de (ix+31) (el sprite extra del cambio)
+L 0x8FD4 ACELERADOR          un fotograma de cada dos (por jugador): revoluciones (0x9CA8); boton 2 (bit 5) -> freno (0x902E); sin combustible -> aceleracion -5 (0x9012); boton 1 (bit 4) -> 0x9017; si no (ix-0A) = 0 y aceleracion = tabla 0x90B1[revs >> 4] (retencion)
+L 0x8FEB ACELERADOR_BOTONES  bits 5 y 4 del mando
+L 0x9012 SIN_COMBUSTIBLE_ACEL  aceleracion = -5
+L 0x9017 ACELERA             (ix-0A) = 0; revoluciones >= 0x55 y azar: sprite extra 3 (humo)
+L 0x902E FRENA               (ix-0A) != 0: tabla 0x905A; cada 4 fotogramas sonido 0x13 si vx >= 4; la primera vez (ix-09) = 4, (ix-0B) = 1 y sonido 0x11
+L 0x9041 FRENA_SONIDO        sonido D + jugador si vx (ix+8) >= 4
+L 0x904B FRENA_EMPIEZA       (ix-09) = 4, (ix-0B) = 1, tabla, sonido 0x11
+L 0x905A FRENA_TABLA         aceleracion = tabla 0x9081[(ix+77)*8 + (ix-0A)*2]; (ix-0B)-- a cero: recarga con el 2o byte y (ix-0A)++ (hasta 3)
+D 0x9081 0x90B1 tabla_frenada 3 grupos de 4 parejas (aceleracion, duracion) por (ix+77): 0x90, 0xC0, 0xE0, 0xE0 / 0xA0.. con duracion 8
+F 0x9081 w4
+D 0x90B1 0x90C1 tabla_retencion 16 aceleraciones por revoluciones >> 4 sin acelerar: FD FB F9 F8 EB EB D0 B0 88 88..
+F 0x90B1 16
+# (sin trazar: no es una etiqueta L_ del listado) L 0x90C1 RUTINA_90C1         sin referencia (codigo muerto): anillo de 30 entradas en ix&0xFF00 + 0xC0 con la velocidad
+
+# =============================================================================
+# META, VUELTAS Y REPETICION (0x90E7, desde p00 0x5C2A cada fotograma): por
+# coche, si (ix-1A) (el tile/terreno que deja p03 0xB34F) tiene el bit 6 y
+# su valor & 0x3F < 9 despacha con la tabla 0x9111: 0 = linea de meta
+# (0x9123), 6 = 0x91E1, 7 = 0x91F7, el resto nada. E214 = cuantos han
+# llegado; E244 = 1 pide la repeticion y 2 la reproduce (0x9207).
+# =============================================================================
+L 0x90E7 META_Y_VUELTAS      coche 1: 0x9103 y 0x9207; con dos jugadores el coche 2
+L 0x9103 TILE_ESPECIAL       (ix-1A) con bit 6 y < 9: despacha (tabla 0x9111)
+L 0x9123 LINEA_DE_META       si no termino (bit 1 de ix+1): ultima vuelta (0x91CC) -> estado 3, bit 1, (bit 7 de ix+3C si no venia de 4), E214++ (el primero: posicion (0x9161)), guarda el tiempo (0x8D70), musica de meta (0x8682); un jugador con bit 7 de (ix+3C) -> E250 = 0x1A; si no vuelta nueva (0x9180)
+L 0x9142 META_LLEGADA        E214++ y lo demas
+L 0x9161 META_PRIMERO        con dos jugadores (ix+71) = (ix+7E); E331/E3F1 (por jugador) = (ix+71) + 1
+L 0x916E META_POSICION_JUGADOR  HL = E331 (jugador 1) o E3F1
+L 0x917A META_POSICION_ESCRIBE  (HL) = (ix+71) + 1
+L 0x9180 VUELTA_NUEVA        si (ix-2) cambio respecto a (ix-8): (ix-8) = (ix-2), (ix-7) = 0x40; tiempo de vuelta = cronometro E210.. - (ix-12..-10) (p00 0x52BB, 0x5339) -> 6 digitos a ix+0x78.. y p00 0x48B7
+L 0x91CA VUELTAS_CARRERA     A = tabla 0x91DB[E25B] (vueltas) comparado con (ix-2) (desde p01 0x76F2; devuelve A = vueltas)
+L 0x91CC VUELTAS_COMPARA     cp (ix-2)
+D 0x91DB 0x91E1 tabla_vueltas vueltas por categoria E25B: 3, 4, 3, 4, 3, 4
+F 0x91DB 6
+L 0x91E1 TILE_6_REPETICION   si E244 != 0: E244 = 0 y, si era 2, 0x91EC
+L 0x91EC REINICIA_PISTA_REPETICION  E315 = 1, p00 0x44F3 y CARGA_TILES_CIRCUITO (p00 0x4BCE)
+L 0x91F7 TILE_7_PIDE_REPETICION  un jugador y E244 = 0: E244 = 1
+L 0x9206 NADA_9206           ret (entradas 1-5 y 8 de la tabla)
+L 0x9207 REPETICION          en estado 0, con el boton 2 (bit 5 de E1C9) y E244 = 1 y terreno 15: angulo 0, volante 0, (ix+1) &= 0x3F, E1D5 = 0, E244 = 2, pista (0x9263) y 0x923A
+L 0x923A OBJETOS_A_UN_LADO   los 5 objetos E800..: x = 0xC8 o 0xF8 por el bit 7 de (ix+29); E315 = 0
+L 0x9245 OBJETOS_LADO_BUCLE  un objeto por vuelta
+L 0x9255 OBJETO_LADO_X       (ix+4) = A
+L 0x9258 OBJETO_LADO_SIGUIENTE  IX += 0x38
+L 0x9263 CARGA_PISTA_REPETICION  p00 0x44F3; lista 0x927E[E25B] (p04) y p04 0x6D00 (CARGA_LISTA_TILES); escena p00 0x5778; p00 0x49E0
+L 0x928A FIN_DE_CARRERA_P00  para la musica (0x869A), guarda el tiempo de los dos coches (0x8D70) y E250 = 0x0E (desde p00 0x5AFF)
+B 0x92A0 El volante: (ix+13) = giro por fotograma desde la tabla 0x9344 por
+B 0x92A0 neumaticos (ix+76), velocidad (ix+11 & 0x0C) y la rampa (ix+58) que
+B 0x92A0 crece 2 por fotograma con izquierda/derecha (tope 16) y baja sola.
+L 0x92A0 VOLANTE             repeticion -> 0x93DD; rampa (0x9335) si hay direccion; izquierda/derecha (bits 2/3): (ix+13) = +-tabla; nada: 0x931C; y el aviso de los ultimos (0x92F9: (ix+7E) < 2, F1, cada 64 fotogramas, rampa < 2, y < 0x10 -> bit 7 de ix+1)
+L 0x92B7 VOLANTE_MANDO       el mando del jugador
+L 0x92EA VOLANTE_TABLA       A = tabla; negativo con izquierda (bit 1 de C)
+L 0x92F3 VOLANTE_GUARDA      (ix+13) = A; neumatico 0 (0x8F19)
+L 0x931C VOLANTE_CENTRA      sin direccion: si el angulo no es 0, (ix+13) = -+ tabla 0x93D4[(ix+76)] hacia el centro
+L 0x9331 VOLANTE_GUARDA_B    (ix+13) = A
+L 0x9335 VOLANTE_RAMPA       (ix+58) += 2 (tope 0x10)
+L 0x9340 VOLANTE_RAMPA_GUARDA  (ix+58) = A
+D 0x9344 0x93D4 tabla_volante 9 bloques de 16 bytes por (ix+76): 4 velocidades x 4 pasos de rampa (grados de giro por fotograma)
+F 0x9344 16
+D 0x93D4 0x93DD tabla_volante_centra 9 bytes por (ix+76): giro hacia el centro al soltar
+F 0x93D4 9
+L 0x93DD VOLANTE_REPETICION  (ix+1) &= 0x3F, volante 0, angulo 0
+
+# =============================================================================
+# LA FISICA (0x9408 para el coche, 0x9423 para los objetos): terreno y
+# derrape (0x9510), objetos de pista (0x943B), angulo (0x96DB/0x96BE),
+# velocidad (0x9744/0x9776), fotograma (0x9A01/0x9962). Angulo (ix+C): 0x40
+# por cuarto de vuelta; seno/coseno en 0x9B73/0x9B75 con la tabla 0x9B97;
+# vx = cos * v, vy = sin * v (0x9B12: producto 8.8 con signo, p00 0x4A8A).
+# =============================================================================
+L 0x9408 FISICA_COCHE_JUGADOR  terreno (0x9510); terreno 14 -> sin sprite (0x9465); RALLY (E25B = 0): charcos (0x943B); angulo (0x96DB); velocidad (0x9744); fotograma (0x9A01)
+L 0x9423 FISICA_OBJETO       terreno 14 -> sin sprite; RALLY: 0x943B; angulo (0x96BE); velocidad (0x9776); fotograma (0x9962)
+L 0x943B EFECTO_TERRENO      0x9441 y 0x9473
+L 0x9441 EFECTO_TERRENO_ARRANCA  sin choque y sin efecto: terreno 11/12 -> (ix+2B) = 10, (ix+2C) = 0x81; terreno 8/9 -> (ix+2C) = 1, (ix+2B) = 3
+L 0x9465 SIN_SPRITE          bit 7 de (ix+31)
+L 0x946A EFECTO_81           (ix+2B) = 10, (ix+2C) = 0x81
+L 0x9473 EFECTO_TERRENO_PASO  (ix+2C) = 1: sprite extra 1 (salpicadura, hipotesis) y bit 6; (ix+2B)-- a cero: (ix+2C) = 0
+L 0x9484 EFECTO_CUENTA       (ix+2B)--
+L 0x948D EFECTO_8X           0x81: a los 10 pasa a 0x82 con 10 y sonido 0x19 si es el coche; 0x82: a cero
+L 0x94AB EFECTO_82_CUENTA    (ix+2B)-- a cero: (ix+2C) = 0
+L 0x94B4 FRENADA_CATEGORIA   si (ix+13) != 0 y E25B - 1 < 6: despacha (tabla 0x94C3): velocidad -= v/256 (0x94CF), v/512 (0x94E2), v/1024 (0x94F8) o nada (0x950F)
+L 0x94CF FRENADA_1_256       (ix+10,11) -= H
+L 0x94E2 FRENADA_1_512       (ix+10,11) -= H/2
+L 0x94F8 FRENADA_1_1024      (ix+10,11) -= H/4
+L 0x950F NADA_950F           ret
+L 0x9510 TERRENO_Y_DERRAPE   bit 0 de (ix+1) = 0; sin choque: (ix+22) = terreno bajo el coche (0x9550); < 3 -> borde (0x9563); si no (ix+28) = 0 y, con terreno < 9, velocidad -= v/32
+L 0x9550 TERRENO_BAJO_COCHE  tile del buffer de nombres en (x, y-4) (p00 0x4A9D) -> clase 0..15 (0x9641); HL = la casilla
+L 0x9563 BORDE               terreno 1 -> rebote con vx (0x95B7); 2 -> con -vx (0x95AA); 0: si vy < 6 y no se repite ((ix+28)): mira la casilla de abajo, la de la izquierda y la derecha para elegir el lado; si no 0x9628 (choque)
+L 0x95AA REBOTE_IZQUIERDA    HL = -vx
+L 0x95B7 REBOTE_DERECHA      HL = vx
+L 0x95BD REBOTE              vy += HL/2; 0x95D0
+L 0x95D0 REBOTE_GIRA         bit 0 de (ix+1); angulo += 8 (o -8 si vy < 0); vy = -vy/2; bits 7 y 0; avanza dos veces (0x9AFE); para el coche: (ix+64) += |H|/2 (desgaste); en RALLY, |H| >= 3 -> choque (0x9628)
+L 0x95DE REBOTE_ANGULO       angulo += A
+L 0x9616 REBOTE_DESGASTE     (ix+64) += H/2
+L 0x9628 CHOQUE              bit 3 de (ix+1); objeto -> p03 0xB559; coche: (ix+2C) = 0, (ix+2B) = 1
+L 0x963C SIN_REPETIR_BORDE   (ix+28) = 0
+L 0x9641 CLASE_DE_TILE       A = tile -> clase 0..15 por los 15 umbrales E264..E272 (arbol de comparaciones): clase par si < umbral, impar si >= (E264: 0/1, E265: 2.., E26B: 8.., E26F: 12..)
+L 0x965A CLASE_2_3           E266
+L 0x9662 CLASE_4_7           E268/E269
+L 0x966F CLASE_6_7           E26A
+L 0x9677 CLASE_8_15          E26F
+L 0x9689 CLASE_10_11         E26E
+L 0x9691 CLASE_12_15         E271/E270
+L 0x969E CLASE_14_15         E272
+L 0x96A6 CLASE_1             A = 1
+L 0x96A9 CLASE_3             A = 3
+L 0x96AC CLASE_5             A = 5
+L 0x96AF CLASE_7             A = 7
+L 0x96B2 CLASE_9             A = 9
+L 0x96B5 CLASE_11            A = 11
+L 0x96B8 CLASE_13            A = 13
+L 0x96BB CLASE_15            A = 15
+L 0x96BE ANGULO_OBJETO       angulo += (ix+13); si sale de -0x20..0x20 se queda en +-0x20
+L 0x96D7 ANGULO_OBJETO_TOPE  (ix+C) = +-0x20
+L 0x96DB ANGULO_COCHE        (ix+C,D) += (ix+13)/8 (fraccion en ix+D); fuera de -0x20..0x20 y sin derrape: tope +-0x20 y, si venia con bit 7 (exceso de velocidad), fuera de RALLY, (ix+53) >= 10 y girando al mismo lado: (ix+39) = angulo y bit 6 (derrape)
+L 0x971D ANGULO_COCHE_TOPE   (ix+C) = +-0x20
+L 0x9744 VELOCIDAD_COCHE     tope por el angulo (0x980D: C si se paso); acelera (0x97AB); vy = sin(angulo) * v, vx = cos(angulo) * v (0x9B12)
+L 0x9776 VELOCIDAD_OBJETO    exceso del coche guia (0x97FF); acelera (0x97DC); vy, vx como arriba
+L 0x97AB ACELERA_COCHE       v += (ix+12) con signo (minimo 0); tope (ix-20,-1F) (menos 0x100 con el neumatico bit 2); p00 0x4A4F
+L 0x97C2 ACELERA_TOPE        HL = velocidad maxima del motor
+L 0x97CF ACELERA_COMPARA     p00 0x4A4F: HL - DE
+L 0x97D5 ACELERA_GUARDA      (ix+10,11) = DE
+L 0x97DC ACELERA_OBJETO      v += (ix+12) con signo, sin pasar de 0 ni de 0xFFFF
+L 0x97F6 ACELERA_OBJETO_NEG  resta
+L 0x97FF EXCESO_OBJETO       si el coche guia (IY) tiene el bit 7: 0x9814 y bit 7 del objeto
+L 0x980D EXCESO_COCHE        bit 7 de (ix+1) -> 0x9814; si no 0x9893
+L 0x9814 EXCESO_CORRIGE      0x98CF; desvio entre vy real y la que toca (|H - (ix+B)|, tope 8) -> C; (ix+53)++; tope = tabla 0x988B[C] (RALLY: 0x986B[terreno] -> 0x988B) comparado con v alta: si la pasa -> bit 7 fuera, v = -vx (invierte?), (ix+53) = 0, C
+L 0x982C EXCESO_TOPE_8       C = min(desvio, 8)
+L 0x9832 EXCESO_TABLA        la tabla por categoria
+L 0x984A EXCESO_COMPARA      tabla[C] < v alta -> corrige
+D 0x986B 0x988B tabla_exceso_rally 16 punteros (terreno) a 0x988B
+F 0x986B w8
+D 0x988B 0x9893 tabla_exceso 8 topes de velocidad (byte alto) por desvio 0..7: FF 9 8 7 6 5 4 3 (el desvio 8 lee el byte siguiente)
+F 0x988B 8
+L 0x9893 EXCESO_ENTRA        RALLY: v alta < 15: umbral = 0x994E[v alta] * |volante| * 8 + (aceleracion & 0x70) >> 4; si pasa de 0x993E[terreno] -> bit 7 (derrape por exceso) y 0x98CF
+L 0x98AE EXCESO_PRODUCTO     HL = cuadrado * |volante|
+L 0x98CF ARRASTRE            B = min(aceleracion, 0x10); vy -= (sin * B * 2 + vy)/8, vx idem con cos; v -= v/8 (p00 0x4A7E); C
+L 0x98D8 ARRASTRE_TOPE       B = min(A, 0x10)
+L 0x98DE ARRASTRE_VA         el calculo
+D 0x993E 0x994E tabla_exceso_terreno 16 umbrales por terreno (0x37, salvo 0x50 en el 10)
+F 0x993E 16
+D 0x994E 0x9962 tabla_cuadrados 16 cuadrados 1, 4, 9, 16.. 0xFF (y 4 x 0xFF)
+F 0x994E 20
+L 0x9962 FOTOGRAMA_OBJETO    un fotograma de cada dos por jugador; 0x996A
+L 0x996A FOTOGRAMA_OBJETO_VA  efecto 0x8X -> tablas 0x99E1/0x99F1 (0x99BE); si no fotograma = 0x9AA3[angulo] (+5 cada 2 fotogramas en F3/F3000/F1: ruedas); (ix+33) = patron EB40[(ix+18)&3] + fotograma*8 (o el fotograma si >= 0x80)
+L 0x999D FOTOGRAMA_SUMA      + tabla
+L 0x999E FOTOGRAMA_GUARDA    si cambia: (ix+E) = A y el patron (ix+33) desde EB40+0x40+(ix+18)&3
+L 0x99BA PATRON_GUARDA       (ix+33) = A
+L 0x99BE FOTOGRAMA_EFECTO    tabla 0x99E1 (0x81) o 0x99F1 (0x82) por angulo
+L 0x99C9 FOTOGRAMA_EFECTO_ANGULO  indice = (-(angulo+8) >> 4) & 0x0F
+D 0x99E1 0x9A01 tablas_fotograma_efecto 2 x 16 fotogramas por angulo para los efectos 0x81 y 0x82 de los objetos
+F 0x99E1 16
+L 0x9A01 FOTOGRAMA_COCHE     choque (bit 3) -> explosion (0x9AB3); efecto 0x8X -> 0x9A83/0x9A93; si no 0x9AA3[angulo] + 5 cada 2 fotogramas si se mueve (no RALLY/STOCK/ENDURANCE, no carroceria 0x13) salvo bit 6 de la tabla; (ix+E) = A si cambia
+L 0x9A4E FOTOGRAMA_COCHE_FIJO  bit 6 de la tabla: sin animar
+L 0x9A55 FOTOGRAMA_COCHE_TABLA  A = tabla
+L 0x9A56 FOTOGRAMA_COCHE_GUARDA  (ix+E) = A si cambia
+L 0x9A5E FOTOGRAMA_COCHE_EFECTO  tablas 0x9A83/0x9A93
+L 0x9A69 FOTOGRAMA_COCHE_EFECTO_ANGULO  por angulo
+D 0x9A83 0x9AA3 tablas_fotograma_coche_efecto 2 x 16 fotogramas por angulo (efectos 0x81/0x82 del coche)
+F 0x9A83 16
+D 0x9AA3 0x9AB3 tabla_fotograma_angulo 16 fotogramas por angulo (indice (-(angulo+8) >> 4) & 0x0F): 2 3 4 4 40 40 41 41 42 42 43 44 44 0 0 1 (bit 6 = fijo)
+F 0x9AA3 16
+L 0x9AB3 EXPLOSION           cada 5 fotogramas (ix+2C)++ hasta 10: fotograma = 0x9AD1[(ix+2C)]
+D 0x9AD1 0x9AE3 tabla_explosion 18 fotogramas 0x80..0x85 (0x82..0x85 repetidos)
+F 0x9AD1 18
+L 0x9AE3 OBJETO_QUITA_SI_TIPO  si (ix+0) != 0 -> 0x9E2D
+L 0x9AFE AVANZA_Y            (ix+5,6) += vy (ix+A,B)
+L 0x9B12 PRODUCTO_8_8        HL (seno/coseno con signo, -0x100..0xFF) * DE (velocidad) / 256 con signo: 0xFFxx = -1 -> -DE; 0x00xx = 1 -> DE; si no (L*16 * DE) / 2 por 0x9B4F y p00 0x4A8A
+L 0x9B21 PRODUCTO_UNO        HL = DE
+L 0x9B23 PRODUCTO_FRACCION   el producto por 0x9B4F
+L 0x9B3D PRODUCTO_POSITIVO   sin signo
+L 0x9B4F MULTIPLICA_H_E      HL = H * E (8 x 8 bits, sin signo)
+L 0x9B56 MULT_BIT_6          bit 6
+L 0x9B5A MULT_BIT_5          bit 5
+L 0x9B5E MULT_BIT_4          bit 4
+L 0x9B62 MULT_BIT_3          bit 3
+L 0x9B66 MULT_BIT_2          bit 2
+L 0x9B6A MULT_BIT_1          bit 1
+L 0x9B6E MULT_BIT_0          bit 0
+L 0x9B72 MULT_FIN            ret
+L 0x9B73 SENO                A = angulo - 0x40 y coseno: HL = sen(angulo) (0x9B75 con A - 0x40)
+L 0x9B75 COSENO              A -= 0x40: HL = tabla 0x9B97[A] (0..0x80: 0..0xFF..0), negativo -> H = 0xFF y -A
+L 0x9B87 SENO_POSITIVO       H = 0, L = tabla[A]
+L 0x9B8E TABLA_SENO          A = 0x9B97[A]
+D 0x9B97 0x9C18 tabla_seno 129 bytes: medio seno 0 -> 0xFF -> 0 (angulo en 1/256 de vuelta, 0x80 = media vuelta)
+F 0x9B97 16
+
+# =============================================================================
+# REVOLUCIONES Y PAR (0x9C18/0x9CA8): (ix+59) = revoluciones por velocidad y
+# marcha (0x9C45, tabla 0x9C84 de 9 cajas x 4 marchas); la aceleracion (ix+12)
+# = tabla p09 0xB72E[motor*16 + revs/8] (0x9C18, pagina 9 en A000) * la
+# relacion de la marcha (0x9CCF, tabla 0x9CE2). 0xFF = pasado de vueltas.
+# =============================================================================
+L 0x9C18 PAR_MOTOR           revoluciones (0x9C45); A = (revs & 0xF8) / 8 (>= 16 -> 0xFF); HL = p09 0xB72E + (ix+74)*16 + A; pagina 9 en A000, lee, 1/2/3
+L 0x9C1F PAR_MOTOR_INDICE    HL = L*16 (tambien entra 0x89BA con L = motor)
+L 0x9C42 PAR_FF              A = 0xFF
+L 0x9C45 REVOLUCIONES        marcha 0: si la velocidad da < 0x14, (ix+59) = 0x1B (ralenti); si no 0x9C59
+L 0x9C59 REVOLUCIONES_MARCHA  (ix+59) = H de 0x9C69 con L = caja (ix+75), A = marcha, BC = velocidad
+L 0x9C69 RELACION_POR_VELOCIDAD  (EA50) = caja*4 + marcha; E = 0x9C84[eso]; HL = velocidad*16 * E (0x9B4F: H*E con H = byte alto de v*16)
+D 0x9C84 0x9CA8 tabla_relaciones 9 cajas (ix+75) x 4 marchas: factor de revoluciones por velocidad
+F 0x9C84 4
+L 0x9CA8 ACELERACION_MOTOR   (ix+5F) != 0: cuenta atras y aceleracion 0; si no par (0x9C18): 0xFF -> 0 (0x9CC5); si no (ix+12) = par * relacion (0x9CCF)
+L 0x9CB7 ACELERACION_PAR     par y relacion
+L 0x9CCA ACELERACION_E0      (ix+12) = 0xE0 (sin referencia en p02)
+L 0x9CCF PAR_POR_RELACION    H = 0x9CE2[(EA50)]; A = (A * H) >> 8, tope 0x7F
+D 0x9CE2 0x9D06 tabla_relaciones_b 9 cajas x 4 marchas: factor de aceleracion (copia de 0x9C84)
+F 0x9CE2 4
+
+# =============================================================================
+# LOS OBJETOS (0x9D06, desde p00 0x5C48 cada fotograma): los 5 de cada
+# jugador (E800 / E928, 0x38 bytes): tipo (ix+0) (bits 0-3 = 1..15; bit 4 y
+# (ix+23) los paran; bit 5 = esperando (ix+20); bit 7 = guia), posicion
+# (ix+3..6), velocidad, (ix+1D,1E) posicion inicial, (ix+24,25) pareja.
+# Tipo < 11: fisica de objeto (0x9D5C); luego su rutina por tipo (0x9F47,
+# tabla 0x9F53, casi todas en p03), y se mueven; x >= 0xB8 -> fuera (0x9E31).
+# E91C/E91D/E91E = cuantos hay (total, jugador 1, jugador 2).
+# =============================================================================
+L 0x9D06 OBJETOS             los 5 de E800 con IY = E2C0 (0x9D28) y p03 0xB5B6; con dos jugadores los de E928 con E380
+L 0x9D28 OBJETOS_5           B = 5
+L 0x9D2A OBJETO_PASO         tipo 0 o bit 4 o (ix+23) -> nada; tipo < 11 -> fisica (0x9D5C); rutina del tipo (0x9F47); mueve (0x9D70); x >= 0xB8 -> fuera (0x9E31)
+L 0x9D54 OBJETO_SIGUIENTE    IX += 0x38
+L 0x9D5C FISICA_OBJETO_PASO  carrera parada ((iy+66) = 0) -> velocidades a cero (0x9DA4); si no: terreno (0x9510) salvo bit 5, 0x9423 y p03 0xA8A1
+L 0x9D70 MUEVE_OBJETO        y += vy; bit 5 -> espera (0x9DB2); si no x (0x9D89)
+L 0x9D89 MUEVE_X             x (ix+3,4) += vx + avance de la pista del coche guia (iy+43,44)
+L 0x9DA4 OBJETO_PARADO       vx = vy = 0
+L 0x9DB2 OBJETO_ESPERA       (ix+20)-- a cero: bit 5 fuera; p03 0xA17C y 0xA4C2 (C -> fuera, 0x9E2D); bit 2 de (ix+1) fuera; velocidad; con el bit 7 guarda (ix+19..1C)
+L 0x9E2D QUITA_OBJETO        0x9E35 (desde 0x9AE3, 0x9DB2)
+L 0x9E2F QUITA_OBJETO_B      idem (entrada de la tabla de jr)
+L 0x9E31 QUITA_OBJETO_FUERA  idem (x >= 0xB8)
+L 0x9E33 QUITA_OBJETO_D      idem
+L 0x9E35 QUITA_OBJETO_VA     tipo 8/9 -> p01 0x7FFC (E208); E91C-- y el contador del jugador (E91D/E91E); B = tipo*2; tipo = 0; EA67 = (x >= 0xE0); p03 0xA531; x = 0xE0; con dos jugadores: la pareja (ix+24,25) se libera (y cambia de jugador si (ix+23) = 0); luego si queda sitio (E919/E918) mete un objeto nuevo del mismo tipo (0x9F00)
+L 0x9E51 QUITA_CUENTA        (HL)-- (E91D o E91E)
+L 0x9E65 QUITA_EA67          EA67 = A
+L 0x9EB4 QUITA_PAREJA_CUENTA  (HL)++
+L 0x9EB5 QUITA_PAREJA_FIN    pop ix
+L 0x9EB7 QUITA_NUEVO         EA68 = B; si E919 = 0 y E918 < 0xB8 ret; si (E919-1) < 2 ret; por jugador y EA67 decide si entra uno nuevo
+L 0x9ECA QUITA_NUEVO_E919    E919 - 1 - 2
+L 0x9ED2 QUITA_NUEVO_JUGADOR_1  jugador 1: E91B = 1 -> lista E928 si EA67 = 1; si no E800
+L 0x9EE9 QUITA_NUEVO_J1_B    EA67 = 0
+L 0x9EED QUITA_NUEVO_JUGADOR_2  jugador 2: idem cruzado
+L 0x9EFE QUITA_NUEVO_J2_B    EA67 = 0
+L 0x9F00 NUEVO_OBJETO        0x9F08 con IX guardado
+L 0x9F08 NUEVO_OBJETO_VA     EA68 = (EA68 >> 1) con el carry; busca sitio (p03 0xA440: NZ no hay); tipo = EA68 | 0x10; (ix+1D,1E) = (E918 - 0xB0) / 4 + 1; E91C++ y el contador del jugador
+L 0x9F45 NUEVO_OBJETO_CUENTA (HL)++
+L 0x9F47 RUTINA_DEL_TIPO     despacha por tipo - 1 (< 15) con la tabla 0x9F53
+L 0x9F71 NADA_9F71           ret (tipos 11..14)
+L 0x9F74 COLORES_CATEGORIA   copia los 8 bytes de 0x9F8F[min(E25B,5)] a E1F4..E1FB (desde p00 0x5A07)
+L 0x9F7D COLORES_CATEGORIA_INDICE  A*8
+D 0x9F8F 0x9FBF tabla_colores_categoria 6 x 8 bytes por categoria -> E1F4..E1FB (colores de los objetos por tipo, 0x9FBF los lee desde E1F3+A)
+F 0x9F8F 8
+L 0x9FBF COLOR_OBJETO        (ix+F) = E1F3[A] (A se conserva)
+L 0x9FCC CREA_OBJETO_EN      A = tipo, DE = (x, y): sitio libre (p03 0xA433; NZ no), IX = el sitio, p03 0xA3AB, (ix+0) = tipo y sigue en 0x9FCC+0x68+.. (jr $+104 -> p03 0xA049)
+L 0x9FE3 OBJETO_LIBRE        (ix+0) = 0 y C (desde p03 0xA15C)
+L 0x9FE9 MISMA_POSICION_INICIAL  Z si (iy+10,11) = (ix+19,1A) (desde p03 0xA1B1)
+L 0x9FF7 OBJETO_DESDE_A292    push af; p03 0xA412 (busca sitio); pop bc; ret nz; IX = HL y sigue en p03 0xA000 (cruza la frontera; desde p03 0xA292)
+
+# --- etiquetas que faltaban (repaso de cobertura) ---
+L 0x8007 E208_GUARDA_COLA    ld (E208),a de la cola de p01 0x7FFC
+L 0x8476 PINTA_BANDA_BUCLE   un WRTVRM cada 2 bytes, 0xAC veces
+
+
+
+D 0x8ECE 0x8ED6 tabla_8ECE ocho bytes (04 01 04 01 02 04 02 01) entre dos rutinas sin llamador; nadie los referencia en la ROM trazada
+F 0x8ECE 8
+
+# --- BLOQUES IDENTIFICADOS POR tools/graficos.py (los recorre desde la ROM como hace el cargador de la pagina 0 y los
+# verifica: RLE que termina, patrones y colores de la misma longitud,
+# alineacion de los fotogramas). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0x927e 0x928a tabla_927E 6 punteros a listas del cargador de tiles; por (E25B) desde p02 0x9266
+F 0x927e w1
+# --- fin de los bloques de graficos.py ---
+
+# --- BLOQUES IDENTIFICADOS POR tools/coches.py (la cadena de la eleccion de coche: los coches predefinidos, las listas
+# de valores por categoria y paso, las tablas por carroceria y motor y las
+# curvas de par, cruzadas unas con otras (los valores elegibles tienen que
+# ser exactamente los indices que las tablas admiten)). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0x88d7 0x88e9 tabla_color_carroceria un color de sprite por carroceria (18): (ix+0F) en p02 0x898E; las 18 salen de los pasos 2 de la tabla de eleccion p03 0xBC45
+F 0x88d7 18
+D 0x88e9 0x88fb tabla_88e9 un byte por carroceria (18) -> (ix-21) en p02 0x89AA
+F 0x88e9 18
+D 0x88fb 0x8943 tabla_motor una palabra por motor (36) -> (ix-20,-1F) en p02 0x899B; los 36 motores son los valores del paso 1 de p03 0xBC45, 6 por categoria, y los de cada categoria comparten el byte alto (RALLY 09, STOCK 0A, ENDURANCE 0D, F3 0D, F3000 0E, F1 0F)
+F 0x88fb w6
+# --- fin de los bloques de coches.py ---
+
+# --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
+D 0x8215 0x823b pendiente_de_trazar Sin trazar ni identificar todavia (38 bytes)
+D 0x8b12 0x8b26 pendiente_de_trazar Sin trazar ni identificar todavia (20 bytes)
+D 0x9111 0x9123 pendiente_de_trazar Sin trazar ni identificar todavia (18 bytes)
+D 0x94c3 0x94cf pendiente_de_trazar Sin trazar ni identificar todavia (12 bytes)
+D 0x9f53 0x9f71 pendiente_de_trazar Sin trazar ni identificar todavia (30 bytes)
+# --- fin de la seccion pendiente ---

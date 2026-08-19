@@ -1,0 +1,252 @@
+# Anotaciones de F-1 Spirit (Konami, 1987, RC-752): pagina 9 de 16, que el
+# mapper pone en 0xa000-0xbfff (ver tools/paginas.py).
+#
+# Directivas: L=etiqueta, C=comentario de linea, B=cabecera de bloque,
+# D=rango de datos (con nombre y explicacion), F=anchura de fila de un bloque
+# de datos. Todo anclado a direccion, asi que sobrevive a un retrazado. Sin
+# acentos a proposito.
+#
+# ESTADO: pagina sin trazar. El rango D de abajo es un marcador: dice que NADA
+# de esta pagina esta explicado todavia. Se va recortando segun el trazado
+# convierte bytes en codigo y las lecturas ponen nombre a los datos.
+
+# --- BLOQUES IDENTIFICADOS POR tools/graficos.py (los recorre desde la ROM como hace el cargador de la pagina 0 y los
+# verifica: RLE que termina, patrones y colores de la misma longitud,
+# alineacion de los fotogramas). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0xbad9 0xbb2b rle_pat_BAD9 patrones RLE: 10 tiles desde el 1 (lista 0x62a3)
+F 0xbad9 16
+D 0xbb2b 0xbb35 rle_pat_BB2B patrones RLE: 1 tiles desde el 41 (tabla85[67])
+F 0xbb2b 16
+D 0xbb35 0xbb57 rle_pat_BB35 patrones RLE: 4 tiles desde el 60 (lista 0x62a3)
+F 0xbb35 16
+D 0xbb57 0xbb71 rle_pat_BB57 patrones RLE: 3 tiles desde el 64 (lista 0x62a3)
+F 0xbb57 16
+D 0xbb71 0xbb91 rle_pat_BB71 patrones RLE: 4 tiles desde el 70 (lista 0x62a3)
+F 0xbb71 16
+D 0xbb91 0xbba1 rle_pat_BB91 patrones RLE: 2 tiles desde el 74 (lista 0x62a3)
+F 0xbb91 16
+D 0xbba1 0xbbcb rle_pat_BBA1 patrones RLE: 5 tiles desde el 78 (lista 0x62a3)
+F 0xbba1 16
+D 0xbbcb 0xbbe5 rle_pat_BBCB patrones RLE: 3 tiles desde el 92 (tabla85[69])
+F 0xbbcb 16
+D 0xbbe5 0xbbec rle_pat_BBE5 patrones RLE: 1 tiles desde el 95 (lista 0x62a3)
+F 0xbbe5 16
+D 0xbbec 0xbc06 rle_pat_BBEC patrones RLE: 3 tiles desde el 99 (tabla85[70])
+F 0xbbec 16
+D 0xbc06 0xbc33 rle_pat_BC06 patrones RLE: 6 tiles desde el 102 (tabla85[71])
+F 0xbc06 16
+D 0xbc33 0xbc67 rle_pat_BC33 patrones RLE: 7 tiles desde el 108 (lista 0x62a3)
+F 0xbc33 16
+D 0xbc67 0xbc81 rle_pat_BC67 patrones RLE: 3 tiles desde el 130 (lista 0x62a3)
+F 0xbc67 16
+D 0xbc81 0xbc9e rle_pat_BC81 patrones RLE: 4 tiles desde el 136 (lista 0x62a3)
+F 0xbc81 16
+D 0xbc9e 0xbca6 rle_pat_BC9E patrones RLE: 1 tiles desde el 159 (lista 0x6211)
+F 0xbc9e 16
+D 0xbca6 0xbcbd rle_pat_BCA6 patrones RLE: 3 tiles desde el 167 (lista 0x6211)
+F 0xbca6 16
+D 0xbcbd 0xbccf rle_pat_BCBD patrones RLE: 2 tiles desde el 150 (lista 0x6211)
+F 0xbcbd 16
+D 0xbccf 0xbcd4 rle_pat_BCCF patrones RLE: 1 tiles desde el 152 (lista 0x6211)
+F 0xbccf 16
+D 0xbcd4 0xbcd7 rle_pat_BCD4 patrones RLE: 1 tiles desde el 141 (tabla85[72])
+F 0xbcd4 16
+D 0xbcd7 0xbce1 rle_pat_BCD7 patrones RLE: 1 tiles desde el 140 (lista 0x6211)
+F 0xbcd7 16
+D 0xbce1 0xbcf6 rle_pat_BCE1 patrones RLE: 3 tiles desde el 142 (lista 0x6211)
+F 0xbce1 16
+D 0xbcf6 0xbd2e rle_pat_BCF6 patrones RLE: 7 tiles desde el 184 (lista 0x6211)
+F 0xbcf6 16
+D 0xbd2e 0xbd78 rle_col_BD2E colores RLE: 10 tiles desde el 1 (lista 0x62a3)
+F 0xbd2e 16
+D 0xbd78 0xbd81 rle_col_BD78 colores RLE: 1 tiles desde el 41 (tabla85[67])
+F 0xbd78 16
+D 0xbd81 0xbd9f rle_col_BD81 colores RLE: 4 tiles desde el 60 (lista 0x62a3)
+F 0xbd81 16
+D 0xbd9f 0xbdb8 rle_col_BD9F colores RLE: 3 tiles desde el 64 (lista 0x62a3)
+F 0xbd9f 16
+D 0xbdb8 0xbdd4 rle_col_BDB8 colores RLE: 4 tiles desde el 70 (lista 0x62a3)
+F 0xbdb8 16
+D 0xbdd4 0xbddb rle_col_BDD4 colores RLE: 2 tiles desde el 74 (lista 0x62a3)
+F 0xbdd4 16
+D 0xbddb 0xbdfe rle_col_BDDB colores RLE: 5 tiles desde el 78 (lista 0x62a3)
+F 0xbddb 16
+D 0xbdfe 0xbe0e rle_col_BDFE colores RLE: 3 tiles desde el 92 (tabla85[69])
+F 0xbdfe 16
+D 0xbe0e 0xbe13 rle_col_BE0E colores RLE: 1 tiles desde el 95 (lista 0x62a3)
+F 0xbe0e 16
+D 0xbe13 0xbe26 rle_col_BE13 colores RLE: 3 tiles desde el 99 (tabla85[70])
+F 0xbe13 16
+D 0xbe26 0xbe31 rle_col_BE26 colores RLE: 6 tiles desde el 102 (tabla85[71])
+F 0xbe26 16
+D 0xbe31 0xbe47 rle_col_BE31 colores RLE: 7 tiles desde el 108 (lista 0x62a3)
+F 0xbe31 16
+D 0xbe47 0xbe52 rle_col_BE47 colores RLE: 3 tiles desde el 130 (lista 0x62a3)
+F 0xbe47 16
+D 0xbe52 0xbe69 rle_col_BE52 colores RLE: 4 tiles desde el 136 (lista 0x62a3)
+F 0xbe52 16
+D 0xbe69 0xbe70 rle_col_BE69 colores RLE: 1 tiles desde el 159 (lista 0x6211)
+F 0xbe69 16
+D 0xbe70 0xbe7b rle_col_BE70 colores RLE: 3 tiles desde el 167 (lista 0x6211)
+F 0xbe70 16
+D 0xbe7b 0xbe88 rle_col_BE7B colores RLE: 2 tiles desde el 150 (lista 0x6211)
+F 0xbe7b 16
+D 0xbe88 0xbe8b rle_col_BE88 colores RLE: 1 tiles desde el 152 (lista 0x6211)
+F 0xbe88 16
+D 0xbe8b 0xbe8e rle_col_BE8B colores RLE: 1 tiles desde el 141 (tabla85[72])
+F 0xbe8b 16
+D 0xbe8e 0xbe91 rle_col_BE8E colores RLE: 1 tiles desde el 140 (lista 0x6211)
+F 0xbe8e 16
+D 0xbe91 0xbea3 rle_col_BE91 colores RLE: 3 tiles desde el 142 (lista 0x6211)
+F 0xbe91 16
+D 0xbea3 0xbecf rle_col_BEA3 colores RLE: 7 tiles desde el 184 (lista 0x6211)
+F 0xbea3 16
+# --- fin de los bloques de graficos.py ---
+
+# --- BLOQUES IDENTIFICADOS POR tools/circuitos.py (la cadena secuencia -> piezas -> metatiles de la pagina 0 y los objetos
+# de la pista, recorridos desde la ROM; los tamanos de las tablas salen del
+# indice maximo que usa cada carrera y cada tabla acaba donde empieza la
+# siguiente). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0xa000 0xa07e objetos_pista_08 objetos de la pista de la carrera 8 (F1 ROUND 4): 53 registros de 3 bytes (palabra = posicion en la pista en los 12 bits altos y tipo en los 4 bajos; y un byte), precedidos de la cuenta; los recorre 0x5E6C por (ix+0x57)
+F 0xa000 1,3
+D 0xa07e 0xa115 objetos_pista_09 objetos de la pista de la carrera 9 (F1 ROUND 5): 50 registros de 3 bytes (palabra = posicion en la pista en los 12 bits altos y tipo en los 4 bajos; y un byte), precedidos de la cuenta; los recorre 0x5E6C por (ix+0x57)
+F 0xa07e 1,3
+D 0xa115 0xa170 objetos_pista_10 objetos de la pista de la carrera 10 (F1 ROUND 6): 30 registros de 3 bytes (palabra = posicion en la pista en los 12 bits altos y tipo en los 4 bajos; y un byte), precedidos de la cuenta; los recorre 0x5E6C por (ix+0x57)
+F 0xa115 1,3
+D 0xa170 0xa1dd objetos_pista_11 objetos de la pista de la carrera 11 (F1 ROUND 7): 36 registros de 3 bytes (palabra = posicion en la pista en los 12 bits altos y tipo en los 4 bajos; y un byte), precedidos de la cuenta; los recorre 0x5E6C por (ix+0x57)
+F 0xa170 1,3
+D 0xa1dd 0xa26e objetos_pista_12 objetos de la pista de la carrera 12 (F1 ROUND 8): 48 registros de 3 bytes (palabra = posicion en la pista en los 12 bits altos y tipo en los 4 bajos; y un byte), precedidos de la cuenta; los recorre 0x5E6C por (ix+0x57)
+F 0xa1dd 1,3
+D 0xa26e 0xa30b objetos_pista_13 objetos de la pista de la carrera 13 (F1 ROUND 9): 52 registros de 3 bytes (palabra = posicion en la pista en los 12 bits altos y tipo en los 4 bajos; y un byte), precedidos de la cuenta; los recorre 0x5E6C por (ix+0x57)
+F 0xa26e 1,3
+D 0xa30b 0xa375 objetos_pista_14 objetos de la pista de la carrera 14 (F1 ROUND 10): 35 registros de 3 bytes (palabra = posicion en la pista en los 12 bits altos y tipo en los 4 bajos; y un byte), precedidos de la cuenta; los recorre 0x5E6C por (ix+0x57)
+F 0xa30b 1,3
+D 0xa375 0xa3f7 objetos_pista_15 objetos de la pista de la carrera 15 (F1 ROUND 11): 43 registros de 3 bytes (palabra = posicion en la pista en los 12 bits altos y tipo en los 4 bajos; y un byte), precedidos de la cuenta; los recorre 0x5E6C por (ix+0x57)
+F 0xa375 1,3
+D 0xa3f7 0xa491 objetos_pista_16 objetos de la pista de la carrera 16 (F1 ROUND 12): 51 registros de 3 bytes (palabra = posicion en la pista en los 12 bits altos y tipo en los 4 bajos; y un byte), precedidos de la cuenta; los recorre 0x5E6C por (ix+0x57)
+F 0xa3f7 1,3
+D 0xa491 0xa53d objetos_pista_17 objetos de la pista de la carrera 17 (F1 ROUND 13): 57 registros de 3 bytes (palabra = posicion en la pista en los 12 bits altos y tipo en los 4 bajos; y un byte), precedidos de la cuenta; los recorre 0x5E6C por (ix+0x57)
+F 0xa491 1,3
+D 0xa53d 0xa5bc objetos_pista_18 objetos de la pista de la carrera 18 (F1 ROUND 14): 42 registros de 3 bytes (palabra = posicion en la pista en los 12 bits altos y tipo en los 4 bajos; y un byte), precedidos de la cuenta; los recorre 0x5E6C por (ix+0x57)
+F 0xa53d 1,3
+D 0xa5bc 0xa650 objetos_pista_19 objetos de la pista de la carrera 19 (F1 ROUND 15): 49 registros de 3 bytes (palabra = posicion en la pista en los 12 bits altos y tipo en los 4 bajos; y un byte), precedidos de la cuenta; los recorre 0x5E6C por (ix+0x57)
+F 0xa5bc 1,3
+D 0xa650 0xa6de objetos_pista_20 objetos de la pista de la carrera 20 (F1 ROUND 16): 47 registros de 3 bytes (palabra = posicion en la pista en los 12 bits altos y tipo en los 4 bajos; y un byte), precedidos de la cuenta; los recorre 0x5E6C por (ix+0x57)
+F 0xa650 1,3
+# --- fin de los bloques de circuitos.py ---
+
+# --- BLOQUES IDENTIFICADOS POR tools/textos.py (los textos (ASCII + macros de la tabla 0xA6DE) y las pantallas
+# comprimidas (RLE_A_RAM de p01 0x637A), leidos desde la ROM). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0xa6de 0xa806 tabla_textos 148 punteros a los textos de abajo: la entrada n es la MACRO 0x60+n que COPIA_TEXTO (p01 0x6943) expande dentro de otros textos; p01 0x6950
+F 0xa6de w1
+D 0xa806 0xb024 textos 236 textos terminados en 0x5F (ASCII en 0x20-0x5E, macros 0x60-0xFF de la tabla 0xA6DE, tiles y posiciones por debajo de 0x20): fichas de los coches, menus, RESULT, THE MEMORIAL OF FORMULA-1...
+F 0xa806 16
+D 0xb9de 0xbaa5 pantalla_B9DE pantalla comprimida para RLE_A_RAM (p01 0x637A): 24 filas de 14 tiles; p01 0x75D7 (con 9): el HUD de un jugador, en la columna 18 del buffer E400
+F 0xb9de 16
+D 0xbaa5 0xbac0 pantalla_BAA5 pantalla comprimida para RLE_A_RAM (p01 0x637A): 3 filas de 16 tiles; p01 0x75B8 (con 9): el HUD de arriba con dos jugadores
+F 0xbaa5 16
+D 0xbac0 0xbad9 pantalla_BAC0 pantalla comprimida para RLE_A_RAM (p01 0x637A): 3 filas de 16 tiles; p01 0x75C6 (con 9): el HUD de abajo con dos jugadores
+F 0xbac0 16
+# --- fin de los bloques de textos.py ---
+
+# --- BLOQUES IDENTIFICADOS POR tools/coches.py (la cadena de la eleccion de coche: los coches predefinidos, las listas
+# de valores por categoria y paso, las tablas por carroceria y motor y las
+# curvas de par, cruzadas unas con otras (los valores elegibles tienen que
+# ser exactamente los indices que las tablas admiten)). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0xb024 0xb039 ficha_rle_b024 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 0/2
+F 0xb024 16
+D 0xb039 0xb04e ficha_rle_b039 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 0/2
+F 0xb039 16
+D 0xb04e 0xb063 ficha_rle_b04e dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 0/2
+F 0xb04e 16
+D 0xb063 0xb082 ficha_rle_b063 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 0/2
+F 0xb063 16
+D 0xb082 0xb0a1 ficha_rle_b082 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 0/2
+F 0xb082 16
+D 0xb0a1 0xb0c0 ficha_rle_b0a1 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 0/2
+F 0xb0a1 16
+D 0xb0c0 0xb0d8 ficha_rle_b0c0 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 0/2
+F 0xb0c0 16
+D 0xb0d8 0xb0f0 ficha_rle_b0d8 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 0/2
+F 0xb0d8 16
+D 0xb0f0 0xb108 ficha_rle_b0f0 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 0/2
+F 0xb0f0 16
+D 0xb108 0xb11e ficha_rle_b108 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 0/2
+F 0xb108 16
+D 0xb11e 0xb139 ficha_rle_b11e dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 0/2
+F 0xb11e 16
+D 0xb139 0xb151 ficha_rle_b139 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 0/2
+F 0xb139 16
+D 0xb151 0xb177 ficha_rle_b151 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 0/2
+F 0xb151 16
+D 0xb177 0xb196 ficha_rle_b177 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 0/2
+F 0xb177 16
+D 0xb196 0xb1b4 ficha_rle_b196 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 0/2
+F 0xb196 16
+D 0xb1b4 0xb1d3 ficha_rle_b1b4 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 0/2
+F 0xb1b4 16
+D 0xb1d3 0xb1f8 ficha_rle_b1d3 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 0/2
+F 0xb1d3 16
+D 0xb1f8 0xb217 ficha_rle_b1f8 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 0/2
+F 0xb1f8 16
+D 0xb217 0xb266 ficha_rle_b217 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 16 filas, 128 bytes al descomprimir; lo apunta sin llamador visto
+F 0xb217 16
+D 0xb266 0xb2e3 ficha_rle_b266 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 16 filas, 128 bytes al descomprimir; lo apunta sin llamador visto
+F 0xb266 16
+D 0xb2e3 0xb360 ficha_rle_b2e3 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 16 filas, 128 bytes al descomprimir; lo apunta sin llamador visto
+F 0xb2e3 16
+D 0xb360 0xb3bf ficha_rle_b360 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 16 filas, 128 bytes al descomprimir; lo apunta sin llamador visto
+F 0xb360 16
+D 0xb3bf 0xb42a ficha_rle_b3bf dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 16 filas, 128 bytes al descomprimir; lo apunta sin llamador visto
+F 0xb3bf 16
+D 0xb42a 0xb45c ficha_rle_b42a dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 1
+F 0xb42a 16
+D 0xb45c 0xb486 ficha_rle_b45c dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 1
+F 0xb45c 16
+D 0xb486 0xb4b3 ficha_rle_b486 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 1
+F 0xb486 16
+D 0xb4b3 0xb4e3 ficha_rle_b4b3 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 1
+F 0xb4b3 16
+D 0xb4e3 0xb50a ficha_rle_b4e3 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 1
+F 0xb4e3 16
+D 0xb50a 0xb53f ficha_rle_b50a dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 1
+F 0xb50a 16
+D 0xb53f 0xb570 ficha_rle_b53f dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 4
+F 0xb53f 16
+D 0xb570 0xb5a6 ficha_rle_b570 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 4
+F 0xb570 16
+D 0xb5a6 0xb5dc ficha_rle_b5a6 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 4
+F 0xb5a6 16
+D 0xb5dc 0xb616 ficha_rle_b5dc dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 3
+F 0xb5dc 16
+D 0xb616 0xb656 ficha_rle_b616 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 3
+F 0xb616 16
+D 0xb656 0xb697 ficha_rle_b656 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 3
+F 0xb656 16
+D 0xb697 0xb6b6 ficha_rle_b697 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 5
+F 0xb697 16
+D 0xb6b6 0xb6dd ficha_rle_b6b6 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 5
+F 0xb6b6 16
+D 0xb6dd 0xb6f9 ficha_rle_b6dd dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta el paso 5
+F 0xb6dd 16
+D 0xb6f9 0xb710 ficha_rle_b6f9 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta sin llamador visto
+F 0xb6f9 16
+D 0xb710 0xb71f ficha_rle_b710 dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta sin llamador visto
+F 0xb710 16
+D 0xb71f 0xb72e ficha_rle_b71f dibujo de ficha comprimido (RLE_A_BUFFER de p01 0x637A, 8 columnas): 8 filas, 64 bytes al descomprimir; lo apunta sin llamador visto
+F 0xb71f 16
+D 0xb72e 0xb96e tabla_par_motor una curva de par por motor (36 filas de 16 bytes): p02 0x9C18 lee la columna (revoluciones & 0xF8) >> 3, y donde vale 0 esta el tope de revoluciones que busca p02 0x89BA
+F 0xb72e 16
+D 0xb96e 0xb9de tabla_par_sobrante 7 filas mas con la misma forma que las de arriba y repetidas de ellas; ningun motor las alcanza (el indice no pasa de 35)
+F 0xb96e 16
+# --- fin de los bloques de coches.py ---
+
+D 0xbecf 0xc000 relleno_BECF 305 bytes a 0xFF hasta el final de la pagina: espacio libre, comprobado byte a byte
+F 0xbecf 16
+
+# --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
+# --- fin de la seccion pendiente ---

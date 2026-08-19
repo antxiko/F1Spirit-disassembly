@@ -1,0 +1,169 @@
+# Puntos de entrada de la pagina 0 de F-1 Spirit (org 0x4000).
+#
+# Cada semilla lleva su justificacion: de donde se llama y con que pagina
+# mapeada. Una semilla sin justificar es la via mas rapida a un trazado falso.
+# Las llamadas que salen de otra pagina se ven en work/p00.trace.json
+# ("externos") y con tools/externos.py.
+
+0x40E4   # INIT, declarado en la cabecera del cartucho (bytes 2-3: E4 40)
+
+0x4018   # la rutina de interrupcion. INIT escribe `jp 0x4018` en el gancho
+         # H.KEYI (0xFD9A): `ld a,0C3h / ld (0FD9Ah),a / ld hl,4018h /
+         # ld (0FD9Bh),hl` en 0x4109-0x4113. La BIOS llama al gancho en cada
+         # interrupcion. El juego entero corre desde aqui (INIT acaba en
+         # `jr $` en 0x413E).
+
+# --- El despachador. 0x40DA es el "call seguido de tabla" de Konami:
+# `pop hl / add a,a / call 40D0h (hl += a) / ld e,(hl) / inc hl / ld d,(hl) /
+# ex de,hl / jp (hl)`. Cinco sitios lo llaman en esta pagina. El tamano de
+# cada tabla = distancia desde la tabla hasta su destino mas bajo (las tablas
+# van en el .nocode).
+#
+# 0x419D: indice (0xE1C0) (el estado del juego; si es < 3 deja 0x427C en la
+# pila como retorno), tabla de 0x41A0 hasta 0x41B1: 9 palabras.
+0x41B2   # estados 0, 6, 7 y 8 de la tabla de 0x41A0
+0x41E3   # estado 1 de la tabla de 0x41A0
+0x41EA   # estado 2 de la tabla de 0x41A0
+0x4221   # estado 3 de la tabla de 0x41A0
+0x4252   # estado 4 de la tabla de 0x41A0
+0x4279   # estado 5 de la tabla de 0x41A0
+0x427C   # retorno empujado en 0x419C para los estados < 3
+
+# 0x4E34: indice (ix+0)&3, tabla de 0x4E37 hasta 0x4E3E: 4 palabras.
+0x4E3F   # entrada 0 de la tabla de 0x4E37
+0x4E51   # entrada 1 de la tabla de 0x4E37
+0x4E6F   # entrada 2 de la tabla de 0x4E37
+0x4E70   # entrada 3 de la tabla de 0x4E37
+
+# 0x54EC: indice A&7 (lo devuelve el call 0x5513), tabla de 0x54EF hasta
+# 0x54FE: 8 palabras (550E, 54FF, 5504, 5509, 550E, 5509, 5504, 54FF).
+0x54FF   # entradas 1 y 7 de la tabla de 0x54EF
+0x5504   # entradas 2 y 6 de la tabla de 0x54EF
+0x5509   # entradas 3 y 5 de la tabla de 0x54EF
+0x550E   # entradas 0 y 4 de la tabla de 0x54EF
+
+# 0x5A3D: indice (0xE250)&0x7F, tabla de 0x5A40 hasta 0x5A7F: 32 palabras
+# (SUPOSICION razonable: el indice se enmascara a 7 bits pero la tabla solo
+# llega hasta su destino mas bajo, 0x5A80; si el indice pasara de 31 se
+# leerian instrucciones como punteros).
+0x5A80
+0x5A83
+0x5A86
+0x5A8B
+0x5A8E
+0x5A94
+0x5A97
+0x5A9A
+0x5A9D
+0x5AA3
+0x5AAB
+0x5B02
+0x5B10
+0x5B19
+0x5B4F
+0x5B52
+0x5B55
+0x5B58
+0x5B66
+0x5B69
+0x5B6C
+0x5B6F
+0x5B72
+0x5B90
+0x5B9D
+
+# 0x5D26: indice (0xE1DD) (la rutina de antes ya comprobo que es < 10),
+# tabla de 0x5D29 hasta 0x5D3E: 11 palabras.
+0x5D3F
+0x5D40
+0x5D4E
+0x5D74
+0x5D7C
+0x5D8D
+0x5D97
+0x5D9F
+0x5DBC
+
+# --- Rutinas de esta pagina llamadas desde otras. La pagina 0 esta SIEMPRE
+# en 0x4000-0x5FFF (nadie escribe en 0x5000), asi que toda llamada a
+# 0x4000-0x5FFF desde cualquier pagina es inequivoca. Solo se siembran las
+# que vienen de codigo ya trazado con certeza, o cuya evidencia se explica.
+0x4457   # `di / ld (F0F3),a / ld (B000),a / ei / ret`: pone la pagina A en
+         # 0xA000, gemela de 0x4447. Sin llamador en esta pagina; la llaman
+         # nueve sitios de las paginas 1 y 2 (todos con `ld a,N` delante:
+         # tools/reconocimiento.py), que aun no estan trazadas. SIN VERIFICAR
+         # por trazado; la rutina se lee sola.
+
+# --- Llamadas desde otras paginas MEDIDAS en el emulador (hecho-verificado):
+# tools/omsx_bancos.tcl -> work/omsx/bancos.log. Punto de ruptura en cada
+# origen y lectura del depurable 'romblocks' de openMSX en el destino: en
+# esa direccion estaba mapeada ESTA pagina.
+0x4476   # desde p01:63FF (medido)
+0x4496   # desde p01:6402 (medido)
+0x4811   # desde p01:7B73 (medido)
+0x4830   # desde p01:7B70 (medido)
+0x4A03   # desde p01:7BFE (medido)
+0x4A0D   # desde p01:7C05 (medido)
+0x4A4F   # desde p02:97CF (medido)
+0x4A61   # desde p01:7AF8 (medido)
+0x4A7E   # desde p02:8DD9 p02:8DF6 p02:98F8 p02:991B p02:9930 (medido)
+0x4A86   # desde p02:871B p02:8D33 (medido)
+0x4A8A   # desde p02:8717 p02:9B3A p02:9B44 (medido)
+0x4ABD   # desde p03:A065 (medido)
+0x4ACB   # desde p01:7C46 (medido)
+0x4AF0   # desde p03:BAA9 p03:BADE (medido)
+0x4B04   # desde p03:AD74 p03:B25A (medido)
+0x4B0C   # desde p02:8EB2 (medido)
+0x4B67   # desde p01:684C (medido)
+0x4BE3   # desde p01:7E0A (medido)
+0x4C43   # desde p01:7E07 (medido)
+0x54D4   # desde p02:8A7E (medido)
+0x54DF   # desde p02:8DBD (medido)
+0x5CA1   # desde p01:7EA6 (medido)
+
+# --- Llamadas desde otras paginas MEDIDAS en el emulador (hecho-verificado):
+# tools/omsx_bancos.tcl -> work/omsx/bancos.log. Punto de ruptura en cada
+# origen y lectura del depurable 'romblocks' de openMSX en el destino: en
+# esa direccion estaba mapeada ESTA pagina.
+0x44F3   # desde p02:91F1 p02:9263 (medido)
+0x4807   # desde p01:60F0 (medido)
+0x48B7   # desde p02:91C7 (medido)
+0x49E0   # desde p02:927B (medido)
+0x52BB   # desde p02:91AA (medido)
+0x5778   # desde p02:9278 (medido)
+
+# --- Llamadas desde otras paginas MEDIDAS en el emulador (hecho-verificado):
+# tools/omsx_bancos.tcl -> work/omsx/bancos.log. Punto de ruptura en cada
+# origen y lectura del depurable 'romblocks' de openMSX en el destino: en
+# esa direccion estaba mapeada ESTA pagina.
+0x4760   # desde p01:70E3 (medido)
+0x4AD9   # desde p03:B648 (medido)
+
+# --- Llamadas desde p01 a esta pagina (fija en 0x4000: la pagina es segura;
+# la semilla falta solo porque el trazado de p00 no llegaba). 2026-08-19.
+0x44C1   # desde p01:7D19 y p01:7D33: VUELCA_768_A_NOMBRES con el buffer EC00 (la otra entrada de 0x44C4)
+0x578A   # desde p01:7CE2 (entrada 26 del despachador de carrera, por 0x7CD0)
+
+# --- Llamadas desde p01 a esta pagina (fija en 0x4000), MEDIDAS 2026-08-19
+# forzando los subestados de carrera con tools/omsx_fuerza_estados.tcl
+# (work/omsx/bancos_fuerza.log).
+0x44C1   # desde p01:7D19 y p01:7D33 (medido): VUELCA_768_A_NOMBRES con el buffer EC00 (la otra entrada de 0x44C4)
+0x578A   # desde p01:7CE2 (medido): entrada 26 del despachador de carrera, por 0x7CD0
+
+# --- Llamadas desde otras paginas MEDIDAS en el emulador (hecho-verificado):
+# tools/omsx_bancos.tcl -> work/omsx/bancos.log. Punto de ruptura en cada
+# origen y lectura del depurable 'romblocks' de openMSX en el destino: en
+# esa direccion estaba mapeada ESTA pagina.
+0x4B6C   # desde p02:8258 p02:8378 (medido)
+0x4C12   # desde p01:6AAF (medido)
+0x522D   # desde p01:6CCE (medido)
+0x52D5   # desde p01:6A03 (medido)
+0x543C   # desde p02:8288 (medido)
+0x545E   # desde p02:8293 (medido)
+
+# --- Llamadas desde p01/p02 a esta pagina (fija en 0x4000: la pagina es
+# segura; faltaban solo porque los llamadores se trazaron hoy al sembrar las
+# entradas de tabla en pagina de los despachadores 0x71E1 y 0x8212). 2026-08-19.
+0x480D   # desde p01:7383 p01:73F0 p01:7402 p02:833A (p00 es fija): DE = flujo para PINTA_TILES
+0x58A0   # desde p01:74DF (el truco " UJM3EDC" de INPUT PASSWORD: `jp 0x58A0`; p00 es fija). 2026-08-19
+0x559D   # sin llamador: call 0x443D / ld de,0x0800 / call AVANZA_POSICION / call PINTA_FILA_PISTA / jp 0x43FE = avanza una fila de pista y la pinta; acaba exacto en 0x55AC. 2026-08-19

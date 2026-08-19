@@ -1,0 +1,346 @@
+# Anotaciones de F-1 Spirit (Konami, 1987, RC-752): pagina 4 de 16, que el
+# mapper pone en 0x6000-0x7fff (ver tools/paginas.py).
+#
+# Directivas: L=etiqueta, C=comentario de linea, B=cabecera de bloque,
+# D=rango de datos (con nombre y explicacion), F=anchura de fila de un bloque
+# de datos. Todo anclado a direccion, asi que sobrevive a un retrazado. Sin
+# acentos a proposito.
+#
+# ESTADO: pagina sin trazar. El rango D de abajo es un marcador: dice que NADA
+# de esta pagina esta explicado todavia. Se va recortando segun el trazado
+# convierte bytes en codigo y las lecturas ponen nombre a los datos.
+
+# --- BLOQUES IDENTIFICADOS POR tools/graficos.py (los recorre desde la ROM como hace el cargador de la pagina 0 y los
+# verifica: RLE que termina, patrones y colores de la misma longitud,
+# alineacion de los fotogramas). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0x6000 0x61a9 tabla_recursos_tiles 85 recursos de tiles de 5 B (flags, patrones, colores) que las listas piden con la orden 0x17 (CARGA_RECURSO_85, 0x4E9F), y el tile lo dice la orden
+F 0x6000 5
+D 0x61a9 0x61fd tabla_61A9 42 punteros a listas del cargador de tiles; indexada por la carrera (E25C) desde CARGA_TILES_CIRCUITO (p00 0x4BDA/0x4BF8); dos juegos de 21: las entradas 21-41 entran por la mitad de las listas de las 0-20
+F 0x61a9 w1
+D 0x61fd 0x620a lista_61FD lista del cargador de tiles (0x4CCD): 2 registros de 6 B, tiles 206-209; la usa p00 0x4BCE/0x4BE3
+F 0x61fd 6,6,1
+D 0x620a 0x6211 lista_620A lista del cargador de tiles (0x4CCD): 1 registros de 6 B, tiles 252-255; la usa p00 0x59D3, p01 0x634E
+F 0x620a 6,1
+D 0x6211 0x62a3 lista_6211 lista del cargador de tiles (0x4CCD): 38 registros de 6 B y 36 ordenes, tiles 1-209; la usa tabla_61A9[0]; sigue en la lista de 0x62a3
+F 0x6211 17,3,6,6,3,3,3,3,3,3,3,6,3,6,3,6,6,3,3,3,3,6,3,3,6,6,6,6,6,3,6,6,6,6,3,3,6,6,3,3,6,6,6,3,6,6,6,6,6,6,6,6,6,6,3,3,3,3,3,3,3,3,3,6,6,6,3,6,6,6,3,3,3,6,1
+D 0x62a3 0x6370 lista_62A3 lista del cargador de tiles (0x4CCD): 25 registros de 6 B y 18 ordenes, tiles 1-139; la usa tabla_61A9[21]
+F 0x62a3 6,6,6,3,3,6,6,3,3,6,6,6,3,6,6,6,6,6,6,6,6,6,6,3,3,3,3,3,3,3,3,3,6,6,6,3,6,6,6,3,3,3,6,1
+D 0x6370 0x6384 lista_6370 lista del cargador de tiles (0x4CCD): 1 registros de 6 B y 7 ordenes, tiles 94-97; la usa tabla_61A9[2]; sigue en la lista de 0x6384
+F 0x6370 17,3,3,3,6,3,3,3,1
+D 0x6384 0x639a lista_6384 lista del cargador de tiles (0x4CCD): 1 registros de 6 B y 5 ordenes, tiles 94-97; la usa tabla_61A9[23]
+F 0x6384 3,3,6,3,3,3,1
+D 0x639a 0x63b7 lista_639A lista del cargador de tiles (0x4CCD): 1 registros de 6 B y 18 ordenes, tiles 59-61; la usa tabla_61A9[3]; sigue en la lista de 0x63b7
+F 0x639a 17,3,3,3,3,3,3,3,3,3,3,3,3,6,3,3,3,3,3,1
+D 0x63b7 0x63e5 lista_63B7 lista del cargador de tiles (0x4CCD): 1 registros de 6 B y 13 ordenes, tiles 59-61; la usa tabla_61A9[24]
+F 0x63b7 3,3,3,3,3,3,3,3,6,3,3,3,3,3,1
+D 0x63e5 0x63f9 lista_63E5 lista del cargador de tiles (0x4CCD): 0 registros de 6 B y 11 ordenes, sin registros propios; la usa tabla_61A9[1]; sigue en la lista de 0x63f9
+F 0x63e5 17,3,3,3,3,3,3,3,3,3,3,1
+D 0x63f9 0x6415 lista_63F9 lista del cargador de tiles (0x4CCD): 0 registros de 6 B y 9 ordenes, sin registros propios; la usa tabla_61A9[22]
+F 0x63f9 3,3,3,3,3,3,3,3,3,1
+D 0x6415 0x6485 lista_6415 lista del cargador de tiles (0x4CCD): 8 registros de 6 B y 21 ordenes, tiles 112-205; la usa sublista de 0x6370
+F 0x6415 6,3,3,3,3,3,6,6,6,6,3,3,3,3,3,3,3,3,3,3,3,3,6,3,6,6,3,3,3,1
+D 0x6485 0x64c5 lista_6485 lista del cargador de tiles (0x4CCD): 3 registros de 6 B y 15 ordenes, tiles 47-58; la usa sublista de 0x6370
+F 0x6485 3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,6,6,6,1
+D 0x64c5 0x64cf lista_64C5 lista del cargador de tiles (0x4CCD): 0 registros de 6 B y 3 ordenes, sin registros propios; la usa sublista de 0x63e5
+F 0x64c5 3,3,3,1
+D 0x64cf 0x6500 lista_64CF lista del cargador de tiles (0x4CCD): 5 registros de 6 B y 6 ordenes, tiles 4-46; la usa sublista de 0x6370
+F 0x64cf 6,6,3,3,3,6,6,6,3,3,3,1
+D 0x6500 0x6513 lista_6500 lista del cargador de tiles (0x4CCD): 3 registros de 6 B, tiles 1-14; la usa sublista de 0x639a
+F 0x6500 6,6,6,1
+D 0x6513 0x6529 lista_6513 lista del cargador de tiles (0x4CCD): 3 registros de 6 B y 1 ordenes, tiles 3-14; la usa sublista de 0x70bb
+F 0x6513 6,6,6,3,1
+D 0x6529 0x653f lista_6529 lista del cargador de tiles (0x4CCD): 3 registros de 6 B y 1 ordenes, tiles 3-14; la usa sublista de 0x7101
+F 0x6529 6,6,6,3,1
+D 0x653f 0x6552 lista_653F lista del cargador de tiles (0x4CCD): 3 registros de 6 B, tiles 1-14; la usa sublista de 0x72fc
+F 0x653f 6,6,6,1
+D 0x6552 0x6568 lista_6552 lista del cargador de tiles (0x4CCD): 3 registros de 6 B y 1 ordenes, tiles 3-14; la usa sublista de 0x7226
+F 0x6552 6,6,6,3,1
+D 0x6568 0x657b lista_6568 lista del cargador de tiles (0x4CCD): 3 registros de 6 B, tiles 1-14; la usa sublista de 0x7388
+F 0x6568 6,6,6,1
+D 0x657b 0x6585 lista_657B lista del cargador de tiles (0x4CCD): 0 registros de 6 B y 3 ordenes, sin registros propios; la usa sublista de 0x639a
+F 0x657b 3,3,3,1
+D 0x6585 0x6598 lista_6585 lista del cargador de tiles (0x4CCD): 3 registros de 6 B, tiles 15-30; la usa sublista de 0x7101
+F 0x6585 6,6,6,1
+D 0x6598 0x65ab lista_6598 lista del cargador de tiles (0x4CCD): 3 registros de 6 B, tiles 15-30; la usa sublista de 0x714a
+F 0x6598 6,6,6,1
+D 0x65ab 0x65be lista_65AB lista del cargador de tiles (0x4CCD): 3 registros de 6 B, tiles 15-30; la usa sublista de 0x7226
+F 0x65ab 6,6,6,1
+D 0x65be 0x65d4 lista_65BE lista del cargador de tiles (0x4CCD): 3 registros de 6 B y 1 ordenes, tiles 17-30; la usa sublista de 0x733c
+F 0x65be 6,6,6,3,1
+D 0x65d4 0x6605 lista_65D4 lista del cargador de tiles (0x4CCD): 6 registros de 6 B y 4 ordenes, tiles 31-34; la usa sublista de 0x639a
+F 0x65d4 3,3,3,3,6,6,6,6,6,6,1
+D 0x6605 0x6642 lista_6605 lista del cargador de tiles (0x4CCD): 10 registros de 6 B, tiles 31-40; la usa sublista de 0x70bb
+F 0x6605 6,6,6,6,6,6,6,6,6,6,1
+D 0x6642 0x6673 lista_6642 lista del cargador de tiles (0x4CCD): 6 registros de 6 B y 4 ordenes, tiles 31-34; la usa sublista de 0x7101
+F 0x6642 3,3,3,3,6,6,6,6,6,6,1
+D 0x6673 0x66b0 lista_6673 lista del cargador de tiles (0x4CCD): 10 registros de 6 B, tiles 31-40; la usa sublista de 0x714a
+F 0x6673 6,6,6,6,6,6,6,6,6,6,1
+D 0x66b0 0x66e1 lista_66B0 lista del cargador de tiles (0x4CCD): 6 registros de 6 B y 4 ordenes, tiles 31-34; la usa sublista de 0x7226
+F 0x66b0 3,3,3,3,6,6,6,6,6,6,1
+D 0x66e1 0x671e lista_66E1 lista del cargador de tiles (0x4CCD): 10 registros de 6 B, tiles 31-40; la usa sublista de 0x72fc
+F 0x66e1 6,6,6,6,6,6,6,6,6,6,1
+D 0x671e 0x6743 lista_671E lista del cargador de tiles (0x4CCD): 6 registros de 6 B, tiles 44-58; la usa sublista de 0x639a
+F 0x671e 6,6,6,6,6,6,1
+D 0x6743 0x6768 lista_6743 lista del cargador de tiles (0x4CCD): 6 registros de 6 B, tiles 44-58; la usa sublista de 0x70bb
+F 0x6743 6,6,6,6,6,6,1
+D 0x6768 0x678d lista_6768 lista del cargador de tiles (0x4CCD): 6 registros de 6 B, tiles 44-58; la usa sublista de 0x7101
+F 0x6768 6,6,6,6,6,6,1
+D 0x678d 0x67b2 lista_678D lista del cargador de tiles (0x4CCD): 6 registros de 6 B, tiles 44-58; la usa sublista de 0x7226
+F 0x678d 6,6,6,6,6,6,1
+D 0x67b2 0x67d7 lista_67B2 lista del cargador de tiles (0x4CCD): 6 registros de 6 B, tiles 44-58; la usa sublista de 0x72fc
+F 0x67b2 6,6,6,6,6,6,1
+D 0x67d7 0x67ea lista_67D7 lista del cargador de tiles (0x4CCD): 0 registros de 6 B y 6 ordenes, sin registros propios; la usa sublista de 0x639a
+F 0x67d7 3,3,3,3,3,3,1
+D 0x67ea 0x680f lista_67EA lista del cargador de tiles (0x4CCD): 6 registros de 6 B, tiles 62-73; la usa sublista de 0x7101
+F 0x67ea 6,6,6,6,6,6,1
+D 0x680f 0x6834 lista_680F lista del cargador de tiles (0x4CCD): 6 registros de 6 B, tiles 62-73; la usa sublista de 0x714a
+F 0x680f 6,6,6,6,6,6,1
+D 0x6834 0x6859 lista_6834 lista del cargador de tiles (0x4CCD): 6 registros de 6 B, tiles 62-73; la usa sublista de 0x7388
+F 0x6834 6,6,6,6,6,6,1
+D 0x6859 0x687e lista_6859 lista del cargador de tiles (0x4CCD): 6 registros de 6 B, tiles 62-73; la usa sublista de 0x7281
+F 0x6859 6,6,6,6,6,6,1
+D 0x687f 0x6886 lista_687F lista del cargador de tiles (0x4CCD): 0 registros de 6 B y 2 ordenes, sin registros propios; la usa sublista de 0x639a
+F 0x687f 3,3,1
+D 0x6886 0x6893 lista_6886 lista del cargador de tiles (0x4CCD): 0 registros de 6 B y 4 ordenes, sin registros propios; la usa sublista de 0x7101
+F 0x6886 3,3,3,3,1
+D 0x6893 0x68a0 lista_6893 lista del cargador de tiles (0x4CCD): 0 registros de 6 B y 4 ordenes, sin registros propios; la usa sublista de 0x7226
+F 0x6893 3,3,3,3,1
+D 0x68a0 0x68b9 lista_68A0 lista del cargador de tiles (0x4CCD): 0 registros de 6 B y 8 ordenes, sin registros propios; la usa sublista de 0x639a
+F 0x68a0 3,3,3,3,3,3,3,3,1
+D 0x68b9 0x68cf lista_68B9 lista del cargador de tiles (0x4CCD): 3 registros de 6 B y 1 ordenes, tiles 86-96; la usa sublista de 0x7101
+F 0x68b9 6,6,3,6,1
+D 0x68cf 0x68e5 lista_68CF lista del cargador de tiles (0x4CCD): 3 registros de 6 B y 1 ordenes, tiles 86-96; la usa sublista de 0x7226
+F 0x68cf 6,6,3,6,1
+D 0x68e5 0x6922 lista_68E5 lista del cargador de tiles (0x4CCD): 10 registros de 6 B, tiles 107-174; la usa sublista de 0x639a
+F 0x68e5 6,6,6,6,6,6,6,6,6,6,1
+D 0x6922 0x695f lista_6922 lista del cargador de tiles (0x4CCD): 10 registros de 6 B, tiles 107-174; la usa sublista de 0x7101
+F 0x6922 6,6,6,6,6,6,6,6,6,6,1
+D 0x695f 0x699c lista_695F lista del cargador de tiles (0x4CCD): 10 registros de 6 B, tiles 107-174; la usa sublista de 0x7226
+F 0x695f 6,6,6,6,6,6,6,6,6,6,1
+D 0x699c 0x69d9 lista_699C lista del cargador de tiles (0x4CCD): 10 registros de 6 B, tiles 107-174; la usa sublista de 0x72fc
+F 0x699c 6,6,6,6,6,6,6,6,6,6,1
+D 0x69d9 0x6a16 lista_69D9 lista del cargador de tiles (0x4CCD): 10 registros de 6 B, tiles 107-174; la usa sublista de 0x7388
+F 0x69d9 6,6,6,6,6,6,6,6,6,6,1
+D 0x6a16 0x6a26 lista_6A16 lista del cargador de tiles (0x4CCD): 0 registros de 6 B y 5 ordenes, sin registros propios; la usa sublista de 0x639a
+F 0x6a16 3,3,3,3,3,1
+D 0x6a26 0x6a36 lista_6A26 lista del cargador de tiles (0x4CCD): 1 registros de 6 B y 3 ordenes, tiles 194-194; la usa sublista de 0x639a
+F 0x6a26 3,3,6,3,1
+D 0x6a36 0x6a49 lista_6A36 lista del cargador de tiles (0x4CCD): 2 registros de 6 B y 2 ordenes, tiles 181-194; la usa sublista de 0x70bb
+F 0x6a36 3,3,6,6,1
+D 0x6a49 0x6a5c lista_6A49 lista del cargador de tiles (0x4CCD): 2 registros de 6 B y 2 ordenes, tiles 181-194; la usa sublista de 0x72fc
+F 0x6a49 3,3,6,6,1
+D 0x6a5c 0x6a6f lista_6A5C lista del cargador de tiles (0x4CCD): 2 registros de 6 B y 2 ordenes, tiles 181-194; la usa sublista de 0x714a
+F 0x6a5c 3,3,6,6,1
+D 0x6a6f 0x6a82 lista_6A6F lista del cargador de tiles (0x4CCD): 2 registros de 6 B y 2 ordenes, tiles 181-194; la usa sublista de 0x7226
+F 0x6a6f 3,3,6,6,1
+D 0x6a82 0x6a95 lista_6A82 lista del cargador de tiles (0x4CCD): 2 registros de 6 B y 2 ordenes, tiles 181-194; la usa sublista de 0x7281
+F 0x6a82 3,3,6,6,1
+D 0x6a95 0x6aa8 lista_6A95 lista del cargador de tiles (0x4CCD): 0 registros de 6 B y 6 ordenes, sin registros propios; la usa sublista de 0x639a
+F 0x6a95 3,3,3,3,3,3,1
+D 0x6aa8 0x6b21 lista_6AA8 lista del cargador de tiles (0x4CCD): 13 registros de 6 B y 14 ordenes, tiles 97-197; la usa sublista de 0x63e5
+F 0x6aa8 3,3,3,3,6,6,6,6,6,6,6,6,6,6,3,3,3,3,3,3,3,3,3,3,6,6,6,1
+D 0x6b21 0x6b4f lista_6B21 lista del cargador de tiles (0x4CCD): 0 registros de 6 B y 15 ordenes, sin registros propios; la usa sublista de 0x63e5
+F 0x6b21 3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1
+D 0x6b4f 0x6b59 lista_6B4F lista del cargador de tiles (0x4CCD): 0 registros de 6 B y 3 ordenes, sin registros propios; la usa sublista de 0x63e5
+F 0x6b4f 3,3,3,1
+D 0x6b59 0x6b6c lista_6B59 lista del cargador de tiles (0x4CCD): 3 registros de 6 B, tiles 55-59; la usa sublista de 0x63e5
+F 0x6b59 6,6,6,1
+D 0x6b6c 0x6b85 lista_6B6C lista del cargador de tiles (0x4CCD): 1 registros de 6 B y 6 ordenes, tiles 55-57; la usa sublista de 0x63e5
+F 0x6b6c 6,3,3,3,3,3,3,1
+D 0x6b85 0x6b98 lista_6B85 lista del cargador de tiles (0x4CCD): 3 registros de 6 B, tiles 35-42; la usa sublista de 0x63e5
+F 0x6b85 6,6,6,1
+D 0x6b98 0x6bbd lista_6B98 lista del cargador de tiles (0x4CCD): 6 registros de 6 B, tiles 1-18; la usa sublista de 0x63e5
+F 0x6b98 6,6,6,6,6,6,1
+D 0x6bbd 0x6c36 lista_6BBD lista del cargador de tiles (0x4CCD): 20 registros de 6 B, tiles 210-255; la usa p00 0x4C19/0x4C5E
+F 0x6bbd 6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,1
+D 0x6c36 0x6c55 lista_6C36 lista del cargador de tiles (0x4CCD): 5 registros de 6 B, tiles 212-255; la usa p00 0x4C31/0x4C84
+F 0x6c36 6,6,6,6,6,1
+D 0x6c55 0x6c62 lista_6C55 lista del cargador de tiles (0x4CCD): 2 registros de 6 B, tiles 250-255; la usa tabla_4C37[3]
+F 0x6c55 6,6,1
+D 0x6c62 0x6c6f lista_6C62 lista del cargador de tiles (0x4CCD): 2 registros de 6 B, tiles 250-255; la usa tabla_4C37[2]
+F 0x6c62 6,6,1
+D 0x6c6f 0x6c7c lista_6C6F lista del cargador de tiles (0x4CCD): 2 registros de 6 B, tiles 250-255; la usa tabla_4C37[0]
+F 0x6c6f 6,6,1
+D 0x6c7c 0x6cd1 lista_6C7C lista del cargador de tiles (0x4CCD): 14 registros de 6 B, tiles 218-251; la usa p00 0x4C1F/0x4C67, p01 0x6348
+F 0x6c7c 6,6,6,6,6,6,6,6,6,6,6,6,6,6,1
+D 0x6cd1 0x6cff lista_6CD1 lista del cargador de tiles (0x4CCD): 7 registros de 6 B y 1 ordenes, tiles 1-254; la usa p01 0x6815
+F 0x6cd1 6,6,6,6,6,6,3,6,1
+D 0x6d00 0x6d34 lista_6D00 lista del cargador de tiles (0x4CCD): 8 registros de 6 B y 1 ordenes, tiles 1-66; la usa p02 0x9272
+F 0x6d00 6,6,6,6,6,6,6,6,3,1
+D 0x6d34 0x6d6b lista_6D34 lista del cargador de tiles (0x4CCD): 3 registros de 6 B y 12 ordenes, tiles 64-237; la usa p00 0x5CDB
+F 0x6d34 6,6,3,3,3,3,3,3,3,3,3,3,3,3,6,1
+D 0x6d6b 0x6dae lista_6D6B lista del cargador de tiles (0x4CCD): 11 registros de 6 B, tiles 0-138; la usa p01 0x6342
+F 0x6d6b 6,6,6,6,6,6,6,6,6,6,6,1
+D 0x6dae 0x6db5 lista_6DAE lista del cargador de tiles (0x4CCD): 1 registros de 6 B, tiles 255-255; la usa p02 0x8264
+F 0x6dae 6,1
+D 0x6db5 0x6dbc lista_6DB5 lista del cargador de tiles (0x4CCD): 1 registros de 6 B, tiles 16-58; la usa p02 0x823B/0x8367
+F 0x6db5 6,1
+D 0x6dbc 0x6dc3 lista_6DBC lista del cargador de tiles (0x4CCD): 1 registros de 6 B, tiles 1-44; la usa p02 0x8241
+F 0x6dbc 6,1
+D 0x6dc3 0x6dd6 lista_6DC3 lista del cargador de tiles (0x4CCD): 3 registros de 6 B, tiles 45-82; la usa p02 0x82CF (por 0x8390 -> 0x4C93)
+F 0x6dc3 6,6,6,1
+D 0x6dd6 0x6de3 lista_6DD6 lista del cargador de tiles (0x4CCD): 2 registros de 6 B, tiles 80-218; la usa p02 0x829E (por 0x8390 -> 0x4C93)
+F 0x6dd6 6,6,1
+D 0x6de3 0x6dea lista_6DE3 lista del cargador de tiles (0x4CCD): 1 registros de 6 B, tiles 150-221; la usa p02 0x82E9 (por 0x8390 -> 0x4C93)
+F 0x6de3 6,1
+D 0x6dea 0x6e06 lista_6DEA lista del cargador de tiles (0x4CCD): 4 registros de 6 B y 1 ordenes, tiles 1-140; la usa p01 0x7CDC
+F 0x6dea 6,3,6,6,6,1
+D 0x6e06 0x6e0d lista_6E06 lista del cargador de tiles (0x4CCD): 1 registros de 6 B, tiles 5-5; la usa p01 0x6D25
+F 0x6e06 6,1
+D 0x6e0d 0x6e14 lista_6E0D lista del cargador de tiles (0x4CCD): 1 registros de 6 B, tiles 10-15; la usa p01 0x6781
+F 0x6e0d 6,1
+D 0x6e14 0x6e4b lista_6E14 lista del cargador de tiles (0x4CCD): 9 registros de 6 B, tiles 64-234; la usa tabla_BD0F[5]
+F 0x6e14 6,6,6,6,6,6,6,6,6,1
+D 0x6e4b 0x6e82 lista_6E4B lista del cargador de tiles (0x4CCD): 9 registros de 6 B, tiles 64-222; la usa tabla_BD0F[4]
+F 0x6e4b 6,6,6,6,6,6,6,6,6,1
+D 0x6e82 0x6eb9 lista_6E82 lista del cargador de tiles (0x4CCD): 9 registros de 6 B, tiles 64-204; la usa tabla_BD0F[3]
+F 0x6e82 6,6,6,6,6,6,6,6,6,1
+D 0x6eb9 0x6ef0 lista_6EB9 lista del cargador de tiles (0x4CCD): 9 registros de 6 B, tiles 64-211; la usa tabla_BD0F[2]
+F 0x6eb9 6,6,6,6,6,6,6,6,6,1
+D 0x6ef0 0x6f39 lista_6EF0 lista del cargador de tiles (0x4CCD): 12 registros de 6 B, tiles 64-215; la usa tabla_BD0F[1]
+F 0x6ef0 6,6,6,6,6,6,6,6,6,6,6,6,1
+D 0x6f39 0x6f70 lista_6F39 lista del cargador de tiles (0x4CCD): 9 registros de 6 B, tiles 64-218; la usa tabla_BD0F[0]
+F 0x6f39 6,6,6,6,6,6,6,6,6,1
+D 0x6f70 0x6f95 lista_6F70 lista del cargador de tiles (0x4CCD): 6 registros de 6 B, tiles 64-154; la usa tabla_BD03[1]
+F 0x6f70 6,6,6,6,6,6,1
+D 0x6f95 0x6fcc lista_6F95 lista del cargador de tiles (0x4CCD): 9 registros de 6 B, tiles 64-121; la usa tabla_BD03[3]
+F 0x6f95 6,6,6,6,6,6,6,6,6,1
+D 0x6fcc 0x7009 lista_6FCC lista del cargador de tiles (0x4CCD): 10 registros de 6 B, tiles 64-142; la usa tabla_BD03[4]
+F 0x6fcc 6,6,6,6,6,6,6,6,6,6,1
+D 0x7009 0x7010 lista_7009 lista del cargador de tiles (0x4CCD): 1 registros de 6 B, tiles 64-101; la usa tabla_BD03[5]
+F 0x7009 6,1
+D 0x7010 0x7029 lista_7010 lista del cargador de tiles (0x4CCD): 4 registros de 6 B, tiles 67-136; la usa tabla_927E[1]
+F 0x7010 6,6,6,6,1
+D 0x7029 0x7042 lista_7029 lista del cargador de tiles (0x4CCD): 4 registros de 6 B, tiles 67-136; la usa tabla_927E[0]
+F 0x7029 6,6,6,6,1
+D 0x7042 0x705b lista_7042 lista del cargador de tiles (0x4CCD): 4 registros de 6 B, tiles 67-136; la usa tabla_927E[2]
+F 0x7042 6,6,6,6,1
+D 0x705b 0x7074 lista_705B lista del cargador de tiles (0x4CCD): 4 registros de 6 B, tiles 67-136; la usa tabla_927E[3]
+F 0x705b 6,6,6,6,1
+D 0x7074 0x708d lista_7074 lista del cargador de tiles (0x4CCD): 4 registros de 6 B, tiles 67-136; la usa tabla_927E[4]
+F 0x7074 6,6,6,6,1
+D 0x708d 0x70a6 lista_708D lista del cargador de tiles (0x4CCD): 4 registros de 6 B, tiles 67-136; la usa tabla_927E[5]
+F 0x708d 6,6,6,6,1
+D 0x70a6 0x70bb lista_70A6 lista del cargador de tiles (0x4CCD): 0 registros de 6 B y 2 ordenes, sin registros propios; la usa sublista de 0x70bb
+F 0x70a6 17,3,1
+D 0x70bb 0x70cd lista_70BB lista del cargador de tiles (0x4CCD): 4 registros de 6 B y 15 ordenes, tiles 59-194; la usa tabla_61A9[5]; sigue en la lista de 0x70cd
+F 0x70bb 3,3,3,3,6,3,6,3,3,3,6,3,3,6,3,3,3,3,3,1
+D 0x70cd 0x7101 lista_70CD lista del cargador de tiles (0x4CCD): 3 registros de 6 B y 11 ordenes, tiles 59-106; la usa tabla_61A9[26]
+F 0x70cd 3,6,3,3,3,6,3,3,6,3,3,3,3,3,1
+D 0x7101 0x7113 lista_7101 lista del cargador de tiles (0x4CCD): 5 registros de 6 B y 14 ordenes, tiles 59-180; la usa tabla_61A9[6]; sigue en la lista de 0x7113
+F 0x7101 3,3,3,3,6,3,6,6,6,3,3,3,3,6,3,3,3,3,3,1
+D 0x7113 0x714a lista_7113 lista del cargador de tiles (0x4CCD): 4 registros de 6 B y 10 ordenes, tiles 59-106; la usa tabla_61A9[27]
+F 0x7113 3,6,6,6,3,3,3,3,6,3,3,3,3,3,1
+D 0x714a 0x7156 lista_714A lista del cargador de tiles (0x4CCD): 3 registros de 6 B y 15 ordenes, tiles 59-106; la usa tabla_61A9[7]; sigue en la lista de 0x7156
+F 0x714a 3,3,3,3,3,6,3,3,3,6,3,3,6,3,3,3,3,3,1
+D 0x7156 0x718a lista_7156 lista del cargador de tiles (0x4CCD): 3 registros de 6 B y 11 ordenes, tiles 59-106; la usa tabla_61A9[28]
+F 0x7156 3,6,3,3,3,6,3,3,6,3,3,3,3,3,1
+D 0x718a 0x719e lista_718A lista del cargador de tiles (0x4CCD): 3 registros de 6 B y 7 ordenes, tiles 35-99; la usa tabla_61A9[8]; sigue en la lista de 0x719e
+F 0x718a 17,3,3,6,6,3,3,3,3,6,1
+D 0x719e 0x71c0 lista_719E lista del cargador de tiles (0x4CCD): 3 registros de 6 B y 5 ordenes, tiles 35-99; la usa tabla_61A9[29]
+F 0x719e 3,6,6,3,3,3,3,6,1
+D 0x71c0 0x71d4 lista_71C0 lista del cargador de tiles (0x4CCD): 9 registros de 6 B y 11 ordenes, tiles 1-18; la usa tabla_61A9[9]; sigue en la lista de 0x71d4
+F 0x71c0 17,3,3,3,3,3,3,3,3,3,3,6,6,6,6,6,6,6,6,6,1
+D 0x71d4 0x7226 lista_71D4 lista del cargador de tiles (0x4CCD): 9 registros de 6 B y 9 ordenes, tiles 1-18; la usa tabla_61A9[30]
+F 0x71d4 3,3,3,3,3,3,3,3,3,6,6,6,6,6,6,6,6,6,1
+D 0x7226 0x7238 lista_7226 lista del cargador de tiles (0x4CCD): 6 registros de 6 B y 18 ordenes, tiles 59-180; la usa tabla_61A9[10]; sigue en la lista de 0x7238
+F 0x7226 3,3,3,3,6,3,6,6,6,3,6,3,3,3,3,3,3,3,6,3,3,3,3,3,1
+D 0x7238 0x7281 lista_7238 lista del cargador de tiles (0x4CCD): 5 registros de 6 B y 14 ordenes, tiles 59-106; la usa tabla_61A9[31]
+F 0x7238 3,6,6,6,3,6,3,3,3,3,3,3,3,6,3,3,3,3,3,1
+D 0x7281 0x72aa lista_7281 lista del cargador de tiles (0x4CCD): 11 registros de 6 B y 14 ordenes, tiles 59-194; la usa tabla_61A9[11]; sigue en la lista de 0x72aa
+F 0x7281 17,3,3,3,3,6,6,3,6,3,6,6,6,6,6,6,6,3,3,6,3,3,3,3,3,1
+D 0x72aa 0x72fc lista_72AA lista del cargador de tiles (0x4CCD): 9 registros de 6 B y 9 ordenes, tiles 59-106; la usa tabla_61A9[32]
+F 0x72aa 3,6,3,6,6,6,6,6,6,6,3,3,6,3,3,3,3,3,1
+D 0x72fc 0x730b lista_72FC lista del cargador de tiles (0x4CCD): 2 registros de 6 B y 17 ordenes, tiles 59-82; la usa tabla_61A9[12]; sigue en la lista de 0x730b
+F 0x72fc 3,3,3,3,3,3,3,3,3,3,6,3,3,6,3,3,3,3,3,1
+D 0x730b 0x733c lista_730B lista del cargador de tiles (0x4CCD): 2 registros de 6 B y 12 ordenes, tiles 59-82; la usa tabla_61A9[33]
+F 0x730b 3,3,3,3,3,6,3,3,6,3,3,3,3,3,1
+D 0x733c 0x7354 lista_733C lista del cargador de tiles (0x4CCD): 5 registros de 6 B y 15 ordenes, tiles 59-194; la usa tabla_61A9[13]; sigue en la lista de 0x7354
+F 0x733c 3,3,3,3,6,6,3,6,3,3,3,6,3,3,6,3,3,3,3,3,1
+D 0x7354 0x7388 lista_7354 lista del cargador de tiles (0x4CCD): 3 registros de 6 B y 11 ordenes, tiles 59-106; la usa tabla_61A9[34]
+F 0x7354 3,6,3,3,3,6,3,3,6,3,3,3,3,3,1
+D 0x7388 0x73b8 lista_7388 lista del cargador de tiles (0x4CCD): 7 registros de 6 B y 26 ordenes, tiles 59-194; la usa tabla_61A9[19]; sigue en la lista de 0x73b8
+F 0x7388 3,3,6,6,6,3,3,3,3,3,3,3,3,3,3,6,6,6,3,3,3,3,3,3,3,3,6,3,3,3,3,3,3,1
+D 0x73b8 0x7401 lista_73B8 lista del cargador de tiles (0x4CCD): 4 registros de 6 B y 16 ordenes, tiles 59-106; la usa tabla_61A9[40]
+F 0x73b8 3,3,6,6,6,3,3,3,3,3,3,3,3,6,3,3,3,3,3,3,1
+D 0x7401 0x7415 lista_7401 lista del cargador de tiles (0x4CCD): 2 registros de 6 B y 7 ordenes, tiles 94-99; la usa tabla_61A9[20]; sigue en la lista de 0x7415
+F 0x7401 17,3,3,6,6,3,3,3,3,1
+D 0x7415 0x7431 lista_7415 lista del cargador de tiles (0x4CCD): 2 registros de 6 B y 5 ordenes, tiles 94-99; la usa tabla_61A9[41]
+F 0x7415 3,6,6,3,3,3,3,1
+D 0x7431 0x745b tabla_7431 21 punteros al juego de fotogramas de cada tipo de coche (ix+0x18), para FOTOGRAMA_COCHE (0x46C5)
+F 0x7431 w1
+D 0x745b 0x7481 tabla_745B 19 punteros al juego de fotogramas de cada tipo de coche (ix+0x18), para FOTOGRAMA_COCHE_40 (0x4744)
+F 0x745b w1
+D 0x7481 0x74a5 tabla_listas_sprites 18 punteros a listas del cargador de sprites, 3 por categoria (E25B); CARGA_SPRITES_CARRERA (0x4EDC) lee el primero de cada tres
+F 0x7481 w3
+D 0x74a5 0x74ba sprites_74A5 lista del cargador de sprites (0x4F1A): 10 pares (recurso, patron) y 0xFF; la usa p00 0x4ECA
+F 0x74a5 2
+D 0x74ba 0x74bf sprites_74BA lista del cargador de sprites (0x4F1A): 2 pares (recurso, patron) y 0xFF; la usa tabla_7481[0]
+F 0x74ba 2
+D 0x74c0 0x74c7 sprites_74C0 lista del cargador de sprites (0x4F1A): 3 pares (recurso, patron) y 0xFF; la usa tabla_7481[6]
+F 0x74c0 2
+D 0x74c7 0x74ce sprites_74C7 lista del cargador de sprites (0x4F1A): 3 pares (recurso, patron) y 0xFF; la usa tabla_7481[3]
+F 0x74c7 2
+D 0x74ce 0x74d3 sprites_74CE lista del cargador de sprites (0x4F1A): 2 pares (recurso, patron) y 0xFF; la usa tabla_7481[9]
+F 0x74ce 2
+D 0x74d3 0x74d8 sprites_74D3 lista del cargador de sprites (0x4F1A): 2 pares (recurso, patron) y 0xFF; la usa tabla_7481[10]
+F 0x74d3 2
+D 0x74d8 0x74dd sprites_74D8 lista del cargador de sprites (0x4F1A): 2 pares (recurso, patron) y 0xFF; la usa tabla_7481[11]
+F 0x74d8 2
+D 0x74dd 0x74e2 sprites_74DD lista del cargador de sprites (0x4F1A): 2 pares (recurso, patron) y 0xFF; la usa tabla_7481[12]
+F 0x74dd 2
+D 0x74e2 0x74e7 sprites_74E2 lista del cargador de sprites (0x4F1A): 2 pares (recurso, patron) y 0xFF; la usa tabla_7481[13]
+F 0x74e2 2
+D 0x74e7 0x74ec sprites_74E7 lista del cargador de sprites (0x4F1A): 2 pares (recurso, patron) y 0xFF; la usa tabla_7481[14]
+F 0x74e7 2
+D 0x74ec 0x74ef sprites_74EC lista del cargador de sprites (0x4F1A): 1 pares (recurso, patron) y 0xFF; la usa p00 0x4F8B
+F 0x74ec 2
+D 0x74ef 0x74f2 sprites_74EF lista del cargador de sprites (0x4F1A): 1 pares (recurso, patron) y 0xFF; la usa p01 0x6354
+F 0x74ef 2
+D 0x74f2 0x74f5 sprites_74F2 lista del cargador de sprites (0x4F1A): 1 pares (recurso, patron) y 0xFF; la usa p00 0x5961
+F 0x74f2 2
+D 0x74f5 0x7502 sprites_74F5 lista del cargador de sprites (0x4F1A): 6 pares (recurso, patron) y 0xFF; la usa ningun llamador en el codigo trazado (es la unica lista que pide los recursos 27-32, los fotogramas sueltos)
+F 0x74f5 2
+D 0x7502 0x7505 sprites_7502 lista del cargador de sprites (0x4F1A): 1 pares (recurso, patron) y 0xFF; la usa p02 0x8247
+F 0x7502 2
+D 0x7505 0x75d1 tabla_recursos_sprites 34 recursos de sprites de 6 B (clase en EB40, tipo 0 = RLE / 2 = copia / 1 y FF = nada, origen, longitud) para CARGA_RECURSO_SPRITE (0x4F28)
+F 0x7505 6
+D 0x75d1 0x7631 tiles_coche 6 parejas de tiles (16 B) que TILES_COCHE (0x4701) copia a los patrones 0x2670/0x2680 segun (ix-3) = 1..6
+F 0x75d1 16
+D 0x7631 0x7634 rle_pat_7631 patrones RLE: 2 tiles desde el 208 (lista 0x6211)
+F 0x7631 16
+D 0x7634 0x7637 rle_pat_7634 patrones RLE: 2 tiles desde el 208 (lista 0x61fd)
+F 0x7634 16
+D 0x7637 0x763a rle_col_7637 colores RLE: 4 tiles desde el 252 (lista 0x620a)
+F 0x7637 16
+D 0x763a 0x763d rle_pat_763A patrones RLE: 4 tiles desde el 252 (lista 0x620a)
+F 0x763a 16
+D 0x763d 0x7642 rle_pat_763D patrones RLE: 1 tiles desde el 5 (lista 0x6e06)
+F 0x763d 16
+D 0x7642 0x7645 rle_col_7642 colores RLE: 1 tiles desde el 5 (lista 0x6e06)
+F 0x7642 16
+D 0x76c5 0x7731 rle_sprites_76C5 patrones de sprites RLE (0x4862): 10 sprites de 16x16; recurso 33 de la tabla 0x7505
+F 0x76c5 16
+D 0x7731 0x79b1 fotogramas_7731 juego de 10 fotogramas de coche (64 B = 2 sprites de 16x16, media fila = 16 B); lo usan recurso_sprite[1], recurso_sprite[2], recurso_sprite[3], tabla_7431[12], tabla_7431[13], tabla_7431[14], tabla_7431[15], tabla_7431[16], tabla_7431[17]
+F 0x7731 16
+D 0x79b1 0x7af1 fotogramas_79B1 juego de 5 fotogramas de coche (64 B = 2 sprites de 16x16, media fila = 16 B); lo usan tabla_745B[12], tabla_745B[13], tabla_745B[14], tabla_745B[15], tabla_745B[16], tabla_745B[17]
+F 0x79b1 16
+D 0x7af1 0x7d71 fotogramas_7AF1 juego de 10 fotogramas de coche (64 B = 2 sprites de 16x16, media fila = 16 B); lo usan recurso_sprite[4], recurso_sprite[5], recurso_sprite[6], tabla_7431[10], tabla_7431[11], tabla_7431[9]
+F 0x7af1 16
+D 0x7d71 0x7eb1 fotogramas_7D71 juego de 5 fotogramas de coche (64 B = 2 sprites de 16x16, media fila = 16 B); lo usan tabla_745B[10], tabla_745B[11], tabla_745B[9]
+F 0x7d71 16
+D 0x7eb1 0x7ff1 fotogramas_7EB1 juego de 5 fotogramas de coche (64 B = 2 sprites de 16x16, media fila = 16 B); lo usan recurso_sprite[7], recurso_sprite[8], tabla_7431[6], tabla_7431[7]
+F 0x7eb1 16
+D 0x7ff1 0x8000 fotogramas_7FF1 juego de 5 fotogramas de coche (64 B = 2 sprites de 16x16, media fila = 16 B); lo usan recurso_sprite[9], tabla_7431[8]
+F 0x7ff1 16
+# --- fin de los bloques de graficos.py ---
+
+D 0x7645 0x76c5 patrones_7645 16 patrones de tile de 8 bytes SIN comprimir (los demas graficos del cartucho van en RLE): dibujan una figura de dos mitades simetricas. Quien los carga, por identificar
+F 0x7645 8
+
+# --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
+D 0x687e 0x687f pendiente_de_trazar Sin trazar ni identificar todavia (1 bytes)
+D 0x6cff 0x6d00 pendiente_de_trazar Sin trazar ni identificar todavia (1 bytes)
+D 0x74bf 0x74c0 pendiente_de_trazar Sin trazar ni identificar todavia (1 bytes)
+# --- fin de la seccion pendiente ---

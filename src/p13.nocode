@@ -1,0 +1,5 @@
+# Zonas de la pagina 13 (org 0x6000) que el trazador NO debe leer como codigo:
+# tablas de palabras detras de un `call` del despachador, graficos alcanzados
+# por un salto muerto... Cada una con su explicacion.
+0x6868 0x68A6   tabla de 31 palabras del interprete de la partitura (jp (hl) en 0x6867)
+0x6120 0x61AC   punteros a las cabeceras de los sonidos 1..70 (`ld hl,611Eh` en 0x6019 apunta dos bytes antes: la entrada 0 son los bytes 2D C9 de `ld c,2Dh / ret` en 0x611E-0x611F, el sonido 0 no existe)

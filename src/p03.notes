@@ -1,0 +1,136 @@
+# Anotaciones de F-1 Spirit (Konami, 1987, RC-752): pagina 3 de 16, que el
+# mapper pone en 0xA000-0xBFFF (es la tercera del grupo 1/2/3 con el que
+# arranca el juego). Lo unico trazado: el estado 0 del juego llama aqui.
+#
+# Directivas: L, C, B, D, F como en el resto. Sin acentos a proposito.
+
+L 0xBE14 PANTALLA_INICIAL   estado 0/0: borra nombres (0x3800) y patrones, descomprime 0xBE8A con 0x485C (pagina 0) y pinta 6 filas de 21 tiles desde el 0x40 en 0x3907
+L 0xBE56 PANTALLA_INICIAL_2 estado 0/1: escribe 21 patrones (0xF0) por fila a partir de 0x0A00 + 8*(...); cuenta E1D0 y devuelve NZ hasta la sexta
+
+# --- BLOQUES IDENTIFICADOS POR tools/graficos.py (los recorre desde la ROM como hace el cargador de la pagina 0 y los
+# verifica: RLE que termina, patrones y colores de la misma longitud,
+# alineacion de los fotogramas). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0xbd03 0xbd0f tabla_BD03 6 punteros por (E251) a listas del cargador de tiles (las entradas 0 y 2 apuntan a la tabla 0xBD0F, que se indexa otra vez por (E25B)); p01 0x6787
+F 0xbd03 w1
+D 0xbd0f 0xbd1b tabla_BD0F 6 punteros a listas del cargador de tiles; por (E25B) desde las entradas 0 y 2 de la tabla 0xBD03 (p01 0x6799)
+F 0xbd0f w1
+# --- fin de los bloques de graficos.py ---
+
+# --- BLOQUES IDENTIFICADOS POR tools/coches.py (la cadena de la eleccion de coche: los coches predefinidos, las listas
+# de valores por categoria y paso, las tablas por carroceria y motor y las
+# curvas de par, cruzadas unas con otras (los valores elegibles tienen que
+# ser exactamente los indices que las tablas admiten)). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0xbb0d 0xbb31 ficha_dibujos_bb0d 18 punteros a dibujo de ficha, 18 en uso: el paso 0/2 de la eleccion, indexado por el valor; p01 0x6644, y p01 0x6657 lo descomprime con la pagina 9 en 0xA000
+F 0xbb0d w1
+D 0xbb31 0xbb79 ficha_dibujos_bb31 36 punteros a dibujo de ficha, 36 en uso: el paso 1 de la eleccion, indexado por el valor; p01 0x6644, y p01 0x6657 lo descomprime con la pagina 9 en 0xA000
+F 0xbb31 w1
+D 0xbb79 0xbb85 ficha_dibujos_bb79 6 punteros a dibujo de ficha, 6 en uso: el paso 3 de la eleccion, indexado por el valor; p01 0x6644, y p01 0x6657 lo descomprime con la pagina 9 en 0xA000
+F 0xbb79 w1
+D 0xbb85 0xbb91 ficha_dibujos_bb85 6 punteros a dibujo de ficha, 6 en uso: el paso 4 de la eleccion, indexado por el valor; p01 0x6644, y p01 0x6657 lo descomprime con la pagina 9 en 0xA000
+F 0xbb85 w1
+D 0xbb91 0xbba3 ficha_dibujos_bb91 9 punteros a dibujo de ficha, 6 en uso: el paso 5 de la eleccion, indexado por el valor (las 3 ultimas repiten las primeras y ningun valor las alcanza); p01 0x6644, y p01 0x6657 lo descomprime con la pagina 9 en 0xA000
+F 0xbb91 w1
+D 0xbbeb 0xbc45 tabla_coches 18 coches predefinidos de 5 bytes (motor, carroceria, (ix+77), (ix+76), (ix+75)|bit7); p01 0x6568 copia a E297/E357 el que se elige en el paso 0
+F 0xbbeb 5
+D 0xbc45 0xbc8d tabla_eleccion 6 categorias (E25B) x 6 punteros (E251) a las listas de valores de abajo; p01 0x676C
+F 0xbc45 w6
+D 0xbc8d 0xbc91 valores_bc8d 3 valores y 0xFF: 00 01 02; los elige el paso 0 de la categoria 0 (RALLY)
+F 0xbc8d 4
+D 0xbc91 0xbc95 valores_bc91 3 valores y 0xFF: 03 04 05; los elige el paso 0 de la categoria 1 (STOCK)
+F 0xbc91 4
+D 0xbc95 0xbc99 valores_bc95 3 valores y 0xFF: 06 07 08; los elige el paso 0 de la categoria 2 (ENDURANCE)
+F 0xbc95 4
+D 0xbc99 0xbc9d valores_bc99 3 valores y 0xFF: 09 0A 0B; los elige el paso 0 de la categoria 3 (F3)
+F 0xbc99 4
+D 0xbc9d 0xbca1 valores_bc9d 3 valores y 0xFF: 0C 0D 0E; los elige el paso 0 de la categoria 4 (F3000)
+F 0xbc9d 4
+D 0xbca1 0xbca5 valores_bca1 3 valores y 0xFF: 0F 10 11; los elige el paso 0 de la categoria 5 (F1)
+F 0xbca1 4
+D 0xbca5 0xbcac valores_bca5 6 valores y 0xFF: 0C 0D 0E 0F 10 11; los elige el paso 1 de la categoria 0 (RALLY)
+F 0xbca5 7
+D 0xbcac 0xbcb3 valores_bcac 6 valores y 0xFF: 06 07 08 09 0A 0B; los elige el paso 1 de la categoria 1 (STOCK)
+F 0xbcac 7
+D 0xbcb3 0xbcba valores_bcb3 6 valores y 0xFF: 00 01 02 03 04 05; los elige el paso 1 de la categoria 2 (ENDURANCE)
+F 0xbcb3 7
+D 0xbcba 0xbcc1 valores_bcba 6 valores y 0xFF: 12 13 14 15 16 17; los elige el paso 1 de la categoria 3 (F3)
+F 0xbcba 7
+D 0xbcc1 0xbcc8 valores_bcc1 6 valores y 0xFF: 18 19 1A 1B 1C 1D; los elige el paso 1 de la categoria 4 (F3000)
+F 0xbcc1 7
+D 0xbcc8 0xbccf valores_bcc8 6 valores y 0xFF: 1E 1F 20 21 22 23; los elige el paso 1 de la categoria 5 (F1)
+F 0xbcc8 7
+D 0xbccf 0xbcd3 valores_bccf 3 valores y 0xFF: 00 01 02; los elige el paso 2 de la categoria 0 (RALLY)
+F 0xbccf 4
+D 0xbcd3 0xbcd7 valores_bcd3 3 valores y 0xFF: 03 04 05; los elige el paso 2 de la categoria 1 (STOCK)
+F 0xbcd3 4
+D 0xbcd7 0xbcdb valores_bcd7 3 valores y 0xFF: 06 07 08; los elige el paso 2 de la categoria 2 (ENDURANCE)
+F 0xbcd7 4
+D 0xbcdb 0xbcdf valores_bcdb 3 valores y 0xFF: 09 0A 0B; los elige el paso 2 de la categoria 3 (F3)
+F 0xbcdb 4
+D 0xbcdf 0xbce3 valores_bcdf 3 valores y 0xFF: 0C 0D 0E; los elige el paso 2 de la categoria 4 (F3000)
+F 0xbcdf 4
+D 0xbce3 0xbce7 valores_bce3 3 valores y 0xFF: 0F 10 11; los elige el paso 2 de la categoria 5 (F1)
+F 0xbce3 4
+D 0xbce7 0xbceb valores_bce7 3 valores y 0xFF: 03 04 05; los elige el paso 3 de la categoria 0 (RALLY)
+F 0xbce7 4
+D 0xbceb 0xbcef valores_bceb 3 valores y 0xFF: 00 01 02; los elige el paso 3 de las categorias 1 STOCK, 2 ENDURANCE, 3 F3, 4 F3000, 5 F1
+F 0xbceb 4
+D 0xbcef 0xbcf3 valores_bcef 3 valores y 0xFF: 00 01 02; los elige el paso 4 de la categoria 0 (RALLY)
+F 0xbcef 4
+D 0xbcf3 0xbcf7 valores_bcf3 3 valores y 0xFF: 03 04 05; los elige el paso 4 de las categorias 1 STOCK, 2 ENDURANCE, 3 F3, 4 F3000, 5 F1
+F 0xbcf3 4
+D 0xbcf7 0xbcfb valores_bcf7 3 valores y 0xFF: 80 01 02; los elige el paso 5 de la categoria 0 (RALLY)
+F 0xbcf7 4
+D 0xbcfb 0xbcff valores_bcfb 3 valores y 0xFF: 80 01 02; los elige el paso 5 de la categoria 1 (STOCK)
+F 0xbcfb 4
+D 0xbcff 0xbd03 valores_bcff 3 valores y 0xFF: 83 04 05; los elige el paso 5 de las categorias 2 ENDURANCE, 3 F3, 4 F3000, 5 F1
+F 0xbcff 4
+D 0xbd1b 0xbd3f ficha_textos_bd1b 18 punteros a texto de ficha, 18 en uso: el paso 0 de la eleccion, indexado por el valor; p01 0x67A2; los textos son los de la pagina 9 que lee tools/textos.py
+F 0xbd1b w1
+D 0xbd3f 0xbd87 ficha_textos_bd3f 36 punteros a texto de ficha, 36 en uso: el paso 1 de la eleccion, indexado por el valor; p01 0x67A2; los textos son los de la pagina 9 que lee tools/textos.py
+F 0xbd3f w1
+D 0xbd87 0xbdab ficha_textos_bd87 18 punteros a texto de ficha, 18 en uso: el paso 2 de la eleccion, indexado por el valor; p01 0x67A2; los textos son los de la pagina 9 que lee tools/textos.py
+F 0xbd87 w1
+D 0xbdab 0xbdb7 ficha_textos_bdab 6 punteros a texto de ficha, 6 en uso: el paso 3 de la eleccion, indexado por el valor; p01 0x67A2; los textos son los de la pagina 9 que lee tools/textos.py
+F 0xbdab w1
+D 0xbdb7 0xbdc3 ficha_textos_bdb7 6 punteros a texto de ficha, 6 en uso: el paso 4 de la eleccion, indexado por el valor; p01 0x67A2; los textos son los de la pagina 9 que lee tools/textos.py
+F 0xbdb7 w1
+D 0xbdc3 0xbdd5 ficha_textos_bdc3 9 punteros a texto de ficha, 6 en uso: el paso 5 de la eleccion, indexado por el valor (las 3 ultimas repiten las primeras y ningun valor las alcanza); p01 0x67A2; los textos son los de la pagina 9 que lee tools/textos.py
+F 0xbdc3 w1
+# --- fin de los bloques de coches.py ---
+
+D 0xa94f 0xa955 tabla_curvas_A94F 3 punteros a las listas de abajo; los lee 0xA948, que devuelve en DE la palabra (ix+1B,1C) del coche
+F 0xa94f w1
+D 0xa955 0xa991 curvas_A955 3 listas de 10 palabras con signo, decrecientes y estabilizadas al final: -412..-435, -1032..-1088 y -2064..-2048 (esta ultima salta a -2048 en la octava). Por su forma son tablas de fisica de la carrera; que magnitud, por identificar
+F 0xa955 w1
+
+# --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
+D 0xa087 0xa089 pendiente_de_trazar Sin trazar ni identificar todavia (2 bytes)
+D 0xa0be 0xa0ea pendiente_de_trazar Sin trazar ni identificar todavia (44 bytes)
+D 0xa3a4 0xa3ab pendiente_de_trazar Sin trazar ni identificar todavia (7 bytes)
+D 0xa3b4 0xa412 pendiente_de_trazar Sin trazar ni identificar todavia (94 bytes)
+D 0xa4b5 0xa4c2 pendiente_de_trazar Sin trazar ni identificar todavia (13 bytes)
+D 0xa561 0xa592 pendiente_de_trazar Sin trazar ni identificar todavia (49 bytes)
+D 0xa65e 0xa673 pendiente_de_trazar Sin trazar ni identificar todavia (21 bytes)
+D 0xa7b9 0xa860 pendiente_de_trazar Sin trazar ni identificar todavia (167 bytes)
+D 0xa991 0xaaf9 pendiente_de_trazar Sin trazar ni identificar todavia (360 bytes)
+D 0xac0d 0xac32 pendiente_de_trazar Sin trazar ni identificar todavia (37 bytes)
+D 0xb137 0xb158 pendiente_de_trazar Sin trazar ni identificar todavia (33 bytes)
+D 0xb4e7 0xb559 pendiente_de_trazar Sin trazar ni identificar todavia (114 bytes)
+D 0xb598 0xb5b6 pendiente_de_trazar Sin trazar ni identificar todavia (30 bytes)
+D 0xb6ec 0xb75c pendiente_de_trazar Sin trazar ni identificar todavia (112 bytes)
+D 0xb82f 0xb847 pendiente_de_trazar Sin trazar ni identificar todavia (24 bytes)
+D 0xb86d 0xb899 pendiente_de_trazar Sin trazar ni identificar todavia (44 bytes)
+D 0xb8d4 0xb92d pendiente_de_trazar Sin trazar ni identificar todavia (89 bytes)
+D 0xb96f 0xb99b pendiente_de_trazar Sin trazar ni identificar todavia (44 bytes)
+D 0xb9b3 0xb9c0 pendiente_de_trazar Sin trazar ni identificar todavia (13 bytes)
+D 0xb9d8 0xb9e5 pendiente_de_trazar Sin trazar ni identificar todavia (13 bytes)
+D 0xba02 0xba0f pendiente_de_trazar Sin trazar ni identificar todavia (13 bytes)
+D 0xba2c 0xba39 pendiente_de_trazar Sin trazar ni identificar todavia (13 bytes)
+D 0xba53 0xba7e pendiente_de_trazar Sin trazar ni identificar todavia (43 bytes)
+D 0xba96 0xba9f pendiente_de_trazar Sin trazar ni identificar todavia (9 bytes)
+D 0xbba3 0xbbeb pendiente_de_trazar Sin trazar ni identificar todavia (72 bytes)
+D 0xbdd5 0xbe14 pendiente_de_trazar Sin trazar ni identificar todavia (63 bytes)
+D 0xbe8a 0xc000 pendiente_de_trazar Sin trazar ni identificar todavia (374 bytes)
+# --- fin de la seccion pendiente ---

@@ -1,0 +1,39 @@
+# Anotaciones de F-1 Spirit (Konami, 1987, RC-752): pagina 10 de 16, que el
+# mapper pone en 0x6000-0x7fff (ver tools/paginas.py).
+#
+# Directivas: L=etiqueta, C=comentario de linea, B=cabecera de bloque,
+# D=rango de datos (con nombre y explicacion), F=anchura de fila de un bloque
+# de datos. Todo anclado a direccion, asi que sobrevive a un retrazado. Sin
+# acentos a proposito.
+#
+# ESTADO: pagina sin trazar. El rango D de abajo es un marcador: dice que NADA
+# de esta pagina esta explicado todavia. Se va recortando segun el trazado
+# convierte bytes en codigo y las lecturas ponen nombre a los datos.
+
+# --- BLOQUES IDENTIFICADOS POR tools/circuitos.py (la cadena secuencia -> piezas -> metatiles de la pagina 0 y los objetos
+# de la pista, recorridos desde la ROM; los tamanos de las tablas salen del
+# indice maximo que usa cada carrera y cada tabla acaba donde empieza la
+# siguiente). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0x6000 0x6618 piezas_A tabla de piezas A: 65 piezas de 24 B (3 filas x 8 metatiles); la usan las carreras 0
+F 0x6000 8
+D 0x6618 0x6dc8 piezas_B tabla de piezas B: 82 piezas de 24 B (3 filas x 8 metatiles); la usan las carreras 2,8,20
+F 0x6618 8
+D 0x6dc8 0x7848 piezas_C tabla de piezas C: 112 piezas de 24 B (3 filas x 8 metatiles); la usan las carreras 3,4,5,6,7,10,11,12,13,14,15,16,17,18,19
+F 0x6dc8 8
+D 0x7848 0x7d88 piezas_D tabla de piezas D: 56 piezas de 24 B (3 filas x 8 metatiles); la usan las carreras 1,9
+F 0x7848 8
+D 0x7d88 0x7dd0 piezas_escena las 3 piezas (24 B = 3 filas x 8 metatiles) de la escena fija que pinta p00 0x5778
+F 0x7d88 8
+D 0x7dd0 0x7e18 piezas_escena las 3 piezas (24 B = 3 filas x 8 metatiles) de la escena fija que pinta p00 0x578A
+F 0x7dd0 8
+D 0x7e18 0x7e38 metatiles_escena los 2 metatiles (16 B = 4 filas x 4 tiles) de la escena fija que pinta p00 0x578A
+F 0x7e18 16
+D 0x7e38 0x7fd8 metatiles_escena los 26 metatiles (16 B = 4 filas x 4 tiles) de la escena fija que pinta p00 0x5778
+F 0x7e38 16
+D 0x7fd8 0x8000 metatiles_A tabla de metatiles A: 176 metatiles de 16 B (4 filas x 4 tiles); la usan las carreras 0 (sigue en la pagina siguiente)
+F 0x7fd8 16
+# --- fin de los bloques de circuitos.py ---
+
+# --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
+# --- fin de la seccion pendiente ---

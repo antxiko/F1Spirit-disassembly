@@ -1,0 +1,333 @@
+# Anotaciones de F-1 Spirit (Konami, 1987, RC-752): pagina 0 de 16, la unica
+# FIJA: el mapper la deja siempre en 0x4000-0x5FFF (nadie escribe en 0x5000).
+# Aqui viven la cabecera, INIT, la interrupcion, las rutinas de cambio de
+# banco, la lectura de mandos y las rutinas comunes que llaman las demas
+# paginas.
+#
+# Directivas: L=etiqueta, C=comentario de linea, B=cabecera de bloque,
+# D=rango de datos (con nombre y explicacion), F=anchura de fila de un bloque
+# de datos. Todo anclado a direccion, asi que sobrevive a un retrazado. Sin
+# acentos a proposito.
+#
+# El mapa de memoria (lo que se sabe): cartucho en la pagina 1 del Z80
+# (0x4000-0x7FFF) y habilitado tambien en la pagina 2 (0x8000-0xBFFF) por
+# INIT con ENASLT; asi las cuatro ranuras del mapper quedan a la vista.
+# RAM del juego de 0xE000 a 0xF0FF (INIT la borra entera) y pila en 0xF0F0.
+# Sombra del mapper en F0F1/F0F2/F0F3 (que pagina hay en 6000/8000/A000).
+# INIT instala `jp 0x4018` en H.KEYI y se queda en `jr $`: el juego entero
+# corre dentro de la interrupcion, como en los cartuchos Konami de 1984.
+
+# =============================================================================
+# LA CABECERA
+# =============================================================================
+D 0x4000 0x4018 cabecera "AB", INIT=0x40E4, STATEMENT/DEVICE/TEXT a cero y reserva; en 0x4010 la firma "CD" 07 "R" FF de Konami y en 0x4015 un `jp 0xBE2E` (entrada para otro cartucho; no se sabe aun quien salta ahi ni con que pagina en 0xA000)
+F 0x4000 2,w4,6,5,3
+
+# =============================================================================
+# LA INTERRUPCION (H.KEYI) Y EL ARRANQUE
+# =============================================================================
+B 0x4018 La interrupcion: cada fotograma. Lee el estado del VDP, guarda la
+B 0x4018 sombra del mapper, mapea D/E/F para el sonido (0x6AA5 en la pagina
+B 0x4018 13), vuelve a poner D/E/F, vacia la cola de ordenes de sonido, y
+B 0x4018 restaura los bancos guardados antes de la logica del juego.
+L 0x4018 INTERRUPCION      gancho H.KEYI; candado en el bit 1 de E1C5
+C 0x4018 RDVDP: lee y limpia el estado del VDP
+C 0x401E bit 1 de E1C5: ya hay una interrupcion dentro -> fuera
+C 0x402A F0F1/F0F2/F0F3: la sombra del mapper; se guarda en D/E/A y se pone D/E/F
+C 0x4046 el paso del reproductor de sonido, en la pagina 13
+C 0x4049 D/E/F otra vez: el driver toca 0x9000 para el SCC y deja la pagina 2 en 0x8000
+C 0x405D vacia la cola de ordenes de sonido (call 0x6000 de la pagina 13 por orden)
+C 0x4061 0x6422 de la pagina 13 (D/E/F siguen mapeadas)
+C 0x406A restaura en el mapper y en la sombra los tres bancos guardados
+C 0x4089 bit 0 de E1C5: la logica del juego ya esta en curso (se salto un fotograma)
+C 0x40A4 lee mandos y teclas
+C 0x40AC el despachador de estados del juego
+L 0x40BB L_40BB            si (E1D5) != 0: lo pone a cero y llama 0x477C, 0x450C y 0x4887 (que son, pendiente)
+L 0x40CD VDP_REG           escribe el registro C del VDP con B (BIOS WRTVDP)
+L 0x40D0 HL_MAS_A          hl += a (sin signo)
+L 0x40D5 DE_MAS_A          de += a (sin signo)
+L 0x40DA DESPACHA          el "call seguido de tabla" de Konami: salta a la palabra A de la tabla que sigue al call
+B 0x40E4 INIT: la BIOS llega aqui por la cabecera. Habilita el cartucho en
+B 0x40E4 0x8000-0xBFFF, instala la interrupcion, borra la RAM, arranca el
+B 0x40E4 sonido, busca otros cartuchos (0xBF50 de la pagina 15), deja 1/2/3
+B 0x40E4 mapeadas y se para en `jr $`.
+L 0x40E4 INIT              punto de entrada del cartucho (cabecera)
+C 0x40E5 RSLREG: la ranura primaria de cada pagina
+C 0x40EF EXPTBL/SLTTBL: compone el identificador de ranura del cartucho
+C 0x4102 ENASLT con H=0x80: el cartucho tambien en 0x8000-0xBFFF
+C 0x4109 `jp 0x4018` en H.KEYI (FD9A)
+C 0x4114 pila en 0xF0F0 y RAM 0xE000-0xF0FF a cero
+C 0x4129 arranca el sonido (pagina 13) y pide el sonido 0x46
+C 0x4137 D/E/F y 0xBF50 de la pagina 15: busca otros cartuchos Konami en las ranuras
+C 0x413B 1/2/3 en 6000/8000/A000: el mapeo con el que arranca el juego
+L 0x413E BUCLE_FINAL       aqui se queda INIT; todo lo demas pasa en la interrupcion
+L 0x4140 VACIA_COLA_SONIDO hasta 10 ordenes en E246..: cada una `call 0x6000` (pagina 13) con A
+L 0x4155 CUENTA_ATRAS_F0F7 decrementa el contador de 16 bits F0F7/F0F8; A=0xFF si seguia contando
+L 0x4174 ENCOLA_SONIDO     mete A en la cola de E245 (maximo 10); F0FA guarda el ultimo
+L 0x418C ESTADOS           suma 1 a E1C3 y despacha por (E1C0); si < 3 deja 0x427C como retorno
+D 0x41A0 0x41B2 tabla_estados 9 palabras del despachador de 0x419D: estados 0..8 de (E1C0)
+F 0x41A0 w1
+L 0x41B2 ESTADO_0          estados 0, 6, 7 y 8: subestado en (E1C1) via djnz; 0xBE14/0xBE56 (pagina 3)
+L 0x41E3 ESTADO_1          por el despachador de 0x419D
+L 0x41EA ESTADO_2          por el despachador de 0x419D
+L 0x4221 ESTADO_3          por el despachador de 0x419D
+L 0x4252 ESTADO_4          por el despachador de 0x419D
+L 0x4279 ESTADO_5          `jp 0x5A27`
+L 0x427C TRAS_ESTADO_012   retorno empujado por 0x418C para los estados 0, 1 y 2: mira F006 y los mandos
+L 0x42B9 ARRANCA_SONIDO    D/E/F, 0x6CE9 de la pagina 13 (init), restaura, PSG R7=0xBF, pide el sonido 0x46 y vuelve a 1/2/3
+L 0x4317 VDP_REGISTROS     escribe R0..R7 desde la tabla de 0x4328
+D 0x4328 0x4330 tabla_vdp los ocho registros del VDP: R0=02 (G2), R1=E2, R2=0E (nombres 0x3800), R3=7F (colores 0x0000), R4=07 (patrones 0x2000), R5=76 (atributos de sprites 0x3B00), R6=03 (patrones de sprites 0x1800), R7=E4 (fondo azul oscuro)
+F 0x4328 8
+
+# =============================================================================
+# MANDOS Y TECLADO
+# =============================================================================
+L 0x4335 LEE_ENTRADAS      teclas F, mando 1 (E1D9/E1D8 ahora/flancos) y, si E1C2 lo pide, mando 2 (E1CC)
+L 0x4358 FLANCOS_E1CC      flancos del mando 2
+L 0x435D FLANCOS_E1C9      flancos en E1C9/E1C8
+L 0x4360 FLANCOS           (hl) = A; (hl-1) = bits que acaban de pulsarse
+L 0x4367 LEE_MANDO_1       joystick 1 por el PSG (0x43EC) mas cursores y espacio del teclado (filas 8 y 4)
+L 0x4394 LEE_MANDO_2       joystick 2 por el PSG (E=0xCF) mas teclas de las filas 6, 3, 2 y 5
+L 0x43D1 LEE_TECLAS_F      F1..F5 en los bits 0..4 (filas 7 y 6 del teclado)
+L 0x43EC LEE_JOY_PSG       E=0x8F: joystick 1; entra en 0x43EE con E=0xCF para el 2
+L 0x43EE LEE_JOY_PSG_E     PSG R15=E, lee R14, invierte, 6 bits
+
+# =============================================================================
+# EL MAPPER: que pagina va en cada ranura
+# =============================================================================
+B 0x43FE Las rutinas de banco. El mapper Konami SCC: escribir N en 0x7000,
+B 0x43FE 0x9000 o 0xB000 pone la pagina N en 0x6000, 0x8000 o 0xA000 (0x5000
+B 0x43FE nunca se toca: la pagina 0 es fija). Cada escritura se apunta en la
+B 0x43FE sombra F0F1/F0F2/F0F3. Las paginas van siempre en grupos de tres
+B 0x43FE consecutivas (1/2/3, 4/5/6, 7/8/9, A/B/C, D/E/F), y sueltas solo a
+B 0x43FE la ranura que les toca por su numero: tools/paginas.py.
+L 0x43FE MAPEA_1_2_3       1/2/3 en 6000/8000/A000: el mapeo "por defecto"
+L 0x4418 MAPEA_4_5_6       4/5/6 por 0x441B
+L 0x441B MAPEA_DESDE_A     A, A+1, A+2 en 6000/8000/A000
+L 0x4433 MAPEA_1_2_3_B     como 0x43FE pero por 0x441B
+L 0x4438 MAPEA_7_8_9       7/8/9 por 0x441B
+L 0x443D MAPEA_A_B_C       A/B/C por 0x441B
+L 0x4442 MAPEA_D_E_F       la pagina del sonido (13) y las 14 y 15
+L 0x4447 MAPEA_A_EN_8000   A en 8000 y A+1 en A000
+L 0x4457 MAPEA_A_EN_A000   A en A000 (la llaman las paginas 1 y 2)
+
+# =============================================================================
+# TABLAS DE LOS OTROS DESPACHADORES DE ESTA PAGINA
+# =============================================================================
+D 0x4E37 0x4E3F tabla_4E34 4 palabras del despachador de 0x4E34 (indice (ix+0)&3)
+F 0x4E37 w1
+D 0x54EF 0x54FF tabla_54EC 8 palabras del despachador de 0x54EC (indice A&7, simetrica: 550E 54FF 5504 5509 550E 5509 5504 54FF)
+F 0x54EF w1
+D 0x5A40 0x5A80 tabla_5A3D 32 palabras del despachador de 0x5A3D (indice (E250)&0x7F)
+F 0x5A40 w1
+D 0x5D29 0x5D3F tabla_5D26 11 palabras del despachador de 0x5D26 (indice (E1DD), que antes se comprobo < 10)
+F 0x5D29 w1
+
+# =============================================================================
+# RUTINAS COMUNES DE VRAM (las llaman las paginas 1, 2 y 3; bautizadas al
+# leerlas, 2026-08-19). Mapa de VRAM segun la tabla de 0x4328: colores en
+# 0x0000, patrones en 0x2000, sprites (patrones) en 0x1800, nombres en 0x3800,
+# atributos de sprites en 0x3B00. "3 tercios" = repetir en los tres bloques
+# de 0x800 de la pantalla 2 (HL += 0x800 dos veces).
+# =============================================================================
+L 0x4460 LIMPIA_EA80_Y_ATRIBUTOS  borra 0x7F bytes de RAM desde EA80 (con 0xE0) y los atributos de sprites (0x3B00, 0x80 bytes a 0xE0 = fuera de pantalla)
+L 0x4474 TILES_16_58_F0     como 0x4476 con A=0xF0: patrones de los tiles 16..58 llenos de 0xF0 (mitad izquierda)
+L 0x4476 TILES_16_58_A      mapea D/E/F, llena los colores de los tiles 16..58 con A, trae sus patrones de p15:0xB777 (RLE) y vuelve a 1/2/3
+L 0x4484 PATRONES_16_DESDE_B777  descomprime (RLE) p15:0xB777 en los patrones desde el tile 16 (VRAM 0x2080), 3 tercios
+L 0x448D COLORES_16_58_A    llena 0x158 bytes de la tabla de colores desde el tile 16 (VRAM 0x0080) con A, 3 tercios
+L 0x4496 TILES_0_15_MACIZOS mapea D/E/F; patrones de los tiles 0..15 a cero y el color del tile i = i (fondo del color i): 16 bloques macizos, 3 tercios; vuelve a 1/2/3
+L 0x44AB BUCLE_TILES_0_15   un tile por vuelta: 8 bytes de color A (= indice) en VRAM HL, HL += 8
+L 0x44BC VUELCA_NOMBRES_E400  copia los 768 bytes del buffer de pantalla E400 a la tabla de nombres (0x3800)
+L 0x44C4 VUELCA_768_A_NOMBRES HL = buffer de RAM; SETWRT 0x3800 y 3 x 256 bytes por el puerto del VDP (hay otra entrada en 0x44C1 con el buffer EC00, sin trazar)
+L 0x44D6 OUT_256_VRAM       256 bytes desde (HL) al puerto del VDP (C' lo dejo 0x4673)
+L 0x4673 PREPARA_ESCRITURA_VRAM  SETWRT en HL y deja en C' el puerto de datos del VDP (byte de la BIOS 0x0007)
+L 0x47E6 LLENA_VRAM_3_TERCIOS  FILVRM: BC bytes de A en VRAM HL, y otra vez en HL+0x800 y HL+0x1000
+L 0x47E8 BUCLE_LLENA_TERCIO  un tercio por vuelta
+L 0x47F7 RLE_VRAM_3_TERCIOS  descomprime (DE) en VRAM HL con 0x4862, tres veces (HL += 0x800), el mismo flujo cada vez
+L 0x47F9 BUCLE_RLE_TERCIO   un tercio por vuelta
+L 0x4811 PINTA_TILES        flujo en (DE): palabra = direccion de VRAM; luego bytes: FF fin, FE nueva direccion, 02 fila/columna (0x3800 + fila*32 + columna), otro = tile (menos B, AND C) por WRTVRM en HL++ (B=0, C=0xFF: tal cual)
+L 0x4815 PINTA_TILES_DIRECCION  lee la palabra de (DE) como nueva direccion de VRAM y sigue
+L 0x481B PINTA_TILES_BUCLE  un byte del flujo por vuelta
+L 0x4830 BORRA_TILES        como 0x4811 con B=C=0: escribe ceros en las mismas posiciones (borra lo que pinto)
+L 0x483F PINTA_TILES_POSICION  el codigo 02 del flujo: columna y fila -> VRAM 0x3800 + fila*32 + columna
+L 0x4862 RLE_A_VRAM         descomprime en VRAM HL el flujo de (DE): 0x00 = fin; 0x01..0x7F = repetir el byte siguiente n veces; 0x81..0xFF = copiar n&0x7F bytes tal cual; 0x80 = seguir en el puntero que viene (0x485C)
+L 0x4865 RLE_A_VRAM_BUCLE   un codigo del flujo por vuelta
+L 0x4873 RLE_COPIA_N        n bytes tal cual al VDP
+L 0x487F RLE_REPITE_N       el mismo byte n veces al VDP
+L 0x485C RLE_SIGUE_PUNTERO  DE = la palabra de (DE): el flujo continua en otro sitio
+L 0x4B88 RELLENA_RAM        (HL..HL+BC) = A, por ldir
+
+# =============================================================================
+# TABLAS: leer la palabra A (0x4A44 y 0x4A3B son las de TODAS las tablas de
+# punteros del cartucho: listas de graficos, circuitos, despachos de datos).
+# =============================================================================
+L 0x4A3B DE_PALABRA_A      DE = la palabra A de la tabla DE (de += 2a)
+L 0x4A44 HL_PALABRA_A      HL = la palabra A de la tabla HL (hl += 2a; hl = (hl))
+L 0x4B87 RELLENA_RAM_CERO  (HL..HL+BC) = 0, por 0x4B88
+L 0x4BB2 COLORES_0_210_A_CERO  la tabla de colores de los tiles 0..210 (0x698 bytes desde 0x0000) a cero, en los 3 tercios
+L 0x4BB9 LLENA_VRAM_3_TERCIOS_B  como 0x47E6: FILVRM de BC bytes de A en HL, HL+0x800 y HL+0x1000
+L 0x4BBB BUCLE_LLENA_TERCIO_B  un tercio por vuelta
+
+# =============================================================================
+# EL CARGADOR DE TILES (0x4CCD). Los graficos de fondo del cartucho estan
+# comprimidos (RLE) en las paginas 4-9, 12 y 15, y se cargan por LISTAS de
+# registros de 6 bytes que viven en la pagina 4 (el cargador mapea 4/5/6):
+#   [0] flags: bit 7/6/5 = el tile va al tercio 0x0000/0x0800/0x1000 de la
+#       pantalla (se repite en cada tercio marcado); bits 2..1 = grupo de
+#       paginas donde estan los bytes (00 = 4/5/6, 01 = 7/8/9, 10 = A/B/C,
+#       11 = D/E/F); bit 4 = espejo horizontal; bit 3 = volteo vertical.
+#   [1] primer tile; [2..3] patrones comprimidos; [4..5] colores comprimidos.
+# Si (flags & 0xF0) == 0x10 es una ORDEN (0x4E2D): 0x10 copia 16 bytes a
+# E263 (17 B); 0x11/15/19/1D guarda una palabra en E276+0/2/4/6 (3 B); 0x13
+# es una sublista (3 B); 0x17 carga el recurso [1] de la TABLA DE 85 RECURSOS
+# de p04 0x6000 (5 bytes: flags, patrones, colores) en el tile [2] (3 B).
+# La lista acaba en 0x00. tools/graficos.py las recorre todas desde la ROM y
+# comprueba que cada par patrones/colores descomprime a lo mismo.
+# E1D4 es el MODO: 0 = tiles enteros; 0x80|fila = solo esa fila de cada tile
+# (el efecto de aparecer por filas de 0x4CB6); bit 6 = solo los colores.
+# =============================================================================
+B 0x4BCE Los graficos de la pista: la lista comun 0x61FD (tiles 206-209) y
+B 0x4BCE la lista de la carrera (E25C) de la tabla p04 0x61A9 (tiles 1-205:
+B 0x4BCE la pista y los decorados; el panel son los tiles 206-255).
+L 0x4BCE CARGA_TILES_CIRCUITO  lista p04 0x61FD y la de la carrera (E25C) de la tabla p04 0x61A9
+L 0x4BE3 CARGA_TILES_CIRCUITO_2_PASOS  0x4689 (sprites de los coches), 0x450C con D/E/F, las listas de 0x4BCE, y los colores por filas 0-3 (0x4CA1), p01 0x6EF8, 0x477C, y filas 4-7 (0x4CA8)
+L 0x4C12 CARGA_TILES_PANEL  listas p04 0x6BBD y 0x6C7C (tiles 210-255) y la de la categoria (E25B) de la tabla 0x4C37 (tiles 250-255); con el bit 5 de E1C2 (dos jugadores) la lista 0x6C36
+L 0x4C31 CARGA_TILES_PANEL_2J  la lista p04 0x6C36 (el panel de dos jugadores)
+D 0x4C37 0x4C43 tabla_listas_panel 6 punteros por la categoria (E25B) a la lista de la parte del panel que cambia con ella (p04 0x6C6F, 0x6C62, 0x6C55: tiles 250-255); 0x4C70 la limita a 5
+F 0x4C37 w1
+L 0x4C43 CARGA_TILES_PANEL_POR_FILAS  colores de los tiles 211-251 a cero (3 tercios) y los de 252-255 del tercio de abajo; luego el panel (las listas de 0x4C12) cargado fila a fila con 0x4C93
+L 0x4C84 CARGA_TILES_PANEL_2J_POR_FILAS  la lista p04 0x6C36 fila a fila
+L 0x4C93 CARGA_LISTA_POR_FILAS  la lista HL una fila de patron por vuelta (E1D4 = 0x80..0x87), con DE de espera entre filas: los tiles van apareciendo de arriba abajo
+L 0x4CA1 CARGA_COLORES_FILAS_0_3  solo los colores de la lista HL, filas 0..3 (E1D4 = 0xC0..0xC3)
+L 0x4CA8 CARGA_COLORES_FILAS_4_7  solo los colores de la lista HL, filas 4..7 (E1D4 = 0xC4..0xC7)
+L 0x4CB6 CARGA_LISTA_FILA_A_FILA  B vueltas: E1D4 = A, espera DE, carga la lista HL (0x4CD1), A += C
+L 0x4CBE ESPERA_DE           bucle de espera de DE vueltas
+L 0x4CCD CARGA_LISTA_TILES   HL = lista de registros de 6 bytes (pagina 4); E1D4 = 0 (tiles enteros); deja 1/2/3
+L 0x4CD1 CARGA_LISTA_TILES_MODO  como 0x4CCD con el modo E1D4 que traiga: IX = lista, mapea 4/5/6, recorre, tile 0 a cero, vuelve a 1/2/3
+L 0x4CE0 RECORRE_LISTA       un registro (o una orden) por vuelta hasta el 0x00
+L 0x4CEB REGISTRO_DE_LISTA   0x1x = orden (0x4E2D); si no, por cada tercio marcado en los bits 5/6/7 carga el registro (0x4D19) y salta los 6 bytes
+L 0x4D19 CARGA_REGISTRO_TERCIO  el registro IX al tercio DE: patrones (tile*8 + tercio + 0x2000) salvo con el bit 6 de E1D4, y colores (tile*8 + tercio); EA6F.7 = 0 patrones, 1 colores
+L 0x4D4A RLE_DESDE_GRUPO     mapea el grupo de los bits 2..1 de los flags (4, 7, A o D en 0x6000), descomprime DE en VRAM HL y vuelve a 4/5/6
+L 0x4D64 RLE_TILES           el descompresor de los tiles: (DE) -> VRAM HL por bloques de 8 bytes (EA50). Codigos: 00 fin, 01..7F repetir el byte siguiente n veces, 80 nada, 81..FF copiar n&0x7F bytes
+L 0x4D73 RLE_TILES_BUCLE     un codigo por vuelta
+L 0x4D81 RLE_TILES_COPIA     n bytes tal cual, uno a uno por 0x4D97
+L 0x4D8C RLE_TILES_REPITE    el mismo byte n veces por 0x4D97
+L 0x4D8E RLE_TILES_REPITE_BUCLE  una copia por vuelta
+L 0x4D97 RLE_TILES_BYTE      acumula el byte en EA50..EA57; al octavo: espejo (bit 4 de EA6E), volteo (bit 3) y vuelca el tile al VDP (8 OUTI), o solo la fila E1D4&7 si E1D4 != 0
+L 0x4DB8 VUELCA_TILE_BUCLE   los 8 bytes del tile al VDP (B = 16, pero outi ya resta uno: 8 vueltas)
+L 0x4DC1 RLE_TILES_SOLO_FILA  modo por filas: escribe solo el byte (E1D4&7) del tile en (E1D2) + fila, y E1D2 += 8
+L 0x4DEA VOLTEA_TILE         volteo vertical: intercambia las filas 0-7, 1-6, 2-5, 3-4 de EA50
+L 0x4DF3 VOLTEA_TILE_BUCLE   una pareja de filas por vuelta
+L 0x4DFF ESPEJA_TILE         espejo horizontal: invierte los 8 bits de cada fila (no con los colores: bit 7 de EA6F)
+L 0x4E0B ESPEJA_TILE_FILA    una fila por vuelta
+L 0x4E0D ESPEJA_TILE_BIT     un bit por vuelta (rr (hl) / rla)
+L 0x4E19 TILE_0_A_CERO       patrones y colores del tile 0 a cero en los 3 tercios
+L 0x4E2D ORDEN_DE_LISTA      despacha por los bits 1..0 de la orden (tabla 0x4E37)
+L 0x4E3F ORDEN_COPIA_E263    0x10: los 16 bytes que siguen a E263 (17 bytes de lista)
+L 0x4E51 ORDEN_PALABRA_E276  0x11/15/19/1D: la palabra que sigue a E276 + ((orden>>1)&6) (3 bytes de lista)
+L 0x4E6F ORDEN_NADA          0x12: ret sin avanzar IX (se quedaria en bucle: ninguna lista la usa)
+L 0x4E70 ORDEN_SUBLISTA      0x13: recorre la lista que sigue (puntero) y sigue con esta; 0x17 (bit 2) -> 0x4E8C
+L 0x4E8C ORDEN_RECURSO       0x17: el recurso [1] de la tabla de 85 en el tile [2] (0x4E9F)
+L 0x4E9F CARGA_RECURSO_85    A = recurso de la TABLA DE 85 de p04 0x6000 (5 bytes), C = tile: monta el registro de 6 bytes en EA60 y lo carga con 0x4CE0
+C 0x4EAE suma que no se usa (A se pierde en el ld a,(hl) de 0x4EB3)
+
+# =============================================================================
+# EL CARGADOR DE SPRITES (0x4F1A). Listas de pares (recurso, patron) que
+# acaban en 0xFF, en la pagina 4; el recurso es un registro de 6 bytes de la
+# TABLA DE 34 RECURSOS DE SPRITES de p04 0x7505: [0] clase (donde apuntar el
+# patron en EB40), [1] tipo (0 = RLE de 0x4862, 1 y FF = nada, 2 = copia tal
+# cual de [4..5] bytes), [2..3] origen. Las 16 entradas de EB40 dicen que
+# patron de sprite le toco a cada clase. tools/graficos.py lo comprueba.
+# =============================================================================
+L 0x4EC7 CARGA_SPRITES_CARRERA  4/5/6: la lista p04 0x74A5, EB40 a cero, la lista de la categoria (E25B) de la tabla p04 0x7481 (la primera palabra de cada tres), rellena EB40 (0x4F02), 1/2/3; con E25B = 0, EB41 = EB42 = EB40
+L 0x4EF9 BORRA_EB40          EB40..EB4E a cero (15 bytes)
+L 0x4F02 RELLENA_EB40        las entradas a cero de EB40..EB4F toman el valor de EB40
+L 0x4F09 RELLENA_EB40_BUCLE  una entrada por vuelta
+L 0x4F11 CARGA_LISTA_SPRITES  mapea 4/5/6, carga la lista HL (0x4F1A) y vuelve a 1/2/3
+L 0x4F1A LISTA_SPRITES       un par (recurso, patron) por vuelta hasta 0xFF
+L 0x4F28 CARGA_RECURSO_SPRITE  el registro A de la tabla p04 0x7505; EB40+clase = patron B; IX = VRAM 0x1800 + B*8; tipo 0 -> RLE_A_VRAM, 1 -> nada, 2 -> LDIRVM de [4..5] bytes, FF -> nada
+L 0x4F58 RECURSO_SPRITE_RLE  tipo 0: descomprime el origen en los patrones de sprites
+L 0x4F61 RECURSO_SPRITE_COPIA  tipo 2: copia [4..5] bytes tal cual
+
+# =============================================================================
+# LOS FOTOGRAMAS DE LOS COCHES: 64 bytes (2 sprites de 16x16) por fotograma,
+# en juegos consecutivos desde p04 0x7731 (tools/graficos.py los lista). El
+# coche del jugador 1 (IX = E2C0) tiene sus patrones en VRAM 0x1800 y el del
+# jugador 2 (E380) en 0x1840: cada fotograma se copia ahi al cambiar.
+# =============================================================================
+L 0x4689 FOTOGRAMAS_COCHES   4/5/6; el coche 1 (E2C0 -> patrones 0x1800) y, con el bit 5 de E1C2, el 2 (E380 -> 0x1840); vuelve a 1/2/3
+L 0x46A8 FOTOGRAMA_COCHE     si (ix-3) != 0 -> tiles (0x4701); fotograma (ix+0E): >= 0x80 -> 0x46DF, bit 6 -> 0x4740; si cambio respecto a (ix+3E), 64 bytes del juego (tabla p04 0x7431 por (ix+18)) + fotograma*64 a VRAM HL
+L 0x46DF FOTOGRAMA_COCHE_80  fotogramas 0x80..: (fotograma & 0x0F)*64 desde p05 0x8A71 (E25B < 3) o 0x8BF1
+L 0x4701 TILES_COCHE         (ix-3) = 1..6: los 16 bytes (2 tiles) de p04 0x75D1 + (n-1)*16 a los patrones 0x2670 (bit 0 de ix+9) o 0x2680, en los 3 tercios
+L 0x471E TILES_COCHE_TERCIOS  los tres LDIRVM de 16 bytes
+L 0x4740 FOTOGRAMA_COCHE_40  fotogramas con el bit 6: (fotograma & 0xBF)*64 desde el juego de la tabla p04 0x745B por (ix+18)
+L 0x47CF COPIA_A_VRAM        LDIRVM: BC bytes desde DE (RAM o ROM) a VRAM HL
+
+# =============================================================================
+# LA PISTA: secuencia -> piezas -> metatiles -> tiles. Por carrera (E25C):
+# (E257) = la SECUENCIA (p07 0x6000[E25C]; pares (pieza, flags), 0xFF = fin de
+# vuelta), (E259) = la tabla de PIEZAS (p12 0xAFA2[E25C]; 24 bytes = 3 filas
+# x 8 metatiles, una fila = la pantalla de ancho) y (E253) = la tabla de
+# METATILES (p12 0xAF78[E25C]; 16 bytes = 4 filas x 4 tiles). Las tablas
+# estan en p10-p12 y se leen con A/B/C; la secuencia con 7/8/9. En el
+# bloque del coche (IX): (ix+46,47) = pieza actual en la secuencia, (ix+45) =
+# fila dentro de la pieza (0..11), (ix+3F,40) = posicion (alta en ix+40:
+# fila de pantalla), (ix-2) = vueltas, (ix-19) = columna de desplazamiento
+# (0..7), (ix+9) = jugador (1 -> buffer E400, otro -> EC00).
+# tools/circuitos.py lo recorre desde la ROM: 21 secuencias, 4 tablas de
+# piezas, 4 de metatiles y las dos escenas fijas de 0x5778/0x578A.
+# =============================================================================
+L 0x5530 PREPARA_CIRCUITO    E1FE = 0x3C; (E257), (E259) y (E253) de las tres tablas por la carrera (E25C); 0x5F5D; posicion a cero (0x556B); 1/2/3
+L 0x556B POSICION_PISTA_A_CERO  vueltas (ix-2), fila (ix+45), pieza (ix+46,47), posicion (ix+3F..42) y (ix+57) a cero
+L 0x5588 PINTA_PISTA_32_FILAS  A/B/C; 32 veces: avanza 0x800 (una fila de 8 px) y pinta la fila: la pantalla entera de pista
+L 0x558D PINTA_PISTA_BUCLE   una fila por vuelta
+L 0x559D PINTA_UNA_FILA_MAS  sin llamador: 0x443D, avanza 0x800 (una fila de 8 px) y pinta esa fila (0x564C); vuelve por 0x43FE. Lo que hace PINTA_PISTA_32_FILAS en cada vuelta, pero una sola vez
+L 0x55AC SIN_AVANCE          (ix+4C) = 0: esta vuelta no hay fila nueva
+L 0x55B1 AVANZA_PISTA        7/8/9; DE = (ix+43,44): >= 0x1000 -> dos filas y pico (0x560F), >= 0x800 -> una y pico (0x5632), si no lo que toque (0x55CB)
+L 0x55CB AVANZA_POSICION     (ix+3F,40) -= DE (con acarreo a ix+41,42); si cruza filas de 8 px: (ix+4C) = 1 y (ix+45) += filas; a las 12 filas pasa a la pieza siguiente (ix+46,47) y (ix+6F) = 3
+L 0x560F AVANZA_DOS_FILAS    dos filas enteras pintadas y el resto
+L 0x5632 AVANZA_UNA_FILA     una fila entera pintada y el resto
+L 0x564C PINTA_FILA_PISTA    7/8/9; fila del buffer de nombres (E400 o EC00, por ix+9) que toca por (ix+40); la pieza (ix+46,47) de la secuencia (E257): 0xFF = fin de vuelta (0x56D7); flags bit 6 -> columna (ix-19) += flags&0x3F (mod 8); E255 = fila de metatile; pinta los 8 metatiles (0x5705); 0x5E6C; 1/2/3
+L 0x568D FILA_PISTA_SIGUE    (ix-1).7 = 1 solo si en esta fila se aplico un desplazamiento de columna (el `jr c` mira el acarreo que dejan los `and`, no el bit 7 de C); HL = pieza*24 + fila*8 + columna + (E259); E255 = (E253) + (3 - fila&3)*4
+L 0x56D7 FIN_DE_VUELTA       1/2/3; fila y pieza a cero, (ix+57) = 0, (ix-2)++ (vueltas); p01 0x77A7; y pinta la fila ya desde el principio
+L 0x56F7 FILA_BUFFER_NOMBRES  HL = DE + (((ix+40) - 0x40) & 0xF8) * 4: la fila de 32 bytes del buffer
+L 0x5705 PINTA_8_METATILES   A/B/C; los 8 indices de la fila HL de la pieza (rotando desde la columna l&7): por cada uno, 4 tiles de (E255) + indice*16 al buffer (HL') con ldi
+L 0x5710 PINTA_METATILE_SIGUIENTE  siguiente columna (mod 8 dentro de la fila)
+L 0x5716 PINTA_METATILE      los 4 tiles de una fila del metatile
+L 0x5730 PINTA_ESCENA_FIJA   guarda (E257), (E259), (E253); pinta una escena de 3 piezas con las piezas HL y los metatiles DE (0x5755); y los restaura
+D 0x574F 0x5755 secuencia_escena  la secuencia fija de las escenas: las piezas 0, 1 y 2 con flags 0 (la pinta 0x5588 con 32 filas, asi que nunca llega a leer mas)
+F 0x574F 2
+L 0x5755 PINTA_ESCENA        IX = IY = E380 (el bloque del segundo coche): posicion a cero, (E253) = DE, (E259) = HL, (E257) = 0x574F, buffer EC00 ((iy+9) = 2), y las 32 filas (0x5588)
+L 0x5778 PINTA_ESCENA_7D88   la escena de piezas p10 0x7D88 y metatiles p10 0x7E38 (26 metatiles; que es, por ver en el emulador)
+L 0x578A PINTA_ESCENA_7DD0   la escena de piezas p10 0x7DD0 y metatiles p10 0x7E18 (2 metatiles macizos de los tiles 0x89 y 0x8A)
+
+# --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
+D 0x430d 0x4317 pendiente_de_trazar Sin trazar ni identificar todavia (10 bytes)
+D 0x467f 0x4689 pendiente_de_trazar Sin trazar ni identificar todavia (10 bytes)
+D 0x47d3 0x47e6 pendiente_de_trazar Sin trazar ni identificar todavia (19 bytes)
+D 0x4835 0x4839 pendiente_de_trazar Sin trazar ni identificar todavia (4 bytes)
+D 0x4961 0x497a pendiente_de_trazar Sin trazar ni identificar todavia (25 bytes)
+D 0x49c4 0x49c7 pendiente_de_trazar Sin trazar ni identificar todavia (3 bytes)
+D 0x49ef 0x49f9 pendiente_de_trazar Sin trazar ni identificar todavia (10 bytes)
+D 0x4a09 0x4a0d pendiente_de_trazar Sin trazar ni identificar todavia (4 bytes)
+D 0x4a55 0x4a61 pendiente_de_trazar Sin trazar ni identificar todavia (12 bytes)
+D 0x4a76 0x4a7e pendiente_de_trazar Sin trazar ni identificar todavia (8 bytes)
+D 0x4a97 0x4a9d pendiente_de_trazar Sin trazar ni identificar todavia (6 bytes)
+D 0x4b48 0x4b67 pendiente_de_trazar Sin trazar ni identificar todavia (31 bytes)
+D 0x4ba3 0x4bb2 pendiente_de_trazar Sin trazar ni identificar todavia (15 bytes)
+D 0x4c8c 0x4c93 pendiente_de_trazar Sin trazar ni identificar todavia (7 bytes)
+D 0x4c9a 0x4ca1 pendiente_de_trazar Sin trazar ni identificar todavia (7 bytes)
+D 0x4caf 0x4cb6 pendiente_de_trazar Sin trazar ni identificar todavia (7 bytes)
+D 0x4fb2 0x4fbe pendiente_de_trazar Sin trazar ni identificar todavia (12 bytes)
+D 0x514a 0x516a pendiente_de_trazar Sin trazar ni identificar todavia (32 bytes)
+D 0x53b7 0x53d2 pendiente_de_trazar Sin trazar ni identificar todavia (27 bytes)
+D 0x5452 0x545e pendiente_de_trazar Sin trazar ni identificar todavia (12 bytes)
+D 0x54d1 0x54d4 pendiente_de_trazar Sin trazar ni identificar todavia (3 bytes)
+D 0x57d8 0x57d9 pendiente_de_trazar Sin trazar ni identificar todavia (1 bytes)
+D 0x584d 0x5876 pendiente_de_trazar Sin trazar ni identificar todavia (41 bytes)
+D 0x58a2 0x58f2 pendiente_de_trazar Sin trazar ni identificar todavia (80 bytes)
+D 0x5909 0x5913 pendiente_de_trazar Sin trazar ni identificar todavia (10 bytes)
+D 0x5993 0x599b pendiente_de_trazar Sin trazar ni identificar todavia (8 bytes)
+D 0x5e4a 0x5e6c pendiente_de_trazar Sin trazar ni identificar todavia (34 bytes)
+D 0x5f41 0x5f55 pendiente_de_trazar Sin trazar ni identificar todavia (20 bytes)
+# --- fin de la seccion pendiente ---

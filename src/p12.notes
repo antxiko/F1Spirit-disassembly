@@ -1,0 +1,338 @@
+# Anotaciones de F-1 Spirit (Konami, 1987, RC-752): pagina 12 de 16, que el
+# mapper pone en 0xa000-0xbfff (ver tools/paginas.py).
+#
+# Directivas: L=etiqueta, C=comentario de linea, B=cabecera de bloque,
+# D=rango de datos (con nombre y explicacion), F=anchura de fila de un bloque
+# de datos. Todo anclado a direccion, asi que sobrevive a un retrazado. Sin
+# acentos a proposito.
+#
+# ESTADO: pagina sin trazar. El rango D de abajo es un marcador: dice que NADA
+# de esta pagina esta explicado todavia. Se va recortando segun el trazado
+# convierte bytes en codigo y las lecturas ponen nombre a los datos.
+
+# --- BLOQUES IDENTIFICADOS POR tools/graficos.py (los recorre desde la ROM como hace el cargador de la pagina 0 y los
+# verifica: RLE que termina, patrones y colores de la misma longitud,
+# alineacion de los fotogramas). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0xafcc 0xafd1 rle_pat_AFCC patrones RLE: 1 tiles desde el 180 (lista 0x733c)
+F 0xafcc 16
+D 0xafd1 0xafdf rle_pat_AFD1 patrones RLE: 2 tiles desde el 31 (lista 0x66e1)
+F 0xafd1 16
+D 0xafdf 0xafe6 rle_pat_AFDF patrones RLE: 2 tiles desde el 31 (lista 0x66e1)
+F 0xafdf 16
+D 0xafe6 0xaff4 rle_pat_AFE6 patrones RLE: 2 tiles desde el 31 (lista 0x66e1)
+F 0xafe6 16
+D 0xaff4 0xb00d rle_pat_AFF4 patrones RLE: 3 tiles desde el 41 (tabla85[73])
+F 0xaff4 16
+D 0xb00d 0xb016 rle_pat_B00D patrones RLE: 3 tiles desde el 59 (lista 0x73b8)
+F 0xb00d 16
+D 0xb016 0xb02f rle_pat_B016 patrones RLE: 3 tiles desde el 100 (lista 0x73b8)
+F 0xb016 16
+D 0xb02f 0xb032 rle_pat_B02F patrones RLE: 1 tiles desde el 187 (tabla85[77])
+F 0xb02f 16
+D 0xb032 0xb06f rle_pat_B032 patrones RLE: 10 tiles desde el 44 (lista 0x67b2)
+F 0xb032 16
+D 0xb06f 0xb092 rle_pat_B06F patrones RLE: 5 tiles desde el 54 (lista 0x67b2)
+F 0xb06f 16
+D 0xb092 0xb0ce rle_pat_B092 patrones RLE: 10 tiles desde el 44 (lista 0x67b2)
+F 0xb092 16
+D 0xb0ce 0xb0f1 rle_pat_B0CE patrones RLE: 5 tiles desde el 54 (lista 0x67b2)
+F 0xb0ce 16
+D 0xb0f1 0xb122 rle_pat_B0F1 patrones RLE: 10 tiles desde el 44 (lista 0x67b2)
+F 0xb0f1 16
+D 0xb122 0xb147 rle_pat_B122 patrones RLE: 5 tiles desde el 54 (lista 0x67b2)
+F 0xb122 16
+D 0xb147 0xb14a rle_pat_B147 patrones RLE: 2 tiles desde el 107 (lista 0x69d9)
+F 0xb147 16
+D 0xb14a 0xb180 rle_pat_B14A patrones RLE: 8 tiles desde el 111 (lista 0x69d9)
+F 0xb14a 16
+D 0xb180 0xb1b6 rle_pat_B180 patrones RLE: 8 tiles desde el 127 (lista 0x69d9)
+F 0xb180 16
+D 0xb1b6 0xb1e9 rle_pat_B1B6 patrones RLE: 8 tiles desde el 143 (lista 0x69d9)
+F 0xb1b6 16
+D 0xb1e9 0xb21c rle_pat_B1E9 patrones RLE: 8 tiles desde el 159 (lista 0x69d9)
+F 0xb1e9 16
+D 0xb21c 0xb22b rle_pat_B21C patrones RLE: 3 tiles desde el 80 (tabla85[74])
+F 0xb21c 16
+D 0xb22b 0xb277 rle_pat_B22B patrones RLE: 10 tiles desde el 181 (tabla85[75])
+F 0xb22b 16
+D 0xb277 0xb289 rle_pat_B277 patrones RLE: 3 tiles desde el 80 (lista 0x72aa)
+F 0xb277 16
+D 0xb289 0xb2d9 rle_pat_B289 patrones RLE: 10 tiles desde el 181 (lista 0x6a82)
+F 0xb289 16
+D 0xb2d9 0xb2e8 rle_pat_B2D9 patrones RLE: 3 tiles desde el 80 (lista 0x70cd)
+F 0xb2d9 16
+D 0xb2e8 0xb33a rle_pat_B2E8 patrones RLE: 10 tiles desde el 181 (lista 0x6a36)
+F 0xb2e8 16
+D 0xb33a 0xb34b rle_pat_B33A patrones RLE: 3 tiles desde el 80 (lista 0x7354)
+F 0xb33a 16
+D 0xb34b 0xb39b rle_pat_B34B patrones RLE: 10 tiles desde el 181 (lista 0x6a49)
+F 0xb34b 16
+D 0xb39b 0xb39e rle_pat_B39B patrones RLE: 2 tiles desde el 42 (tabla85[78])
+F 0xb39b 16
+D 0xb39e 0xb3a3 rle_pat_B39E patrones RLE: 1 tiles desde el 82 (tabla85[79])
+F 0xb39e 16
+D 0xb3a3 0xb3a8 rle_pat_B3A3 patrones RLE: 1 tiles desde el 81 (tabla85[81])
+F 0xb3a3 16
+D 0xb3a8 0xb3b6 rle_pat_B3A8 patrones RLE: 3 tiles desde el 190 (lista 0x7388)
+F 0xb3a8 16
+D 0xb3b6 0xb3c0 rle_pat_B3B6 patrones RLE: 1 tiles desde el 193 (lista 0x7388)
+F 0xb3b6 16
+D 0xb3c0 0xb3e2 rle_pat_B3C0 patrones RLE: 4 tiles desde el 103 (lista 0x73b8)
+F 0xb3c0 16
+D 0xb3e2 0xb411 rle_pat_B3E2 patrones RLE: 6 tiles desde el 35 (lista 0x719e)
+F 0xb3e2 16
+D 0xb411 0xb449 rle_pat_B411 patrones RLE: 8 tiles desde el 9 (lista 0x71d4)
+F 0xb411 16
+D 0xb449 0xb47b rle_pat_B449 patrones RLE: 8 tiles desde el 9 (lista 0x71d4)
+F 0xb449 16
+D 0xb47b 0xb4b3 rle_pat_B47B patrones RLE: 8 tiles desde el 9 (lista 0x71d4)
+F 0xb47b 16
+D 0xb4b3 0xb4bd rle_pat_B4B3 patrones RLE: 1 tiles desde el 77 (tabla85[0])
+F 0xb4b3 16
+D 0xb4bd 0xb4cf rle_pat_B4BD patrones RLE: 2 tiles desde el 15 (tabla85[4])
+F 0xb4bd 16
+D 0xb4cf 0xb509 rle_pat_B4CF patrones RLE: 7 tiles desde el 86 (lista 0x68cf)
+F 0xb4cf 16
+D 0xb509 0xb50c rle_col_B509 colores RLE: 1 tiles desde el 180 (lista 0x733c)
+F 0xb509 16
+D 0xb50c 0xb50f rle_col_B50C colores RLE: 2 tiles desde el 31 (lista 0x6673)
+F 0xb50c 16
+D 0xb50f 0xb512 rle_col_B50F colores RLE: 2 tiles desde el 33 (lista 0x66e1)
+F 0xb50f 16
+D 0xb512 0xb524 rle_col_B512 colores RLE: 3 tiles desde el 41 (tabla85[73])
+F 0xb512 16
+D 0xb524 0xb52d rle_col_B524 colores RLE: 3 tiles desde el 59 (lista 0x7354)
+F 0xb524 16
+D 0xb52d 0xb534 rle_col_B52D colores RLE: 3 tiles desde el 100 (tabla85[76])
+F 0xb52d 16
+D 0xb534 0xb537 rle_col_B534 colores RLE: 1 tiles desde el 187 (tabla85[77])
+F 0xb534 16
+D 0xb537 0xb53a rle_col_B537 colores RLE: 1 tiles desde el 194 (lista 0x6a49)
+F 0xb537 16
+D 0xb53a 0xb53d rle_col_B53A colores RLE: 1 tiles desde el 138 (lista 0x6dea)
+F 0xb53a 16
+D 0xb53d 0xb540 rle_col_B53D colores RLE: 1 tiles desde el 139 (lista 0x6dea)
+F 0xb53d 16
+D 0xb540 0xb543 rle_col_B540 colores RLE: 1 tiles desde el 140 (lista 0x6dea)
+F 0xb540 16
+D 0xb543 0xb546 rle_col_B543 colores RLE: 1 tiles desde el 194 (lista 0x733c)
+F 0xb543 16
+D 0xb546 0xb575 rle_col_B546 colores RLE: 10 tiles desde el 44 (lista 0x671e)
+F 0xb546 16
+D 0xb575 0xb593 rle_col_B575 colores RLE: 5 tiles desde el 54 (lista 0x671e)
+F 0xb575 16
+D 0xb593 0xb5c9 rle_col_B593 colores RLE: 10 tiles desde el 44 (lista 0x671e)
+F 0xb593 16
+D 0xb5c9 0xb5e8 rle_col_B5C9 colores RLE: 5 tiles desde el 54 (lista 0x671e)
+F 0xb5c9 16
+D 0xb5e8 0xb605 rle_col_B5E8 colores RLE: 10 tiles desde el 44 (lista 0x671e)
+F 0xb5e8 16
+D 0xb605 0xb623 rle_col_B605 colores RLE: 5 tiles desde el 54 (lista 0x678d)
+F 0xb605 16
+D 0xb623 0xb628 rle_col_B623 colores RLE: 2 tiles desde el 107 (lista 0x68e5)
+F 0xb623 16
+D 0xb628 0xb631 rle_col_B628 colores RLE: 8 tiles desde el 111 (lista 0x68e5)
+F 0xb628 16
+D 0xb631 0xb63a rle_col_B631 colores RLE: 8 tiles desde el 127 (lista 0x68e5)
+F 0xb631 16
+D 0xb63a 0xb63f rle_col_B63A colores RLE: 8 tiles desde el 143 (lista 0x69d9)
+F 0xb63a 16
+D 0xb63f 0xb648 rle_col_B63F colores RLE: 8 tiles desde el 159 (lista 0x69d9)
+F 0xb63f 16
+D 0xb648 0xb64b rle_col_B648 colores RLE: 3 tiles desde el 80 (tabla85[74])
+F 0xb648 16
+D 0xb64b 0xb652 rle_col_B64B colores RLE: 10 tiles desde el 181 (tabla85[75])
+F 0xb64b 16
+D 0xb652 0xb65b rle_col_B652 colores RLE: 3 tiles desde el 80 (lista 0x72aa)
+F 0xb652 16
+D 0xb65b 0xb662 rle_col_B65B colores RLE: 10 tiles desde el 181 (lista 0x6a82)
+F 0xb65b 16
+D 0xb662 0xb66b rle_col_B662 colores RLE: 3 tiles desde el 80 (lista 0x7156)
+F 0xb662 16
+D 0xb66b 0xb672 rle_col_B66B colores RLE: 10 tiles desde el 181 (lista 0x6a5c)
+F 0xb66b 16
+D 0xb672 0xb675 rle_col_B672 colores RLE: 3 tiles desde el 80 (lista 0x70cd)
+F 0xb672 16
+D 0xb675 0xb678 rle_col_B675 colores RLE: 10 tiles desde el 181 (lista 0x6a36)
+F 0xb675 16
+D 0xb678 0xb67b rle_col_B678 colores RLE: 3 tiles desde el 80 (lista 0x7354)
+F 0xb678 16
+D 0xb67b 0xb67e rle_col_B67B colores RLE: 10 tiles desde el 181 (lista 0x6a49)
+F 0xb67b 16
+D 0xb67e 0xb681 rle_col_B67E colores RLE: 3 tiles desde el 80 (lista 0x7238)
+F 0xb67e 16
+D 0xb681 0xb684 rle_col_B681 colores RLE: 10 tiles desde el 181 (lista 0x6a6f)
+F 0xb681 16
+D 0xb684 0xb696 rle_col_B684 colores RLE: 2 tiles desde el 42 (tabla85[78])
+F 0xb684 16
+D 0xb696 0xb699 rle_col_B696 colores RLE: 1 tiles desde el 81 (tabla85[81])
+F 0xb696 16
+D 0xb699 0xb69c rle_col_B699 colores RLE: 1 tiles desde el 100 (tabla85[80])
+F 0xb699 16
+D 0xb69c 0xb6b4 rle_col_B69C colores RLE: 3 tiles desde el 190 (lista 0x7388)
+F 0xb69c 16
+D 0xb6b4 0xb6b9 rle_col_B6B4 colores RLE: 1 tiles desde el 193 (lista 0x7388)
+F 0xb6b4 16
+D 0xb6b9 0xb6c2 rle_col_B6B9 colores RLE: 2 tiles desde el 107 (lista 0x695f)
+F 0xb6b9 16
+D 0xb6c2 0xb6c7 rle_col_B6C2 colores RLE: 2 tiles desde el 107 (lista 0x69d9)
+F 0xb6c2 16
+D 0xb6c7 0xb6cc rle_col_B6C7 colores RLE: 2 tiles desde el 107 (lista 0x699c)
+F 0xb6c7 16
+D 0xb6cc 0xb6d1 rle_col_B6CC colores RLE: 2 tiles desde el 107 (lista 0x6922)
+F 0xb6cc 16
+D 0xb6d1 0xb6d4 rle_col_B6D1 colores RLE: 2 tiles desde el 31 (lista 0x6642)
+F 0xb6d1 16
+D 0xb6d4 0xb6d7 rle_col_B6D4 colores RLE: 2 tiles desde el 31 (lista 0x66b0)
+F 0xb6d4 16
+D 0xb6d7 0xb6da rle_col_B6D7 colores RLE: 2 tiles desde el 31 (lista 0x6605)
+F 0xb6d7 16
+D 0xb6da 0xb6dd rle_col_B6DA colores RLE: 2 tiles desde el 31 (lista 0x66e1)
+F 0xb6da 16
+D 0xb6dd 0xb6e0 rle_col_B6DD colores RLE: 2 tiles desde el 33 (lista 0x6642)
+F 0xb6dd 16
+D 0xb6e0 0xb6e3 rle_col_B6E0 colores RLE: 2 tiles desde el 33 (lista 0x66b0)
+F 0xb6e0 16
+D 0xb6e3 0xb6e6 rle_col_B6E3 colores RLE: 2 tiles desde el 33 (lista 0x6605)
+F 0xb6e3 16
+D 0xb6e6 0xb6ef rle_col_B6E6 colores RLE: 3 tiles desde el 59 (lista 0x7113)
+F 0xb6e6 16
+D 0xb6ef 0xb6f8 rle_col_B6EF colores RLE: 3 tiles desde el 59 (lista 0x73b8)
+F 0xb6ef 16
+D 0xb6f8 0xb701 rle_col_B6F8 colores RLE: 3 tiles desde el 59 (lista 0x730b)
+F 0xb6f8 16
+D 0xb701 0xb708 rle_col_B701 colores RLE: 3 tiles desde el 100 (lista 0x7113)
+F 0xb701 16
+D 0xb708 0xb70f rle_col_B708 colores RLE: 3 tiles desde el 100 (lista 0x73b8)
+F 0xb708 16
+D 0xb70f 0xb73e rle_col_B70F colores RLE: 10 tiles desde el 44 (lista 0x6768)
+F 0xb70f 16
+D 0xb73e 0xb76d rle_col_B73E colores RLE: 10 tiles desde el 44 (lista 0x678d)
+F 0xb73e 16
+D 0xb76d 0xb79c rle_col_B76D colores RLE: 10 tiles desde el 44 (lista 0x67b2)
+F 0xb76d 16
+D 0xb79c 0xb7cb rle_col_B79C colores RLE: 10 tiles desde el 44 (lista 0x6743)
+F 0xb79c 16
+D 0xb7cb 0xb801 rle_col_B7CB colores RLE: 10 tiles desde el 44 (lista 0x6768)
+F 0xb7cb 16
+D 0xb801 0xb837 rle_col_B801 colores RLE: 10 tiles desde el 44 (lista 0x678d)
+F 0xb801 16
+D 0xb837 0xb86d rle_col_B837 colores RLE: 10 tiles desde el 44 (lista 0x67b2)
+F 0xb837 16
+D 0xb86d 0xb8a3 rle_col_B86D colores RLE: 10 tiles desde el 44 (lista 0x6743)
+F 0xb86d 16
+D 0xb8a3 0xb8c0 rle_col_B8A3 colores RLE: 10 tiles desde el 44 (lista 0x6768)
+F 0xb8a3 16
+D 0xb8c0 0xb8dd rle_col_B8C0 colores RLE: 10 tiles desde el 44 (lista 0x678d)
+F 0xb8c0 16
+D 0xb8dd 0xb8fa rle_col_B8DD colores RLE: 10 tiles desde el 44 (lista 0x67b2)
+F 0xb8dd 16
+D 0xb8fa 0xb917 rle_col_B8FA colores RLE: 10 tiles desde el 44 (lista 0x6743)
+F 0xb8fa 16
+D 0xb917 0xb935 rle_col_B917 colores RLE: 5 tiles desde el 54 (lista 0x6768)
+F 0xb917 16
+D 0xb935 0xb953 rle_col_B935 colores RLE: 5 tiles desde el 54 (lista 0x678d)
+F 0xb935 16
+D 0xb953 0xb971 rle_col_B953 colores RLE: 5 tiles desde el 54 (lista 0x6743)
+F 0xb953 16
+D 0xb971 0xb98e rle_col_B971 colores RLE: 5 tiles desde el 54 (lista 0x67b2)
+F 0xb971 16
+D 0xb98e 0xb9ad rle_col_B98E colores RLE: 5 tiles desde el 54 (lista 0x6768)
+F 0xb98e 16
+D 0xb9ad 0xb9cc rle_col_B9AD colores RLE: 5 tiles desde el 54 (lista 0x678d)
+F 0xb9ad 16
+D 0xb9cc 0xb9ec rle_col_B9CC colores RLE: 5 tiles desde el 54 (lista 0x6743)
+F 0xb9cc 16
+D 0xb9ec 0xba0c rle_col_B9EC colores RLE: 5 tiles desde el 54 (lista 0x67b2)
+F 0xb9ec 16
+D 0xba0c 0xba2a rle_col_BA0C colores RLE: 5 tiles desde el 54 (lista 0x6743)
+F 0xba0c 16
+D 0xba2a 0xba48 rle_col_BA2A colores RLE: 5 tiles desde el 54 (lista 0x67b2)
+F 0xba2a 16
+D 0xba48 0xba51 rle_col_BA48 colores RLE: 8 tiles desde el 111 (lista 0x6922)
+F 0xba48 16
+D 0xba51 0xba72 rle_col_BA51 colores RLE: 8 tiles desde el 111 (lista 0x695f)
+F 0xba51 16
+D 0xba72 0xba7d rle_col_BA72 colores RLE: 8 tiles desde el 111 (lista 0x69d9)
+F 0xba72 16
+D 0xba7d 0xba86 rle_col_BA7D colores RLE: 8 tiles desde el 111 (lista 0x699c)
+F 0xba7d 16
+D 0xba86 0xba8f rle_col_BA86 colores RLE: 8 tiles desde el 127 (lista 0x6922)
+F 0xba86 16
+D 0xba8f 0xbab0 rle_col_BA8F colores RLE: 8 tiles desde el 127 (lista 0x695f)
+F 0xba8f 16
+D 0xbab0 0xbab9 rle_col_BAB0 colores RLE: 8 tiles desde el 127 (lista 0x69d9)
+F 0xbab0 16
+D 0xbab9 0xbac2 rle_col_BAB9 colores RLE: 8 tiles desde el 127 (lista 0x699c)
+F 0xbab9 16
+D 0xbac2 0xbae3 rle_col_BAC2 colores RLE: 8 tiles desde el 143 (lista 0x695f)
+F 0xbac2 16
+D 0xbae3 0xbae8 rle_col_BAE3 colores RLE: 8 tiles desde el 143 (lista 0x699c)
+F 0xbae3 16
+D 0xbae8 0xbb0b rle_col_BAE8 colores RLE: 8 tiles desde el 159 (lista 0x695f)
+F 0xbae8 16
+D 0xbb0b 0xbb14 rle_col_BB0B colores RLE: 8 tiles desde el 159 (lista 0x699c)
+F 0xbb0b 16
+D 0xbb14 0xbb36 rle_col_BB14 colores RLE: 4 tiles desde el 103 (lista 0x7354)
+F 0xbb14 16
+D 0xbb36 0xbb55 rle_col_BB36 colores RLE: 4 tiles desde el 103 (lista 0x7113)
+F 0xbb36 16
+D 0xbb55 0xbb74 rle_col_BB55 colores RLE: 4 tiles desde el 103 (lista 0x73b8)
+F 0xbb55 16
+D 0xbb74 0xbb96 rle_col_BB74 colores RLE: 4 tiles desde el 103 (lista 0x7156)
+F 0xbb74 16
+D 0xbb96 0xbbbb rle_col_BB96 colores RLE: 6 tiles desde el 35 (lista 0x719e)
+F 0xbb96 16
+D 0xbbbb 0xbbbe rle_col_BBBB colores RLE: 8 tiles desde el 9 (lista 0x71d4)
+F 0xbbbb 16
+D 0xbbbe 0xbbc8 rle_col_BBBE colores RLE: 1 tiles desde el 77 (tabla85[0])
+F 0xbbbe 16
+D 0xbbc8 0xbbd9 rle_col_BBC8 colores RLE: 2 tiles desde el 1 (tabla85[1])
+F 0xbbc8 16
+D 0xbbd9 0xbbe3 rle_col_BBD9 colores RLE: 1 tiles desde el 77 (tabla85[2])
+F 0xbbd9 16
+D 0xbbe3 0xbbf4 rle_col_BBE3 colores RLE: 2 tiles desde el 1 (tabla85[3])
+F 0xbbe3 16
+D 0xbbf4 0xbc05 rle_col_BBF4 colores RLE: 2 tiles desde el 15 (tabla85[4])
+F 0xbbf4 16
+D 0xbc05 0xbc3e rle_col_BC05 colores RLE: 7 tiles desde el 86 (lista 0x68cf)
+F 0xbc05 16
+D 0xbc3e 0xbc75 rle_col_BC3E colores RLE: 7 tiles desde el 86 (lista 0x68b9)
+F 0xbc3e 16
+D 0xbc75 0xbcf7 rle_pat_BC75 patrones RLE: 22 tiles desde el 97 (lista 0x6aa8)
+F 0xbc75 16
+D 0xbcf7 0xbd77 rle_pat_BCF7 patrones RLE: 22 tiles desde el 97 (lista 0x6aa8)
+F 0xbcf7 16
+D 0xbd77 0xbe02 rle_pat_BD77 patrones RLE: 22 tiles desde el 97 (lista 0x6aa8)
+F 0xbd77 16
+D 0xbe02 0xbe65 rle_col_BE02 colores RLE: 22 tiles desde el 97 (lista 0x6aa8)
+F 0xbe02 16
+D 0xbe65 0xbebc rle_col_BE65 colores RLE: 22 tiles desde el 97 (lista 0x6aa8)
+F 0xbe65 16
+D 0xbebc 0xbf3b rle_col_BEBC colores RLE: 22 tiles desde el 97 (lista 0x6aa8)
+F 0xbebc 16
+# --- fin de los bloques de graficos.py ---
+
+# --- BLOQUES IDENTIFICADOS POR tools/circuitos.py (la cadena secuencia -> piezas -> metatiles de la pagina 0 y los objetos
+# de la pista, recorridos desde la ROM; los tamanos de las tablas salen del
+# indice maximo que usa cada carrera y cada tabla acaba donde empieza la
+# siguiente). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0xa000 0xa698 metatiles_C tabla de metatiles C: 256 metatiles de 16 B (4 filas x 4 tiles); la usan las carreras 3,4,5,6,7,10,11,12,13,14,15,16,17,18,19
+F 0xa000 16
+D 0xa698 0xaf78 metatiles_D tabla de metatiles D: 142 metatiles de 16 B (4 filas x 4 tiles); la usan las carreras 1,9
+F 0xa698 16
+D 0xaf78 0xafa2 tabla_metatiles 21 punteros (por (E25C)) a la tabla de metatiles de cada carrera
+F 0xaf78 w1
+D 0xafa2 0xafcc tabla_piezas 21 punteros (por (E25C)) a la tabla de piezas de cada carrera
+F 0xafa2 w1
+# --- fin de los bloques de circuitos.py ---
+
+D 0xbf3b 0xbffc mandos_grabados_BF3B 96 pares (mascara de mandos, cuadros que dura) que suman 626 cuadros: 12,5 s a 50 Hz. Mismo formato que p15 0xBAB9 y p06 0xBDC1, pero aqui las mascaras llevan tambien el bit 7 (80 84 88 90 94 98). Partida grabada para la demo (hipotesis fundada, sin medir en el emulador)
+F 0xbf3b 2
+D 0xbffc 0xc000 relleno_BFFC 4 bytes a 0xFF hasta el final de la pagina
+F 0xbffc 16
+
+# --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
+# --- fin de la seccion pendiente ---

@@ -1,0 +1,22 @@
+# Puntos de entrada de la pagina 15 de F-1 Spirit (org 0xa000).
+#
+# Cada semilla lleva su justificacion: de donde se llama y con que pagina
+# mapeada. Una semilla sin justificar es la via mas rapida a un trazado falso.
+# Las llamadas que salen de otra pagina se ven en work/p15.trace.json
+# ("externos") y con tools/externos.py.
+
+0xBF50   # desde INIT (0x4138): `di / call 0x4442` (D/E/F en 6000/8000/A000)
+         # y `call 0BF50h` seguido: en 0xA000 esta la pagina 15. Luego INIT
+         # hace `call 0x4433` (vuelve a 1/2/3) y se queda en `jr $`.
+
+# --- Llamadas desde otras paginas MEDIDAS en el emulador (hecho-verificado):
+# tools/omsx_bancos.tcl, 90 s de demo de titulo, 2026-08-19 (work/omsx/bancos.log).
+# Punto de ruptura en cada origen y lectura del depurable 'romblocks' de
+# openMSX en el destino: en esa direccion estaba mapeada ESTA pagina.
+0xA5DF   # desde p13:6470 (medido)
+
+# --- Llamadas desde otras paginas MEDIDAS en el emulador (hecho-verificado):
+# tools/omsx_bancos.tcl -> work/omsx/bancos.log. Punto de ruptura en cada
+# origen y lectura del depurable 'romblocks' de openMSX en el destino: en
+# esa direccion estaba mapeada ESTA pagina.
+0xA6FE   # desde p13:6494 (medido)

@@ -1,0 +1,6 @@
+# Puntos de entrada de la pagina 6 de F-1 Spirit (org 0xa000).
+#
+# Cada semilla lleva su justificacion: de donde se llama y con que pagina
+# mapeada. Una semilla sin justificar es la via mas rapida a un trazado falso.
+# Las llamadas que salen de otra pagina se ven en work/p06.trace.json
+# ("externos") y con tools/externos.py.

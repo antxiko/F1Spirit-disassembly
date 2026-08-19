@@ -1,0 +1,740 @@
+# Anotaciones de F-1 Spirit (Konami, 1987, RC-752): pagina 1 de 16, que el
+# mapper pone en 0x6000-0x7fff (ver tools/paginas.py).
+#
+# Directivas: L=etiqueta, C=comentario de linea, B=cabecera de bloque,
+# D=rango de datos (con nombre y explicacion), F=anchura de fila de un bloque
+# de datos. Todo anclado a direccion, asi que sobrevive a un retrazado. Sin
+# acentos a proposito.
+#
+# ESTADO: pagina sin trazar. El rango D de abajo es un marcador: dice que NADA
+# de esta pagina esta explicado todavia. Se va recortando segun el trazado
+# convierte bytes en codigo y las lecturas ponen nombre a los datos.
+
+
+D 0x7FFF 0x8000 sub_partido el opcode `sub` (0xD6) de la rutina 0x7FFC: su operando es el byte 0x8000 de la pagina 2 (0xD4), y la rutina sigue en p02 0x8001. La unica instruccion del cartucho que cruza una frontera de pagina
+F 0x7FFF 1
+
+# Anotaciones de F-1 Spirit, pagina 1 (org 0x6000), escritas por el agente
+# anotador (2026-08-19) leyendo src/f1spirit_p01.asm y la ROM. Sin acentos.
+# Variables: E250 subestado de carrera (despachador p00 0x5A3D), E251 paso
+# dentro del subestado y el indice del despachador 0x71E1 (0x71DB: `ld a,
+# (E251) / cp 7 / ret nc / call 0x40DA`), E252 paso dentro de la opcion, E27E opcion
+# marcada del menu (cursor), E27F ultima opcion valida, E25F jugador que
+# elige (0/1), E25B categoria 0..5 (ver abajo), E25C carrera 0..20, E29D/E35D por coche
+# (ix-0x23): GP elegido / GP maximo, E295/E355 (ix-0x2B): 16 bits, puntos
+# (hipotesis), EA88..EA8B: posicion del cursor (4 bytes copiados de p03
+# 0xBBxx), EA69/EA6A: columna/fila del escritor de buffers, EA6B: puntero
+# de texto, EA70: buffer de nombres activo (E400/EC00), EC02..: buffer de
+# texto expandido. Textos en p03 0xABxx: [columna, fila, caracteres...,
+# 0x5F]; 1 = salto de linea; >= 0x60 = macro de la tabla p09 0xA6DE.
+
+# QUE CATEGORIA ES CADA VALOR DE E25B (hecho-verificado 2026-08-19 con una
+# captura del menu que mando el usuario):
+#   0 RALLY, 1 STOCK, 2 ENDURANCE, 3 F3, 4 F3000, 5 F1
+# El MENU las ensena en otro orden -columna izquierda: STOCK RACE, RALLY,
+# F3 RACE, F3000 RACE, ENDURANCE RACE; y a la derecha F1 RACE SELECT con
+# ROUND 1-16 y el nombre del GP-, y la tabla 0x6135 traduce la opcion del
+# menu a la numeracion de arriba: [1, 0, 3, 4, 2]. Encaja con lo que ya
+# decia la ROM: el texto del ranking (p09 0xAB74/0xAB87) nombra STOCK, RALLY,
+# F3, F3000, ENDURANCE en el orden del menu, y la velocidad maxima de cada
+# categoria (byte alto de la palabra de p02 0x88FB) va de menos a mas
+# justo en la numeracion interna: RALLY 09, STOCK 0A, ENDURANCE 0D, F3 0D,
+# F3000 0E, F1 0F.
+#
+# Y LAS 21 CARRERAS (E25C), que es lo que indexa los circuitos, los objetos de
+# pista y los rotulos de p06 0xBC6D: 0x611B hace `cp 5 / jr c / add a,(E29D)`,
+# o sea E25C = E25B para las cinco categorias y 5 + E29D para la F1. Luego:
+#   carrera 0 RALLY, 1 STOCK, 2 ENDURANCE, 3 F3, 4 F3000 y 5..20 los 16 GP
+#   del mundial de F1 (E29D = 0..15, ROUND 1..16 en el menu).
+
+# =============================================================================
+# EL MENU DE SELECCION (estado E250 = 3, p00 0x5FD7 llega aqui por E251)
+# =============================================================================
+B 0x6000 Cola de p00 0x5FD7 (cae desde p00 0x5FFD con E251 = 0): en la
+B 0x6000 pantalla de opciones, al pulsar el boton: opcion 0 -> E250 = 0x0A
+B 0x6000 (E25B = min(E25C,5), E91F = 0xFF); opcion 1 -> 0x601E; resto -> E250 = 4.
+L 0x6000 OPCION_ELEGIDA      A = E27E (+1 si E25B = 0xFF); 0 -> categoria por E25C y E250 = 0x0A; 1 -> 0x601E; >1 -> E250 = 4
+C 0x6009 E25B = E25C si < 5, si no 5
+C 0x6017 E91F = 0xFF
+L 0x601E OPCION_1_ELEGIDA    E240 = 0, E27F = 2 (tres opciones), E27E = 0 y E251++ (0x6079); cursor de p03 0xBBAB a EA88; borra los textos p03 0xAB51 y 0xAB59 y pinta el 0xAB5E
+L 0x6047 A_ESTADO_4          E250 = 4
+L 0x6049 PON_ESTADO          E250 = A; E251 = E252 = E27E = 0
+L 0x604C SUBESTADO_A_CERO    E251 = E252 = E27E = 0 (lo llama p00 0x5BA2 tras E250++)
+B 0x6057 p00 0x5FE1 salta aqui con E251 = 1: menu de 2 o 3 opciones con la
+B 0x6057 tabla de cursor p03 0xBBCB; con el boton, E27E = 0 -> un jugador,
+B 0x6057 1 -> dos jugadores (bit 5 de E1C2; E240 = 1 si la opcion es 2).
+L 0x6057 MENU_JUGADORES      mueve el cursor por p03 0xBBCB (0x626C); con el boton (0x62AC): bit 5 de E1C2 = (E27E != 0), E240 = 1 si E27E = 2, pinta el menu de categorias (0x6082) y E251++
+C 0x6065 bit 5 de E1C2: dos jugadores
+C 0x6073 E240 = 1: la tercera opcion (hipotesis: dos jugadores alternos)
+L 0x6079 SIGUIENTE_PASO_MENU E27E = 0 y E251++
+L 0x6082 PINTA_MENU_CATEGORIAS  la raya vertical (0x613A), E27E = 0 (0x619E), la lista de textos con paginas 5/6 (0x62D4), E27F = 2, cursor de p03 0xBBAF a EA88, borra el texto 0xAB5E, pinta 0xAB74; si pasa los puntos: 0xAB87 (E27F = 4) y 0xAB93 (E27F = 5); E35D = GP maximo (0x61C7) y lo pinta en 0x3A7B
+C 0x60A7 carry si los puntos (E295 y E355) no llegan a 0x0C: no hay mas opciones
+C 0x60B6 idem con 0x19
+C 0x60C5 A = 2 * umbrales superados (0x21..0xB4) -> E35D
+C 0x60CB fila 19, columna 27 de la tabla de nombres
+B 0x60D1 La fila del GP elegido (E29D): borra 13 casillas en 0x3AB3 (fila
+B 0x60D1 21, col 19), pinta el numero E29D+1 en 0x3ADC y el nombre de la tabla 0x635A.
+L 0x60D1 PINTA_GP_ELEGIDO    FILVRM 13 ceros en 0x3AB3; numero E29D+1 en 0x3ADC (0x617E); el flujo de tiles 0x635A[E29D] en 0x3AB3 (p00 0x4807)
+C 0x60DE fila 22, columna 28
+C 0x60E7 tabla de 16 punteros a flujos de tiles (0x6E37..0x6ECC)
+C 0x60F0 p00 0x4807: PINTA_TILES con la direccion HL ya dada
+L 0x60F3 MENU_CATEGORIA      E251 = 2: cursor por p03 0xBBD1 (0x626C), textos (0x61A2, 0x62D4), si E27E = 5 mueve el GP (0x623C); con el boton: E25B = categoria de E27E (0x6128), E25C = E25B o 5 + E29D, E25F = 0 y E250 = 6
+C 0x6111 tabla 0x6135: opcion del menu -> categoria (1,0,3,4,2)
+C 0x611B E25C = 5 + E29D: el GP (hipotesis: la carrera de F1 elegida)
+L 0x611C PON_CARRERA         E25C = A, E25F = 0, E250 = 6
+L 0x6128 CATEGORIA_DE_OPCION si A < 5: A = tabla 0x6135[A]; si no A tal cual
+D 0x6135 0x613A tabla_opcion_categoria 5 bytes: la opcion del menu E27E -> categoria E25B (1,0,3,4,2)
+F 0x6135 5
+L 0x613A PINTA_RAYA_MENU     descomprime el flujo 0x6145 (15 columnas) en E421: una raya vertical de tiles 0x5F (7 filas) y 0x5E (7 filas)
+D 0x6145 0x617E flujo_raya_menu flujo RLE para 0x637A: 14 filas de [14 ceros, 0x5F/0x5E], fin 0x00
+F 0x6145 4
+L 0x617E PINTA_NUMERO_2_DIGITOS  A+1 a BCD (p00 0x4B28) y sus dos digitos en VRAM HL y HL+1 como tiles 0x10+n (decena 0 = tile 0)
+L 0x6192 PINTA_DIGITO_DECENA  WRTVRM de la decena y luego la unidad
+L 0x619E CURSOR_A_CERO       E27E = 0
+L 0x61A2 PINTA_NOMBRE_CATEGORIA  paginas 5/6 en 8000/A000; HL = p06 0xBC6D[categoria de E27E (+E29D si >= 5)]; descomprime 11 columnas en E423 (0x637A) y vuelve a 1/2/3
+C 0x61A4 MAPEA_A_EN_8000 con 5: p05 en 0x8000 y p06 en 0xA000
+C 0x61B5 tabla de punteros en p06 (A000 = pagina 6 aqui)
+L 0x61C7 GP_MAXIMO           A = 0; por cada umbral de puntos superado (0x21,0x30,0x41,0x54,0x69,0x80,0x99,0xB4) A += 2; si pasa todos A = 15
+L 0x61F7 PUNTOS_MENOS_0C     DE = 0x0C y compara (0x6227)
+L 0x61FC PUNTOS_MENOS_19     DE = 0x19
+L 0x6201 PUNTOS_MENOS_21     DE = 0x21
+L 0x6206 PUNTOS_MENOS_30     DE = 0x30
+L 0x620B PUNTOS_MENOS_41     DE = 0x41
+L 0x6210 PUNTOS_MENOS_54     DE = 0x54
+L 0x6215 PUNTOS_MENOS_69     DE = 0x69
+L 0x621A PUNTOS_MENOS_80     DE = 0x80
+L 0x621F PUNTOS_MENOS_99     DE = 0x99
+L 0x6224 PUNTOS_MENOS_B4     DE = 0xB4
+L 0x6227 COMPARA_PUNTOS      si E1DF != 0: NZ y sin carry; si no carry solo si (E295) < DE y (E355) < DE (los 16 bits de ix-0x2B de los dos coches)
+L 0x623C MUEVE_GP            flancos de los dos mandos: izquierda (bit 2) -> E29D-- (0x6255); derecha (bit 3) -> E29D++ hasta E35D; repinta nombre y numero y suena 0x25
+L 0x6255 GP_ANTERIOR         E29D-- si no es 0
+L 0x625B GP_NUEVO            E29D = A; 0x61A2, 0x60D1 y sonido 0x25 (0x62A2)
+L 0x6266 MUEVE_CURSOR_MANDO_ACTIVO  como 0x626C pero con los flancos del mando de E25F (0x62C5)
+L 0x626C MUEVE_CURSOR        HL = tabla de posiciones (pares y,x por opcion); flancos de los dos mandos: arriba (bit 0) E27E-- / abajo (bit 1) E27E++ (tope E27F); posicion nueva a EA88 y sonido 0x25 (salvo E250 = 0x18)
+L 0x6274 MUEVE_CURSOR_FLANCOS  A = flancos: bit 0 arriba, bit 1 abajo
+L 0x6285 CURSOR_ABAJO_OK     sigue en 0x628E
+L 0x6287 CURSOR_ARRIBA       E27E--; si pasa de 0 se queda en 0 y no suena
+L 0x628E CURSOR_A_POSICION   EA88/EA89 = el par E27E de la tabla DE; sonido 0x25 si E250 != 0x18
+L 0x62A2 SONIDO_25           ENCOLA_SONIDO 0x25 (cursor)
+L 0x62A7 BOTON_MANDO_ACTIVO  como 0x62AC con los flancos del mando de E25F
+L 0x62AC BOTON_PULSADO       Z si ningun mando acaba de pulsar el boton (bit 4 de E1C8|E1CB); si no, sonido 0x26 (salvo E250 = 0x18) y A = 0xFF
+L 0x62B3 BOTON_FLANCO        bit 4 de A
+L 0x62C2 BOTON_SI            A = 0xFF, NZ
+L 0x62C5 FLANCOS_MANDO_ACTIVO  A = E1C8 (mando 1) si E25F = 0, si no E1CB (mando 2)
+L 0x62D1 FLANCOS_LEE         A = (HL)
+L 0x62D3 NADA_62D3           ret (lo llama p00 0x5FDA)
+B 0x62D4 Los textos de la pantalla de categorias: p09 en A000 para expandir
+B 0x62D4 el texto p09 0xAC0F en EC02 (0x691B) y pintarlo en E501 (7 filas x
+B 0x62D4 11 columnas, fuente +0x30); y los dos bloques por coche (E2C0 y E380).
+L 0x62D4 PINTA_TEXTOS_CATEGORIAS  p09 en A000; texto 0xAC0F -> EC02 -> E501 (7x11, fuente 0x30); 1/2/3; 0x6BF3 y 0x6CF4 (0x60 a E5AB/E5CB) por coche; y 0x631F para E52D (coche 1) y E54D (coche 2)
+C 0x62D6 MAPEA_A_EN_A000 con 9: el texto 0xAC0F esta en la pagina 9
+L 0x631F PINTA_VALOR_COCHE   HL = destino en el buffer; DE = bloque del coche: byte (DE - 0x40 + categoria) a BCD y sus digitos en HL (0x6CF0, B = 0x60)
+C 0x632E DE - 0x40 + categoria: E280.. (coche 1) o E340.. (coche 2), un byte por categoria (hipotesis: lo conseguido en cada una)
+L 0x6342 CARGA_TILES_MENU    listas de tiles p04 0x6D6B, 0x6C7C y 0x620A (CARGA_LISTA_TILES) y la lista de sprites p04 0x74EF
+D 0x635A 0x637A tabla_nombres_gp 16 punteros (E29D) a los flujos de tiles de los nombres de los GP (0x6E37..0x6EC2), para 0x60D1
+F 0x635A w1
+
+# =============================================================================
+# EL DESCOMPRESOR DE BUFFERS (0x637A): flujo (DE) -> RAM HL en un rectangulo
+# de A columnas dentro de un buffer de 32 de ancho (E400/EC00). Codigos:
+# 00 fin; 01..7F copiar n bytes; 80 nueva direccion de destino (palabra);
+# 81..E0 repetir el byte siguiente n&0x7F veces; E1..F0 serie creciente
+# (n-0xE0 valores desde el byte siguiente: t, t+1, ...); F1..FF serie
+# decreciente (n-0xF0 valores: t, t-1, ...). EA69 cuenta la columna: al
+# llegar a C' salta a la fila siguiente (HL += 32 - C').
+# =============================================================================
+L 0x637A RLE_A_BUFFER        A = ancho en columnas, HL = destino, DE = flujo; EA69 = EA6A = 0, C' = A (0x66B0)
+L 0x637F RLE_A_BUFFER_DESTINO  el flujo empieza por la palabra de destino (tambien codigo 0x80); C' lo trae el llamador (p00 0x5FD0: 0x20)
+L 0x6385 RLE_BUFFER_CODIGO   un codigo por vuelta; 00 = fin
+L 0x6392 RLE_BUFFER_COPIA    n bytes tal cual (n < 0x80)
+L 0x63A2 RLE_BUFFER_MAS      codigos >= 0x81: repetir (< 0xE1), serie creciente (< 0xF1) o decreciente
+L 0x63AB RLE_BUFFER_REPITE   el mismo byte n&0x7F veces
+L 0x63BB RLE_BUFFER_SERIES   n = codigo - 0xE1: < 0x10 creciente, si no decreciente
+L 0x63C4 RLE_BUFFER_CRECIENTE  t, t+1, t+2... (n+1 valores)
+L 0x63D4 RLE_BUFFER_DECRECIENTE  t, t-1, t-2... (n+1 valores)
+L 0x63E9 RLE_BUFFER_FILA_SIGUIENTE  EA69 = 0 y HL += 32 - C' (fin de fila del rectangulo)
+
+# =============================================================================
+# ESTADOS E250 = 6 (0x63F7) Y 7 (0x6452): la pantalla de eleccion del coche
+# (E251 = paso: 0 elige, 5 confirma, 6/7 fin; E252 = 2 mientras entra el
+# panel deslizante de 0x66E7/0x671C). Hipotesis: la seleccion de coche de
+# cada jugador (E25F); los textos estan en p03 0xABxx.
+# =============================================================================
+L 0x63F7 ENTRA_ELECCION_COCHE  E250 = 6: limpia (p00 0x465B, 0x5F8D), tiles 16..58 con 0xE0 y 0..15 macizos, texto p03 0xABAD; E250++ (pasa a 7), E27F = 1, cursor 0xBBB7 y el resto de 0x6417
+L 0x6417 PINTA_PANTALLA_COCHE  cursor HL (4 bytes) a EA88; borra E400 (0x21F bytes); VRAM (0x6635); tiles (0x6781); hasta 3 valores de la fila E251 de la tabla p03 0xBC45 (0x676C) pintados en E422/E42C/E436 (0x6611); 0xFF acaba
+L 0x6452 ELECCION_COCHE      E250 = 7: VRAM (0x6635); por E251: 0 -> 0x6521, >= 6 -> 0x64F3; si E252 = 2 -> desliza (0x65DE); si no 0x6469
+L 0x6469 ELECCION_MANDO      flancos del mando activo: izquierda (bit 2) -> 0x6580, derecha (bit 3) -> 0x6599, boton (bit 4): sonido 0x26, guarda la eleccion en (0x67F0)+E251-1 y pasa al paso siguiente (tabla 0x67E4 de textos) o, en el paso 5, a 0x64AC
+C 0x647D HL = E297 (jugador 1) o E357 (jugador 2): donde se apuntan las elecciones
+C 0x648E A = el valor elegido (fila E251 de p03 0xBC45, columna E27E)
+C 0x649A tabla 0x67E4: pares (texto a borrar, texto a pintar) por paso E251 (p03 0xABE3..0xABFB)
+L 0x64AC CONFIRMA_ELECCION   pinta p03 0xAC07; E251 = 7 (o 6 si venia de 0); cursor 0xBBBB, E27E = 0, E27F = 1
+L 0x64BC ELECCION_FIN        E251 = A; cursor p03 0xBBBB a EA88; E27E = 0, E27F = 1
+L 0x64D3 ELECCION_PASO_0     copia los 5 bytes del coche elegido (0x6568) y confirma (0x64AC)
+L 0x64D8 SIGUIENTE_JUGADOR   con dos jugadores (bit 5 de E1C2): E25F++ y si != 2 vuelve a E250 = 6; si no limpia (0x465B) y E250 = 0x0A
+L 0x64EB A_ESTADO_0A         p00 0x465B y E250 = 0x0A
+L 0x64F3 ELECCION_SI_NO      E251 >= 6: cursor por p03 0xBBE1 (0x6266); boton: E27E = 0 -> 0x64D8; si no borra 0xAC07, E251 = 0 y E250 = 6 (si E251 era 7) o textos 0xABFB/0xABE3 (0x6756)
+L 0x6521 ELECCION_POR_E252   E252: 1 -> 0x6469; >= 2 -> 0x65DE; 0 -> cursor por p03 0xBBDD; boton: E27E != 0 -> textos 0xABAD/0xABD9 y 0x67CF; E27E = 0 -> borra 0xABAD, pinta 0xABCA, cursor 0xBBB3, E252++ y 0x67CF
+L 0x6547 ELECCION_OPCION_0   borra 0xABAD, pinta 0xABCA, cursor 0xBBB3, E252++, 0x67CF
+L 0x6565 GUARDA_COCHE_ELEGIDO  HL = E297/E357 (0x67F0) y 0x6568
+L 0x6568 COPIA_5_BYTES_COCHE  copia a (HL) los 5 bytes de la entrada (valor de p03 0xBC45 por E251/E27E) de la tabla p03 0xBBEB (5 bytes por entrada)
+L 0x6580 ELECCION_IZQUIERDA  E27E--; si pasa de 0 lo deja en 0; si no, EA89 (x del cursor): si es 0x48 -> panel desde la izquierda (C = 0) (0x65B8), si no EA89 -= 0x50 y sonido 0x25
+L 0x658A ELECCION_IZQ_CURSOR  EA89 == 0x48: entra el panel; si no, EA89 -= 0x50
+L 0x6599 ELECCION_DERECHA    E27E++; si la fila E251 de 0xBC45 no tiene mas (0xFF) lo deshace; EA89 == 0xE8 -> panel desde la derecha (C = 1), si no EA89 += 0x50 y sonido 0x25
+L 0x65AB ELECCION_DER_CURSOR EA89 == 0xE8: entra el panel; si no, EA89 += 0x50
+L 0x65B8 ARRANCA_PANEL       E25D = C (lado), E25E = 10 (pasos), E252 = 2; borra E920.. (0xFF bytes); pinta en E821 el valor (E251, E27E) (0x6611); sonido 0x25
+L 0x65DE DESLIZA_PANEL       un paso por fotograma: E25D = 1 -> 0x671C (hacia la derecha), si no 0x66E7 (hacia la izquierda); E25E--; al llegar a 0, E252 = 1 (o 0 si E251 = 0)
+L 0x65EF DESLIZA_IZQUIERDA   ventana E401.. desplazada a la izquierda
+L 0x65F8 DESLIZA_CUENTA      E25E--; al acabar E252 = 1 (0 si E251 = 0)
+L 0x6606 DESLIZA_FIN         E252 = A
+L 0x660A CURSOR_SUMA_C       EA89 += C y sonido 0x25
+L 0x660C SONIDO_25_B         ENCOLA_SONIDO 0x25
+B 0x6611 Pinta en el buffer (DE) la ficha A de la fila E251: el grafico de
+B 0x6611 8 columnas (p08/p09, tablas 0x67C3) con 0x637A, el texto (tabla
+B 0x6611 0x67B7, p09/p11 0xBBxx/0xBDxx) en 8 filas x 9 columnas, y el marco (0x66BC).
+L 0x6611 PINTA_FICHA         texto de la ficha A a EA6B (0x67A2); DE = grafico (0x6644); 0x6657 los pinta en (DE); marco en DE - 0x21 (0x66BC)
+L 0x662A VUELCA_512_NOMBRES  p00 0x477C (pendiente) y copia E400.. (0x200 bytes) a la tabla de nombres 0x3800
+L 0x662D VUELCA_512_NOMBRES_SIN  idem sin el 0x477C
+L 0x6635 VUELCA_544_NOMBRES  p00 0x477C y copia E400.. (0x220 bytes) a VRAM 0x38E0 (desde la fila 7)
+L 0x663E COPIA_BUFFER_VRAM   LDIRVM de E400 (BC bytes) a VRAM HL
+L 0x6644 GRAFICO_FICHA       HL = tabla 0x67C3[E251] (punteros por paso); DE = entrada (A-1)&0x7F de esa tabla (flujo RLE en p08/p09)
+L 0x6657 PINTA_GRAFICO_Y_TEXTO_FICHA  paginas 8/9 en 8000/A000; descomprime el grafico (8 columnas) en HL (0x637A); el texto (EA6B) a EC02 (0x691B); y lo pinta en HL-1 en 8 filas x 9 columnas (0x666E); acaba en 1/2/3
+C 0x665A MAPEA_A_EN_8000 con 8: paginas 8 y 9
+L 0x666E PINTA_TEXTO_EC02_E0  texto EC02 en (HL) con la fuente +0xE0; B = filas, C = columnas (p02 0x838C llama aqui)
+L 0x6675 PINTA_TEXTO_BUFFER  texto (DE) en el buffer (HL+1..): caracter + B' (fuente), espacio = 0, 1 = salto de linea, 0x5F = fin (y MAPEA_1_2_3); caja de C columnas x B filas (EA69/EA6A)
+L 0x6678 PINTA_TEXTO_CARACTER  un caracter por vuelta
+L 0x668C PINTA_TEXTO_ESPACIO  el espacio (0x20) es el tile 0
+L 0x668E PINTA_TEXTO_ESCRIBE (HL) = tile; EA69++; al llegar a C, fila nueva
+L 0x669A PINTA_TEXTO_FILA    HL += 32 - columna (fila siguiente del buffer); EA6A++; al llegar a B acaba con MAPEA_1_2_3
+L 0x66B0 INICIA_CONTADORES_BUFFER  EA69 = EA6A = 0; C' = A
+L 0x66BC PINTA_MARCO_FICHA   marco de tiles en el buffer HL: esquinas 0x0C/0x0D y 0x0E/0x0F, lados 0x0A (horizontal) y 0x0B (vertical, 15 filas), 8 de ancho
+L 0x66C5 MARCO_LADOS         una fila de lados (0x0B en HL y HL+9) por vuelta
+L 0x66D5 MARCO_HORIZONTAL    esquina C, 8 tiles 0x0A y esquina C+1; HL += 0x17
+L 0x66DC MARCO_HORIZONTAL_BUCLE  un tile 0x0A por vuelta
+L 0x66E7 DESPLAZA_VENTANA_IZQ  17 filas de 29 bytes desde (HL) a (DE) = HL-1 (ldir); la columna nueva de cada fila sale de E800 + fila*32 + (10 - E25E)
+L 0x66E9 DESPLAZA_IZQ_FILA   una fila por vuelta
+L 0x671C DESPLAZA_VENTANA_DER  17 filas de 29 bytes con lddr (hacia la derecha); la columna nueva de E800 + fila*32 + E25E - 1
+L 0x671E DESPLAZA_DER_FILA   una fila por vuelta
+L 0x674E VALOR_FILA_E27E     A = byte E27E de la fila HL (la entrada de la tabla p03 0xBC45 que dejo 0x676C)
+L 0x6756 CAMBIA_TEXTOS       borra el texto HL, pinta el DE, E27E = 0, E251++, cursor p03 0xBBB3 y repinta (0x6417)
+L 0x676C FILA_TABLA_BC45     HL = p03 0xBC45 + categoria*12 (6 palabras por categoria), palabra E251 de ahi: la fila de valores del paso E251 (acaba en 0xFF)
+L 0x6781 CARGA_TILES_FICHAS  lista p04 0x6E0D (CARGA_LISTA_TILES) y la lista de la tabla p03 0xBD03[E251]; si E251 = 0 o 2, la subtabla por categoria
+L 0x6799 CARGA_TILES_FICHAS_CATEGORIA  HL = tabla[E25B]
+L 0x679F CARGA_TILES_FICHAS_LISTA  CARGA_LISTA_TILES HL
+L 0x67A2 TEXTO_FICHA         EA6B = tabla 0x67B7[E251] -> entrada (A-1)&0x7F (punteros a textos)
+D 0x67B7 0x67C3 tabla_textos_fichas 6 punteros (E251) a tablas de textos de las fichas (p09/p11 0xBD1B, 0xBD3F, 0xBD87, 0xBDAB, 0xBDB7, 0xBDC3)
+F 0x67B7 w1
+D 0x67C3 0x67CF tabla_graficos_fichas 6 punteros (E251) a tablas de flujos RLE de los graficos de las fichas (p08/p09 0xBB0D, 0xBB31, 0xBB0D, 0xBB79, 0xBB85, 0xBB91)
+F 0x67C3 w1
+L 0x67CF PINTA_JUGADOR       pinta el texto p03 0xAC01 y en 0x386C (fila 3, col 12) el tile 0x11 (jugador 1) o 0x12 (jugador 2, E25F != 0)
+L 0x67D8 PINTA_JUGADOR_TILE  el digito del jugador
+D 0x67E6 0x67F0 tabla_textos_pasos 5 punteros a textos de p03 (borrar/pintar por paso E251 = 1..3 de 0x6469): 0xABE3 0xABE9 0xABEF 0xABF5 0xABFB; el sexto, 0xAC01, va en el `ld de` de 0x67D9
+F 0x67E6 w1
+L 0x67F0 BLOQUE_ELECCION     HL = E297 si E25F = 0 (jugador 1), si no E357
+# (sin trazar, el agente lo leyo como codigo) L 0x67FC BLOQUE_COCHE_JUGADOR  B = A; IX = E29C (jugador 1) o E35C (E25F != 0); Z si B = 0 (sin trazar: nadie lo llama en p01)
+
+# =============================================================================
+# ESTADOS E250 = 0 (0x680C) Y 1 (0x6877): el damero de tiles 0xFE/0xFF de
+# 64x64 px y los 12 bloques de 8 columnas que van apareciendo encima desde
+# p15 0xB6FC/0xB737 (hipotesis: la pantalla de presentacion de Konami).
+# =============================================================================
+L 0x680C ESTADO_0_DAMERO     limpia (p00 0x465B), pinta el damero (0x6822 con la tabla 0x6852), tiles de la lista p04 0x6CD1, E25E = 0 y p00 0x5BA2 (E250 = 1)
+L 0x6822 PINTA_DAMERO        IY = E2C0, E25E = 0; una entrada de la tabla 0x6852 por vuelta (0x6833) hasta el 0xFF
+L 0x682A PINTA_DAMERO_BUCLE  siguiente casilla
+L 0x6833 CASILLA_DAMERO      entrada E25E (3 bytes: y, x, tile) de la tabla 0x6852; 0xFF = fin (Z); si no rellena 8x8 tiles (p00 0x4B67) y NZ
+D 0x6852 0x6877 tabla_damero 12 entradas (y, x, tile): casillas de 8x8 tiles (64 px) de 0xFE y 0xFF alternados, 4 columnas x 3 filas, fin 0xFF
+F 0x6852 3
+L 0x6877 ESTADO_1_BLOQUES    E251 = 0: vuelca E400; cada 4 fotogramas un bloque mas (0x68AC); al acabar E25E = 0x14 y E251 = 1; luego E25E-- hasta 0 y E250 = 2
+L 0x689E ESTADO_1_ESPERA     20 fotogramas y E250 = 2
+L 0x68A3 A_ESTADO_2          E250 = 2
+L 0x68A7 A_ESTADO_19         E250 = 0x19 (lo llaman p00 0x5B66/0x5B69/0x5BCB y el despachador 0x71E1)
+L 0x68A9 A_ESTADO_A          PON_ESTADO A
+L 0x68AC PINTA_BLOQUE_PRESENTACION  paginas 14/15 en 8000/A000; entrada E25E de la tabla 0x68D9 (y, x, flujo): 0xFF = fin (Z); si no descomprime el flujo (p15) en 8 columnas en la casilla (p00 0x4A9D) del buffer (0x637A); NZ
+C 0x68AE MAPEA_A_EN_8000 con 0x0E: los flujos 0xB6FC/0xB737 son de la pagina 15
+# (ya lo declara tools/textos.py como tabla_68D9) D 0x68D9 0x690A tabla_bloques_presentacion 12 entradas (y, x, puntero al flujo RLE p15 0xB6FC o 0xB737) + 0xFF: los bloques de 8 columnas sobre el damero
+# (ya lo declara tools/textos.py como tabla_68D9) F 0x68D9 4
+
+# =============================================================================
+# EL EXPANSOR DE TEXTOS (0x690A/0x691B): copia el texto (HL) a EC02.. hasta
+# el 0x5F; los bytes >= 0x60 son macros: la palabra (byte-0x60) de la tabla
+# p09 0xA6DE es otro texto que se expande dentro (hasta 10 niveles, C').
+# El buffer acaba en 0xEE01.
+# =============================================================================
+L 0x690A EXPANDE_TEXTO_FF    pagina 9 en A000; expande (HL) en EC02, cierra con 0xFF (para PINTA_TILES: p00 0x4B8F/0x4B99) y vuelve a 1/2/3
+L 0x691B EXPANDE_TEXTO_5F    expande (HL) en EC02 y cierra con 0x5F (para 0x6675); la pagina 9 la mapea el llamador
+L 0x6925 EXPANDE_TEXTO       C' = 10 (niveles de macro que quedan)
+L 0x6929 EXPANDE_BUCLE       un byte por vuelta: 0x5F fin; >= 0x60 macro (0x6943); si no lo copia; para en DE = 0xEE02
+L 0x6943 EXPANDE_MACRO       si quedan niveles: HL = p09 0xA6DE[A-0x60] y se expande recursivamente (0x6929); C'++ al volver
+L 0x6962 EXPANDE_MACRO_TOPE  sin niveles: A = 0 y carry (el byte se copia como 0)
+L 0x6965 EXPANDE_NIVEL       Z si C' = 0; si no C'--
+
+# =============================================================================
+# ESTADO E250 = 15 (0x6970): la pantalla RANKING tras la carrera. Por coche
+# (IY = E2C0 / E380): (iy-0x40..-0x2C) = 21 bytes, mejor puntuacion por
+# carrera (E25C); (iy-0x2B,-0x2A) = total de puntos (suma de los 21, 16
+# bits); (iy+0x71) = posicion final 1..10; (iy+0x4D..0x4F) = tiempo de 3
+# bytes; bit 1 de (iy+1) = termino la carrera (si no, "RETIRE"). Los textos
+# estan en 0x6D8E.. (tiles = ASCII - 0x20). E25B: 0 RALLY, 1 STOCK, 2
+# ENDURANCE, 3 F3, 4 F3000, 5 F1 (tabla 0x6E0A); E25C - 5 = GP (0x6E16).
+# EA70 = buffer del jugador que se pinta (E400 el 1, EC00 el 2); EA72 ->
+# EA74/EA76 (puntos ganados, palabra por jugador).
+# =============================================================================
+L 0x6970 RANKING             E251 = 0: E252 = 0x10, (E27E) = 0x1E0 (contador de 16 bits), oculta los sprites (0x3B00 = 0xD0), panel de 1 jugador (0x6A9F), borra E400/EC00 (0x6CDE), los vuelca (0x6CB6, 0x6CD1), tiles (0x6D25), puntos de la posicion (0x6D43) y la ficha (0x69C5) por coche; E251++; E251 > 0 -> 0x6AB9
+C 0x6985 y = 0xD0 en el primer atributo: ningun sprite visible
+L 0x69C5 PINTA_FICHA_RANKING  total (0x6BFC); buffer (EA70) de tile 5 (0x6B81) con una ventana de 22x15 de tile 0 en +0x21 (p00 0x4B6D); puntos por categoria (0x6B8F); textos (0x6C1D); tiempo (iy+4D..4F) -> EA57 -> p00 0x5339 y, si termino, 0x52D5 en +0x166; posicion (+0xEB), puntos (+0x10B) o "RETIRE" (0x6A90); total (0x6A7A)
+C 0x69DB rectangulo de 22 columnas x 15 filas de tile 0 (A' = 0)
+C 0x69F5 p00 0x5339: los 3 bytes del tiempo EA57..EA59 a digitos en EA50..
+C 0x6A03 p00 0x52D5: escribe el tiempo en (EA70)+0x166 (fila 11, col 6)
+C 0x6A15 con dos jugadores y el mismo tiempo (E30D..F = E3CD..F): intercambia las posiciones E331/E3F1 segun E2D6/E396
+C 0x6A50 (iy+71) = posicion final -> BCD -> 2 digitos en +0xEB (fila 7, col 11) si E240 = 0
+C 0x6A6A (EA72) -> los puntos ganados -> 4 digitos en +0x10B (fila 8, col 11)
+L 0x6A7A PINTA_TOTAL_RANKING  (iy-2B) -> BCD -> 4 digitos en (EA70)+0x1CB (fila 14, col 11)
+L 0x6A90 PINTA_RETIRE        no termino: los 12 tiles de 0x6ECC ("RETIRE EMPTY") en (EA70)+0x103 (fila 8, col 3)
+L 0x6A9F PANEL_RANKING_1J    con dos jugadores nada; si no: colores de los tiles 252-255 (VRAM 0x7E0) a cero, CARGA_TILES_PANEL (p00 0x4C12), E300 = 0 y 0x7599
+L 0x6AB9 RANKING_PASOS       E251 = 1: vuelca (0x6AF6) y p02 0x8406 con C = 7 hasta E252 = 0x14; 2: cuenta (E27E) hasta 0x1DF/0x1C8 o boton -> 0x6B02; 3: 0x8C fotogramas o boton -> E251 = 4, sonido 0x80; 4: bit 6 de E1C2 -> sonido 0x46 y E250 = 2, si no E1F3 = 0
+C 0x6AC1 p02 0x8406 (1/2/3 puestas) con C = 7
+L 0x6ACF RANKING_PASO_2      (E27E) 16 bits --; a cero -> 0x6B02; DE = 0x1DF si nadie termino (0x6D31), 0x1C8 si no; mientras (E27E) >= DE sigue volcando; luego el boton (bit 4 de E1C8) -> 0x6B02
+L 0x6AE9 RANKING_COMPARA     (E27E) - DE
+L 0x6AF6 VUELCA_RANKING      E400 -> VRAM 0x3801 (0x6CB6) y, con dos jugadores, EC00 -> 0x3800 (0x6CD1)
+L 0x6B02 RANKING_PASO_3_ENTRA  E27E = 0x8C, E251++, sonido 0x81
+L 0x6B10 RANKING_PASO_3      boton (bit 4 de E1C8) o E27E-- a cero -> E251++ y sonido 0x80
+L 0x6B20 RANKING_PASO_4_ENTRA  E251++ y sonido 0x80
+L 0x6B29 RANKING_PASO_4      bit 6 de E1C2: sonido 0x46 y E250 = 2; si no E1F3 = 0
+L 0x6B35 RANKING_FIN         sonido 0x46 y A_ESTADO_2
+# (sin trazar, el agente lo leyo como codigo) L 0x6B3D A_ESTADO_10_SIN_GP  E29D = E35D = 0 y E250 = 0x10 (sin trazar y sin referencia en toda la ROM: codigo muerto)
+B 0x6B49 Entrada 14 del despachador de carrera (p00 0x5B19): decide si tras
+B 0x6B49 la carrera se pasa a E250 = 0x10 (NC) o al ranking (C). Solo en la
+B 0x6B49 carrera 20 (el ultimo GP), con un coche que termino primero y con los
+B 0x6B49 puntos (byte bajo de E295/E355) >= 0xB4. Hipotesis: el final del campeonato.
+L 0x6B49 FIN_DE_CAMPEONATO   C si E25C < 20; si el coche 1 termino (bit 1 de E2C1) y E331 < 2 -> puntos (0x6B6B); si no mira el coche 2 (E381, E3F1); NC -> p00 pone E250 = 0x10
+L 0x6B5D FIN_CAMPEONATO_COCHE_2  coche 2 terminado -> C; posicion E3F1 < 2 -> 0x6B6B, si no C
+L 0x6B6B PUNTOS_0xB4         D = 0xB4 y 0x6B71 (salta el `ld d,0xBD` de 0x6B6F, que no usa nadie)
+# (sin trazar, el agente lo leyo como codigo) L 0x6B6F PUNTOS_0xBD         D = 0xBD (sin referencia: codigo muerto)
+L 0x6B71 COMPARA_PUNTOS_D    NC si el byte bajo de E295 >= D; si no, con dos jugadores, NC si E355 >= D; si no C
+L 0x6B81 RELLENA_BUFFER_TILE_5  24 filas x 32 de tile 5 desde HL (fondo del ranking)
+L 0x6B85 RELLENA_FILA_5      una fila
+L 0x6B87 RELLENA_FILA_5_BUCLE  un tile
+L 0x6B8F PINTA_PUNTOS_CATEGORIAS  los 5 bytes (iy-3F,-40,-3D,-3C,-3E: STOCK, RALLY, F3, F3000, ENDURANCE) a BCD y 2 digitos cada uno en (EA70)+0x20B (fila 16, col 11) y filas siguientes; y la suma de los 16 GP (iy-3B..-2C) en la fila 21 (F1)
+L 0x6BB6 PINTA_PUNTOS_CATEGORIA  una categoria por vuelta (EA50.. guarda los 5 valores)
+L 0x6BE1 SUMA_PUNTOS_GP      EA78 += (DE), 16 bytes
+L 0x6BF3 TOTAL_A_BCD         HL = (iy-2B,-2A) -> BCD (p00 0x4B28)
+L 0x6BFC SUMA_TOTAL_PUNTOS   (iy-2B,-2A) = suma de los 21 bytes desde iy-0x40 (la mejor puntuacion de cada carrera)
+L 0x6C0B SUMA_TOTAL_BUCLE    un byte por vuelta
+L 0x6C1D PINTA_TEXTOS_RANKING  9 textos de 0x6D8E (10 si termino: + "POINT"), el numero de jugador (0x6C80), categoria y GP (0x6C8E), "TIME" si termino, "RESULT" si E240 != 1, "F1" y "TOTAL"
+L 0x6C2A PINTA_TEXTOS_LISTA   entrada
+L 0x6C5C PINTA_TEXTOS_TILES   B' textos desde (HL'): [desplazamiento en el buffer (palabra), n, n tiles]
+L 0x6C65 PINTA_TEXTO_TILES_EN  HL = (EA70) + DE; n = (HL'); copia n tiles
+L 0x6C6E PINTA_TEXTO_TILES_BUCLE  un tile por vuelta
+L 0x6C7B PINTA_TEXTO_SI_NZ   pinta el texto solo si NZ
+L 0x6C80 PINTA_NUMERO_JUGADOR  (EA70)+0x4E (fila 2, col 14) = tile 0x10 + (iy+9)
+L 0x6C8E PINTA_CATEGORIA_RANKING  el nombre de la categoria (0x6E0A[E25B]) en +0x83 (fila 4, col 3) y, si E25C >= 5, el del GP (0x6E16[E25C-5]) en +0xA3 (fila 5)
+L 0x6CB0 PINTA_UN_TEXTO      B' = 1 y 0x6C65
+L 0x6CB6 VUELCA_E400_RANKING  E400 -> VRAM 0x3801, 17 columnas x 24 filas (p00 0x522D); con dos jugadores 16 columnas en 0x3810
+L 0x6CCD VUELCA_RANKING_VA   p00 0x522D: B' columnas x 24 filas
+L 0x6CD1 VUELCA_EC00_RANKING  EC00 -> VRAM 0x3800, 16 columnas x 24 filas (p00 0x522D)
+L 0x6CDE BORRA_E400_EC00     los dos buffers de nombres a cero (0x300 cada uno)
+L 0x6CF0 PINTA_BCD_2_DIGITOS  E = 2 digitos BCD -> tiles B+digito en (HL), decena 0 en blanco
+L 0x6CF4 PINTA_BCD_4_DIGITOS  D,E = 4 digitos BCD -> tiles B+digito en (HL..HL+3), ceros a la izquierda en blanco (C)
+L 0x6D01 PINTA_BCD_MILLAR    el primer digito de D
+L 0x6D0C PINTA_BCD_CENTENA   el segundo digito de D
+L 0x6D10 PINTA_BCD_DECENA    E: decena (en blanco si cero y nada antes) y unidad
+L 0x6D1B PINTA_BCD_UNIDAD    la unidad siempre
+L 0x6D25 CARGA_TILES_RANKING  lista p04 0x6E06 (CARGA_LISTA_TILES) y tiles 16..58 con 0x10 (p00 0x4476)
+L 0x6D31 ALGUIEN_TERMINO     NZ si el coche 1 termino (bit 1 de E2C1) o, con dos jugadores, el 2 (E381)
+L 0x6D43 PUNTOS_POR_POSICION  HL = iy-0x40+E25C (la mejor de esta carrera); EA72 = EA74 (jugador 1) o EA76; si termino, E240 = 0 y posicion (iy+71) < 11: puntos = tabla 0x6ED8[E25B] + posicion; si mejora la guarda; (EA72) = puntos (palabra)
+C 0x6D60 tabla de 6 punteros por categoria a los puntos por posicion
+L 0x6D88 PUNTOS_CERO         sin puntos
+L 0x6D89 GUARDA_PUNTOS       (EA74/EA76) = A, byte alto 0
+D 0x6D8E 0x6E0A textos_ranking 14 textos [desplazamiento en el buffer (palabra), n, n tiles (ASCII-0x20)]: RANKING, PLAYER, BEST POINT, TOTAL POINT, STOCK, RALLY, F3, F3000, ENDURANCE, POINT, F1, TOTAL, RESULT, TIME
+F 0x6D8E 10,9,13,14,8,8,5,8,12,8,5,8,9,7
+D 0x6E0A 0x6E16 tabla_nombres_categoria 6 punteros (E25B) al byte de cuenta de los textos RALLY, STOCK, ENDURANCE, F3, F3000, F1 de arriba
+F 0x6E0A w1
+D 0x6E16 0x6E36 tabla_nombres_gp_cuenta 16 punteros (E25C-5) a los nombres de GP de abajo, con su byte de cuenta
+F 0x6E16 w1
+D 0x6E36 0x6ECC nombres_gp 16 nombres: [n, n tiles, 0xFF]: BRAZIL, SAN MARINO, BELGIUM, MONACO, U.S.A., FRANCE, GREAT BRITAIN, WEST GERMANY, HUNGARY, AUSTRIA, ITALY, PORTUGAL, SPAIN, MEXICO, JAPAN, AUSTRALIA (0x635A apunta al segundo byte: flujo para PINTA_TILES)
+F 0x6E36 8,12,9,8,8,8,15,14,9,9,7,10,7,8,7,11
+D 0x6ECC 0x6ED8 texto_retire 12 tiles "RETIRE", 0x1E, "EMPTY" que 0x6A90 copia tal cual
+F 0x6ECC 12
+D 0x6ED8 0x6EE4 tabla_puntos_categoria 6 punteros (E25B) a la tabla de puntos por posicion: 0x6EE3 (RALLY, STOCK, ENDURANCE) y 0x6EED (F3, F3000, F1); se indexan con la posicion 1..10
+F 0x6ED8 w1
+D 0x6EE4 0x6EF8 puntos_por_posicion posicion 1..10 -> 9,8,7,6,5,4,3,2,1,0 (desde 0x6EE3+1) y 9,8,7,6,5,4,0,0,0,0 (desde 0x6EED+1)
+F 0x6EE4 10
+
+# =============================================================================
+# LOS SPRITES DE LA CARRERA (0x6EF8, desde p00 0x5C51 cada fotograma):
+# monta la tabla de atributos en EA80.. (EA88 si el bit 6 de E1C2 esta a
+# cero: los dos primeros sprites quedan para el cursor) con los dos coches
+# (E2C0/E380) y los 5 objetos de 0x38 bytes de E800.. (jugador 1) y E928..
+# (jugador 2). Por objeto IX: (ix+4) x, (ix+6) y, (ix+31) flags (bit 0 =
+# visible este fotograma, bit 6 = pide un sprite extra, bit 7 = sin sprite),
+# (ix+33) patron, (ix+0F) color, (ix+2F) tipo del sprite extra, (ix+0E)
+# fotograma, (ix+5A) x en la vista del otro jugador. IY = el coche cuya
+# camara (iy+4B) se resta a y. En D'E' va el desplazamiento (y, x) de la
+# vista y en B'C' su alto y ancho: 1 jugador (0x10,0xF8) y 0x76 x 0xC0; 2
+# jugadores (0x00,0xF8) y (0x88,0x10) con 0x6E x 0xA8 (media pantalla cada uno).
+# =============================================================================
+L 0x6EF8 SPRITES_CARRERA     E216 = 0; un jugador -> 0x6FB4; dos: HL = tabla de atributos (0x6FD6), semaforo (0x6FAC), coche 2 en su vista, coche 1 en la suya (bit 6 de ix+31 = bit 7 viejo), cada coche en la vista del otro por (ix+5A), los 5 objetos de cada jugador (0x6FE3) y oculta el resto (0x6F9D)
+C 0x6F1A bit 6 de (ix+31) = bit 7 anterior (parpadeo)
+C 0x6F4B x = (ix+5A): el coche 2 visto desde la vista del 1
+C 0x6F6D el coche 1 visto desde la vista del 2 (camara de E380)
+L 0x6F9D OCULTA_RESTO_SPRITES  y = 0xE0 en los atributos que quedan hasta EAF8
+L 0x6F9F OCULTA_SPRITE_BUCLE  un atributo (4 bytes) por vuelta
+L 0x6FAC SPRITES_SEMAFORO    si E1D7 != 0 (luces de salida) los monta 0x7EFA
+L 0x6FB4 SPRITES_1_JUGADOR   vista (0x10,0xF8) de 0x76 x 0xC0: el coche 1 (E2C0) y sus 5 objetos (E800); oculta el resto
+L 0x6FD6 TABLA_ATRIBUTOS     HL = EA80 si el bit 6 de E1C2 esta puesto, si no EA88
+L 0x6FE3 SPRITES_5_OBJETOS   IX = 5 objetos de 0x38 bytes: los que tienen (ix+0) != 0 y (ix+0)&0x30 = 0 van a 0x6FFE
+L 0x6FE5 SPRITES_OBJETO_BUCLE  un objeto por vuelta
+L 0x6FF4 SPRITES_OBJETO_SIGUIENTE  IX += 0x38
+L 0x6FFC SPRITE_FUERA        fuera de la vista: exx y vuelve
+L 0x6FFE SPRITE_OBJETO       E = (ix+4) x; A = (ix+6) - (iy+4B) - 8 (y relativa a la camara)
+L 0x7009 SPRITE_OBJETO_XY    bit 0 de (ix+31) = 0; fuera si y >= B' o x >= C'; suma D'E'; bit 0 = 1 (visible); si bit 7 no hay sprite; si no dos sprites (y, x, patron, color) y (y, x, patron+4, color 1); con el bit 6: sprite extra por (ix+2F) si E216 < 4
+C 0x702A E1DE = 1: patron 0 en vez de (ix+33)
+C 0x704A el segundo sprite del par: patron+4, color 1
+C 0x7050 bit 6 consumido: el sprite extra (ix+2F): 1 -> tabla 0x7091 por fotograma (ix+0E), 2 -> 0x70AF, mas -> 0x70BE
+L 0x7088 ESCRIBE_SPRITE      (HL) = y, x, patron B, color C
+D 0x7091 0x70AF tabla_sprite_extra 10 entradas (dx, dy, patron) por fotograma (ix+0E) 0..9 del sprite extra de tipo 1 (color 0x0F)
+F 0x7091 3
+L 0x70AF SPRITE_EXTRA_2      patron 0xDC, color 8; si el fotograma (ix+0E) = 2, x += 0x10
+L 0x70B2 SPRITE_EXTRA_ESCRIBE  solo con (ix+0E) = 2: x += 0x10 y lo escribe (0x7088)
+L 0x70BE SPRITE_EXTRA_3      patron 0xE0 o 0xE4 (parpadeo por E1C3), color 0x0F
+# (sin trazar, el agente lo leyo como codigo) L 0x70CC RUTINA_70CC         sin referencia (codigo muerto): (ix+31) &= 0xFE
+
+# =============================================================================
+# LOS OBJETOS DE TILES (0x70D9/0x70DF y 0x7134): lista en E928 de entradas
+# de 0x1F bytes [destino en el buffer de nombres (palabra, 0 = fin), variante
+# c, 28 bytes de fondo guardado]. 0x70D9 pinta en cada destino el bloque de
+# 7 filas x 4 tiles de la plantilla p06 0xAF57 sumando 21*c a cada tile (0 =
+# transparente, >= 0x82 tal cual); 0x7134 devuelve el fondo guardado y vacia
+# la lista. Hipotesis: los coches rivales, dibujados con tiles.
+# =============================================================================
+L 0x70D9 PINTA_OBJETOS_TILES  E1D5 = 0 y 0x70E6
+L 0x70DF PINTA_OBJETOS_TILES_B  E1D5 = 0, p00 0x4760 y 0x70E6 (desde el bucle de carrera p00 0x5C96)
+L 0x70E6 PINTA_OBJETOS_TILES_VA  paginas 5/6 en 8000/A000; recorre la lista E928 (0x70EE); vuelve a 1/2/3
+C 0x70E8 MAPEA_A_EN_8000 con 5: la plantilla 0xAF57 es de la pagina 6
+L 0x70EE OBJETO_TILES        DE = destino (0 = fin), C = variante; B' = 21*c; 7 filas x 4 tiles desde p06 0xAF57
+L 0x7108 OBJETO_TILES_FILA   una fila de 4 tiles; luego DE += 0x1C con vuelta dentro del buffer de 1 KB (res 2,h / set 2,h)
+L 0x710A OBJETO_TILES_TILE   tile 0 no se escribe; < 0x82 suma B'; el resto tal cual
+L 0x7115 OBJETO_TILES_ESCRIBE  (DE) = tile
+L 0x7116 OBJETO_TILES_SIGUIENTE  DE++, HL++
+L 0x7130 OBJETOS_TILES_FIN   MAPEA_1_2_3
+L 0x7134 BORRA_OBJETOS_TILES  por cada entrada de E928: destino a 0, variante a 0 y devuelve las 7 filas x 4 tiles guardadas al buffer (0x714C)
+L 0x7137 BORRA_OBJETO_TILES  una entrada por vuelta; palabra 0 = fin
+L 0x714C DEVUELVE_FONDO_OBJETO  A filas: 4 ldi y DE += 0x1C con vuelta en el buffer
+
+# =============================================================================
+# ESTADOS E250 = 4 (0x7162) Y 5 (0x71CD): el menu tras la carrera GAME /
+# EXCHANGE / PASSWORD / INPUT PASSWORD / GAME OVER (texto 0x7193), con el
+# despachador 0x71E1 por E251 (0 = cursor, 1..6 = la opcion elegida + 1).
+# EA72 = opcion del cursor; E252 = paso dentro de la opcion; EA50.. = flujo
+# de tiles del texto que se pinta con p00 0x480D (ASCII - 0x20).
+# La contrasena: 24 simbolos = 1 aleatorio + los 21 bytes de E280 (mejor
+# puntuacion por carrera) + 2 de control (xor y suma), cada uno xor una
+# clave de p00 0x5000+aleatorio, y en letras (+0x41). Seis contrasenas
+# especiales en la tabla 0x7497 (MAXPOINT, UJM3EDC, XMITAIYOENDDEMO,
+# HYPEROFF, ESCON, ESCOFF) ejecutan el codigo que sigue a cada texto.
+# =============================================================================
+L 0x7162 ENTRA_MENU_PASSWORD  E250 = 4: limpia sprites (p00 0x4460), filas 16-23 (0x7183), pinta el menu (0x718D), E250++ (5), E251 = 0 y 0x7175
+L 0x7175 BORRA_EA50          E252 = 0 y EA50..EA7E a cero
+L 0x7183 BORRA_FILAS_16_23   FILVRM 256 ceros en 0x3A00
+L 0x718D PINTA_MENU_PASSWORD  PINTA_TILES del flujo 0x7193
+D 0x7193 0x71CD texto_menu_password flujo de PINTA_TILES (ASCII - 0x20): en 0x3A28 GAME, 0x3A48 EXCHANGE, 0x3A68 PASSWORD, 0x3A88 INPUT PASSWORD, 0x3AA8 GAME OVER, 0xFF
+F 0x7193 7,11,11,17,12
+L 0x71CD MENU_PASSWORD       E250 = 5: p00 0x477C si bit 6 de E1C2; vuelca 512 (0x662D); despacha por E251 (< 7) con la tabla 0x71E4
+C 0x71E1 el indice es E251 (no E252): 0 cursor, 1 GAME, 2 EXCHANGE, 3 PASSWORD, 4 INPUT PASSWORD, 5 GAME OVER, 6 fin de GAME OVER
+L 0x71F2 CURSOR_MENU_PASSWORD  p00 0x477C; mueve EA72 (0x7241); sprite del cursor en EA80: y = EA72*8 + 0x88, x = 0x32, patron 0, color 7; con boton o espacio (E1C8 & 0x30): sonido 0x26 (si bit 6 de E1C2), E251 = EA72 + 1 y 0x7175
+L 0x7224 EXCHANGE            intercambia los 0xC0 bytes de E280.. y E340.. (los datos de los dos jugadores), E2C9 = 1, E389 = 2, E25B = 0xFF y E250 = 4 (0x7418)
+L 0x7241 MUEVE_CURSOR_EA72   HL = EA72 (y), EA73 (x): flancos de E1C8: arriba/abajo E--, E++ (tope C = 4); izquierda/derecha D++, D-- (tope B = 0); si cambia, sonido 0x25
+L 0x7249 MUEVE_CURSOR_HL     entrada con HL, B (tope x) y C (tope y)
+L 0x7253 CURSOR_HL_ABAJO     bit 1
+L 0x7257 CURSOR_HL_IZQ       bit 2
+L 0x725B CURSOR_HL_DER       bit 3
+L 0x725F CURSOR_HL_TOPES     -1 -> 0; > tope -> tope
+L 0x7266 CURSOR_HL_TOPE_X    D <= B
+L 0x726A CURSOR_HL_Y_MENOS   E = -1 -> 0
+L 0x7271 CURSOR_HL_TOPE_Y    E <= C
+L 0x7275 CURSOR_HL_GUARDA    escribe D y E; C = 1 si alguno cambio
+L 0x727D CURSOR_HL_GUARDA_X  (HL) = D
+L 0x7285 CURSOR_HL_GUARDA_Y  (HL-1) = E; sonido 0x25 si cambio
+L 0x728E ESCRIBE_SPRITE_EDBC (HL) = E, D, B, C (y, x, patron, color)
+L 0x7297 INTERCAMBIA_BLOQUES  intercambia C bytes (B+1 veces) entre (HL) y (DE); acaba en 0x7418 (E250 = 4)
+L 0x7298 INTERCAMBIA_BYTE    un byte por vuelta
+L 0x72A8 PASSWORD            E252 = 0: limpia, genera la contrasena (0x7317), la descifra... la cifra (0x72F4), a letras (0x72E6), y la pinta en 0x3A43 (fila 18, col 3) con p00 0x480D; E252++; luego espera boton o espacio: sonido 0x26 y E250 = 4
+L 0x72D5 PASSWORD_ESPERA     boton o espacio (E1C8 & 0x30) -> sonido 0x26 y E250 = 4
+L 0x72E6 VALORES_A_LETRAS    cada byte de (HL) hasta 0xFF: += 0x41 ('A'..)
+L 0x72F1 MAS_41              A += 0x41
+L 0x72F4 CIFRA_PASSWORD      el primer byte es la clave E (0..15); cada byte siguiente ^= (p00 0x5000+E) & 0x0F, y & 0x1F (E avanza); hasta 0xFF
+L 0x72F9 CIFRA_BYTE          un simbolo por vuelta
+L 0x7308 ANADE_SIMBOLO       A = min(A, 15) -> (BC++); D ^= A, E += A (los dos de control)
+L 0x730E ANADE_SIMBOLO_ESCRIBE  (BC) = A y control
+L 0x7317 GENERA_PASSWORD     E280..E294 a EA60 (0x7565); EA50/51 = 0x3830; en EA52..: el nibble aleatorio de R, los 21 valores, D (xor) y E (suma), 0xFF
+L 0x7336 GENERA_PASSWORD_BUCLE  un valor de EA60.. por vuelta (21)
+L 0x7351 INPUT_PASSWORD      E252 = 0: limpia, EA50..EA7E = 0xFF, (EA70) = EA52 (donde escribe), (EA50) = 0x3A43; 1: lee el teclado (0x7380); 2: comprueba (0x73CE); 3: espera E1C4 y E250 = 4 (0x7413)
+L 0x7380 INPUT_PASSWORD_TECLA  pinta EA50 (0x480D) y lee una tecla de p03 0xB3A9 (C = ninguna): 8 borra (0x73B6), 0x0D acepta (0x73C9), '0'..'9' y 'A'..'Z' se guardan en (EA70)++ hasta EA6A
+L 0x7386 LEE_TECLA_PASSWORD  p03 0xB3A9: carry = sin tecla
+L 0x73A4 GUARDA_TECLA        (EA70) < EA6A: guarda y avanza
+L 0x73B6 BORRA_TECLA         si (EA70) > EA52: retrocede y pone '?' (0x3F)
+L 0x73C9 PASO_SIGUIENTE_E252  E252++
+L 0x73CE COMPRUEBA_PASSWORD  borra filas 16-23; contrasena especial (0x7467) -> "CORRECT"; si no letras a valores (0x7522), descifra (0x72F4), verifica (0x7530): Z -> EA53.. a E280 y total (0x7571) y "CORRECT" (0x741E); NZ -> "WRONG PASSWORD" (0x7437); E1C4 = 0x3C y E252++
+L 0x73ED PASSWORD_CORRECT    pinta 0x741E en 0x3A43, E1C4 = 0x3C, sonido 0x26, E252++
+L 0x73FF PASSWORD_WRONG      pinta 0x7437, E1C4 = 0x3C, E252++
+# (sin trazar, el agente lo leyo como codigo) L 0x740C RUTINA_740C         sin referencia (codigo muerto): E1C4 = 0x3C y 0x73C9
+L 0x7413 ESPERA_E1C4         E1C4--; a cero E250 = 4
+L 0x7418 A_ESTADO_4_B        E250 = 4
+D 0x741E 0x7437 texto_correct flujo para 0x480D: en 0x3A43 "CORRECT" y 16 espacios, 0xFF
+F 0x741E 25
+D 0x7437 0x7450 texto_wrong flujo para 0x480D: en 0x3A43 "WRONG PASSWORD" y 8 espacios, 0xFF
+F 0x7437 25
+L 0x7450 GAME_OVER_MENU      p02 0x869A y E251++ (-> 0x7458)
+L 0x7458 GAME_OVER_MENU_FIN  sonido 0x33 (p02 0x884C), p00 0x5D16 y E1C0 = 1 (E1C1 = 0): vuelve al estado 1 del juego
+L 0x7467 PASSWORD_ESPECIAL   prueba las 6 contrasenas de la tabla 0x7497 (0x7474): Z si alguna coincide (y ya ejecuto su codigo)
+L 0x7469 PASSWORD_ESPECIAL_BUCLE  una por vuelta (B = 6..1)
+L 0x7474 COMPARA_PASSWORD_ESPECIAL  DE = tabla 0x7497[B-1]; compara con EA52.. hasta el 0xFF; si coincide salta al codigo que sigue al 0xFF con retorno 0x7490 (xor a / ret: Z)
+L 0x7481 COMPARA_PASSWORD_BUCLE  un caracter por vuelta
+L 0x7490 PASSWORD_ESPECIAL_OK  retorno comun de los codigos especiales: A = 0, Z
+# (sin trazar, el agente lo leyo como codigo) L 0x7492 RUTINA_7492         5 bytes sin referencia (resto de otro bucle de comparacion): cp (hl) / inc hl / ret nz / jr 0x7481
+D 0x7497 0x74A3 tabla_passwords_especiales 6 punteros a los textos: 0x74A3 MAXPOINT, 0x74BB UJM3EDC, 0x74E2 XMITAIYOENDDEMO, 0x74FB HYPEROFF, 0x750A ESCON, 0x7516 ESCOFF
+F 0x7497 w1
+D 0x74A3 0x74AC password_maxpoint "MAXPOINT", 0xFF
+F 0x74A3 9
+L 0x74AC CODIGO_MAXPOINT     E1DF = 1 (0x6227 deja de comparar los puntos: todo desbloqueado)
+L 0x74B2 PUNTOS_200          E295 = E355 = 0xC8 (desde p00 0x57F4)
+D 0x74BB 0x74C4 password_ujm3edc " UJM3EDC", 0xFF (dos columnas del teclado)
+F 0x74BB 9
+L 0x74C4 CODIGO_UJM3EDC      si F0FE != 0 y E1DE != 2: F006 = 1, E25B = 0xFF, E29D = 0 y p00 0x58A0
+D 0x74E2 0x74F1 password_enddemo "MITAIYOENDDEMO" y 0xFF (0x74F0); el codigo del truco sigue en 0x74F1
+F 0x74E2 16
+L 0x74F1 CODIGO_ENDDEMO      bit 7 de F0FE y E250 = 0x10 (la secuencia final)
+D 0x74FB 0x7504 password_hyperoff "HYPEROFF", 0xFF
+F 0x74FB 9
+L 0x7504 CODIGO_HYPEROFF     E1D6 = 1
+D 0x750A 0x7510 password_escon "ESCON", 0xFF
+F 0x750A 6
+L 0x7510 CODIGO_ESCON        E1FD = 1
+D 0x7516 0x751D password_escoff "ESCOFF", 0xFF
+F 0x7516 7
+L 0x751D CODIGO_ESCOFF       E1FD = 0
+L 0x7522 LETRAS_A_VALORES    cada byte de (HL) hasta 0xFF: -= 0x41
+L 0x752D MENOS_41            A -= 0x41
+L 0x7530 VERIFICA_PASSWORD   NZ si algun valor de EA55.. pasa de 9 (0x7558) o si el xor y la suma no cuadran con los dos ultimos; Z si bien
+L 0x753C VERIFICA_SUMA       D ^= byte, E += byte hasta el 0xFF
+L 0x754A VERIFICA_CONTROL    quita el ultimo del acumulado y compara
+L 0x7555 PASSWORD_MAL        A = 0xFF, NZ
+L 0x7558 VALORES_HASTA_9     15 valores desde HL+3: carry si alguno > 9
+L 0x755C VALORES_HASTA_9_BUCLE  uno por vuelta
+L 0x7565 E280_A_EA60         los 21 bytes de E280 (mejor puntuacion por carrera) a EA60
+L 0x7571 EA53_A_E280         los 21 valores descifrados a E280 y recalcula el total del coche 1 (0x6BFC)
+
+# =============================================================================
+# EL PANEL DE LA CARRERA (0x7583, desde p00 0x59F6): el fondo del HUD en
+# E400 desde p09 (0xBAA5/0xBAC0 con dos jugadores, 0xB9DE con uno) y el
+# nombre de la carrera (p06 0xBC6D[E25C]) y el contador del mapa.
+# =============================================================================
+L 0x7583 PINTA_PANEL_CARRERA  0x7599, 0x76F2, E202..E205 = 0 (los niveles mostrados de los indicadores)
+L 0x7599 PINTA_PANEL_HUD     pagina 9 en A000, 0x75A4, 1/2/3
+L 0x75A4 PINTA_PANEL_HUD_VA  borra E400 (0x400); dos jugadores: 16 columnas de p09 0xBAA5 en (x 0x80, y +0) y de 0xBAC0 en (x 8, y +0xA8); uno: 14 columnas de 0xB9DE en (x 0x90, y +0) y el nombre (0x75EB); VUELCA_NOMBRES_E400
+L 0x75D7 PINTA_PANEL_HUD_1J  el panel de un jugador: 14 columnas en la columna 18
+L 0x75EB PINTA_NOMBRE_CARRERA  paginas 5/6; p06 0xBC6D[E25C] (11 columnas) en (x 0x98, y +8) del buffer
+C 0x75F3 la misma tabla que 0x61B5: 21 nombres (5 categorias y 16 GP)
+
+# =============================================================================
+# EL HUD EN CARRERA (0x760D, desde p00 0x5C54 cada fotograma): el mapa
+# (0x77EC), el combustible (0x7652) y, por el fotograma (E1C3 & 7), una de
+# ocho tareas de la tabla 0x761B (velocidad, vueltas, indicador, semaforo...).
+# Por coche: (ix+50) combustible, (ix+68) estado de los neumaticos (bits),
+# (ix+69) marcha?, (ix+10,11) velocidad, (ix+6C/6E/6D) contador del mapa,
+# (ix-6,-5) = E2BA/E2BB posicion del marcador en el mapa, (ix+71) posicion,
+# (ix-2) vueltas, (ix-4) vueltas mostradas; E1FC = vueltas de la carrera
+# (p02 0x91CA); E202..E205 = ultimo nivel pintado de cada indicador.
+# =============================================================================
+L 0x760D HUD_CARRERA         0x77EC (mapa), 0x7652 (combustible) y la tarea E1C3 & 7 de la tabla 0x761B
+L 0x762B HUD_TAREA_0         0x7B0F
+L 0x762E HUD_TAREA_1         0x7AD9 (velocidad)
+L 0x7631 HUD_TAREA_2         0x7B0F
+L 0x7634 HUD_TAREA_3         0x7AA2
+L 0x7637 HUD_TAREA_4         0x7B0F
+L 0x763A HUD_TAREA_5         0x78FB (neumaticos) y 0x79B3 (posicion, vueltas, mapa)
+L 0x7640 HUD_TAREA_6         0x7B0F
+L 0x7643 HUD_TAREA_7         0x7A45 (combustible)
+L 0x7646 RESTA_COMBUSTIBLE_18  (ix+50) -= 0x18, minimo 0 (desde p02 0x8E13)
+L 0x764E GUARDA_COMBUSTIBLE  (ix+50) = A
+L 0x7652 CONSUMO_COMBUSTIBLE  cada 256 fotogramas (E1C3 = 0), por coche (0x7669)
+L 0x7669 CONSUMO_COCHE       solo si (ix+5D) = 0; (ix+50) -= D (0x7699) + ((ix+59) >> 3 & 0x1F si (ix+12) < 0); si baja de 0x11 sonido 0x1D (p02 0x8674)
+L 0x7685 CONSUMO_RESTA       B = D + A; (ix+50) -= B
+L 0x768E CONSUMO_GUARDA      guarda y avisa si < 0x11
+L 0x7699 CONSUMO_BASE        D = 0x30 si p02 0x8E8E devuelve NC; si no D = tabla 0x76AA[(ix+74)]
+D 0x76AA 0x76F2 tabla_consumo 36 palabras (byte bajo = consumo base por 256 fotogramas) indexadas por (ix+74): seis grupos de seis (hipotesis: por categoria y motor)
+F 0x76AA w6
+L 0x76F2 INICIA_HUD_CARRERA  E1FC = p02 0x91CA (vueltas); (ix+6D) = tabla 0x7719[E25C] por coche
+L 0x770A PASO_MAPA_COCHE     (ix+6D) = 0x7719[E25C]
+D 0x7719 0x772E tabla_paso_mapa 21 bytes por carrera (E25C): filas de pista por paso del marcador del mapa (0xA6, 0xD0, 0xB8, 0xC3, 0xBE, 0xC6, 0xDD, 0xB3)
+F 0x7719 21
+L 0x772E INICIA_MAPA_772E    sin referencia: E32C = 1; (E2BA) y (E241) de la tabla 0x7753[E25C]; (ix+6D) = 2
+D 0x7753 0x77A7 tabla_mapa_inicio 21 entradas (E25C) de dos palabras: posicion inicial del marcador (E2BA) y puntero al camino de deltas (E241) en p05/p06
+F 0x7753 w2
+L 0x77A7 REINICIA_MAPA_VUELTA  (ix+6C) = (ix+6E) = 0; un jugador: (E2BA) = tabla 0x77C2[E25C] (desde p00 FIN_DE_VUELTA)
+D 0x77C2 0x77EC tabla_mapa_salida 21 palabras (E25C): posicion (y, x) del marcador del mapa en la salida
+F 0x77C2 w1
+L 0x77EC AVANZA_MARCADOR_MAPA  por coche: dos jugadores -> contador de 16 bits (ix+6E,6C) += 2*(ix+6D) si bit 0 de (ix+6F) (0x7804); uno -> 0x781E
+L 0x7804 AVANZA_CONTADOR_2J  (ix+6C:6E) += 2*(ix+6D) cuando el bit 0 de (ix+6F) esta puesto
+L 0x781E AVANZA_MARCADOR_1J  si toca un paso (0x7867): paginas 5/6; por cada paso (B): byte (E241)+(ix+6C): nibble BAJO -> (ix-6) = (E2BA) = y, nibble ALTO -> (ix-5) = (E2BB) = x (con signo, ver 0x784E): mueve el marcador del mapa por el camino; 1/2/3
+L 0x7827 AVANZA_MARCADOR_PASO  un paso del camino por vuelta
+L 0x784E DELTAS_DEL_BYTE     los rrca x4 intercambian los nibbles ANTES de los sra: D = nibble BAJO con signo (va a la y) y E = nibble ALTO con signo (va a la x)
+L 0x7867 TOCA_PASO_MAPA      (ix+6E) += bit 0 de (ix+6F); carry si no llega a (ix+6D); si no B = pasos enteros, (ix+6E) el resto, (ix+6C)++
+L 0x787E TOCA_PASO_CUENTA    cuenta cuantos (ix+6D) caben
+L 0x7886 ENTRA_BOXES         (iy+63) = 0xA0 (tiempo de parada), (iy+5C) = 1 (desde p02 0x8C04)
+L 0x788F EN_BOXES            mando del jugador (bit 0 de ix+9): boton -> C (sale); abajo -> (iy+63)-- (a cero: 0x78CB) y reposta (iy+50)++ hasta 0xFF; NC mientras sigue (desde p00 0x4FDA y p02 0x8D66)
+L 0x78A5 BOXES_REPOSTA       la parada: (iy+63)-- y combustible ++
+L 0x78B2 BOXES_COMBUSTIBLE   (iy+50)++; lleno -> si (iy+63) < 0x64 o (iy+68) = 0 sigue, si no C
+L 0x78BE BOXES_LLENO         NC si quedan neumaticos por cambiar
+L 0x78C9 BOXES_SALE          C
+L 0x78CB BOXES_NEUMATICOS    di; p02 0x871F y 0x86D0; ei; (iy+68) = 0; borra el indicador de neumaticos: 5 tiles 0 en 0x3818 (dos jugadores) o 0x3AE9 (0x78F5)
+C 0x78DF con dos jugadores salta a 0x7917 con DE = 0x000F (repinta las 4 celdas)
+D 0x78F5 0x78FB tiles_vacios 5 tiles 0 y 0xFF (para 0x4807)
+F 0x78F5 6
+L 0x78FB HUD_NEUMATICOS      un jugador: (ix+68) bits 0, 3, 2, 1 -> celdas 0x3A5D, 0x3A7D, 0x3A9D, 0x3ABD (tile 0xF2 o 0 parpadeando por bit 4 de E1C3); dos: 0x793F
+L 0x7917 HUD_NEUMATICOS_CELDAS  (EA50) = 0; cada bit de E pinta D en su celda (0x7C2E)
+L 0x793F HUD_NEUMATICOS_2J   por coche: aviso (0x7976) y 0x7950
+L 0x7950 HUD_NEUMATICOS_COCHE  (ix+6B)++ & 3 -> tabla 0x798F: si su mascara & (ix+68) != 0 pinta su flujo en 0x3818 (jugador 1) o 0x3AE9
+L 0x7971 HUD_NEUMATICOS_PINTA  PINTA_TILES HL
+L 0x7976 AVISO_NEUMATICOS    (ix+4A)-- a cero: si no bit 3 de (ix+1) y (ix+68) != 0, sonido 0x1F (p02 0x8674)
+D 0x798F 0x7997 tabla_neumaticos 4 punteros a [mascara, flujo de tiles 0xFF]
+F 0x798F w1
+D 0x7997 0x79B3 flujos_neumaticos 4 flujos: mascara 1/2/4/8 y 5 tiles (0xED.. / 0xE8.. / 0xE4..) + 0xFF
+F 0x7997 7
+L 0x79B3 HUD_POSICION_VUELTAS  dos jugadores: marcador vertical (y = 0x88 - E32C/2) en EAFC y EAF8, vueltas E1FC-(ix-2) en 0x3833/0x3AA4; uno: vueltas (0x7CA6 si cambian), posicion E331 en 0x399B y el marcador del mapa (E2BA) en EAFC
+L 0x79EB HUD_VUELTAS_RESTANTES  C = E1FC - (ix-2); si cambia respecto a (ix-4): BCD y 2 digitos en HL' (0x7ACB)
+L 0x7A06 HUD_POSICION_1J     vueltas -> 0x7CA6 si cambian; E331 (posicion) -> BCD -> 0x399B (fila 12, col 27); sprite del mapa (E2BA) en EAFC
+L 0x7A2F MARCADOR_VERTICAL   y = 0x40 - A/2 + E
+L 0x7A37 ESCRIBE_SPRITE_MAPA  (HL) = y, x, patron 0xD4, color 0x0F
+L 0x7A3D ESCRIBE_SPRITE_EDBC_B  (HL) = E, D, B, C
+L 0x7A45 HUD_COMBUSTIBLE     nivel = (ix+50) >> 5 (0..7): dos jugadores en 0x3836/0x3AA7 con la tabla 0x7BA0; uno en 0x39F5 (fila 15, col 21) con 0x7BA9; E204/E205 = nivel pintado
+L 0x7A75 HUD_COMBUSTIBLE_NIVEL  A >> 5 & 7 y 0x7C08
+L 0x7A82 HUD_COMBUSTIBLE_1J  tabla 0x7BA9, base 0x39F5
+L 0x7AA2 HUD_E329            (ix+69)+1: dos jugadores como digito en 0x3851/0x3AC2; uno como tile 0xF6+(ix+69) en 0x39BC (fila 13, col 28)
+L 0x7ACA HUD_DIGITO_MAS_1    E++ y 0x7ACB
+L 0x7ACB HUD_DIGITOS_DE      (EA50) = DE (BCD); 1 byte (2 digitos) en HL (0x7BF9)
+L 0x7AD9 HUD_VELOCIDAD       (ix+10,11) -> p00 0x4A61 -> x3 -> BCD: dos jugadores en 0x3810/0x3AE1, uno en 0x3977 (fila 11, col 23); 2 bytes desde EA51
+L 0x7AF7 HUD_VELOCIDAD_PINTA  HL = valor: 0x4A61, x3, BCD a EA50, pinta 2 bytes (0x7BF9)
+L 0x7B0F HUD_INDICADOR_E19A  dos jugadores: E19A y E19F como nivel 0..7 (0x7B7C) con la tabla 0x7B8E en 0x3856/0x3AC7; uno: E19A/8 con la tabla 0x7BB2 (3 bytes por nivel) en 0x3993 (fila 12, col 19) y los tiles 0xD4-0xD6 de 0x7B76 en 0x3933 parpadeando (bit 4 de E1C3)
+L 0x7B47 HUD_INDICADOR_1J    el indicador de un jugador
+D 0x7B76 0x7B7C flujo_d4d6 flujo de PINTA_TILES: en 0x3933 los tiles 0xD4 0xD5 0xD6 (parpadean)
+F 0x7B76 6
+L 0x7B7C NIVEL_0_7           A = (A >> 3) & 0x1F; si pasa de 7, 7
+D 0x7B8D 0x7BB2 tablas_indicadores 4 tablas de 8 tiles por nivel, cada una precedida de su tile de borrado (0): 0x7B8E (E19A dos jugadores: FC.. FE), 0x7B97 (FA.. FF, sin uso visto), 0x7BA0 (combustible dos jugadores: FB), 0x7BA9 (combustible un jugador: F4)
+F 0x7B8D 9
+D 0x7BB2 0x7BE5 tabla_indicador_1j 17 entradas (tile, desplazamiento de VRAM) por nivel del indicador E19A de un jugador (base 0x3993)
+F 0x7BB2 3
+L 0x7BE5 HL_POR_8            HL *= 8
+# (sin trazar, el agente lo leyo como codigo) L 0x7BE9 RUTINA_7BE9         sin trazar (p03 0xA4A6 la referencia): H = A, L = 0; p00 0x4A6D; HL *= 5; A = H, o 0xFF si desborda
+L 0x7BF9 PINTA_DIGITOS_HUD   dos jugadores -> p00 0x4A03 (tiles 0xD4+); uno -> D' = 0xF5 y p00 0x4A0D: B bytes BCD de (DE) en VRAM HL
+L 0x7C08 ACTUALIZA_INDICADOR  A = nivel nuevo, (IY) = nivel pintado, HL = tabla, (EA50) = base de VRAM, EA52 = tipo (0/2: 3 bytes por nivel, 1: un tile por nivel); un paso por llamada hacia el nivel nuevo
+L 0x7C16 INDICADOR_SUBE      (IY)++ y pinta el tile del nivel
+L 0x7C1F INDICADOR_PINTA_NIVEL  tile y celda (0x7C3E) y lo escribe (0x7C2E)
+L 0x7C24 INDICADOR_BAJA      celda del nivel nuevo con el tile de borrado (byte anterior a la tabla)
+L 0x7C2E ESCRIBE_CELDA_HUD   VRAM (EA50) + HL = D
+L 0x7C3C CUELGA              jr $: EA52 >= 3 no esta previsto
+L 0x7C3E TILE_Y_CELDA        por EA52 (p00 0x4ACB con la tabla de 3 palabras 0x7C49): 0/2 -> 0x7C56 (tile, desplazamiento), 1 -> 0x7C4F (tile = tabla[nivel], desplazamiento = nivel)
+C 0x7C46 p00 0x4ACB: salta a la palabra EA52 de las tres que siguen (0x7C56, 0x7C4F, 0x7C56) con A = nivel
+L 0x7C4F CELDA_1_BYTE        D = tabla[nivel], HL = nivel
+L 0x7C56 CELDA_3_BYTES       D = tabla[3*nivel], HL = la palabra siguiente
+L 0x7C64 ESCALA_TILE_X2      los 8 bytes de (DE) a 16x16: cada bit doblado, cada fila dos veces, en EA60.. (4 tiles: izquierda arriba, derecha arriba, izquierda abajo, derecha abajo)
+L 0x7C69 ESCALA_FILA         una fila de origen por vuelta
+L 0x7C72 ESCALA_BIT          un bit por vuelta
+L 0x7CA3 ESCALA_SIGUIENTE    a la mitad (fila 4) salta a los tiles de abajo
+L 0x7CA6 PINTA_VUELTAS_GRANDE  E = vueltas restantes: lee el patron del tile 0xF5+E del tercio 1 (VRAM 0x2FA8+E*8) en EA58, lo dobla (0x7C64) y lo escribe en los tiles 0xFC..0xFF del tercio 0 (VRAM 0x27E0)
+L 0x7CB5 LEE_PATRON_BUCLE    8 bytes por RDVRM
+
+# =============================================================================
+# ESTADOS E250 = 26 (0x7CD0) Y 27 (0x7CFD): una escena en el buffer EC00 con
+# la pista fija de p00 0x578A, dos bandas a cuadros (0x7DAB), una imagen de
+# p08 0x9386 y los coches como objetos de tiles (p03 0xB4AE + 0x70D9)
+# mientras el buffer se desplaza hacia abajo (0x7D7A). Acaba en E250 = 0x0E.
+# Hipotesis: la escena de la meta tras la carrera.
+# =============================================================================
+L 0x7CD0 ENTRA_ESCENA_META   E947 = 0; limpia (0x465B); p02 0x9263; tiles p04 0x6DEA; escena p00 0x578A; bandas (0x7DAB); imagen p08 0x9386 (8 columnas) en ECD5 (0x7D6C); p00 0x5BA2 (E250 = 27); (E27E) = 0xEEE8
+L 0x7CFD ESCENA_META         E251 = 0: desplaza (0x7D48, 0x7D7A), objetos desde (E27E) (p03 0xB4AE), los pinta (0x70D9), vuelca EC00 (p00 0x44C1), los borra (0x7134); en (E27E) = 0xEF28: E251++, E25D = 0x14; E251 != 0: vuelca y E25D-- (a 1: p02 0x869A; a 0: E250 = 0x0E)
+L 0x7D33 ESCENA_META_FIN     vuelca y cuenta E25D
+L 0x7D48 ESCENA_META_PUNTERO  (E27E) -= 0x40 con vuelta a 0xEFE8 por debajo de EC00; en 0xED68 descomprime p08 0x93C6 (7 columnas) en ECD6
+L 0x7D5A ESCENA_META_GUARDA  (E27E) = HL
+L 0x7D6C RLE_DESDE_P08       paginas 8/9; descomprime DE (A columnas) en HL (0x637A); 1/2/3
+L 0x7D7A DESPLAZA_ESCENA     la banda de 18 columnas del buffer EC00 baja una fila: EEE0 -> EFE0, y 23 filas hacia abajo, EFE0 -> EC00
+L 0x7D8C DESPLAZA_ESCENA_FILA  una fila por vuelta
+L 0x7DA1 COPIA_18            ldir de 0x12 bytes (HL) -> (DE) sin mover HL ni DE
+L 0x7DAB PINTA_BANDAS_CUADROS  en EC12 y EC32 (filas 0 y 1, col 18) 12 filas alternas de 14 tiles 0x8B/0x8C alternados
+L 0x7DB8 PINTA_BANDA         C = 12 filas (cada dos)
+L 0x7DBA PINTA_BANDA_FILA    14 tiles
+L 0x7DBC PINTA_BANDA_TILE    tile y xor 7 (0x8B <-> 0x8C)
+
+# =============================================================================
+# LA SALIDA (0x7DCA, desde p00 0x5C62 cada fotograma): fases E221 0..9 con
+# la tabla 0x7DD3 y el contador E222. E1D7 = luces del semaforo (0x7EFA
+# monta sus sprites: 4 fijos de 0x7F18 y uno de 0x7F28+E1D7*4); (ix+5D) = 6
+# en los dos coches -> fase 9 (carrera acabada: E221 = 0xFF).
+# =============================================================================
+L 0x7DCA FASES_SALIDA        si E221 < 10 despacha por E221 (tabla 0x7DD3)
+L 0x7DE7 SALIDA_0            E220..E22E = 0; F0F7 = 0x132; sonido 0x81; E326 = E3E6 = 0; E222 = 10 y E221++; panel por filas (p00 0x4C43) y pista (0x4BE3); espera p02 0x865C; sonido 0x80; p02 0x8704; E1D7 = 1
+L 0x7E0D SALIDA_0_ESPERA     p02 0x865C hasta Z
+L 0x7E20 FASE_SIGUIENTE      E222 = A y E221++
+L 0x7E28 SALIDA_1            parpadeo de los coches (bit 7 de E2F1/E3B1 cada dos fotogramas, un jugador); 0x7E80; E222-- a cero -> sonido 0x29 y fase siguiente (0x7E6F)
+L 0x7E40 SALIDA_1_CUENTA     E198 = E197 = 0xFF y cuenta E222
+L 0x7E4C SALIDA_2            sonido 0x29 al acabar
+L 0x7E50 SALIDA_3            sonido 0x29 al acabar
+L 0x7E54 SALIDA_4            sonido 0x2A al acabar
+L 0x7E56 SALIDA_LUZ          0x7E80; parpadeo; E222-- a cero -> 0x7E6F
+L 0x7E6A SALIDA_LUZ_CUENTA   E222--
+L 0x7E6F SALIDA_LUZ_SIGUIENTE  E222 = 0x14, E221++, 0x7ED9, sonido E y E1D7++ (una luz mas)
+L 0x7E80 E197_E198_FF        E198 = E197 = 0xFF
+L 0x7E89 SALIDA_5            E222-- a cero: si E240 = 0, E315 = E3D5 = 1 (0x7EC2); E1D7 = 0 (luces fuera); p00 0x595B; fase siguiente; 0x7ED9
+L 0x7EA2 SALIDA_6            E219 = 0; p00 0x5CA1 (cronometro E210 a cero); E326 = E2A2 = E3E6 = E362 = 1; E222 = 10 y fase siguiente; 0x7F3C; 0x7ED9
+L 0x7EC2 SALIDA_GO           E315 = E3D5 = 1 ((ix+55) de los dos coches)
+L 0x7ECB SALIDA_7            0x7ED9; E222-- a cero: p02 0x87E2 y fase siguiente
+L 0x7ED9 SALIDA_TODOS_EN_6   si (ix+5D) = 6 en el coche 1 (E31D) y, con dos jugadores, en el 2 (E3DD): E221 = 9
+L 0x7EE6 SALIDA_COCHE_1_EN_6  E31D = 6 -> E221 = 9
+L 0x7EF2 SALIDA_9            E221 = 0xFF y p02 0x869A
+L 0x7EFA SPRITES_SEMAFORO_MONTA  copia a (HL) los 16 bytes de 0x7F18 (4 sprites) y los 4 de 0x7F24 + E1D7*4 (la luz encendida); HL avanza 20
+D 0x7F18 0x7F28 sprites_semaforo 4 atributos (y, x, patron, color): (0x10,0x60,0xC4,4), (0x10,0x60,0xC8,5), (0x20,0x60,0xCC,4), (0x20,0x60,0xD0,5)
+F 0x7F18 4
+D 0x7F28 0x7F3C sprites_luz 5 atributos por E1D7 = 0..4 (la tabla empieza en 0x7F24 para E1D7 = 1): (0xE0,0x60,0xC0,0) oculto, (0x0E,0x60,0xC0,8), (0x15,0x60,0xC0,0x0A), (0x1C,0x60,0xC0,0x0B), (0x23,0x60,0xC0,0x12)
+F 0x7F28 4
+L 0x7F3C INICIA_RITMO        E33E = E3FE = 0x40 ((ix+7E) de los dos coches); E20F = E208 = 0 (desde p00 0x59F3)
+L 0x7F4C RITMO_CADA_256      cada 256 fotogramas: si E331 (posicion) < 3 y E208 = 0, E208 = 4
+B 0x7F62 Entrada de la carrera (E250 = 11, desde p00 0x5ABA): p02 0x800B y,
+B 0x7F62 por coche, (iy+7E) (1..99) sube o baja segun la posicion del coche
+B 0x7F62 (iy+40..42) comparada con p03 0xBDD5[E25B] (byte y palabra) y E20F,
+B 0x7F62 con multiplicaciones de p02 0x9B4F. Hipotesis: el ritmo de los rivales.
+L 0x7F62 RITMO_CARRERA       p02 0x800B; un jugador: 0x7F4C; E208 = 1 -> 0x7FDB; 0x7F85 por coche
+L 0x7F85 RITMO_COCHE         E, DE = p03 0xBDD5 + E25B*3; HL = DE - (iy+7E)*E (0x9B4F); HL *= E20F; compara con (iy+40..42) >> 2: menor -> (iy+7E)-- (minimo 1); si no ++ (hasta 99); 0x7FDB
+L 0x7FCF RITMO_SUBE          (iy+7E)++ salvo 0x63
+L 0x7FDB E208_ALTERNA        si E208 < 2: E208 = (E208 ^ 1) + 3
+# (sin trazar, el agente lo leyo como codigo) L 0x7FE9 RUTINA_7FE9         sin referencia (codigo muerto): C si E208 = 0 o 4, si no NC
+L 0x7FF6 E208_5              E208 = 5 (desde p03 0xB564)
+L 0x7FFC E208_POR_X          E208 = 0 si (ix+4) >= 0xD4, si no 1 (desde p02 0x9E40); la rutina sigue en p02 0x8000: el `sub 0xD4` cruza la frontera (0x7FFF = D6, p02 0x8000 = D4) y acaba en p02 0x800A
+
+# --- etiquetas internas que faltaban (repaso de cobertura) ---
+L 0x61B2 NOMBRE_CATEGORIA_INDICE  A = categoria de la opcion (0x6128) y sigue
+L 0x632E VALOR_COCHE_LEE    HL = DE - 0x40 + A: el byte del coche
+L 0x63D9 RLE_BUFFER_DECRECIENTE_BUCLE  un valor por vuelta
+L 0x6A47 RANKING_EMPATE_B   la otra rama del desempate
+L 0x6A4A RANKING_INTERCAMBIA_POSICIONES  E331 <-> E3F1
+L 0x6A50 RANKING_POSICION   (iy+71) -> BCD -> 2 digitos en +0xEB si E240 = 0
+L 0x6D5C PUNTOS_GUARDA_EA72 (EA72) = BC (EA74 o EA76)
+L 0x7034 SPRITE_PATRON      A = (ix+33)
+L 0x7037 SPRITE_ESCRIBE_PAR los dos sprites del objeto
+L 0x70CA SPRITE_EXTRA_3_VA  a 0x70B2
+L 0x789B BOXES_MANDO        HL = flancos del mando del jugador
+L 0x7ABC HUD_E329_1J        tile 0xF6 + (ix+69) en 0x39BC
+L 0x7AF1 HUD_VELOCIDAD_1J   (E2D0) en 0x3977
+
+# --- BLOQUES IDENTIFICADOS POR tools/textos.py (los textos (ASCII + macros de la tabla 0xA6DE) y las pantallas
+# comprimidas (RLE_A_RAM de p01 0x637A), leidos desde la ROM). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0x68d9 0x690a tabla_68D9 12 parejas (destino en el buffer, flujo en p15) y 0xFF: las pantallas de 8 de ancho que pinta 0x68AC por (E25E)
+F 0x68d9 w2
+# --- fin de los bloques de textos.py ---
+
+# --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
+D 0x6b6f 0x6b71 pendiente_de_trazar Sin trazar ni identificar todavia (2 bytes)
+D 0x71e4 0x71f2 pendiente_de_trazar Sin trazar ni identificar todavia (14 bytes)
+D 0x761b 0x762b pendiente_de_trazar Sin trazar ni identificar todavia (16 bytes)
+D 0x7c49 0x7c4f pendiente_de_trazar Sin trazar ni identificar todavia (6 bytes)
+D 0x7dd3 0x7de7 pendiente_de_trazar Sin trazar ni identificar todavia (20 bytes)
+# --- fin de la seccion pendiente ---

@@ -1,0 +1,82 @@
+# Puntos de entrada de la pagina 3 de F-1 Spirit (org 0xa000).
+#
+# Cada semilla lleva su justificacion: de donde se llama y con que pagina
+# mapeada. Una semilla sin justificar es la via mas rapida a un trazado falso.
+# Las llamadas que salen de otra pagina se ven en work/p03.trace.json
+# ("externos") y con tools/externos.py.
+
+# Las dos primeras semillas vienen de seguir el arranque con los bancos en la
+# mano: INIT acaba con `call 0x4433` (1/2/3 en 6000/8000/A000) y `jr $`; la
+# interrupcion 0x4018 guarda esos tres valores, mapea D/E/F para el sonido y
+# los RESTAURA (0x406A-0x407C) antes de la logica del juego. Asi que en las
+# primeras interrupciones, con (E1C0)=0 y (E1C1)=0, en 0xA000 esta ESTA
+# pagina. Traza parcial de la pagina 0 (tools/z80trace.py, clase Tracer)
+# desde 0x41CE: no alcanza ninguna rutina de banco antes del call.
+0xBE14   # desde 0x41DE (estado 0, subestado 0 del despachador 0x419D), con
+         # 1/2/3 mapeadas. Primera rutina del juego fuera de la pagina 0.
+0xBE56   # desde 0x41B9 (estado 0, subestado 1): la interrupcion siguiente,
+         # con los mismos bancos SI 0xBE14 no los cambia (hecho-sin-verificar
+         # hasta que el trazado de esta pagina diga si 0xBE14 llama a alguna
+         # rutina de banco de la pagina 0 y no restaura).
+
+# --- Llamadas desde otras paginas MEDIDAS en el emulador (hecho-verificado):
+# tools/omsx_bancos.tcl, 90 s de demo de titulo, 2026-08-19 (work/omsx/bancos.log).
+# Punto de ruptura en cada origen y lectura del depurable 'romblocks' de
+# openMSX en el destino: en esa direccion estaba mapeada ESTA pagina.
+0xA089   # desde p00:59C6 (medido)
+0xA110   # desde p00:5C4B (medido)
+0xA5B9   # desde p00:5A13 (medido)
+0xAB63   # desde p00:5C4E (medido)
+
+# --- Llamadas desde otras paginas MEDIDAS en el emulador (hecho-verificado):
+# tools/omsx_bancos.tcl -> work/omsx/bancos.log. Punto de ruptura en cada
+# origen y lectura del depurable 'romblocks' de openMSX en el destino: en
+# esa direccion estaba mapeada ESTA pagina.
+0xA531   # desde p02:9E68 (medido)
+0xA8A1   # desde p02:9D6D (medido)
+0xB34F   # desde p02:8CCC (medido)
+0xB5B6   # desde p02:9D11 (medido)
+0xB5D3   # desde p02:8A78 (medido)
+
+# --- Llamadas desde otras paginas MEDIDAS en el emulador (hecho-verificado):
+# tools/omsx_bancos.tcl -> work/omsx/bancos.log. Punto de ruptura en cada
+# origen y lectura del depurable 'romblocks' de openMSX en el destino: en
+# esa direccion estaba mapeada ESTA pagina.
+0xA5AF   # desde p00:52BB (medido)
+0xB44C   # desde p00:5210 p00:5C93 (medido)
+0xB463   # desde p00:5216 (medido)
+
+# --- Destinos de tablas de despachador (`call 0x40DA` + tabla) MEDIDOS en el
+# emulador (hecho-verificado): bp en el `jp (hl)` de 0x40E3; HL = destino,
+# DE-1 = la entrada de la tabla que lo apuntaba; romblocks en el destino = ESTA pagina.
+0xB92D   # entrada de tabla p02:9F63 (medido, despachador)
+0xB93E   # entrada de tabla p02:9F61 (medido, despachador)
+0xB951   # entrada de tabla p02:9F53 (medido, despachador)
+0xB99B   # entrada de tabla p02:9F55 (medido, despachador)
+0xB9C0   # entrada de tabla p02:9F57 (medido, despachador)
+0xB9E5   # entrada de tabla p02:9F59 (medido, despachador)
+0xBA0F   # entrada de tabla p02:9F5B (medido, despachador)
+0xBA39   # entrada de tabla p02:9F5D (medido, despachador)
+0xBA7E   # entrada de tabla p02:9F5F (medido, despachador)
+
+# --- DEDUCIDA, SIN MEDIR (2026-08-19): desde p01:7D13 (rutina 0x7CD0, entrada
+# 26 del despachador de carrera). Antes de la llamada, 0x7CDF (0x4CCD) y
+# 0x7D06 -> 0x7D6C (`ld a,8 / call 0x4447` ... `call 0x43FE`) vuelven las dos
+# a 1/2/3, asi que en 0xA000 esta la 3. Confirmar al medir.
+0xB4AE   # desde p01:7D13 (MEDIDO 2026-08-19 forzando E250, bancos_fuerza.log; 1/2/3 restaurado en 0x7D76)
+
+# --- DEDUCIDA, SIN MEDIR (2026-08-19): desde p01:7386 (entrada 3 del
+# despachador 0x71E1, estado (E252)=1: lee teclas en bucle, 0x08/0x0D/0x30-0x5A,
+# y las mete en EA52: es la entrada de un texto). En ese nivel rige el
+# mapeo 1/2/3 (modelo del agente B, 302/302 medidas): 0xB3A9 es de ESTA
+# pagina. Confirmar en cuanto se mida.
+0xB3A9   # desde p01:7386 (deducido, sin medir): devuelve en A la tecla pulsada (CY si ninguna)
+
+# --- CAIDA DESDE p02 (hecho-verificado leyendo la ROM, 2026-08-19): la
+# rutina p02 0x9FF7 (`push af / call 0xA412 / pop bc / ret nz / push hl /
+# pop ix`) ocupa 0x9FF7-0x9FFF, o sea los ULTIMOS bytes de la pagina 2, y
+# CAE en 0xA000. Que ahi esta ESTA pagina lo dice el propio codigo: a
+# 0x9FF7 se entra desde p03:0xA292 y llama a 0xA412, las dos de la pagina
+# 3, luego la 3 esta mapeada en 0xA000 durante toda la rutina.
+0xA000   # caida desde p02:9FF7 (los 6 bytes finales de la pagina 2)
+0xA948   # sin llamador: `ld e,(ix+1B) / ld d,(ix+1C) / ret` y detras su tabla de punteros (0xA955, 0xA969, 0xA97D). 2026-08-19

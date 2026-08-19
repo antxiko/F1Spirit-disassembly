@@ -1,0 +1,27 @@
+# Anotaciones de F-1 Spirit (Konami, 1987, RC-752): pagina 11 de 16, que el
+# mapper pone en 0x8000-0x9fff (ver tools/paginas.py).
+#
+# Directivas: L=etiqueta, C=comentario de linea, B=cabecera de bloque,
+# D=rango de datos (con nombre y explicacion), F=anchura de fila de un bloque
+# de datos. Todo anclado a direccion, asi que sobrevive a un retrazado. Sin
+# acentos a proposito.
+#
+# ESTADO: pagina sin trazar. El rango D de abajo es un marcador: dice que NADA
+# de esta pagina esta explicado todavia. Se va recortando segun el trazado
+# convierte bytes en codigo y las lecturas ponen nombre a los datos.
+
+# --- BLOQUES IDENTIFICADOS POR tools/circuitos.py (la cadena secuencia -> piezas -> metatiles de la pagina 0 y los objetos
+# de la pista, recorridos desde la ROM; los tamanos de las tablas salen del
+# indice maximo que usa cada carrera y cada tabla acaba donde empieza la
+# siguiente). No editar a mano: ---
+# --- los reescribe tools/vuelca_bloques.py ---
+D 0x8000 0x8ad8 metatiles_A tabla de metatiles A: 176 metatiles de 16 B (4 filas x 4 tiles); la usan las carreras 0
+F 0x8000 16
+D 0x8ad8 0x9698 metatiles_B tabla de metatiles B: 188 metatiles de 16 B (4 filas x 4 tiles); la usan las carreras 2,8,20; los 3 ultimos no los usa ninguna carrera
+F 0x8ad8 16
+D 0x9698 0xa000 metatiles_C tabla de metatiles C: 256 metatiles de 16 B (4 filas x 4 tiles); la usan las carreras 3,4,5,6,7,10,11,12,13,14,15,16,17,18,19 (sigue en la pagina siguiente)
+F 0x9698 16
+# --- fin de los bloques de circuitos.py ---
+
+# --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
+# --- fin de la seccion pendiente ---

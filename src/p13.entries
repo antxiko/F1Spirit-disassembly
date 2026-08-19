@@ -1,0 +1,63 @@
+# Puntos de entrada de la pagina 13 de F-1 Spirit (org 0x6000).
+#
+# Cada semilla lleva su justificacion: de donde se llama y con que pagina
+# mapeada. Una semilla sin justificar es la via mas rapida a un trazado falso.
+# Las llamadas que salen de otra pagina se ven en work/p13.trace.json
+# ("externos") y con tools/externos.py.
+
+# La pagina del sonido. Las cuatro semillas son llamadas desde la pagina 0
+# con D/E/F recien mapeadas (`ld a,0Dh / call 0x441B`, o el atajo 0x4442),
+# sin ninguna otra escritura a 0x7000 entre medias: en 0x6000-0x7FFF esta
+# ESTA pagina. Lo comprobo tools/reconocimiento.py (regla pagina -> org) y
+# una traza parcial de la pagina 0 desde 0x40BB/0x4140/0x4155 (ninguna de
+# esas rutinas toca el mapper).
+0x6AA5   # desde la interrupcion (0x4046): tras mapear D/E/F en 0x402F-0x403F.
+         # Es el paso del reproductor de sonido, una vez por interrupcion.
+0x6CE9   # desde INIT (0x42DE, dentro de 0x42B9): tras mapear D/E/F en
+         # 0x42C5-0x42D7. Inicializacion del sonido (escribe el SCC en 0x9880).
+0x6000   # con A = numero de orden: desde 0x4307 (INIT, tras `call 0x4442` y
+         # `ld a,46h`) y desde la cola de ordenes 0x4140 (interrupcion, tras
+         # remapear D/E/F en 0x4049-0x4053). Es "pide este sonido".
+0x6422   # desde la interrupcion (0x4061), despues de 0x40BB y de la cola
+         # 0x4140, que no tocan 0x7000 (el driver solo toca 0x9000 para el SCC).
+
+# --- El interprete de la partitura. 0x6853: un byte >= 0xE0 del flujo de
+# musica es una orden; `and 1Fh` y salto por la tabla de 0x6868 (`ld hl,6868h
+# / add a,a / ... / jp (hl)` en 0x685B-0x6867). La tabla llega hasta su
+# destino mas bajo, 0x68A6: 31 palabras (ordenes 0xE0..0xFE; la 0xFF leeria
+# el codigo de 0x68A6 como puntero, luego no se usa o seria un fallo).
+0x68A6   # ordenes 0xE0, 0xE2 de la tabla de 0x6868
+0x68BC   # ordenes 0xE1, 0xE3 de la tabla de 0x6868
+0x68D9   # orden 0xE4 de la tabla de 0x6868
+0x6903   # orden 0xE5 de la tabla de 0x6868
+0x6917   # orden 0xE6 de la tabla de 0x6868
+0x6927   # orden 0xE7 de la tabla de 0x6868
+0x6939   # orden 0xE8 de la tabla de 0x6868
+0x6948   # orden 0xE9 de la tabla de 0x6868
+0x694F   # orden 0xEA de la tabla de 0x6868
+0x6956   # orden 0xEB de la tabla de 0x6868
+0x69A9   # orden 0xEC de la tabla de 0x6868
+0x69AF   # orden 0xED de la tabla de 0x6868
+0x69B6   # orden 0xEE de la tabla de 0x6868
+0x69C1   # orden 0xEF de la tabla de 0x6868
+0x69C7   # orden 0xF0 de la tabla de 0x6868
+0x69D1   # orden 0xF1 de la tabla de 0x6868
+0x69EC   # orden 0xF2 de la tabla de 0x6868
+0x69FB   # orden 0xF3 de la tabla de 0x6868
+0x6A01   # orden 0xF4 de la tabla de 0x6868
+0x6A07   # orden 0xF5 de la tabla de 0x6868
+0x6A0D   # orden 0xF6 de la tabla de 0x6868
+0x6A17   # orden 0xF7 de la tabla de 0x6868
+0x6A1D   # orden 0xF8 de la tabla de 0x6868
+0x6A37   # orden 0xF9 de la tabla de 0x6868
+0x6A42   # orden 0xFA de la tabla de 0x6868
+0x6A4A   # orden 0xFB de la tabla de 0x6868
+0x6A64   # orden 0xFC de la tabla de 0x6868
+0x6A79   # orden 0xFD de la tabla de 0x6868
+0x6A7C   # orden 0xFE de la tabla de 0x6868
+
+# --- Llamadas desde otras paginas MEDIDAS en el emulador (hecho-verificado):
+# tools/omsx_bancos.tcl -> work/omsx/bancos.log. Punto de ruptura en cada
+# origen y lectura del depurable 'romblocks' de openMSX en el destino: en
+# esa direccion estaba mapeada ESTA pagina.
+0x6A20   # desde p15:A630 p15:A637 p15:A6F5 (medido)
