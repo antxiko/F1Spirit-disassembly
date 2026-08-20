@@ -44,11 +44,11 @@ de pagina (openMSX detecta solo el mapper; 90 s de demo resolvieron 52):
 
 | | |
 |---|---|
-| bytes de codigo trazado | 30.658 (23,4 %) |
-| bytes de datos identificados por herramienta o a mano | 100.414 (76,6 %) |
-| de esos, todavia marcados `pendiente_de_trazar` | 3.067 (2,3 %) |
+| bytes de codigo trazado | 31.591 (24,1 %) |
+| bytes de datos identificados por herramienta o a mano | 99.481 (75,9 %) |
+| de esos, todavia marcados `pendiente_de_trazar` | 504 (0,4 %) |
 | bytes sin asignar | **0** |
-| explicado de verdad | **97,7 %** |
+| explicado de verdad | **99,6 %** |
 | paginas con codigo | 0, 1, 2, 3, 13, 15 (la 1 y la 2, comentadas enteras) |
 | paginas de datos identificadas al 100 % | 5, 7, 10, 11, 14 |
 

@@ -733,13 +733,22 @@ DATA_rle_col_9383:
 	defb 078h,0b0h,000h	; 9383
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (98 bytes)
-;   0x9386..0x93e8  (98 bytes)
-DATA_pendiente_de_trazar:
+; DATOS pantalla_9386: flujo RLE de 8 columnas que p01 0x7CE8 descomprime en
+;   EC D5 (`ld de,0x9386 / ld hl,0xECD5 / ld a,8 / call RLE_DESDE_P08`, que
+;   mapea 8/9 y vuelve a 1/2/3): 64 bytes de flujo, 96 escritos
+;   0x9386..0x93c6  (64 bytes)
+DATA_pantalla_9386:
 	defb 084h,001h,002h,003h,004h,085h,001h,006h,005h,002h,002h,006h,007h,001h,0e3h,008h	; 9386  ................
 	defb 083h,002h,002h,00bh,001h,0e4h,00ch,004h,002h,010h,011h,001h,0e5h,012h,001h,011h	; 9396  ................
 	defb 083h,001h,0e4h,017h,084h,001h,0e3h,01bh,085h,001h,0e3h,01eh,083h,001h,001h,021h	; 93a6  ...............!
 	defb 0e4h,021h,083h,021h,002h,001h,001h,0e4h,025h,084h,001h,0e4h,029h,08ah,001h,000h	; 93b6  .!.!....%...)...
+
+; ----------------------------------------------------------------------
+; DATOS pantalla_93C6: flujo RLE de 7 columnas que p01 0x7D64 descomprime en
+;   ECD6 (`ld de,0x93C6 / ld hl,0xECD6 / ld a,7 / call RLE_DESDE_P08`): 34
+;   bytes de flujo, 77 escritos
+;   0x93c6..0x93e8  (34 bytes)
+DATA_pantalla_93C6:
 	defb 09dh,001h,0e4h,02dh,083h,001h,0e4h,031h,083h,001h,0e3h,035h,083h,001h,0e6h,038h	; 93c6  ...-...1...5...8
 	defb 002h,001h,021h,0e5h,03eh,002h,021h,001h,0e4h,025h,083h,001h,0e4h,029h,002h,001h	; 93d6  ..!.>.!..%...)..
 	defb 001h,000h	; 93e6

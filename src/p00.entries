@@ -167,3 +167,26 @@
 0x480D   # desde p01:7383 p01:73F0 p01:7402 p02:833A (p00 es fija): DE = flujo para PINTA_TILES
 0x58A0   # desde p01:74DF (el truco " UJM3EDC" de INPUT PASSWORD: `jp 0x58A0`; p00 es fija). 2026-08-19
 0x559D   # sin llamador: call 0x443D / ld de,0x0800 / call AVANZA_POSICION / call PINTA_FILA_PISTA / jp 0x43FE = avanza una fila de pista y la pinta; acaba exacto en 0x55AC. 2026-08-19
+
+# --- Codigo SIN LLAMADOR, sembrado por lo que dicen los propios bytes
+# (2026-08-20). En todos los casos el trozo descodifica entero y acaba justo
+# donde empieza el codigo ya trazado, o cae dentro de el. Que nadie los llame
+# con una direccion literal esta comprobado con una busqueda de los dos bytes
+# de cada direccion en los 128 KB de la ROM.
+0x430D   # `ld hl,0 / ld bc,0x4000 / xor a / call FILVRM` (borra los 16 KB de VRAM) y cae en VDP_REGISTROS (0x4317)
+0x467F   # `call SETRD(0x0050) / exx / ld a,(0x0006) / ld c,a / exx / ret`: la gemela de lectura de PREPARA_ESCRITURA_VRAM (0x4673), que hace lo mismo con SETWRT y el byte 0x0007
+0x47D3   # `exx / ld b,3 / [exx / push bc,de / call COPIA_A_VRAM / ld de,0x800 / add hl,de / pop de,bc / exx / djnz] / ret`: LDIRVM en los tres tercios, la gemela de LLENA_VRAM_3_TERCIOS (0x47E6), que hace lo mismo con FILVRM
+0x4835   # `ld c,0FFh / jr 0x4846`: la tercera entrada de PINTA_TILES junto a 0x4830 (BORRA_TILES, C=0) y 0x4839 (C=0)
+0x49EF   # `ld hl,0x3B08 / ld a,(E1C2) / and 040h / jr z,0x49FC` y cae en 0x49F9: la variante de 0x49E0, que es el mismo trozo con 0x3B0C/0x3B04
+0x4A09   # `exx / ld d,010h / exx` y cae en 0x4A0D: la gemela de 0x4A03, que pone D=0xD4
+0x4A55   # tres `srl h / rr l` y cae en los cinco de 0x4A61: divide HL entre 256 (8 desplazamientos) en vez de entre 32
+0x4A76   # dos `sra h / rr l` y cae en los de 0x4A7E: la version con signo, dos desplazamientos mas que 0x4A7E
+0x4A97   # `ld d,(ix+6) / ld e,(ix+4)` y cae en 0x4A9D: la entrada que carga DE de la estructura antes de 0x4A9D
+0x4B48   # `call 0x4A9D` y un bucle que copia B bytes por fila de VRAM (C filas, +0x20 con res/set 2,h) usando la subrutina de 0x4B5E; acaba en `ret` justo antes de L_4B67
+0x4BA3   # `call MAPEA_4_5_6 / ld a,(E25C) / ld hl,0x61D3 / call HL_PALABRA_A / jp 0x4CCD`: carga la lista de tiles de la carrera de la tabla p04 0x61D3, como 0x4BCE hace con 0x61A9
+0x4C8C   # `set 7,a / ld bc,0x0100 / jr 0x4CB6`: otra entrada de CARGA_LISTA_FILA_A_FILA, como 0x4C93, 0x4CA1 y 0x4CA8
+0x4C9A   # `ld a,087h / ld bc,0x08FF / jr 0x4CB6`: idem
+0x4CAF   # `ld a,0C0h / ld bc,0x0801 / jr 0x4CB6`: idem
+0x53B7   # `ld h,0 / exx / push hl,de / ld hl,0xEA60 / ld bc,3 / call 0x4B87 / pop de,hl / ... / jr 0x53E8`: la variante de 0x53D2, que prepara los mismos EA60-EA62 y entra en el mismo L_53E8
+0x58A2   # el gemelo de ESCRITURA del reproductor de 0x5913: lee (E1C9)/(E1CC) -los mandos-, cuenta cuadros en (F001) y, cuando la mascara cambia (o el contador llega a 0xFF), escribe dos bytes en (F002) y avanza el puntero, con D = 0x80 para el jugador 2. OJO: los escribe en el orden (cuadros, mascara) y el reproductor de 0x5920 los lee al reves (`ld d,(hl)` = mascara y luego `ld c,(hl)` = cuadros), que es el orden que tienen los datos de la ROM; a este trozo no lo llama nadie. Acaba en `ret` justo antes de L_58F2
+0x5F41   # `ld l,(ix+46) / ld h,(ix+47) / ld a,(ix+45) / (x2, x2, +bc, x2) / ld c,a / ld b,0 / add hl,bc / ret`: HL = (ix+46/47)*12 + (ix+45)

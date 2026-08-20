@@ -153,3 +153,7 @@
 0x7FE9   # sin llamador: C si (E208) es 0 o 4
 0x6B3D   # sin llamador: E29D = E35D = 0 y estado 0x10 (jp 0x6049)
 0x7BE9   # sin llamador: HL = A*256, por 0x4A6D, x5 (H:L*5) con tope 0xFF
+
+# --- Codigo sin llamador, sembrado por lo que dicen los propios bytes.
+# 2026-08-20.
+0x6B6F   # sin llamador: `ld d,0BDh` y cae en COMPARA_PUNTOS_D (0x6B71); es la entrada gemela de PUNTOS_0xB4 (0x6B6B), que la salta con su `jr $+4`

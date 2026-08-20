@@ -19,12 +19,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from estilo_web import ESTILO                                   # noqa: E402
 
 # Las cifras salen de contar sobre el listado, no de escribirlas a ojo:
-# 131072 = 30658 + 97347 + 3067, que es lo que imprime tools/presupuesto.py
+# 131072 = 31591 + 98977 + 504, que es lo que imprime tools/presupuesto.py
 # descontando de los datos los marcadores de lo que queda por trazar.
-CODIGO = 30658
-DATOS = 97347
-PENDIENTE = 3067
-RUTINAS = 964
+CODIGO = 31591
+DATOS = 98977
+PENDIENTE = 504
+RUTINAS = 977
 CIRCUITOS = 21
 TOTAL = CODIGO + DATOS + PENDIENTE
 

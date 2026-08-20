@@ -301,12 +301,29 @@ FINAL_17:		; pagina 9 en A000; p00 0x477C; vuelca E400 si E251 < 14; despacha po
 	call 040dah		;8212
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (38 bytes)
+; DATOS tabla_8212: 19 palabras del despachador de 0x8212 (`call 0x40DA` en
+;   0x8212; el indice lo pone el llamador)
 ;   0x8215..0x823b  (38 bytes)
-DATA_8215:
-	defb 03bh,082h,075h,082h,07ah,082h,082h,082h,090h,082h,09bh,082h,0aah,082h,0afh,082h	; 8215  ;.u.z...........
-	defb 0cch,082h,0deh,082h,0e6h,082h,0f8h,082h,000h,083h,015h,083h,020h,083h,042h,083h	; 8225  ............ .B.
-	defb 04fh,083h,05ah,083h,07fh,084h	; 8235
+DATA_tabla_8212:
+	defw 0823bh	; 8215  -> FINAL_PASO_0
+	defw 08275h	; 8217  -> FINAL_PASO_1
+	defw 0827ah	; 8219  -> FINAL_PASO_2
+	defw 08282h	; 821b  -> FINAL_PASO_3
+	defw 08290h	; 821d  -> FINAL_PASO_4
+	defw 0829bh	; 821f  -> FINAL_PASO_5
+	defw 082aah	; 8221  -> FINAL_PASO_6
+	defw 082afh	; 8223  -> FINAL_PASO_7
+	defw 082cch	; 8225  -> FINAL_PASO_8
+	defw 082deh	; 8227  -> FINAL_PASO_9
+	defw 082e6h	; 8229  -> FINAL_PASO_10
+	defw 082f8h	; 822b  -> FINAL_PASO_11
+	defw 08300h	; 822d  -> FINAL_PASO_12
+	defw 08315h	; 822f  -> FINAL_PASO_13
+	defw 08320h	; 8231  -> FINAL_PASO_14
+	defw 08342h	; 8233  -> FINAL_PASO_15
+	defw 0834fh	; 8235  -> FINAL_PASO_16
+	defw 0835ah	; 8237  -> FINAL_PASO_17
+	defw 0847fh	; 8239  -> FINAL_PASO_18
 
 ; ======================================================================
 ; CODIGO 0x823b..0x8431  (502 bytes)
@@ -1466,11 +1483,20 @@ ESTADO_COCHE:		; despacha por (ix+5D) con la tabla 0x8B12: 0 normal 0x8C70, 1 en
 	call 040dah		;8b0f
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (20 bytes)
+; DATOS tabla_8B0F: 10 palabras del despachador de 0x8B0F (`call 0x40DA` en
+;   0x8B0F)
 ;   0x8b12..0x8b26  (20 bytes)
-DATA_8B12:
-	defb 070h,08ch,004h,08ch,065h,08dh,021h,08ch,088h,08dh,00bh,08eh,01eh,08eh,026h,08bh	; 8b12  p...e.!.......&.
-	defb 050h,08bh,06ah,08bh	; 8b22
+DATA_tabla_8B0F:
+	defw 08c70h	; 8b12  -> COCHE_ESTADO_0
+	defw 08c04h	; 8b14  -> COCHE_ESTADO_1
+	defw 08d65h	; 8b16  -> COCHE_ESTADO_2
+	defw 08c21h	; 8b18  -> COCHE_ESTADO_3
+	defw 08d88h	; 8b1a  -> COCHE_ESTADO_4
+	defw 08e0bh	; 8b1c  -> COCHE_ESTADO_5
+	defw 08e1eh	; 8b1e  -> COCHE_ESTADO_6
+	defw 08b26h	; 8b20  -> COCHE_ESTADO_7
+	defw 08b50h	; 8b22  -> COCHE_ESTADO_8
+	defw 08b6ah	; 8b24  -> COCHE_ESTADO_9
 
 ; ======================================================================
 ; CODIGO 0x8b26..0x8ece  (936 bytes)
@@ -2233,11 +2259,19 @@ TILE_ESPECIAL:		; (ix-1A) con bit 6 y < 9: despacha (tabla 0x9111)
 	call 040dah		;910e
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (18 bytes)
+; DATOS tabla_910E: 9 palabras del despachador de 0x910E (`call 0x40DA` en
+;   0x910E)
 ;   0x9111..0x9123  (18 bytes)
-DATA_9111:
-	defb 023h,091h,006h,092h,006h,092h,006h,092h,006h,092h,006h,092h,0e1h,091h,0f7h,091h	; 9111  #...............
-	defb 006h,092h	; 9121
+DATA_tabla_910E:
+	defw 09123h	; 9111  -> LINEA_DE_META
+	defw 09206h	; 9113  -> NADA_9206
+	defw 09206h	; 9115  -> NADA_9206
+	defw 09206h	; 9117  -> NADA_9206
+	defw 09206h	; 9119  -> NADA_9206
+	defw 09206h	; 911b  -> NADA_9206
+	defw 091e1h	; 911d  -> TILE_6_REPETICION
+	defw 091f7h	; 911f  -> TILE_7_PIDE_REPETICION
+	defw 09206h	; 9121  -> NADA_9206
 
 ; ======================================================================
 ; CODIGO 0x9123..0x91db  (184 bytes)
@@ -2689,10 +2723,16 @@ FRENADA_CATEGORIA:		; si (ix+13) != 0 y E25B - 1 < 6: despacha (tabla 0x94C3): v
 	call 040dah		;94c0
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (12 bytes)
+; DATOS tabla_94C0: 6 palabras del despachador de 0x94C0 (`call 0x40DA` en
+;   0x94C0)
 ;   0x94c3..0x94cf  (12 bytes)
-DATA_94C3:
-	defb 0cfh,094h,0e2h,094h,0f8h,094h,0f8h,094h,00fh,095h,0f8h,094h	; 94c3  ............
+DATA_tabla_94C0:
+	defw 094cfh	; 94c3  -> FRENADA_1_256
+	defw 094e2h	; 94c5  -> FRENADA_1_512
+	defw 094f8h	; 94c7  -> FRENADA_1_1024
+	defw 094f8h	; 94c9  -> FRENADA_1_1024
+	defw 0950fh	; 94cb  -> NADA_950F
+	defw 094f8h	; 94cd  -> FRENADA_1_1024
 
 ; ======================================================================
 ; CODIGO 0x94cf..0x986b  (924 bytes)
@@ -4130,11 +4170,26 @@ RUTINA_DEL_TIPO:		; despacha por tipo - 1 (< 15) con la tabla 0x9F53
 	call 040dah		;9f50
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (30 bytes)
+; DATOS tabla_9F50: 15 palabras del despachador de 0x9F50 (`call 0x40DA` en
+;   0x9F50); las 9 primeras entradas caen en la pagina 3 (medido en el
+;   emulador)
 ;   0x9f53..0x9f71  (30 bytes)
-DATA_9F53:
-	defb 051h,0b9h,09bh,0b9h,0c0h,0b9h,0e5h,0b9h,00fh,0bah,039h,0bah,07eh,0bah,03eh,0b9h	; 9f53  Q.........9.~.>.
-	defb 02dh,0b9h,051h,0b9h,071h,09fh,071h,09fh,071h,09fh,071h,09fh,0e7h,0b4h	; 9f63  -.Q.q.q.q.q...
+DATA_tabla_9F50:
+	defw 0b951h	; 9f53
+	defw 0b99bh	; 9f55
+	defw 0b9c0h	; 9f57
+	defw 0b9e5h	; 9f59
+	defw 0ba0fh	; 9f5b
+	defw 0ba39h	; 9f5d
+	defw 0ba7eh	; 9f5f
+	defw 0b93eh	; 9f61
+	defw 0b92dh	; 9f63
+	defw 0b951h	; 9f65
+	defw 09f71h	; 9f67  -> NADA_9F71
+	defw 09f71h	; 9f69  -> NADA_9F71
+	defw 09f71h	; 9f6b  -> NADA_9F71
+	defw 09f71h	; 9f6d  -> NADA_9F71
+	defw 0b4e7h	; 9f6f
 
 ; ======================================================================
 ; CODIGO 0x9f71..0x9f8f  (30 bytes)

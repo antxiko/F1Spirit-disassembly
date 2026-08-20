@@ -731,10 +731,19 @@ D 0x68d9 0x690a tabla_68D9 12 parejas (destino en el buffer, flujo en p15) y 0xF
 F 0x68d9 w2
 # --- fin de los bloques de textos.py ---
 
+
+# --- Las cuatro tablas de los despachadores de esta pagina, ya declaradas en
+# src/p01.nocode; aqui con nombre y anchura. Lector: el `call` que las precede
+# (p00 0x40DA DESPACHA -salta a la palabra A de la tabla que sigue al call- y,
+# la de 0x7C49, la variante p00 0x4ACB). 2026-08-20.
+D 0x71E4 0x71F2 tabla_71E1 7 palabras del despachador de 0x71E1 (`call 0x40DA`), indice (E251)
+F 0x71E4 w1
+D 0x761B 0x762B tabla_7618 8 palabras del despachador de 0x7618 (`call 0x40DA`), indice (E1C3) & 7: las tareas del HUD
+F 0x761B w1
+D 0x7C49 0x7C4F tabla_7C46 3 palabras del despachador de 0x7C46 (`call 0x4ACB`, la variante con exx/ex af,af'), indice (EA52): 0x7C56, 0x7C4F, 0x7C56
+F 0x7C49 w1
+D 0x7DD3 0x7DE7 tabla_7DD0 10 palabras del despachador de 0x7DD0 (`call 0x40DA`), indice (E221): las fases de la salida
+F 0x7DD3 w1
+
 # --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
-D 0x6b6f 0x6b71 pendiente_de_trazar Sin trazar ni identificar todavia (2 bytes)
-D 0x71e4 0x71f2 pendiente_de_trazar Sin trazar ni identificar todavia (14 bytes)
-D 0x761b 0x762b pendiente_de_trazar Sin trazar ni identificar todavia (16 bytes)
-D 0x7c49 0x7c4f pendiente_de_trazar Sin trazar ni identificar todavia (6 bytes)
-D 0x7dd3 0x7de7 pendiente_de_trazar Sin trazar ni identificar todavia (20 bytes)
 # --- fin de la seccion pendiente ---

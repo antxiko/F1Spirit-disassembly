@@ -10,7 +10,7 @@
 
 
 ; ======================================================================
-; CODIGO 0xa000..0xa087  (135 bytes)
+; CODIGO 0xa000..0xa068  (104 bytes)
 ; ======================================================================
 
 
@@ -64,49 +64,39 @@ L_A057:
 	cp 00fh		;a062
 	ret nc			;a064
 	call 04abdh		;a065
-	add a,(hl)			;a068
-	cp c			;a069
-	or e			;a06a
-	cp c			;a06b
-	ret c			;a06c
-	cp c			;a06d
-	ld (bc),a			;a06e
-	cp d			;a06f
-	inc l			;a070
-	cp d			;a071
-	ld d,e			;a072
-	cp d			;a073
-	sub (hl)			;a074
-	cp d			;a075
-	ld (hl),a			;a076
-	cp c			;a077
-	ld (hl),a			;a078
-	cp c			;a079
-	ld l,a			;a07a
-	cp c			;a07b
-	add a,(hl)			;a07c
-	and b			;a07d
-	add a,(hl)			;a07e
-	and b			;a07f
-	add a,(hl)			;a080
-	and b			;a081
-	add a,(hl)			;a082
-	and b			;a083
-	sbc a,b			;a084
-	or l			;a085
-	ret			;a086
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (2 bytes)
-;   0xa087..0xa089  (2 bytes)
-DATA_A087:
-	defb 018h,0feh	; a087
+; DATOS tabla_A065: 15 palabras del despachador de 0xA065 (`call 0x4ABD`, la
+;   variante que cambia la direccion de retorno por la palabra A de la tabla
+;   que sigue al call); el indice es (ix+0) & 0x0F menos 1, acotado con `dec a
+;   / cp 0x0F / ret nc`. Estaba trazada como codigo por error hasta hoy
+;   0xa068..0xa086  (30 bytes)
+DATA_tabla_A065:
+	defw 0b986h	; a068  -> AJUSTA_ATRAS_Y_MARCA
+	defw 0b9b3h	; a06a  -> L_B9B3
+	defw 0b9d8h	; a06c  -> L_B9D8
+	defw 0ba02h	; a06e  -> L_BA02
+	defw 0ba2ch	; a070  -> L_BA2C
+	defw 0ba53h	; a072  -> L_BA53
+	defw 0ba96h	; a074  -> L_BA96
+	defw 0b977h	; a076  -> L_B977
+	defw 0b977h	; a078  -> L_B977
+	defw 0b96fh	; a07a  -> L_B96F
+	defw 0a086h	; a07c  -> L_A086
+	defw 0a086h	; a07e  -> L_A086
+	defw 0a086h	; a080  -> L_A086
+	defw 0a086h	; a082  -> L_A086
+	defw 0b598h	; a084  -> L_B598
 
 ; ======================================================================
-; CODIGO 0xa089..0xa0be  (53 bytes)
+; CODIGO 0xa086..0xa0be  (56 bytes)
 ; ======================================================================
 
 
+L_A086:
+	ret			;a086
+L_A087:
+	jr L_A087		;a087
 L_A089:
 	ld ix,0e800h		;a089
 	ld b,005h		;a08d
@@ -135,18 +125,41 @@ L_A0AC:
 	ret			;a0bd
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (44 bytes)
-;   0xa0be..0xa0ea  (44 bytes)
-DATA_A0BE:
-	defb 000h,001h,002h,003h,000h,004h,005h,006h,007h,001h,0ddh,0e5h,0ddh,021h,000h,0e8h	; a0be  .............!..
-	defb 006h,005h,0cdh,0dfh,0a0h,0ddh,021h,028h,0e9h,006h,005h,0cdh,0dfh,0a0h,0ddh,0e1h	; a0ce  ......!(........
-	defb 0c9h,0cdh,0eah,0a0h,011h,038h,000h,0ddh,019h,010h,0f6h,0c9h	; a0de  .....8......
+; DATOS tabla_A0BE: cinco bytes (00 01 02 03 00) que 0xA092 mete en (ix+37) de
+;   las cinco estructuras de 0x38 bytes desde E800; el indice es 5-B (`ld a,5
+;   / sub b / ld hl,0xA0BE / call HL_MAS_A / ld a,(hl)`)
+;   0xa0be..0xa0c3  (5 bytes)
+DATA_tabla_A0BE:
+	defb 000h,001h,002h,003h,000h	; a0be
+
+; ----------------------------------------------------------------------
+; DATOS tabla_A0C3: los mismos cinco bytes (04 05 06 07 01) para las
+;   estructuras desde E928; los lee igual 0xA0AC
+;   0xa0c3..0xa0c8  (5 bytes)
+DATA_tabla_A0C3:
+	defb 004h,005h,006h,007h,001h	; a0c3
 
 ; ======================================================================
-; CODIGO 0xa0ea..0xa3a4  (698 bytes)
+; CODIGO 0xa0c8..0xa3a4  (732 bytes)
 ; ======================================================================
 
 
+L_A0C8:
+	push ix		;a0c8
+	ld ix,0e800h		;a0ca
+	ld b,005h		;a0ce
+	call APLICA_A_LAS_5_ESTRUCTURAS		;a0d0
+	ld ix,0e928h		;a0d3
+	ld b,005h		;a0d7
+	call APLICA_A_LAS_5_ESTRUCTURAS		;a0d9
+	pop ix		;a0dc
+	ret			;a0de
+APLICA_A_LAS_5_ESTRUCTURAS:		; `call 0xA0EA / ld de,0x38 / add ix,de / djnz`: repite 0xA0EA en B estructuras de 0x38 bytes seguidas desde IX
+	call L_A0EA		;a0df
+	ld de,00038h		;a0e2
+	add ix,de		;a0e5
+	djnz APLICA_A_LAS_5_ESTRUCTURAS		;a0e7
+	ret			;a0e9
 L_A0EA:
 	call L_A0F4		;a0ea
 	ld (ix+01bh),e		;a0ed
@@ -531,13 +544,14 @@ L_A39C:
 	ret			;a3a3
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (7 bytes)
+; DATOS relleno_A3A4: siete bytes a cero entre dos rutinas; ningun lector
+;   (comprobado byte a byte)
 ;   0xa3a4..0xa3ab  (7 bytes)
-DATA_A3A4:
+DATA_relleno_A3A4:
 	defb 000h,000h,000h,000h,000h,000h,000h	; a3a4
 
 ; ======================================================================
-; CODIGO 0xa3ab..0xa3b4  (9 bytes)
+; CODIGO 0xa3ab..0xa65e  (691 bytes)
 ; ======================================================================
 
 
@@ -547,23 +561,80 @@ L_A3AB:
 	call 04b87h		;a3af
 	pop bc			;a3b2
 	ret			;a3b3
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (94 bytes)
-;   0xa3b4..0xa412  (94 bytes)
-DATA_A3B4:
-	defb 016h,0ffh,0cdh,09dh,04ah,03ah,06ch,0e2h,057h,03ah,072h,0e2h,092h,05fh,006h,010h	; a3b4  ....J:l.W:r.._..
-	defb 07eh,02dh,092h,0bbh,038h,00ah,07eh,02dh,092h,0bbh,038h,004h,010h,0f2h,037h,0c9h	; a3c4  ~-..8.~-..8...7.
-	defb 03ah,07dh,0eah,047h,07dh,03ch,03dh,010h,0fdh,087h,087h,087h,057h,0b7h,0c9h,016h	; a3d4  :}.G}<=.....W...
-	defb 000h,0cdh,09dh,04ah,03ah,06ch,0e2h,057h,03ah,072h,0e2h,092h,05fh,006h,010h,07eh	; a3e4  ...J:l.W:r.._..~
-	defb 02ch,092h,0bbh,038h,00ah,07eh,02ch,092h,0bbh,038h,004h,010h,0f2h,037h,0c9h,03ah	; a3f4  ,..8.~,..8...7.:
-	defb 07dh,0eah,047h,07dh,03dh,03ch,010h,0fdh,087h,087h,087h,057h,0b7h,0c9h	; a404  }.G}=<.....W..
-
-; ======================================================================
-; CODIGO 0xa412..0xa4b5  (163 bytes)
-; ======================================================================
-
-
+BUSCA_CASILLA_ATRAS:		; desde la casilla que da p00 0x4A9D recorre hacia atras (dec l) hasta 32 posiciones buscando la primera cuyo byte, menos (E26C), sea menor que (E272)-(E26C); devuelve NC y D = la posicion por 8 (contada desde (EA7D)), o CY si no hay ninguna
+	ld d,0ffh		;a3b4
+	call 04a9dh		;a3b6
+	ld a,(0e26ch)		;a3b9
+	ld d,a			;a3bc
+	ld a,(0e272h)		;a3bd
+	sub d			;a3c0
+	ld e,a			;a3c1
+	ld b,010h		;a3c2
+L_A3C4:
+	ld a,(hl)			;a3c4
+	dec l			;a3c5
+	sub d			;a3c6
+	cp e			;a3c7
+	jr c,L_A3D4		;a3c8
+	ld a,(hl)			;a3ca
+	dec l			;a3cb
+	sub d			;a3cc
+	cp e			;a3cd
+	jr c,L_A3D4		;a3ce
+	djnz L_A3C4		;a3d0
+	scf			;a3d2
+	ret			;a3d3
+L_A3D4:
+	ld a,(0ea7dh)		;a3d4
+	ld b,a			;a3d7
+	ld a,l			;a3d8
+	inc a			;a3d9
+L_A3DA:
+	dec a			;a3da
+	djnz L_A3DA		;a3db
+	add a,a			;a3dd
+	add a,a			;a3de
+	add a,a			;a3df
+	ld d,a			;a3e0
+	or a			;a3e1
+	ret			;a3e2
+BUSCA_CASILLA_ADELANTE:		; la gemela de 0xA3B4 recorriendo hacia delante (inc l)
+	ld d,000h		;a3e3
+	call 04a9dh		;a3e5
+	ld a,(0e26ch)		;a3e8
+	ld d,a			;a3eb
+	ld a,(0e272h)		;a3ec
+	sub d			;a3ef
+	ld e,a			;a3f0
+	ld b,010h		;a3f1
+L_A3F3:
+	ld a,(hl)			;a3f3
+	inc l			;a3f4
+	sub d			;a3f5
+	cp e			;a3f6
+	jr c,L_A403		;a3f7
+	ld a,(hl)			;a3f9
+	inc l			;a3fa
+	sub d			;a3fb
+	cp e			;a3fc
+	jr c,L_A403		;a3fd
+	djnz L_A3F3		;a3ff
+	scf			;a401
+	ret			;a402
+L_A403:
+	ld a,(0ea7dh)		;a403
+	ld b,a			;a406
+	ld a,l			;a407
+	dec a			;a408
+L_A409:
+	inc a			;a409
+	djnz L_A409		;a40a
+	add a,a			;a40c
+	add a,a			;a40d
+	add a,a			;a40e
+	ld d,a			;a40f
+	or a			;a410
+	ret			;a411
 L_A412:
 	ld a,(0e25bh)		;a412
 	and a			;a415
@@ -672,18 +743,20 @@ L_A4A1:
 	pop de			;a4b2
 	pop bc			;a4b3
 	ret			;a4b4
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (13 bytes)
-;   0xa4b5..0xa4c2  (13 bytes)
-DATA_A4B5:
-	defb 034h,07eh,0b9h,0c0h,0afh,077h,0e5h,023h,023h,023h,034h,0e1h,0c9h	; a4b5  4~...w.###4..
-
-; ======================================================================
-; CODIGO 0xa4c2..0xa561  (159 bytes)
-; ======================================================================
-
-
+L_A4B5:
+	inc (hl)			;a4b5
+	ld a,(hl)			;a4b6
+	cp c			;a4b7
+	ret nz			;a4b8
+	xor a			;a4b9
+	ld (hl),a			;a4ba
+	push hl			;a4bb
+	inc hl			;a4bc
+	inc hl			;a4bd
+	inc hl			;a4be
+	inc (hl)			;a4bf
+	pop hl			;a4c0
+	ret			;a4c1
 L_A4C2:
 	ld b,a			;a4c2
 	ld a,(0e1c2h)		;a4c3
@@ -791,21 +864,29 @@ L_A55E:
 	inc (hl)			;a55e
 	pop hl			;a55f
 	ret			;a560
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (49 bytes)
-;   0xa561..0xa592  (49 bytes)
-DATA_A561:
-	defb 0fdh,07eh,066h,0a7h,028h,020h,0ddh,05eh,004h,0cdh,0b4h,0a3h,0ddh,072h,006h,0cdh	; a561  .~f.( .^.....r..
-	defb 0ffh,0b8h,0c9h,0fdh,07eh,066h,0a7h,028h,00dh,0ddh,05eh,004h,0cdh,0e3h,0a3h,0ddh	; a571  ....~f.(..^.....
-	defb 072h,006h,0cdh,00bh,0b9h,0c9h,0ddh,07eh,006h,0ddh,077h,015h,0ddh,036h,00eh,0ffh	; a581  r......~..w..6..
-	defb 0c9h	; a591
-
-; ======================================================================
-; CODIGO 0xa592..0xa65e  (204 bytes)
-; ======================================================================
-
-
+AJUSTA_CON_CASILLA_ATRAS:		; si (iy+66) no es cero: E = (ix+4), BUSCA_CASILLA_ATRAS, (ix+6) = D y 0xB8FF; si es cero, (ix+15) = (ix+6) y (ix+0E) = 0xFF
+	ld a,(iy+066h)		;a561
+	and a			;a564
+	jr z,L_A587		;a565
+	ld e,(ix+004h)		;a567
+	call BUSCA_CASILLA_ATRAS		;a56a
+	ld (ix+006h),d		;a56d
+	call PON_IX15_CASILLA_ATRAS		;a570
+	ret			;a573
+AJUSTA_CON_CASILLA_ADELANTE:		; la gemela de 0xA561 con BUSCA_CASILLA_ADELANTE y 0xB90B
+	ld a,(iy+066h)		;a574
+	and a			;a577
+	jr z,L_A587		;a578
+	ld e,(ix+004h)		;a57a
+	call BUSCA_CASILLA_ADELANTE		;a57d
+	ld (ix+006h),d		;a580
+	call PON_IX15_CASILLA_ADELANTE		;a583
+	ret			;a586
+L_A587:
+	ld a,(ix+006h)		;a587
+	ld (ix+015h),a		;a58a
+	ld (ix+00eh),0ffh		;a58d
+	ret			;a591
 L_A592:
 	ld a,(ix+017h)		;a592
 	and a			;a595
@@ -904,11 +985,11 @@ L_A65C:
 	ret			;a65d
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (21 bytes)
+; DATOS tabla_A65E: un byte por carrera (21, indice (E25C)); lo suma 0xA650
+;   (`ld hl,0xA65E / call HL_MAS_A / ex af,af' / add a,(hl)`)
 ;   0xa65e..0xa673  (21 bytes)
-DATA_A65E:
-	defb 014h,032h,00fh,028h,028h,017h,019h,019h,019h,019h,019h,019h,01eh,01eh,01eh,01eh	; a65e  .2.((...........
-	defb 01eh,01eh,01eh,01eh,01eh	; a66e
+DATA_tabla_A65E:
+	defb 014h,032h,00fh,028h,028h,017h,019h,019h,019h,019h,019h,019h,01eh,01eh,01eh,01eh,01eh,01eh,01eh,01eh,01eh	; a65e  .2.((................
 
 ; ======================================================================
 ; CODIGO 0xa673..0xa7b9  (326 bytes)
@@ -1060,20 +1141,122 @@ L_A7A3:
 	jp L_A73D		;a7b6
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (167 bytes)
-;   0xa7b9..0xa860  (167 bytes)
-DATA_A7B9:
-	defb 058h,07ch,05ch,094h,05ch,07ch,064h,094h,064h,094h,064h,094h,064h,094h,064h,094h	; a7b9  X|\.\|d.d.d.d.d.
-	defb 05ch,07ch,05ch,094h,064h,094h,064h,094h,064h,094h,064h,094h,064h,094h,064h,094h	; a7c9  \|\.d.d.d.d.d.d.
-	defb 064h,094h,064h,094h,064h,094h,064h,094h,05ch,07ch,00bh,0a8h,017h,0a8h,00bh,0a8h	; a7d9  d.d.d.d.\|......
-	defb 023h,0a8h,023h,0a8h,023h,0a8h,023h,0a8h,023h,0a8h,00bh,0a8h,017h,0a8h,023h,0a8h	; a7e9  #.#.#.#.#.....#.
-	defb 023h,0a8h,023h,0a8h,023h,0a8h,023h,0a8h,023h,0a8h,023h,0a8h,023h,0a8h,023h,0a8h	; a7f9  #.#.#.#.#.#.#.#.
-	defb 023h,0a8h,00bh,0a8h,000h,000h,008h,018h,020h,000h,028h,018h,040h,000h,048h,018h	; a809  #....... .(.@.H.
-	defb 000h,000h,008h,0e8h,020h,000h,028h,0e8h,040h,000h,048h,0e8h,000h,000h,010h,0e8h	; a819  .... .(.@.H.....
-	defb 020h,000h,030h,0e8h,040h,000h,050h,0e8h,040h,058h,058h,040h,040h,058h,058h,040h	; a829   .0.@.P.@XX@@XX@
-	defb 058h,040h,058h,040h,058h,040h,058h,040h,040h,058h,058h,040h,058h,040h,058h,040h	; a839  X@X@X@X@@XX@X@X@
-	defb 058h,040h,058h,040h,058h,040h,058h,040h,058h,040h,058h,040h,058h,040h,058h,040h	; a849  X@X@X@X@X@X@X@X@
-	defb 040h,058h,002h,004h,005h,002h,001h	; a859
+; DATOS salida_por_carrera: 21 palabras, una por carrera (E25C): la posicion
+;   de salida (E = byte bajo -> (ix+4), D = byte alto -> (ix+6)). La lee
+;   0xA691 (`ld hl,0xA7B9 / call HL_PALABRA_A / ex de,hl`)
+;   0xa7b9..0xa7e3  (42 bytes)
+DATA_salida_por_carrera:
+	defw 07c58h	; a7b9
+	defw 0945ch	; a7bb
+	defw 07c5ch	; a7bd
+	defw 09464h	; a7bf
+	defw 09464h	; a7c1
+	defw 09464h	; a7c3
+	defw 09464h	; a7c5
+	defw 09464h	; a7c7
+	defw 07c5ch	; a7c9
+	defw 0945ch	; a7cb
+	defw 09464h	; a7cd
+	defw 09464h	; a7cf
+	defw 09464h	; a7d1
+	defw 09464h	; a7d3
+	defw 09464h	; a7d5
+	defw 09464h	; a7d7
+	defw 09464h	; a7d9
+	defw 09464h	; a7db
+	defw 09464h	; a7dd
+	defw 09464h	; a7df
+	defw 07c5ch	; a7e1
+
+; ----------------------------------------------------------------------
+; DATOS rejilla_por_carrera: 21 palabras, una por carrera (E25C): puntero a la
+;   rejilla de salida. La lee 0xA6A3 y 0xA785 (`ld hl,0xA7E3 / ld a,(E25C) /
+;   call HL_PALABRA_A`)
+;   0xa7e3..0xa80d  (42 bytes)
+DATA_rejilla_por_carrera:
+	defw 0a80bh	; a7e3
+	defw 0a817h	; a7e5
+	defw 0a80bh	; a7e7
+	defw 0a823h	; a7e9
+	defw 0a823h	; a7eb
+	defw 0a823h	; a7ed
+	defw 0a823h	; a7ef
+	defw 0a823h	; a7f1
+	defw 0a80bh	; a7f3
+	defw 0a817h	; a7f5
+	defw 0a823h	; a7f7
+	defw 0a823h	; a7f9
+	defw 0a823h	; a7fb
+	defw 0a823h	; a7fd
+	defw 0a823h	; a7ff
+	defw 0a823h	; a801
+	defw 0a823h	; a803
+	defw 0a823h	; a805
+	defw 0a823h	; a807
+	defw 0a823h	; a809
+	defw 0a80bh	; a80b
+
+; ----------------------------------------------------------------------
+; DATOS rejillas_de_salida: tres rejillas de 6 palabras (desplazamiento del
+;   coche B respecto a la posicion de salida: byte bajo a (ix+4), alto a
+;   (ix+6)). Los punteros de arriba valen 0xA80B, 0xA817 y 0xA823, dos bytes
+;   MENOS que la primera entrada, porque el indice B va de 6 a 1 y no de 0 a 5
+;   (`call HL_PALABRA_A` en 0xA6C9)
+;   0xa80d..0xa831  (36 bytes)
+DATA_rejillas_de_salida:
+	defw 00000h	; a80d
+	defw 01808h	; a80f
+	defw 00020h	; a811
+	defw 01828h	; a813
+	defw 00040h	; a815
+	defw 01848h	; a817
+	defw 00000h	; a819
+	defw 0e808h	; a81b
+	defw 00020h	; a81d
+	defw 0e828h	; a81f
+	defw 00040h	; a821
+	defw 0e848h	; a823
+	defw 00000h	; a825
+	defw 0e810h	; a827
+	defw 00020h	; a829
+	defw 0e830h	; a82b
+	defw 00040h	; a82d
+	defw 0e850h	; a82f
+
+; ----------------------------------------------------------------------
+; DATOS tabla_A831: 21 palabras, una por carrera (E25C): 0xA74A escoge L o H
+;   segun el bit 0 de (iy+71) y lo mete en (iy+4B) y (iy+54)
+;   0xa831..0xa85b  (42 bytes)
+DATA_tabla_A831:
+	defw 05840h	; a831
+	defw 04058h	; a833
+	defw 05840h	; a835
+	defw 04058h	; a837
+	defw 04058h	; a839
+	defw 04058h	; a83b
+	defw 04058h	; a83d
+	defw 04058h	; a83f
+	defw 05840h	; a841
+	defw 04058h	; a843
+	defw 04058h	; a845
+	defw 04058h	; a847
+	defw 04058h	; a849
+	defw 04058h	; a84b
+	defw 04058h	; a84d
+	defw 04058h	; a84f
+	defw 04058h	; a851
+	defw 04058h	; a853
+	defw 04058h	; a855
+	defw 04058h	; a857
+	defw 05840h	; a859
+
+; ----------------------------------------------------------------------
+; DATOS tabla_A85B: bytes indexados por (EA7F), que 0xA6F1 va incrementando y
+;   0xA7A7 acota a 3: solo se usan los tres primeros (02 04 05). Los mete en
+;   (ix+0)
+;   0xa85b..0xa860  (5 bytes)
+DATA_tabla_A85B:
+	defb 002h,004h,005h,002h,001h	; a85b
 
 ; ======================================================================
 ; CODIGO 0xa860..0xa94f  (239 bytes)
@@ -1257,35 +1440,171 @@ DATA_curvas_A955:
 	defw 0f800h	; a98f
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (360 bytes)
-;   0xa991..0xaaf9  (360 bytes)
-DATA_A991:
-	defb 09dh,0a9h,0adh,0a9h,0bdh,0a9h,0cdh,0a9h,0ddh,0a9h,0edh,0a9h,050h,040h,030h,02ch	; a991  ............P@0,
-	defb 018h,018h,018h,018h,010h,00dh,009h,004h,003h,002h,002h,001h,038h,02ch,021h,01eh	; a9a1  ............8,!.
-	defb 010h,010h,010h,010h,00bh,009h,006h,002h,002h,001h,001h,000h,030h,026h,01ch,01ah	; a9b1  ............0&..
-	defb 00eh,00eh,00eh,00eh,006h,004h,002h,001h,001h,001h,001h,000h,040h,033h,026h,023h	; a9c1  ............@3&#
-	defb 013h,013h,013h,013h,00ch,00ah,007h,003h,002h,001h,001h,000h,053h,043h,033h,02fh	; a9d1  ............SC3/
-	defb 018h,018h,018h,018h,010h,00dh,009h,004h,003h,002h,002h,001h,060h,04ch,039h,034h	; a9e1  ............`L94
-	defb 01ch,01ch,01ch,01ch,013h,00fh,00ah,004h,003h,002h,002h,001h,009h,0aah,031h,0aah	; a9f1  ..............1.
-	defb 059h,0aah,081h,0aah,0a9h,0aah,0d1h,0aah,000h,006h,033h,007h,080h,005h,099h,006h	; aa01  Y.........3.....
-	defb 0c0h,005h,0e6h,006h,040h,005h,04ch,006h,060h,005h,073h,006h,0c0h,006h,019h,008h	; aa11  ....@.L.`.s.....
-	defb 080h,005h,099h,006h,030h,007h,030h,007h,080h,005h,080h,005h,000h,005h,000h,006h	; aa21  ....0.0.........
-	defb 0cch,008h,073h,00ah,0f4h,008h,0a3h,00ah,0a3h,008h,041h,00ah,05bh,008h,0ech,009h	; aa31  ..s.......A.[...
-	defb 070h,008h,004h,00ah,08eh,008h,029h,00ah,066h,008h,0f9h,009h,080h,00bh,080h,00bh	; aa41  p.....).f.......
-	defb 080h,009h,080h,009h,0ach,007h,01eh,009h,0d0h,00bh,020h,00dh,0b2h,00bh,000h,00dh	; aa51  .......... .....
-	defb 0d0h,00bh,020h,00dh,040h,00bh,080h,00ch,078h,00bh,0c0h,00ch,0d4h,00bh,026h,00dh	; aa61  .. .@...x.....&.
-	defb 0b2h,00bh,000h,00dh,000h,00eh,020h,00eh,000h,00dh,020h,00dh,0cch,00ah,000h,00ch	; aa71  ...... ... .....
-	defb 031h,00ch,010h,00dh,051h,00bh,021h,00ch,0c1h,00bh,098h,00ch,0e3h,00ah,0aah,00bh	; aa81  1...Q.!.........
-	defb 01ah,00bh,0e5h,00bh,080h,00dh,077h,00eh,051h,00bh,021h,00ch,060h,00eh,060h,00eh	; aa91  ......w.Q.!.`.`.
-	defb 000h,00dh,000h,00dh,073h,00ah,031h,00bh,071h,00ch,0b0h,00dh,08eh,00bh,0b5h,00ch	; aaa1  ....s.1.q.......
-	defb 000h,00ch,031h,00dh,01ch,00bh,038h,00ch,055h,00bh,077h,00ch,0c7h,00dh,027h,00fh	; aab1  ..1...8.U.w...'.
-	defb 08eh,00bh,0b5h,00ch,000h,00fh,000h,00fh,080h,00dh,080h,00dh,0aah,00ah,0bah,00bh	; aac1  ................
-	defb 000h,00dh,0f1h,00eh,08eh,00bh,048h,00dh,000h,00ch,0cch,00dh,01ch,00bh,0c7h,00ch	; aad1  ......H.........
-	defb 055h,00bh,007h,00dh,0aah,00ch,090h,00eh,08eh,00bh,048h,00dh,0f0h,010h,0f0h,010h	; aae1  U.........H.....
-	defb 030h,00fh,030h,00fh,0aah,00ah,043h,00ch	; aaf1  0.0...C.
+; DATOS tabla_A991: 6 punteros, uno por categoria (E25B), a las seis listas de
+;   abajo; los lee 0xA930 (`ld hl,0xA991 / ld a,(E25B) / call HL_PALABRA_A`)
+;   0xa991..0xa99d  (12 bytes)
+DATA_tabla_A991:
+	defw 0a99dh	; a991  -> DATA_listas_A991
+	defw 0a9adh	; a993
+	defw 0a9bdh	; a995
+	defw 0a9cdh	; a997
+	defw 0a9ddh	; a999
+	defw 0a9edh	; a99b
+
+; ----------------------------------------------------------------------
+; DATOS listas_A991: seis listas de 16 bytes (una por categoria); 0xA940 coge
+;   el byte de indice A acotado a 15 (`cp 0x10 / jr c / ld a,0x0F / call
+;   HL_MAS_A / ld a,(hl)`) y lo mete en (ix+12)
+;   0xa99d..0xa9fd  (96 bytes)
+DATA_listas_A991:
+	defb 050h,040h,030h,02ch,018h,018h,018h,018h,010h,00dh,009h,004h,003h,002h,002h,001h	; a99d  P@0,............
+	defb 038h,02ch,021h,01eh,010h,010h,010h,010h,00bh,009h,006h,002h,002h,001h,001h,000h	; a9ad  8,!.............
+	defb 030h,026h,01ch,01ah,00eh,00eh,00eh,00eh,006h,004h,002h,001h,001h,001h,001h,000h	; a9bd  0&..............
+	defb 040h,033h,026h,023h,013h,013h,013h,013h,00ch,00ah,007h,003h,002h,001h,001h,000h	; a9cd  @3&#............
+	defb 053h,043h,033h,02fh,018h,018h,018h,018h,010h,00dh,009h,004h,003h,002h,002h,001h	; a9dd  SC3/............
+	defb 060h,04ch,039h,034h,01ch,01ch,01ch,01ch,013h,00fh,00ah,004h,003h,002h,002h,001h	; a9ed  `L94............
+
+; ----------------------------------------------------------------------
+; DATOS tabla_A9FD: 6 punteros, uno por categoria (E25B), a las seis tablas de
+;   abajo; los lee 0xA0F7 (`ld hl,0xA9FD / call HL_PALABRA_A`)
+;   0xa9fd..0xaa09  (12 bytes)
+DATA_tabla_A9FD:
+	defw 0aa09h	; a9fd  -> DATA_tablas_A9FD
+	defw 0aa31h	; a9ff
+	defw 0aa59h	; aa01
+	defw 0aa81h	; aa03
+	defw 0aaa9h	; aa05
+	defw 0aad1h	; aa07
+
+; ----------------------------------------------------------------------
+; DATOS tablas_A9FD: seis tablas de 20 palabras (una por categoria). 0xA0FD
+;   indexa con (((ix+0) & 0x0F) - 1)*2 + (iy+56), por dos, y devuelve la
+;   palabra en DE, que 0xA0EA guarda en (ix+1B,1C)
+;   0xaa09..0xaaf9  (240 bytes)
+DATA_tablas_A9FD:
+	defw 00600h	; aa09
+	defw 00733h	; aa0b
+	defw 00580h	; aa0d
+	defw 00699h	; aa0f
+	defw 005c0h	; aa11
+	defw 006e6h	; aa13
+	defw 00540h	; aa15
+	defw 0064ch	; aa17
+	defw 00560h	; aa19
+	defw 00673h	; aa1b
+	defw 006c0h	; aa1d
+	defw 00819h	; aa1f
+	defw 00580h	; aa21
+	defw 00699h	; aa23
+	defw 00730h	; aa25
+	defw 00730h	; aa27
+	defw 00580h	; aa29
+	defw 00580h	; aa2b
+	defw 00500h	; aa2d
+	defw 00600h	; aa2f
+	defw 008cch	; aa31
+	defw 00a73h	; aa33
+	defw 008f4h	; aa35
+	defw 00aa3h	; aa37
+	defw 008a3h	; aa39
+	defw 00a41h	; aa3b
+	defw 0085bh	; aa3d
+	defw 009ech	; aa3f
+	defw 00870h	; aa41
+	defw 00a04h	; aa43
+	defw 0088eh	; aa45
+	defw 00a29h	; aa47
+	defw 00866h	; aa49
+	defw 009f9h	; aa4b
+	defw 00b80h	; aa4d
+	defw 00b80h	; aa4f
+	defw 00980h	; aa51
+	defw 00980h	; aa53
+	defw 007ach	; aa55
+	defw 0091eh	; aa57
+	defw 00bd0h	; aa59
+	defw 00d20h	; aa5b
+	defw 00bb2h	; aa5d
+	defw 00d00h	; aa5f
+	defw 00bd0h	; aa61
+	defw 00d20h	; aa63
+	defw 00b40h	; aa65
+	defw 00c80h	; aa67
+	defw 00b78h	; aa69
+	defw 00cc0h	; aa6b
+	defw 00bd4h	; aa6d
+	defw 00d26h	; aa6f
+	defw 00bb2h	; aa71
+	defw 00d00h	; aa73
+	defw 00e00h	; aa75
+	defw 00e20h	; aa77
+	defw 00d00h	; aa79
+	defw 00d20h	; aa7b
+	defw 00acch	; aa7d
+	defw 00c00h	; aa7f
+	defw 00c31h	; aa81
+	defw 00d10h	; aa83
+	defw 00b51h	; aa85
+	defw 00c21h	; aa87
+	defw 00bc1h	; aa89
+	defw 00c98h	; aa8b
+	defw 00ae3h	; aa8d
+	defw 00baah	; aa8f
+	defw 00b1ah	; aa91
+	defw 00be5h	; aa93
+	defw 00d80h	; aa95
+	defw 00e77h	; aa97
+	defw 00b51h	; aa99
+	defw 00c21h	; aa9b
+	defw 00e60h	; aa9d
+	defw 00e60h	; aa9f
+	defw 00d00h	; aaa1
+	defw 00d00h	; aaa3
+	defw 00a73h	; aaa5
+	defw 00b31h	; aaa7
+	defw 00c71h	; aaa9
+	defw 00db0h	; aaab
+	defw 00b8eh	; aaad
+	defw 00cb5h	; aaaf
+	defw 00c00h	; aab1
+	defw 00d31h	; aab3
+	defw 00b1ch	; aab5
+	defw 00c38h	; aab7
+	defw 00b55h	; aab9
+	defw 00c77h	; aabb
+	defw 00dc7h	; aabd
+	defw 00f27h	; aabf
+	defw 00b8eh	; aac1
+	defw 00cb5h	; aac3
+	defw 00f00h	; aac5
+	defw 00f00h	; aac7
+	defw 00d80h	; aac9
+	defw 00d80h	; aacb
+	defw 00aaah	; aacd
+	defw 00bbah	; aacf
+	defw 00d00h	; aad1
+	defw 00ef1h	; aad3
+	defw 00b8eh	; aad5
+	defw 00d48h	; aad7
+	defw 00c00h	; aad9
+	defw 00dcch	; aadb
+	defw 00b1ch	; aadd
+	defw 00cc7h	; aadf
+	defw 00b55h	; aae1
+	defw 00d07h	; aae3
+	defw 00caah	; aae5
+	defw 00e90h	; aae7
+	defw 00b8eh	; aae9
+	defw 00d48h	; aaeb
+	defw 010f0h	; aaed
+	defw 010f0h	; aaef
+	defw 00f30h	; aaf1
+	defw 00f30h	; aaf3
+	defw 00aaah	; aaf5
+	defw 00c43h	; aaf7
 
 ; ======================================================================
-; CODIGO 0xaaf9..0xac0d  (276 bytes)
+; CODIGO 0xaaf9..0xac22  (297 bytes)
 ; ======================================================================
 
 
@@ -1433,17 +1752,30 @@ L_AC06:
 	ld (ix+002h),h		;ac06
 	ld (ix+034h),l		;ac09
 	ret			;ac0c
+L_AC0D:
+	ld a,(iy+000h)		;ac0d
+	ld c,a			;ac10
+	and 00fh		;ac11
+	ld l,a			;ac13
+	ld h,000h		;ac14
+	ld de,0ac22h		;ac16
+	add hl,de			;ac19
+	ld a,c			;ac1a
+	and 0f0h		;ac1b
+	or (hl)			;ac1d
+	ld (iy+000h),a		;ac1e
+	ret			;ac21
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (37 bytes)
-;   0xac0d..0xac32  (37 bytes)
-DATA_AC0D:
-	defb 0fdh,07eh,000h,04fh,0e6h,00fh,06fh,026h,000h,011h,022h,0ach,019h,079h,0e6h,0f0h	; ac0d  .~.O..o&.."..y..
-	defb 0b6h,0fdh,077h,000h,0c9h,000h,003h,004h,005h,006h,007h,001h,002h,008h,009h,00ah	; ac1d  ..w.............
-	defb 00bh,00ch,00dh,00eh,00fh	; ac2d
+; DATOS tabla_AC22: 16 bytes (00 03 04 05 06 07 01 02 08 09 0A 0B 0C 0D 0E 0F)
+;   que 0xAC16 usa como permutacion del nibble bajo de (iy+0) (`ld de,0xAC22 /
+;   add hl,de / or (hl)`)
+;   0xac22..0xac32  (16 bytes)
+DATA_tabla_AC22:
+	defb 000h,003h,004h,005h,006h,007h,001h,002h,008h,009h,00ah,00bh,00ch,00dh,00eh,00fh	; ac22  ................
 
 ; ======================================================================
-; CODIGO 0xac32..0xb137  (1285 bytes)
+; CODIGO 0xac32..0xb52c  (2298 bytes)
 ; ======================================================================
 
 
@@ -2113,20 +2445,25 @@ L_B10F:
 L_B134:
 	pop ix		;b134
 	ret			;b136
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (33 bytes)
-;   0xb137..0xb158  (33 bytes)
-DATA_B137:
-	defb 0ddh,05eh,00ah,0ddh,056h,00bh,07bh,0b2h,0c0h,0fdh,05eh,00ah,0fdh,056h,00bh,07bh	; b137  .^..V.{...^..V.{
-	defb 0b2h,0c0h,03ah,070h,0eah,0cbh,07fh,03eh,008h,028h,002h,0edh,044h,0ddh,077h,00ch	; b147  ..:p...>.(..D.w.
-	defb 0c9h	; b157
-
-; ======================================================================
-; CODIGO 0xb158..0xb4e7  (911 bytes)
-; ======================================================================
-
-
+L_B137:
+	ld e,(ix+00ah)		;b137
+	ld d,(ix+00bh)		;b13a
+	ld a,e			;b13d
+	or d			;b13e
+	ret nz			;b13f
+	ld e,(iy+00ah)		;b140
+	ld d,(iy+00bh)		;b143
+	ld a,e			;b146
+	or d			;b147
+	ret nz			;b148
+	ld a,(0ea70h)		;b149
+	bit 7,a		;b14c
+	ld a,008h		;b14e
+	jr z,L_B154		;b150
+	neg		;b152
+L_B154:
+	ld (ix+00ch),a		;b154
+	ret			;b157
 L_B158:
 	dec (iy+026h)		;b158
 	ret nz			;b15b
@@ -2641,25 +2978,74 @@ L_B4D5:
 	ld d,070h		;b4e3
 	or a			;b4e5
 	ret			;b4e6
+L_B4E7:
+	set 7,(ix+001h)		;b4e7
+	call RESTA_OCTAVA_PARTE_A_DOS_PALABRAS		;b4eb
+	ld a,(0e1c3h)		;b4ee
+	and 003h		;b4f1
+	ld a,00fh		;b4f3
+	jr z,L_B4F9		;b4f5
+	ld a,006h		;b4f7
+L_B4F9:
+	ld (ix+00fh),a		;b4f9
+	ld a,(0e1c3h)		;b4fc
+	and 007h		;b4ff
+	ret nz			;b501
+	ld a,(ix+027h)		;b502
+	inc a			;b505
+	ld (ix+027h),a		;b506
+	cp 003h		;b509
+	jp nc,09e2dh		;b50b
+	and 001h		;b50e
+	ld l,a			;b510
+	ld h,000h		;b511
+	ld de,0b52ch		;b513
+	add hl,de			;b516
+	ld a,(hl)			;b517
+	ld (ix+00eh),a		;b518
+	ld (ix+033h),a		;b51b
+	ld a,(ix+008h)		;b51e
+	or a			;b521
+	ret nz			;b522
+	ld (ix+00eh),0f8h		;b523
+	ld (ix+033h),0f8h		;b527
+	ret			;b52b
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (114 bytes)
-;   0xb4e7..0xb559  (114 bytes)
-DATA_B4E7:
-	defb 0ddh,0cbh,001h,0feh,0cdh,02eh,0b5h,03ah,0c3h,0e1h,0e6h,003h,03eh,00fh,028h,002h	; b4e7  .......:....>.(.
-	defb 03eh,006h,0ddh,077h,00fh,03ah,0c3h,0e1h,0e6h,007h,0c0h,0ddh,07eh,027h,03ch,0ddh	; b4f7  >..w.:......~'<.
-	defb 077h,027h,0feh,003h,0d2h,02dh,09eh,0e6h,001h,06fh,026h,000h,011h,02ch,0b5h,019h	; b507  w'...-...o&..,..
-	defb 07eh,0ddh,077h,00eh,0ddh,077h,033h,0ddh,07eh,008h,0b7h,0c0h,0ddh,036h,00eh,0f8h	; b517  ~.w..w3.~....6..
-	defb 0ddh,036h,033h,0f8h,0c9h,0e8h,0f0h,0ddh,066h,00bh,0ddh,06eh,00ah,054h,05dh,0cdh	; b527  .63.....f..n.T].
-	defb 08ah,04ah,0ebh,0b7h,0edh,052h,0ddh,074h,00bh,0ddh,075h,00ah,0ddh,066h,008h,0ddh	; b537  .J...R.t..u..f..
-	defb 06eh,007h,054h,05dh,0cdh,08ah,04ah,0ebh,0b7h,0edh,052h,0ddh,074h,008h,0ddh,075h	; b547  n.T]..J...R.t..u
-	defb 007h,0c9h	; b557
+; DATOS tabla_B52C: dos bytes (E8 F0) que 0xB513 escoge con el bit 0 de
+;   (ix+27) y mete en (ix+0E) y (ix+33) (`ld de,0xB52C / add hl,de / ld
+;   a,(hl)`)
+;   0xb52c..0xb52e  (2 bytes)
+DATA_tabla_B52C:
+	defb 0e8h,0f0h	; b52c
 
 ; ======================================================================
-; CODIGO 0xb559..0xb598  (63 bytes)
+; CODIGO 0xb52e..0xb6ec  (446 bytes)
 ; ======================================================================
 
 
+RESTA_OCTAVA_PARTE_A_DOS_PALABRAS:		; resta a la palabra (ix+0A,0B) y a la (ix+07,08) su octava parte con signo (p00 0x4A8A = tres `sra h / rr l`)
+	ld h,(ix+00bh)		;b52e
+	ld l,(ix+00ah)		;b531
+	ld d,h			;b534
+	ld e,l			;b535
+	call 04a8ah		;b536
+	ex de,hl			;b539
+	or a			;b53a
+	sbc hl,de		;b53b
+	ld (ix+00bh),h		;b53d
+	ld (ix+00ah),l		;b540
+	ld h,(ix+008h)		;b543
+	ld l,(ix+007h)		;b546
+	ld d,h			;b549
+	ld e,l			;b54a
+	call 04a8ah		;b54b
+	ex de,hl			;b54e
+	or a			;b54f
+	sbc hl,de		;b550
+	ld (ix+008h),h		;b552
+	ld (ix+007h),l		;b555
+	ret			;b558
 L_B559:
 	ld a,(ix+000h)		;b559
 	or a			;b55c
@@ -2676,6 +3062,7 @@ L_B559:
 L_B574:
 	call L_B189		;b574
 	ld (ix+000h),00fh		;b577
+L_B57B:
 	ld (ix+00fh),006h		;b57b
 	ld (ix+027h),000h		;b57f
 	set 7,(ix+001h)		;b583
@@ -2687,19 +3074,16 @@ L_B590:
 	call 09e2dh		;b592
 	pop ix		;b595
 	ret			;b597
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (30 bytes)
-;   0xb598..0xb5b6  (30 bytes)
-DATA_B598:
-	defb 0ddh,072h,006h,0ddh,073h,004h,0fdh,07eh,009h,0ddh,077h,009h,0ddh,036h,008h,000h	; b598  .r..s..~..w..6..
-	defb 0ddh,036h,007h,000h,0ddh,036h,00bh,000h,0ddh,036h,00ah,000h,018h,0c5h	; b5a8  .6...6...6....
-
-; ======================================================================
-; CODIGO 0xb5b6..0xb6ec  (310 bytes)
-; ======================================================================
-
-
+L_B598:
+	ld (ix+006h),d		;b598
+	ld (ix+004h),e		;b59b
+	ld a,(iy+009h)		;b59e
+	ld (ix+009h),a		;b5a1
+	ld (ix+008h),000h		;b5a4
+	ld (ix+007h),000h		;b5a8
+	ld (ix+00bh),000h		;b5ac
+	ld (ix+00ah),000h		;b5b0
+	jr L_B57B		;b5b4
 L_B5B6:
 	ld a,(0e1c3h)		;b5b6
 	xor (iy+009h)		;b5b9
@@ -2885,22 +3269,31 @@ L_B6E7:
 	ret			;b6eb
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (112 bytes)
-;   0xb6ec..0xb75c  (112 bytes)
-DATA_B6EC:
+; DATOS tabla_B6EC: tabla de bytes que crece de 0xC8 a 0x37 (dando la vuelta);
+;   0xB6C4 la lee con el indice 0x30 - (ix+0C) (`ld hl,0xB6EC / add hl,de / ld
+;   h,(hl)`) y usa el valor para decidir (ix+13)
+;   0xb6ec..0xb74d  (97 bytes)
+DATA_tabla_B6EC:
 	defb 0c8h,0c8h,0c8h,0c8h,0c8h,0c8h,0c9h,0c9h,0c9h,0cah,0cah,0cah,0cch,0cch,0cdh,0cdh	; b6ec  ................
 	defb 0ceh,0cfh,0d1h,0d2h,0d3h,0d3h,0d4h,0d5h,0d8h,0d9h,0dah,0dbh,0dch,0ddh,0e0h,0e2h	; b6fc  ................
 	defb 0e3h,0e4h,0e5h,0e6h,0eah,0ebh,0edh,0eeh,0efh,0f1h,0f5h,0f6h,0f7h,0f9h,0fah,0fbh	; b70c  ................
 	defb 000h,001h,002h,004h,005h,006h,00ah,00ch,00dh,00eh,010h,011h,015h,016h,017h,019h	; b71c  ................
 	defb 01ah,01bh,01fh,020h,021h,022h,023h,024h,027h,028h,029h,02ah,02bh,02ch,02eh,02fh	; b72c  ... !"#$'()*+,./
 	defb 030h,030h,031h,032h,033h,034h,034h,035h,035h,035h,036h,037h,037h,037h,037h,037h	; b73c  0012344555677777
-	defb 037h,0cdh,004h,0b6h,0d8h,0ddh,07eh,017h,0e6h,003h,0cch,05ch,0b7h,0c3h,089h,0b7h	; b74c  7.....~....\....
+	defb 037h	; b74c
 
 ; ======================================================================
-; CODIGO 0xb75c..0xb82f  (211 bytes)
+; CODIGO 0xb74d..0xb82f  (226 bytes)
 ; ======================================================================
 
 
+L_B74D:
+	call L_B604		;b74d
+	ret c			;b750
+	ld a,(ix+017h)		;b751
+	and 003h		;b754
+	call z,L_B75C		;b756
+	jp L_B789		;b759
 L_B75C:
 	ld a,(ix+002h)		;b75c
 	or a			;b75f
@@ -3013,14 +3406,17 @@ L_B827:
 	ret			;b82e
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (24 bytes)
+; DATOS tablas_B82F: tres filas de 8 bytes; las escogen 0xB79A (0xB82F),
+;   0xB79F/0xB851 (0xB83F) y 0xB7B2/0xB848/0xB9FD (0xB837), y de cada una
+;   0xB85D coge el byte de indice A y lo suma a (ix+16)
 ;   0xb82f..0xb847  (24 bytes)
-DATA_B82F:
-	defb 00ch,00ch,000h,006h,0f4h,00ch,0fah,000h,0f4h,00ch,000h,000h,0f4h,0f4h,0fah,0feh	; b82f  ................
+DATA_tablas_B82F:
+	defb 00ch,00ch,000h,006h,0f4h,00ch,0fah,000h	; b82f  ........
+	defb 0f4h,00ch,000h,000h,0f4h,0f4h,0fah,0feh	; b837  ........
 	defb 00ch,00ch,000h,006h,0f4h,00ch,000h,002h	; b83f  ........
 
 ; ======================================================================
-; CODIGO 0xb847..0xb86d  (38 bytes)
+; CODIGO 0xb847..0xbb0d  (710 bytes)
 ; ======================================================================
 
 
@@ -3044,20 +3440,32 @@ L_B853:
 	add a,(ix+016h)		;b866
 	ld (ix+016h),a		;b869
 	ret			;b86c
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (44 bytes)
-;   0xb86d..0xb899  (44 bytes)
-DATA_B86D:
-	defb 0ddh,07eh,017h,0e6h,03ch,0feh,030h,0d0h,0e6h,00ch,0feh,008h,028h,019h,0feh,004h	; b86d  .~..<.0.....(...
-	defb 0c0h,018h,00fh,0ddh,07eh,017h,0e6h,03ch,0feh,030h,0d0h,0feh,004h,028h,008h,0feh	; b87d  ....~..<.0...(..
-	defb 008h,0c0h,0ddh,036h,002h,001h,0c9h,0ddh,036h,002h,002h,0c9h	; b88d  ...6....6...
-
-; ======================================================================
-; CODIGO 0xb899..0xb8d4  (59 bytes)
-; ======================================================================
-
-
+L_B86D:
+	ld a,(ix+017h)		;b86d
+	and 03ch		;b870
+	cp 030h		;b872
+	ret nc			;b874
+	and 00ch		;b875
+	cp 008h		;b877
+	jr z,L_B894		;b879
+	cp 004h		;b87b
+	ret nz			;b87d
+	jr L_B88F		;b87e
+L_B880:
+	ld a,(ix+017h)		;b880
+	and 03ch		;b883
+	cp 030h		;b885
+	ret nc			;b887
+	cp 004h		;b888
+	jr z,L_B894		;b88a
+	cp 008h		;b88c
+	ret nz			;b88e
+L_B88F:
+	ld (ix+002h),001h		;b88f
+	ret			;b893
+L_B894:
+	ld (ix+002h),002h		;b894
+	ret			;b898
 L_B899:
 	ld d,(ix+006h)		;b899
 	ld e,(ix+004h)		;b89c
@@ -3099,23 +3507,58 @@ L_B89F:
 	ld a,c			;b8d0
 	and 007h		;b8d1
 	ret			;b8d3
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (89 bytes)
-;   0xb8d4..0xb92d  (89 bytes)
-DATA_B8D4:
-	defb 0ddh,056h,006h,0ddh,05eh,004h,07ah,0d6h,010h,057h,0cdh,09dh,04ah,03ah,06ch,0e2h	; b8d4  .V..^.z..W..J:l.
-	defb 057h,03ah,072h,0e2h,092h,05fh,07eh,023h,092h,0bbh,0cbh,011h,07eh,023h,092h,0bbh	; b8e4  W:r.._~#....~#..
-	defb 0cbh,011h,07eh,092h,0bbh,0cbh,011h,079h,0e6h,007h,0c9h,0cdh,017h,0b9h,01eh,0c8h	; b8f4  ..~....y........
-	defb 0cdh,0b4h,0a3h,0ddh,072h,015h,0c9h,0cdh,017h,0b9h,01eh,0c8h,0cdh,0e3h,0a3h,0ddh	; b904  ....r...........
-	defb 072h,015h,0c9h,01eh,0c8h,0ddh,0cbh,036h,07eh,020h,007h,0cdh,0e3h,0a3h,0ddh,072h	; b914  r......6~ .....r
-	defb 016h,0c9h,0cdh,0b4h,0a3h,0ddh,072h,016h,0c9h	; b924  ......r..
-
-; ======================================================================
-; CODIGO 0xb92d..0xb96f  (66 bytes)
-; ======================================================================
-
-
+L_B8D4:
+	ld d,(ix+006h)		;b8d4
+	ld e,(ix+004h)		;b8d7
+	ld a,d			;b8da
+	sub 010h		;b8db
+	ld d,a			;b8dd
+	call 04a9dh		;b8de
+	ld a,(0e26ch)		;b8e1
+	ld d,a			;b8e4
+	ld a,(0e272h)		;b8e5
+	sub d			;b8e8
+	ld e,a			;b8e9
+	ld a,(hl)			;b8ea
+	inc hl			;b8eb
+	sub d			;b8ec
+	cp e			;b8ed
+	rl c		;b8ee
+	ld a,(hl)			;b8f0
+	inc hl			;b8f1
+	sub d			;b8f2
+	cp e			;b8f3
+	rl c		;b8f4
+	ld a,(hl)			;b8f6
+	sub d			;b8f7
+	cp e			;b8f8
+	rl c		;b8f9
+	ld a,c			;b8fb
+	and 007h		;b8fc
+	ret			;b8fe
+PON_IX15_CASILLA_ATRAS:		; 0xB917, luego E = 0xC8, BUSCA_CASILLA_ATRAS y (ix+15) = D
+	call PON_IX16_SEGUN_SENTIDO		;b8ff
+	ld e,0c8h		;b902
+	call BUSCA_CASILLA_ATRAS		;b904
+	ld (ix+015h),d		;b907
+	ret			;b90a
+PON_IX15_CASILLA_ADELANTE:		; la gemela de 0xB8FF con BUSCA_CASILLA_ADELANTE
+	call PON_IX16_SEGUN_SENTIDO		;b90b
+	ld e,0c8h		;b90e
+	call BUSCA_CASILLA_ADELANTE		;b910
+	ld (ix+015h),d		;b913
+	ret			;b916
+PON_IX16_SEGUN_SENTIDO:		; E = 0xC8; con el bit 7 de (ix+36) escoge BUSCA_CASILLA_ATRAS o BUSCA_CASILLA_ADELANTE y mete D en (ix+16)
+	ld e,0c8h		;b917
+	bit 7,(ix+036h)		;b919
+	jr nz,L_B926		;b91d
+	call BUSCA_CASILLA_ADELANTE		;b91f
+	ld (ix+016h),d		;b922
+	ret			;b925
+L_B926:
+	call BUSCA_CASILLA_ATRAS		;b926
+	ld (ix+016h),d		;b929
+	ret			;b92c
 L_B92D:
 	bit 1,(ix+030h)		;b92d
 	jr nz,L_B951		;b931
@@ -3145,20 +3588,26 @@ L_B960:
 	and 003h		;b967
 	call z,L_B75C		;b969
 	jp L_B785		;b96c
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (44 bytes)
-;   0xb96f..0xb99b  (44 bytes)
-DATA_B96F:
-	defb 0cdh,086h,0b9h,0ddh,036h,00fh,00ch,0c9h,03eh,00ah,032h,009h,0e2h,0cdh,086h,0b9h	; b96f  ....6...>.2.....
-	defb 0ddh,036h,00fh,004h,0c3h,0f4h,080h,03eh,001h,032h,07dh,0eah,0cdh,061h,0a5h,0cdh	; b97f  .6.....>.2}..a..
-	defb 096h,0b9h,0ddh,036h,018h,000h,0c9h,0ddh,036h,002h,001h,0c9h	; b98f  ...6....6...
-
-; ======================================================================
-; CODIGO 0xb99b..0xb9b3  (24 bytes)
-; ======================================================================
-
-
+L_B96F:
+	call AJUSTA_ATRAS_Y_MARCA		;b96f
+	ld (ix+00fh),00ch		;b972
+	ret			;b976
+L_B977:
+	ld a,00ah		;b977
+	ld (0e209h),a		;b979
+	call AJUSTA_ATRAS_Y_MARCA		;b97c
+	ld (ix+00fh),004h		;b97f
+	jp 080f4h		;b983
+AJUSTA_ATRAS_Y_MARCA:		; (EA7D) = 1, AJUSTA_CON_CASILLA_ATRAS, 0xB996 y (ix+18) = 0
+	ld a,001h		;b986
+	ld (0ea7dh),a		;b988
+	call AJUSTA_CON_CASILLA_ATRAS		;b98b
+	call PON_IX02_A_1		;b98e
+	ld (ix+018h),000h		;b991
+	ret			;b995
+PON_IX02_A_1:		; `ld (ix+02),1 / ret`
+	ld (ix+002h),001h		;b996
+	ret			;b99a
 L_B99B:
 	call L_B847		;b99b
 	call L_B9A4		;b99e
@@ -3170,18 +3619,12 @@ L_B9A4:
 	and 003h		;b9ab
 	call z,L_B75C		;b9ad
 	jp L_B789		;b9b0
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (13 bytes)
-;   0xb9b3..0xb9c0  (13 bytes)
-DATA_B9B3:
-	defb 03eh,004h,032h,07dh,0eah,0cdh,061h,0a5h,0ddh,036h,018h,001h,0c9h	; b9b3  >.2}..a..6...
-
-; ======================================================================
-; CODIGO 0xb9c0..0xb9d8  (24 bytes)
-; ======================================================================
-
-
+L_B9B3:
+	ld a,004h		;b9b3
+	ld (0ea7dh),a		;b9b5
+	call AJUSTA_CON_CASILLA_ATRAS		;b9b8
+	ld (ix+018h),001h		;b9bb
+	ret			;b9bf
 L_B9C0:
 	call L_B847		;b9c0
 	call L_B9C9		;b9c3
@@ -3193,18 +3636,12 @@ L_B9C9:
 	and 003h		;b9d0
 	call z,L_B75C		;b9d2
 	jp L_B789		;b9d5
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (13 bytes)
-;   0xb9d8..0xb9e5  (13 bytes)
-DATA_B9D8:
-	defb 03eh,004h,032h,07dh,0eah,0cdh,061h,0a5h,0ddh,036h,018h,003h,0c9h	; b9d8  >.2}..a..6...
-
-; ======================================================================
-; CODIGO 0xb9e5..0xba02  (29 bytes)
-; ======================================================================
-
-
+L_B9D8:
+	ld a,004h		;b9d8
+	ld (0ea7dh),a		;b9da
+	call AJUSTA_CON_CASILLA_ATRAS		;b9dd
+	ld (ix+018h),003h		;b9e0
+	ret			;b9e4
 L_B9E5:
 	call L_B847		;b9e5
 	call L_B9F0		;b9e8
@@ -3218,18 +3655,12 @@ L_B9F0:
 	jp z,L_B789		;b9f9
 	ld hl,0b837h		;b9fc
 	jp L_B7C4		;b9ff
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (13 bytes)
-;   0xba02..0xba0f  (13 bytes)
-DATA_BA02:
-	defb 03eh,002h,032h,07dh,0eah,0cdh,061h,0a5h,0ddh,036h,018h,000h,0c9h	; ba02  >.2}..a..6...
-
-; ======================================================================
-; CODIGO 0xba0f..0xba2c  (29 bytes)
-; ======================================================================
-
-
+L_BA02:
+	ld a,002h		;ba02
+	ld (0ea7dh),a		;ba04
+	call AJUSTA_CON_CASILLA_ATRAS		;ba07
+	ld (ix+018h),000h		;ba0a
+	ret			;ba0e
 L_BA0F:
 	call L_B847		;ba0f
 	call L_BA18		;ba12
@@ -3243,18 +3674,12 @@ L_BA18:
 	jp z,L_B789		;ba23
 	ld hl,0b83fh		;ba26
 	jp L_B7C4		;ba29
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (13 bytes)
-;   0xba2c..0xba39  (13 bytes)
-DATA_BA2C:
-	defb 03eh,005h,032h,07dh,0eah,0cdh,061h,0a5h,0ddh,036h,018h,002h,0c9h	; ba2c  >.2}..a..6...
-
-; ======================================================================
-; CODIGO 0xba39..0xba53  (26 bytes)
-; ======================================================================
-
-
+L_BA2C:
+	ld a,005h		;ba2c
+	ld (0ea7dh),a		;ba2e
+	call AJUSTA_CON_CASILLA_ATRAS		;ba31
+	ld (ix+018h),002h		;ba34
+	ret			;ba38
 L_BA39:
 	call L_B847		;ba39
 	call L_BA44		;ba3c
@@ -3267,20 +3692,25 @@ L_BA44:
 	and 003h		;ba4b
 	call z,L_B75C		;ba4d
 	jp L_B785		;ba50
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (43 bytes)
-;   0xba53..0xba7e  (43 bytes)
-DATA_BA53:
-	defb 03eh,001h,032h,07dh,0eah,0cdh,074h,0a5h,0ddh,07eh,015h,0ddh,096h,006h,0c6h,008h	; ba53  >.2}..t..~......
-	defb 0feh,010h,030h,009h,0ddh,036h,018h,002h,0ddh,036h,01fh,002h,0c9h,0ddh,07eh,000h	; ba63  ..0..6...6....~.
-	defb 0e6h,0f0h,0f6h,001h,0ddh,077h,000h,0cdh,086h,0b9h,0c9h	; ba73  .....w.....
-
-; ======================================================================
-; CODIGO 0xba7e..0xba96  (24 bytes)
-; ======================================================================
-
-
+L_BA53:
+	ld a,001h		;ba53
+	ld (0ea7dh),a		;ba55
+	call AJUSTA_CON_CASILLA_ADELANTE		;ba58
+	ld a,(ix+015h)		;ba5b
+	sub (ix+006h)		;ba5e
+	add a,008h		;ba61
+	cp 010h		;ba63
+	jr nc,L_BA70		;ba65
+	ld (ix+018h),002h		;ba67
+	ld (ix+01fh),002h		;ba6b
+	ret			;ba6f
+L_BA70:
+	ld a,(ix+000h)		;ba70
+	and 0f0h		;ba73
+	or 001h		;ba75
+	ld (ix+000h),a		;ba77
+	call AJUSTA_ATRAS_Y_MARCA		;ba7a
+	ret			;ba7d
 L_BA7E:
 	call L_B847		;ba7e
 	call L_BA87		;ba81
@@ -3292,18 +3722,11 @@ L_BA87:
 	and 003h		;ba8e
 	call z,L_B75C		;ba90
 	jp L_B789		;ba93
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (9 bytes)
-;   0xba96..0xba9f  (9 bytes)
-DATA_BA96:
-	defb 03eh,001h,032h,07dh,0eah,0cdh,061h,0a5h,0c9h	; ba96  >.2}..a..
-
-; ======================================================================
-; CODIGO 0xba9f..0xbb0d  (110 bytes)
-; ======================================================================
-
-
+L_BA96:
+	ld a,001h		;ba96
+	ld (0ea7dh),a		;ba98
+	call AJUSTA_CON_CASILLA_ATRAS		;ba9b
+	ret			;ba9e
 L_BA9F:
 	ld a,(0e1c3h)		;ba9f
 	xor (iy+009h)		;baa2
@@ -3474,14 +3897,47 @@ DATA_ficha_dibujos_bb91:
 	defw 0b6ddh	; bba1
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (72 bytes)
-;   0xbba3..0xbbeb  (72 bytes)
-DATA_BBA3:
-	defb 098h,040h,000h,00fh,0a0h,040h,000h,00fh,098h,040h,000h,00fh,090h,008h,000h,00fh	; bba3  .@...@...@......
-	defb 030h,048h,004h,008h,018h,030h,000h,00fh,018h,0c0h,000h,00fh,010h,010h,000h,00fh	; bbb3  0H...0..........
-	defb 098h,040h,0a0h,040h,0a8h,040h,0b0h,040h,098h,040h,0a8h,040h,0b8h,040h,090h,008h	; bbc3  .@.@.@.@.@.@.@..
-	defb 098h,008h,0a0h,008h,0a8h,008h,0b0h,008h,090h,088h,018h,030h,028h,030h,018h,0c0h	; bbd3  ...........0(0..
-	defb 028h,0c0h,010h,010h,048h,010h,080h,010h	; bbe3  (...H...
+; DATOS sprites_BBA3: ocho atributos de sprite (y, x, patron, color); p00
+;   0x5FAA copia el de 0xBBA7 a EA88 con `ld bc,4 / ldir`. De los otros siete
+;   no se ha encontrado lector
+;   0xbba3..0xbbc3  (32 bytes)
+DATA_sprites_BBA3:
+	defb 098h,040h,000h,00fh	; bba3
+	defb 0a0h,040h,000h,00fh	; bba7
+	defb 098h,040h,000h,00fh	; bbab
+	defb 090h,008h,000h,00fh	; bbaf
+	defb 030h,048h,004h,008h	; bbb3
+	defb 018h,030h,000h,00fh	; bbb7
+	defb 018h,0c0h,000h,00fh	; bbbb
+	defb 010h,010h,000h,00fh	; bbbf
+
+; ----------------------------------------------------------------------
+; DATOS posiciones_cursor: 20 parejas (y, x) del sprite del cursor; p01 0x626C
+;   (CURSOR_A_POSICION) copia a EA88 la pareja de indice (E27E) (`add a,a /
+;   call HL_MAS_A / ld bc,2 / ldir`), con HL = 0xBBC3 o 0xBBC5 segun (E25B),
+;   que pone p00 0x5FEA/0x5FEF
+;   0xbbc3..0xbbeb  (40 bytes)
+DATA_posiciones_cursor:
+	defb 098h,040h	; bbc3
+	defb 0a0h,040h	; bbc5
+	defb 0a8h,040h	; bbc7
+	defb 0b0h,040h	; bbc9
+	defb 098h,040h	; bbcb
+	defb 0a8h,040h	; bbcd
+	defb 0b8h,040h	; bbcf
+	defb 090h,008h	; bbd1
+	defb 098h,008h	; bbd3
+	defb 0a0h,008h	; bbd5
+	defb 0a8h,008h	; bbd7
+	defb 0b0h,008h	; bbd9
+	defb 090h,088h	; bbdb
+	defb 018h,030h	; bbdd
+	defb 028h,030h	; bbdf
+	defb 018h,0c0h	; bbe1
+	defb 028h,0c0h	; bbe3
+	defb 010h,010h	; bbe5
+	defb 048h,010h	; bbe7
+	defb 080h,010h	; bbe9
 
 ; ----------------------------------------------------------------------
 ; DATOS tabla_coches: 18 coches predefinidos de 5 bytes (motor, carroceria,
@@ -3857,13 +4313,27 @@ DATA_ficha_textos_bdc3:
 	defw 0aedeh	; bdd3
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (63 bytes)
-;   0xbdd5..0xbe14  (63 bytes)
-DATA_BDD5:
-	defb 058h,028h,05ch,04eh,088h,088h,0b5h,0dbh,0b6h,08eh,074h,0d1h,0b0h,051h,0b8h,062h	; bdd5  X(\N......t..Q.b
-	defb 000h,0c0h,08fh,083h,0bah,093h,000h,0c0h,08dh,0c5h,0b7h,0adh,0dbh,0b6h,0c6h,083h	; bde5  ................
-	defb 0bah,0d6h,02eh,0bah,0bdh,05eh,0bdh,0bdh,05eh,0bdh,0bdh,05eh,0bdh,0a2h,02eh,0bah	; bdf5  .....^..^..^....
-	defb 0bdh,05eh,0bdh,097h,099h,0b1h,0a2h,02eh,0bah,0c3h,0a1h,0c2h,0a2h,02eh,0bah	; be05  .^.............
+; DATOS ritmo_por_categoria: seis filas de 3 bytes, una por categoria (E25B):
+;   la primera es el multiplicador y las otras dos la palabra con la que
+;   compara RITMO_COCHE (p01 0x7F85: `ld de,0xBDD5 / hl = de + 3*(E25B)`). El
+;   patron de filas de 3 sigue hasta 0xBE14, pero este lector solo llega a la
+;   sexta
+;   0xbdd5..0xbde7  (18 bytes)
+DATA_ritmo_por_categoria:
+	defb 058h,028h,05ch	; bdd5
+	defb 04eh,088h,088h	; bdd8
+	defb 0b5h,0dbh,0b6h	; bddb
+	defb 08eh,074h,0d1h	; bdde
+	defb 0b0h,051h,0b8h	; bde1
+	defb 062h,000h,0c0h	; bde4
+
+; ----------------------------------------------------------------------
+; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (45 bytes)
+;   0xbde7..0xbe14  (45 bytes)
+DATA_pendiente_de_trazar:
+	defb 08fh,083h,0bah,093h,000h,0c0h,08dh,0c5h,0b7h,0adh,0dbh,0b6h,0c6h,083h,0bah,0d6h	; bde7  ................
+	defb 02eh,0bah,0bdh,05eh,0bdh,0bdh,05eh,0bdh,0bdh,05eh,0bdh,0a2h,02eh,0bah,0bdh,05eh	; bdf7  ...^..^..^.....^
+	defb 0bdh,097h,099h,0b1h,0a2h,02eh,0bah,0c3h,0a1h,0c2h,0a2h,02eh,0bah	; be07  .............
 
 ; ======================================================================
 ; CODIGO 0xbe14..0xbe8a  (118 bytes)
@@ -3938,9 +4408,11 @@ L_BE75:
 	ret			;be89
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (374 bytes)
-;   0xbe8a..0xc000  (374 bytes)
-DATA_BE8A:
+; DATOS pantalla_titulo: flujo RLE de la pantalla del titulo: cabecera 0x2A00
+;   (destino en VRAM) y 352 bytes de codigos que PANTALLA_INICIAL descomprime
+;   con `ld de,0xBE8A / call 0x485C` (0xBE2E); escribe 1008 bytes
+;   0xbe8a..0xbfec  (354 bytes)
+DATA_pantalla_titulo:
 	defb 000h,02ah,018h,000h,002h,007h,003h,00fh,002h,01fh,081h,03fh,008h,0ffh,002h,0f8h	; be8a  .*.........?....
 	defb 003h,0f0h,003h,0e0h,07fh,000h,00dh,000h,087h,001h,003h,00fh,07fh,03fh,07fh,07fh	; be9a  .............?..
 	defb 00ah,0ffh,082h,0fch,0f0h,003h,0c0h,002h,080h,07fh,000h,083h,001h,003h,007h,003h	; beaa  ................
@@ -3963,5 +4435,12 @@ DATA_BE8A:
 	defb 008h,007h,080h,040h,020h,0a0h,020h,0a0h,040h,080h,011h,000h,085h,003h,00fh,01fh	; bfba  ...@ . .@.......
 	defb 03fh,07fh,00bh,0ffh,086h,0fch,0f0h,0e0h,0c0h,080h,080h,07fh,000h,00ah,000h,003h	; bfca  ?...............
 	defb 001h,003h,003h,002h,007h,009h,0ffh,002h,0feh,003h,0fch,002h,0f8h,07fh,000h,009h	; bfda  ................
-	defb 000h,000h,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; bfea  ................
-	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; bffa
+	defb 000h,000h	; bfea
+
+; ----------------------------------------------------------------------
+; DATOS relleno_BFEC: veinte bytes a 0xFF hasta el final de la pagina
+;   (comprobado byte a byte)
+;   0xbfec..0xc000  (20 bytes)
+DATA_relleno_BFEC:
+	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; bfec  ................
+	defb 0ffh,0ffh,0ffh,0ffh	; bffc

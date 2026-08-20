@@ -290,7 +290,7 @@ DATA_tabla_estados:
 	defw 041b2h	; 41b0  -> ESTADO_0
 
 ; ======================================================================
-; CODIGO 0x41b2..0x430d  (347 bytes)
+; CODIGO 0x41b2..0x4328  (374 bytes)
 ; ======================================================================
 
 
@@ -484,18 +484,11 @@ ARRANCA_SONIDO:		; D/E/F, 0x6CE9 de la pagina 13 (init), restaura, PSG R7=0xBF, 
 	ld a,046h		;4305
 	call 06000h		;4307
 	jp MAPEA_1_2_3		;430a
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (10 bytes)
-;   0x430d..0x4317  (10 bytes)
-DATA_430D:
-	defb 021h,000h,000h,001h,000h,040h,0afh,0cdh,056h,000h	; 430d  !....@..V.
-
-; ======================================================================
-; CODIGO 0x4317..0x4328  (17 bytes)
-; ======================================================================
-
-
+L_430D:
+	ld hl,00000h		;430d
+	ld bc,04000h		;4310
+	xor a			;4313
+	call 00056h		;4314   ; BIOS FILVRM - Fills VRAM with value
 VDP_REGISTROS:		; escribe R0..R7 desde la tabla de 0x4328
 	ld hl,04328h		;4317
 	ld d,008h		;431a
@@ -519,7 +512,7 @@ DATA_tabla_vdp:
 	defb 002h,0e2h,00eh,07fh,007h,076h,003h,0e4h	; 4328  .....v..
 
 ; ======================================================================
-; CODIGO 0x4330..0x467f  (847 bytes)
+; CODIGO 0x4330..0x4961  (1585 bytes)
 ; ======================================================================
 
 
@@ -999,18 +992,13 @@ PREPARA_ESCRITURA_VRAM:		; SETWRT en HL y deja en C' el puerto de datos del VDP 
 	exx			;467c
 	ex af,af'			;467d
 	ret			;467e
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (10 bytes)
-;   0x467f..0x4689  (10 bytes)
-DATA_467F:
-	defb 0cdh,050h,000h,0d9h,03ah,006h,000h,04fh,0d9h,0c9h	; 467f  .P..:..O..
-
-; ======================================================================
-; CODIGO 0x4689..0x47d3  (330 bytes)
-; ======================================================================
-
-
+L_467F:
+	call 00050h		;467f   ; BIOS SETRD - Enables VDP to read
+	exx			;4682
+	ld a,(00006h)		;4683
+	ld c,a			;4686
+	exx			;4687
+	ret			;4688
 FOTOGRAMAS_COCHES:		; 4/5/6; el coche 1 (E2C0 -> patrones 0x1800) y, con el bit 5 de E1C2, el 2 (E380 -> 0x1840); vuelve a 1/2/3
 	call MAPEA_4_5_6		;4689
 	ld ix,0e2c0h		;468c
@@ -1190,19 +1178,21 @@ L_47BD:
 COPIA_A_VRAM:		; LDIRVM: BC bytes desde DE (RAM o ROM) a VRAM HL
 	ex de,hl			;47cf
 	jp 0005ch		;47d0   ; BIOS LDIRVM - Block transfers to VRAM from memory
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (19 bytes)
-;   0x47d3..0x47e6  (19 bytes)
-DATA_47D3:
-	defb 0d9h,006h,003h,0d9h,0c5h,0d5h,0cdh,0cfh,047h,011h,000h,008h,019h,0d1h,0c1h,0d9h	; 47d3  ........G.......
-	defb 010h,0f1h,0c9h	; 47e3
-
-; ======================================================================
-; CODIGO 0x47e6..0x4835  (79 bytes)
-; ======================================================================
-
-
+L_47D3:
+	exx			;47d3
+	ld b,003h		;47d4
+L_47D6:
+	exx			;47d6
+	push bc			;47d7
+	push de			;47d8
+	call COPIA_A_VRAM		;47d9
+	ld de,00800h		;47dc
+	add hl,de			;47df
+	pop de			;47e0
+	pop bc			;47e1
+	exx			;47e2
+	djnz L_47D6		;47e3
+	ret			;47e5
 LLENA_VRAM_3_TERCIOS:		; FILVRM: BC bytes de A en VRAM HL, y otra vez en HL+0x800 y HL+0x1000
 	ld d,003h		;47e6
 BUCLE_LLENA_TERCIO:		; un tercio por vuelta
@@ -1250,7 +1240,7 @@ PINTA_TILES_BUCLE:		; un byte del flujo por vuelta
 	ld a,(de)			;481b
 	inc de			;481c
 	cp 002h		;481d
-	jr z,$+32		;481f
+	jr z,PINTA_TILES_POSICION		;481f
 	cp 0ffh		;4821
 	ret z			;4823
 	cp 0feh		;4824
@@ -1263,18 +1253,9 @@ PINTA_TILES_BUCLE:		; un byte del flujo por vuelta
 BORRA_TILES:		; como 0x4811 con B=C=0: escribe ceros en las mismas posiciones (borra lo que pinto)
 	ld bc,00000h		;4830
 	jr PINTA_TILES_DIRECCION		;4833
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (4 bytes)
-;   0x4835..0x4839  (4 bytes)
-DATA_4835:
-	defb 00eh,0ffh,018h,00dh	; 4835
-
-; ======================================================================
-; CODIGO 0x4839..0x4961  (296 bytes)
-; ======================================================================
-
-
+L_4835:
+	ld c,0ffh		;4835
+	jr L_4846		;4837
 L_4839:
 	ld c,000h		;4839
 	jr PINTA_TILES_POSICION		;483b
@@ -1287,6 +1268,7 @@ PINTA_TILES_POSICION:		; el codigo 02 del flujo: columna y fila -> VRAM 0x3800 +
 	inc hl			;4843
 	ld d,(hl)			;4844
 	inc hl			;4845
+L_4846:
 	ld b,020h		;4846
 	push hl			;4848
 	ex de,hl			;4849
@@ -1301,7 +1283,7 @@ PINTA_TILES_POSICION:		; el codigo 02 del flujo: columna y fila -> VRAM 0x3800 +
 	ld de,03800h		;4855
 	add hl,de			;4858
 	pop de			;4859
-	jr $-63		;485a
+	jr PINTA_TILES_BUCLE		;485a
 RLE_SIGUE_PUNTERO:		; DE = la palabra de (DE): el flujo continua en otro sitio
 	ex de,hl			;485c
 	ld e,(hl)			;485d
@@ -1459,11 +1441,24 @@ L_495A:
 	jr L_490B		;495f
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (25 bytes)
-;   0x4961..0x497a  (25 bytes)
-DATA_4961:
-	defb 0f4h,0edh,0f8h,000h,0edh,0f2h,0f6h,0e9h,0f8h,0edh,0f6h,0e9h,000h,0e9h,0f1h,0f4h	; 4961  ................
-	defb 0f8h,0fdh,0ebh,0f3h,0e5h,0f0h,0cah,05ch,048h	; 4971  .......\H
+; DATOS rotulos_hud: cuatro rotulos del HUD en codigos de tile (tile = 0xE4 +
+;   numero de letra (A=1: P=0xF4, I=0xED, T=0xF8), 0x00 = tile 0 (blanco),
+;   0x20 = "no escribir"): "PIT IN" (0x4961), "RETIRE" (0x4967), " EMPTY"
+;   (0x496D) y "GOAL" (0x4973); los escribe con WRTVRM el bucle de 0x490E (`ld
+;   a,(de) / cp 020h / jr z / call 0x004D`) con DE puesto en 0x4900, 0x4941,
+;   0x4955 y 0x495A y B = 6, 6, 6 y 4
+;   0x4961..0x4977  (22 bytes)
+DATA_rotulos_hud:
+	defb 0f4h,0edh,0f8h,000h,0edh,0f2h	; 4961
+	defb 0f6h,0e9h,0f8h,0edh,0f6h,0e9h	; 4967
+	defb 000h,0e9h,0f1h,0f4h,0f8h,0fdh	; 496d
+	defb 0ebh,0f3h,0e5h,0f0h	; 4973
+
+; ----------------------------------------------------------------------
+; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (3 bytes)
+;   0x4977..0x497a  (3 bytes)
+DATA_4977:
+	defb 0cah,05ch,048h	; 4977
 
 ; ======================================================================
 ; CODIGO 0x497a..0x49c4  (74 bytes)
@@ -1505,13 +1500,14 @@ L_49AF:
 	jp RELLENA_RAM		;49c1
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (3 bytes)
+; DATOS inicial_E1F0: los tres bytes 03 01 01 que 0x4986 copia a E1F0-E1F2
+;   (`ld hl,0x49C4 / ld de,0xE1F0 / ld bc,3 / ldir`)
 ;   0x49c4..0x49c7  (3 bytes)
-DATA_49C4:
+DATA_inicial_E1F0:
 	defb 003h,001h,001h	; 49c4
 
 ; ======================================================================
-; CODIGO 0x49c7..0x49ef  (40 bytes)
+; CODIGO 0x49c7..0x4c37  (624 bytes)
 ; ======================================================================
 
 
@@ -1535,21 +1531,14 @@ L_49E0:
 	ld hl,03b0ch		;49e0
 	ld a,(0e1c2h)		;49e3
 	and 040h		;49e6
-	jr z,$+20		;49e8
+	jr z,L_49FC		;49e8
 	ld hl,03b04h		;49ea
-	jr $+15		;49ed
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (10 bytes)
-;   0x49ef..0x49f9  (10 bytes)
-DATA_49EF:
-	defb 021h,008h,03bh,03ah,0c2h,0e1h,0e6h,040h,028h,003h	; 49ef  !.;:...@(.
-
-; ======================================================================
-; CODIGO 0x49f9..0x4a09  (16 bytes)
-; ======================================================================
-
-
+	jr L_49FC		;49ed
+L_49EF:
+	ld hl,03b08h		;49ef
+	ld a,(0e1c2h)		;49f2
+	and 040h		;49f5
+	jr z,L_49FC		;49f7
 L_49F9:
 	ld hl,03b00h		;49f9
 L_49FC:
@@ -1561,19 +1550,11 @@ L_4A03:
 	exx			;4a03
 	ld d,0d4h		;4a04
 	exx			;4a06
-	jr $+6		;4a07
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (4 bytes)
-;   0x4a09..0x4a0d  (4 bytes)
-DATA_4A09:
-	defb 0d9h,016h,010h,0d9h	; 4a09
-
-; ======================================================================
-; CODIGO 0x4a0d..0x4a55  (72 bytes)
-; ======================================================================
-
-
+	jr L_4A0D		;4a07
+L_4A09:
+	exx			;4a09
+	ld d,010h		;4a0a
+	exx			;4a0c
 L_4A0D:
 	ld c,000h		;4a0d
 L_4A0F:
@@ -1639,18 +1620,13 @@ L_4A4F:
 	ld a,l			;4a52
 	cp e			;4a53
 	ret			;4a54
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (12 bytes)
-;   0x4a55..0x4a61  (12 bytes)
-DATA_4A55:
-	defb 0cbh,03ch,0cbh,01dh,0cbh,03ch,0cbh,01dh,0cbh,03ch,0cbh,01dh	; 4a55  .<...<...<..
-
-; ======================================================================
-; CODIGO 0x4a61..0x4a76  (21 bytes)
-; ======================================================================
-
-
+L_4A55:
+	srl h		;4a55
+	rr l		;4a57
+	srl h		;4a59
+	rr l		;4a5b
+	srl h		;4a5d
+	rr l		;4a5f
 L_4A61:
 	srl h		;4a61
 	rr l		;4a63
@@ -1663,18 +1639,11 @@ L_4A61:
 	srl h		;4a71
 	rr l		;4a73
 	ret			;4a75
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (8 bytes)
-;   0x4a76..0x4a7e  (8 bytes)
-DATA_4A76:
-	defb 0cbh,02ch,0cbh,01dh,0cbh,02ch,0cbh,01dh	; 4a76  .,...,..
-
-; ======================================================================
-; CODIGO 0x4a7e..0x4a97  (25 bytes)
-; ======================================================================
-
-
+L_4A76:
+	sra h		;4a76
+	rr l		;4a78
+	sra h		;4a7a
+	rr l		;4a7c
 L_4A7E:
 	sra h		;4a7e
 	rr l		;4a80
@@ -1691,18 +1660,9 @@ L_4A8A:
 	sra h		;4a92
 	rr l		;4a94
 	ret			;4a96
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (6 bytes)
-;   0x4a97..0x4a9d  (6 bytes)
-DATA_4A97:
-	defb 0ddh,056h,006h,0ddh,05eh,004h	; 4a97
-
-; ======================================================================
-; CODIGO 0x4a9d..0x4b48  (171 bytes)
-; ======================================================================
-
-
+L_4A97:
+	ld d,(ix+006h)		;4a97
+	ld e,(ix+004h)		;4a9a
 L_4A9D:
 	ld a,(iy+040h)		;4a9d
 	add a,e			;4aa0
@@ -1844,19 +1804,30 @@ L_4B32:
 	exx			;4b44
 	jr nz,L_4B32		;4b45
 	ret			;4b47
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (31 bytes)
-;   0x4b48..0x4b67  (31 bytes)
-DATA_4B48:
-	defb 0cdh,09dh,04ah,0e5h,0c5h,0cdh,05eh,04bh,0c1h,0e1h,011h,020h,000h,0cbh,094h,019h	; 4b48  ..J...^K... ....
-	defb 0cbh,0d4h,00dh,020h,0eeh,0c9h,0d9h,07eh,023h,0d9h,077h,023h,010h,0f8h,0c9h	; 4b58  ... ...~#.w#...
-
-; ======================================================================
-; CODIGO 0x4b67..0x4ba3  (60 bytes)
-; ======================================================================
-
-
+L_4B48:
+	call L_4A9D		;4b48
+L_4B4B:
+	push hl			;4b4b
+	push bc			;4b4c
+	call COPIA_B_BYTES_ALTERNO		;4b4d
+	pop bc			;4b50
+	pop hl			;4b51
+	ld de,00020h		;4b52
+	res 2,h		;4b55
+	add hl,de			;4b57
+	set 2,h		;4b58
+	dec c			;4b5a
+	jr nz,L_4B4B		;4b5b
+	ret			;4b5d
+COPIA_B_BYTES_ALTERNO:		; copia B bytes de (HL') a (HL): el origen va en el juego alterno de registros y el destino en el principal, alternando con exx
+	exx			;4b5e
+	ld a,(hl)			;4b5f
+	inc hl			;4b60
+	exx			;4b61
+	ld (hl),a			;4b62
+	inc hl			;4b63
+	djnz COPIA_B_BYTES_ALTERNO		;4b64
+	ret			;4b66
 L_4B67:
 	ex af,af'			;4b67
 	call L_4A9D		;4b68
@@ -1902,18 +1873,12 @@ L_4B99:
 	call 0690ah		;4b9a
 	ld de,0ec02h		;4b9d
 	jp L_4839		;4ba0
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (15 bytes)
-;   0x4ba3..0x4bb2  (15 bytes)
-DATA_4BA3:
-	defb 0cdh,018h,044h,03ah,05ch,0e2h,021h,0d3h,061h,0cdh,044h,04ah,0c3h,0cdh,04ch	; 4ba3  ..D:\.!.a.DJ..L
-
-; ======================================================================
-; CODIGO 0x4bb2..0x4c37  (133 bytes)
-; ======================================================================
-
-
+L_4BA3:
+	call MAPEA_4_5_6		;4ba3
+	ld a,(0e25ch)		;4ba6
+	ld hl,061d3h		;4ba9
+	call HL_PALABRA_A		;4bac
+	jp CARGA_LISTA_TILES		;4baf
 COLORES_0_210_A_CERO:		; la tabla de colores de los tiles 0..210 (0x698 bytes desde 0x0000) a cero, en los 3 tercios
 	ld hl,00000h		;4bb2
 	ld bc,00698h		;4bb5
@@ -1997,7 +1962,7 @@ DATA_tabla_listas_panel:
 	defw 06c55h	; 4c41
 
 ; ======================================================================
-; CODIGO 0x4c43..0x4c8c  (73 bytes)
+; CODIGO 0x4c43..0x4e37  (500 bytes)
 ; ======================================================================
 
 
@@ -2027,59 +1992,35 @@ CARGA_TILES_PANEL_POR_FILAS:		; colores de los tiles 211-251 a cero (3 tercios) 
 L_4C7C:
 	call HL_PALABRA_A		;4c7c
 	ld de,00001h		;4c7f
-	jr $+17		;4c82
+	jr CARGA_LISTA_POR_FILAS		;4c82
 CARGA_TILES_PANEL_2J_POR_FILAS:		; la lista p04 0x6C36 fila a fila
 	ld hl,06c36h		;4c84
 	ld de,00001h		;4c87
-	jr $+9		;4c8a
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (7 bytes)
-;   0x4c8c..0x4c93  (7 bytes)
-DATA_4C8C:
-	defb 0cbh,0ffh,001h,000h,001h,018h,023h	; 4c8c
-
-; ======================================================================
-; CODIGO 0x4c93..0x4c9a  (7 bytes)
-; ======================================================================
-
-
+	jr CARGA_LISTA_POR_FILAS		;4c8a
+L_4C8C:
+	set 7,a		;4c8c
+	ld bc,00100h		;4c8e
+	jr CARGA_LISTA_FILA_A_FILA		;4c91
 CARGA_LISTA_POR_FILAS:		; la lista HL una fila de patron por vuelta (E1D4 = 0x80..0x87), con DE de espera entre filas: los tiles van apareciendo de arriba abajo
 	ld a,080h		;4c93
 	ld bc,00801h		;4c95
-	jr $+30		;4c98
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (7 bytes)
-;   0x4c9a..0x4ca1  (7 bytes)
-DATA_4C9A:
-	defb 03eh,087h,001h,0ffh,008h,018h,015h	; 4c9a
-
-; ======================================================================
-; CODIGO 0x4ca1..0x4caf  (14 bytes)
-; ======================================================================
-
-
+	jr CARGA_LISTA_FILA_A_FILA		;4c98
+L_4C9A:
+	ld a,087h		;4c9a
+	ld bc,008ffh		;4c9c
+	jr CARGA_LISTA_FILA_A_FILA		;4c9f
 CARGA_COLORES_FILAS_0_3:		; solo los colores de la lista HL, filas 0..3 (E1D4 = 0xC0..0xC3)
 	ld a,0c0h		;4ca1
 	ld bc,00401h		;4ca3
-	jr $+16		;4ca6
+	jr CARGA_LISTA_FILA_A_FILA		;4ca6
 CARGA_COLORES_FILAS_4_7:		; solo los colores de la lista HL, filas 4..7 (E1D4 = 0xC4..0xC7)
 	ld a,0c4h		;4ca8
 	ld bc,00401h		;4caa
-	jr $+9		;4cad
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (7 bytes)
-;   0x4caf..0x4cb6  (7 bytes)
-DATA_4CAF:
-	defb 03eh,0c0h,001h,001h,008h,018h,000h	; 4caf
-
-; ======================================================================
-; CODIGO 0x4cb6..0x4e37  (385 bytes)
-; ======================================================================
-
-
+	jr CARGA_LISTA_FILA_A_FILA		;4cad
+L_4CAF:
+	ld a,0c0h		;4caf
+	ld bc,00801h		;4cb1
+	jr CARGA_LISTA_FILA_A_FILA		;4cb4
 CARGA_LISTA_FILA_A_FILA:		; B vueltas: E1D4 = A, espera DE, carga la lista HL (0x4CD1), A += C
 	ld (0e1d4h),a		;4cb6
 	add a,c			;4cb9
@@ -2549,10 +2490,12 @@ L_4F9B:
 	jp L_5BA2		;4faf
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (12 bytes)
+; DATOS inicial_E9B1: dos filas de 6 bytes que 0x4F91 copia a E9B1 y E9B9 (`ld
+;   hl,0x4FB2 / ld de,0xE9B1 / ld c,2`, seis bytes por vuelta y dos de salto)
 ;   0x4fb2..0x4fbe  (12 bytes)
-DATA_4FB2:
-	defb 001h,0beh,040h,000h,002h,000h,001h,0beh,040h,000h,004h,012h	; 4fb2  ..@.....@...
+DATA_inicial_E9B1:
+	defb 001h,0beh,040h,000h,002h,000h	; 4fb2
+	defb 001h,0beh,040h,000h,004h,012h	; 4fb8
 
 ; ======================================================================
 ; CODIGO 0x4fbe..0x514a  (396 bytes)
@@ -2765,14 +2708,21 @@ L_513B:
 	ret			;5149
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (32 bytes)
+; DATOS tabla_514A: 8 grupos de 4 bytes; los lee 0x512A con A = (ix+3)*4 + B -
+;   1 (`ld hl,0x514A / call HL_MAS_A / ld a,(hl)`)
 ;   0x514a..0x516a  (32 bytes)
-DATA_514A:
-	defb 024h,020h,01ch,018h,034h,030h,02ch,028h,044h,040h,03ch,038h,054h,050h,04ch,048h	; 514a  $ ..40,(D@<8TPLH
-	defb 064h,060h,05ch,058h,074h,070h,06ch,068h,084h,080h,07ch,078h,094h,090h,08ch,088h	; 515a  d`\Xtplh..|x....
+DATA_tabla_514A:
+	defb 024h,020h,01ch,018h	; 514a
+	defb 034h,030h,02ch,028h	; 514e
+	defb 044h,040h,03ch,038h	; 5152
+	defb 054h,050h,04ch,048h	; 5156
+	defb 064h,060h,05ch,058h	; 515a
+	defb 074h,070h,06ch,068h	; 515e
+	defb 084h,080h,07ch,078h	; 5162
+	defb 094h,090h,08ch,088h	; 5166
 
 ; ======================================================================
-; CODIGO 0x516a..0x53b7  (589 bytes)
+; CODIGO 0x516a..0x5452  (744 bytes)
 ; ======================================================================
 
 
@@ -3128,19 +3078,23 @@ L_5339:
 	and 00fh		;53b3
 	ld (hl),a			;53b5
 	ret			;53b6
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (27 bytes)
-;   0x53b7..0x53d2  (27 bytes)
-DATA_53B7:
-	defb 026h,000h,0d9h,0e5h,0d5h,021h,060h,0eah,001h,003h,000h,0cdh,087h,04bh,0d1h,0e1h	; 53b7  &....!`......K..
-	defb 026h,000h,006h,008h,065h,06ah,053h,01eh,000h,018h,016h	; 53c7  &...ejS....
-
-; ======================================================================
-; CODIGO 0x53d2..0x5452  (128 bytes)
-; ======================================================================
-
-
+L_53B7:
+	ld h,000h		;53b7
+	exx			;53b9
+	push hl			;53ba
+	push de			;53bb
+	ld hl,0ea60h		;53bc
+	ld bc,00003h		;53bf
+	call RELLENA_RAM_CERO		;53c2
+	pop de			;53c5
+	pop hl			;53c6
+	ld h,000h		;53c7
+	ld b,008h		;53c9
+	ld h,l			;53cb
+	ld l,d			;53cc
+	ld d,e			;53cd
+	ld e,000h		;53ce
+	jr L_53E8		;53d0
 L_53D2:
 	ld h,000h		;53d2
 	push af			;53d4
@@ -3231,10 +3185,14 @@ L_544C:
 	ret			;5451
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (12 bytes)
+; DATOS inicial_EA90: tres filas de 4 bytes que 0x543C copia a EA90 (`ld
+;   hl,0x5452 / ld de,0xEA90 / ld bc,0x0C / ldir`); las tres estructuras se
+;   recorren luego con `ld de,4 / ld b,3` desde EA90 (0x54AE)
 ;   0x5452..0x545e  (12 bytes)
-DATA_5452:
-	defb 048h,0a8h,000h,000h,058h,0a0h,004h,000h,070h,0a0h,008h,000h	; 5452  H...X...p...
+DATA_inicial_EA90:
+	defb 048h,0a8h,000h,000h	; 5452
+	defb 058h,0a0h,004h,000h	; 5456
+	defb 070h,0a0h,008h,000h	; 545a
 
 ; ======================================================================
 ; CODIGO 0x545e..0x54d1  (115 bytes)
@@ -3305,9 +3263,10 @@ L_54C4:
 	jp L_543C		;54ce
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (3 bytes)
+; DATOS byte3_EA90: un byte por cada una de las tres estructuras de EA90:
+;   0x54B2 los mete en (ix+3) (`ld hl,0x54D1 / ld de,4 / ld b,3`)
 ;   0x54d1..0x54d4  (3 bytes)
-DATA_54D1:
+DATA_byte3_EA90:
 	defb 007h,00ah,007h	; 54d1
 
 ; ======================================================================
@@ -3796,15 +3755,28 @@ L_581D:
 	jp 06565h		;584a
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (41 bytes)
-;   0x584d..0x5876  (41 bytes)
-DATA_584D:
-	defb 0ffh,005h,000h,004h,0ffh,005h,000h,004h,0ffh,005h,000h,004h,0ffh,005h,000h,00ah	; 584d  ................
-	defb 0ffh,005h,000h,00dh,0feh,000h,000h,000h,004h,001h,00ah,000h,004h,002h,00ah,000h	; 585d  ................
-	defb 004h,003h,00ah,000h,004h,004h,00ah,000h,004h	; 586d  .........
+; DATOS escenas_demo: seis filas de 4 bytes indexadas por (E1CD) desde 0x581D
+;   (`ld de,0x584D / hl = de + 4*(E1CD)`): categoria (E25B), subestado (E250),
+;   banderas (E1C2) y grupo de paginas (F0F6), copiados con cuatro `ldi`; la
+;   fila 5 empieza por 0xFE y devuelve (E1CD) a 1
+;   0x584d..0x5865  (24 bytes)
+DATA_escenas_demo:
+	defb 0ffh,005h,000h,004h	; 584d
+	defb 0ffh,005h,000h,004h	; 5851
+	defb 0ffh,005h,000h,004h	; 5855
+	defb 0ffh,005h,000h,00ah	; 5859
+	defb 0ffh,005h,000h,00dh	; 585d
+	defb 0feh,000h,000h,000h	; 5861
+
+; ----------------------------------------------------------------------
+; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (17 bytes)
+;   0x5865..0x5876  (17 bytes)
+DATA_5865:
+	defb 004h,001h,00ah,000h,004h,002h,00ah,000h,004h,003h,00ah,000h,004h,004h,00ah,000h	; 5865  ................
+	defb 004h	; 5875
 
 ; ======================================================================
-; CODIGO 0x5876..0x58a2  (44 bytes)
+; CODIGO 0x5876..0x5909  (147 bytes)
 ; ======================================================================
 
 
@@ -3829,22 +3801,56 @@ L_58A0:
 	ret			;58a0
 L_58A1:
 	ret			;58a1
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (80 bytes)
-;   0x58a2..0x58f2  (80 bytes)
-DATA_58A2:
-	defb 03ah,0deh,0e1h,0feh,002h,0c8h,03ah,001h,0f0h,04fh,016h,000h,02ah,002h,0f0h,07ch	; 58a2  :.....:..O..*..|
-	defb 0d6h,0c0h,0d8h,0feh,01fh,0d0h,0d9h,03ah,0c9h,0e1h,021h,004h,0f0h,0cdh,0e2h,058h	; 58b2  .......:..!....X
-	defb 03ah,0c2h,0e1h,0cbh,06fh,028h,00dh,0d9h,016h,080h,0d9h,021h,005h,0f0h,03ah,0cch	; 58c2  :...o(.....!..:.
-	defb 0e1h,0cdh,0e2h,058h,0d9h,079h,0d9h,03ch,032h,001h,0f0h,0feh,0ffh,0c0h,018h,003h	; 58d2  ...X.y.<2.......
-	defb 0beh,0c8h,077h,0d9h,071h,023h,0b2h,077h,023h,022h,002h,0f0h,00eh,000h,0d9h,0c9h	; 58e2  ..w.q#.w#"......
-
-; ======================================================================
-; CODIGO 0x58f2..0x5909  (23 bytes)
-; ======================================================================
-
-
+L_58A2:
+	ld a,(0e1deh)		;58a2
+	cp 002h		;58a5
+	ret z			;58a7
+	ld a,(0f001h)		;58a8
+	ld c,a			;58ab
+	ld d,000h		;58ac
+	ld hl,(0f002h)		;58ae
+	ld a,h			;58b1
+	sub 0c0h		;58b2
+	ret c			;58b4
+	cp 01fh		;58b5
+	ret nc			;58b7
+	exx			;58b8
+	ld a,(0e1c9h)		;58b9
+	ld hl,0f004h		;58bc
+	call GRABA_SI_CAMBIA_LA_MASCARA		;58bf
+	ld a,(0e1c2h)		;58c2
+	bit 5,a		;58c5
+	jr z,L_58D6		;58c7
+	exx			;58c9
+	ld d,080h		;58ca
+	exx			;58cc
+	ld hl,0f005h		;58cd
+	ld a,(0e1cch)		;58d0
+	call GRABA_SI_CAMBIA_LA_MASCARA		;58d3
+L_58D6:
+	exx			;58d6
+	ld a,c			;58d7
+	exx			;58d8
+	inc a			;58d9
+	ld (0f001h),a		;58da
+	cp 0ffh		;58dd
+	ret nz			;58df
+	jr L_58E5		;58e0
+GRABA_SI_CAMBIA_LA_MASCARA:		; si A es igual a (HL) no hace nada; si no, la guarda ahi y cae en 0x58E5, que escribe en (F002) el par (cuadros, mascara | D) y pone el contador a cero
+	cp (hl)			;58e2
+	ret z			;58e3
+	ld (hl),a			;58e4
+L_58E5:
+	exx			;58e5
+	ld (hl),c			;58e6
+	inc hl			;58e7
+	or d			;58e8
+	ld (hl),a			;58e9
+	inc hl			;58ea
+	ld (0f002h),hl		;58eb
+	ld c,000h		;58ee
+	exx			;58f0
+	ret			;58f1
 L_58F2:
 	ld a,(0e1cdh)		;58f2
 	ld hl,05909h		;58f5
@@ -3857,10 +3863,20 @@ L_58F2:
 	ret			;5908
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (10 bytes)
+; DATOS partidas_grabadas: cinco punteros a las partidas grabadas de la demo,
+;   uno por (E1CD) 0..4: 0xC000, 0xBDC1, 0xBE26, 0xBF3B y 0xBAB9. Los lee
+;   0x58F5 (`ld a,(E1CD) / ld hl,0x5909 / call HL_PALABRA_A / ld (F002),hl`) y
+;   de ahi los va sacando el reproductor de 0x5920 (mascara, cuadros). Con el
+;   grupo de paginas que pone la fila de 0x584D (4, 4, 0x0A, 0x0D) las tres
+;   ultimas caen en p06 0xBDC1/0xBE26, p12 0xBF3B y p15 0xBAB9: los tres
+;   bloques de pares que ya estaban medidos
 ;   0x5909..0x5913  (10 bytes)
-DATA_5909:
-	defb 000h,0c0h,0c1h,0bdh,026h,0beh,03bh,0bfh,0b9h,0bah	; 5909  ....&.;...
+DATA_partidas_grabadas:
+	defw 0c000h	; 5909
+	defw 0bdc1h	; 590b
+	defw 0be26h	; 590d
+	defw 0bf3bh	; 590f
+	defw 0bab9h	; 5911
 
 ; ======================================================================
 ; CODIGO 0x5913..0x5993  (128 bytes)
@@ -3948,10 +3964,13 @@ L_598A:
 	ret			;5992
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (8 bytes)
+; DATOS sprites_5993: dos atributos de sprite (y, x, patron, color) que 0x597D
+;   copia a EA80 (`ld hl,0x5993 / ld bc,8 / ldir`): (0x10, 0xB0, 0xC0, 6) y
+;   (0x10, 0xC0, 0xC4, 6)
 ;   0x5993..0x599b  (8 bytes)
-DATA_5993:
-	defb 010h,0b0h,0c0h,006h,010h,0c0h,0c4h,006h	; 5993  ........
+DATA_sprites_5993:
+	defb 010h,0b0h,0c0h,006h	; 5993
+	defb 010h,0c0h,0c4h,006h	; 5997
 
 ; ======================================================================
 ; CODIGO 0x599b..0x5a40  (165 bytes)
@@ -4556,15 +4575,27 @@ L_5E3E:
 	jp HL_MAS_A		;5e47
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (34 bytes)
+; DATOS secuencia_5E4A: filas de 3 bytes que recorre 0x5E3E con A = 3*(E25D)
+;   (`ld hl,0x5E4A / jp HL_MAS_A`): el byte 0 a cero acaba la lista (0x5E2B),
+;   el byte 1 lo lee 0x5E14 y el byte 2 va a (E25E) (0x5E31). Once filas y el
+;   cero final
 ;   0x5e4a..0x5e6c  (34 bytes)
-DATA_5E4A:
-	defb 0dfh,06fh,040h,0dfh,04fh,09fh,0efh,0afh,0dfh,0efh,0efh,0dfh,0efh,0afh,0dfh,0efh	; 5e4a  .o@.O...........
-	defb 0efh,0dfh,0efh,0afh,0dfh,0efh,0efh,0dfh,0efh,0afh,0dfh,0efh,0efh,0dfh,040h,05fh	; 5e5a  ..............@_
-	defb 010h,000h	; 5e6a
+DATA_secuencia_5E4A:
+	defb 0dfh,06fh,040h	; 5e4a
+	defb 0dfh,04fh,09fh	; 5e4d
+	defb 0efh,0afh,0dfh	; 5e50
+	defb 0efh,0efh,0dfh	; 5e53
+	defb 0efh,0afh,0dfh	; 5e56
+	defb 0efh,0efh,0dfh	; 5e59
+	defb 0efh,0afh,0dfh	; 5e5c
+	defb 0efh,0efh,0dfh	; 5e5f
+	defb 0efh,0afh,0dfh	; 5e62
+	defb 0efh,0efh,0dfh	; 5e65
+	defb 040h,05fh,010h	; 5e68
+	defb 000h	; 5e6b
 
 ; ======================================================================
-; CODIGO 0x5e6c..0x5f41  (213 bytes)
+; CODIGO 0x5e6c..0x6000  (404 bytes)
 ; ======================================================================
 
 
@@ -4714,19 +4745,20 @@ L_5F33:
 	ld a,(de)			;5f3e
 	ld (hl),a			;5f3f
 	ret			;5f40
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (20 bytes)
-;   0x5f41..0x5f55  (20 bytes)
-DATA_5F41:
-	defb 0ddh,06eh,046h,0ddh,066h,047h,0ddh,07eh,045h,029h,029h,04dh,044h,029h,009h,04fh	; 5f41  .nF.fG.~E))MD).O
-	defb 006h,000h,009h,0c9h	; 5f51
-
-; ======================================================================
-; CODIGO 0x5f55..0x6000  (171 bytes)
-; ======================================================================
-
-
+L_5F41:
+	ld l,(ix+046h)		;5f41
+	ld h,(ix+047h)		;5f44
+	ld a,(ix+045h)		;5f47
+	add hl,hl			;5f4a
+	add hl,hl			;5f4b
+	ld c,l			;5f4c
+	ld b,h			;5f4d
+	add hl,hl			;5f4e
+	add hl,bc			;5f4f
+	ld c,a			;5f50
+	ld b,000h		;5f51
+	add hl,bc			;5f53
+	ret			;5f54
 L_5F55:
 	ex de,hl			;5f55
 	or a			;5f56

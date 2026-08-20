@@ -1,3 +1,4 @@
 # Zonas de la pagina 3 (org 0xa000) que el trazador NO debe leer como codigo:
 # tablas de palabras detras de un `call` del despachador, graficos alcanzados
 # por un salto muerto... Cada una con su explicacion.
+0xA068 0xA086   tabla de 15 palabras del despachador de 0xA065 (`call 0x4ABD`, la variante de DESPACHA que cambia la direccion de retorno por la palabra A de la tabla que sigue al call); el indice es (ix+0)&0x0F - 1, acotado con `dec a / cp 0x0F / ret nc`

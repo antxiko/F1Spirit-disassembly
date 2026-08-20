@@ -264,6 +264,16 @@ D 0x8280 0x8325 pantalla_8280 pantalla comprimida para RLE_A_RAM (p01 0x637A): 6
 F 0x8280 16
 # --- fin de los bloques de textos.py ---
 
+
+# --- Los dos flujos RLE de la escena de la meta (2026-08-20). El
+# descompresor a RAM es p01 0x6385 (codigos: 0x00 fin, 0x01-0x7F copiar n
+# bytes, 0x81-0xE0 repetir n&0x7F veces, 0xE1-0xF0 serie creciente,
+# 0xF1-0xFF decreciente). Recorriendo el flujo byte a byte con esas reglas
+# los dos acaban EXACTO donde empieza el bloque siguiente.
+D 0x9386 0x93C6 pantalla_9386 flujo RLE de 8 columnas que p01 0x7CE8 descomprime en EC D5 (`ld de,0x9386 / ld hl,0xECD5 / ld a,8 / call RLE_DESDE_P08`, que mapea 8/9 y vuelve a 1/2/3): 64 bytes de flujo, 96 escritos
+F 0x9386 16
+D 0x93C6 0x93E8 pantalla_93C6 flujo RLE de 7 columnas que p01 0x7D64 descomprime en ECD6 (`ld de,0x93C6 / ld hl,0xECD6 / ld a,7 / call RLE_DESDE_P08`): 34 bytes de flujo, 77 escritos
+F 0x93C6 16
+
 # --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
-D 0x9386 0x93e8 pendiente_de_trazar Sin trazar ni identificar todavia (98 bytes)
 # --- fin de la seccion pendiente ---

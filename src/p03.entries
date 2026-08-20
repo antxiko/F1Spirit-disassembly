@@ -80,3 +80,45 @@
 # 3, luego la 3 esta mapeada en 0xA000 durante toda la rutina.
 0xA000   # caida desde p02:9FF7 (los 6 bytes finales de la pagina 2)
 0xA948   # sin llamador: `ld e,(ix+1B) / ld d,(ix+1C) / ret` y detras su tabla de punteros (0xA955, 0xA969, 0xA97D). 2026-08-19
+
+# --- LOS 15 DESTINOS DE LA TABLA DEL DESPACHADOR DE 0xA065 (2026-08-20,
+# hecho-verificado leyendo la ROM). En 0xA065 hay `call 0x4ABD`: la variante
+# de DESPACHA que cambia la direccion de retorno por la palabra A de la tabla
+# que sigue al call, con A = (ix+0) & 0x0F - 1 acotado a 0..14. La tabla
+# (0xA068-0xA086) estaba TRAZADA COMO CODIGO; ahora va en p03.nocode. Sus 15
+# palabras son 0xB986 (x5), 0xB9B3, 0xB9D8, 0xBA02, 0xBA2C, 0xBA53, 0xBA96,
+# 0xB977 (x2), 0xB96F y 0xB598, y todas caen en ESTA pagina (la tabla se lee
+# desde codigo de esta pagina, que es la que esta en 0xA000 mientras corre).
+0xB986   # entrada 0/10/11/12/13 de la tabla de 0xA068
+0xB9B3   # entrada 1 de la tabla de 0xA068
+0xB9D8   # entrada 2 de la tabla de 0xA068
+0xBA02   # entrada 3 de la tabla de 0xA068
+0xBA2C   # entrada 4 de la tabla de 0xA068
+0xBA53   # entrada 5 de la tabla de 0xA068
+0xBA96   # entrada 6 de la tabla de 0xA068
+0xB977   # entradas 7 y 8 de la tabla de 0xA068
+0xB96F   # entrada 9 de la tabla de 0xA068
+0xB598   # entrada 14 de la tabla de 0xA068
+
+# --- Entrada 14 de la tabla del despachador p02 0x9F53 (2026-08-20). Las
+# nueve primeras entradas de esa tabla estan MEDIDAS en esta pagina
+# (0xB92D, 0xB93E, 0xB951, 0xB99B, 0xB9C0, 0xB9E5, 0xBA0F, 0xBA39, 0xBA7E);
+# la palabra de p02 0x9F6F vale 0xB4E7 y el trozo que hay ahi llama a
+# 0xB52E y salta a p02 0x9E2D, o sea es de esta pagina. Deducido, sin medir.
+0xB4E7   # entrada 14 de la tabla p02 0x9F53 (deducido, sin medir)
+
+# --- Codigo SIN LLAMADOR (2026-08-20). Los bytes descodifican enteros, las
+# llamadas que hacen caen en rutinas ya trazadas de esta pagina y el trozo
+# acaba justo donde empieza el codigo trazado. Que nadie los llame con una
+# direccion literal esta comprobado buscando los dos bytes de cada direccion
+# en los 128 KB de la ROM.
+0xA0C8   # `push ix / ld ix,0xE800 / ld b,5 / call 0xA0DF / ld ix,0xE928 / ld b,5 / call 0xA0DF / pop ix / ret`, con la subrutina de 0xA0DF (`call 0xA0EA / ld de,0x38 / add ix,de / djnz`): pasa 0xA0EA por las cinco estructuras de cada jugador
+0xA4B5   # `inc (hl) / ld a,(hl) / cp c / ret nz / xor a / ld (hl),a / push hl / inc hl x3 / inc (hl) / pop hl / ret`: cuenta hasta C y acarrea al byte HL+3
+0xAC0D   # `ld a,(iy+0) / ... / ld de,0xAC22 / add hl,de / or (hl) / ld (iy+0),a / ret`: cambia el nibble bajo de (iy+0) por la permutacion de 0xAC22
+0xB137   # `ld e,(ix+0A) / ld d,(ix+0B) / or / ret nz / lo mismo con iy / ld a,(EA70) / bit 7 / ld a,8 o -8 / ld (ix+0C),a / ret`
+0xB74D   # `call 0xB604 / ret c / ld a,(ix+17) / and 3 / call z,0xB75C / jp 0xB789`: las tres direcciones son de esta pagina y estan trazadas
+0xB86D   # `ld a,(ix+17) / and 3Ch / cp 30h / ret nc / and 0Ch / cp 8 -> (ix+2)=2, cp 4 -> (ix+2)=1`
+0xB880   # el gemelo de 0xB86D con las dos ramas cambiadas (cp 4 -> 2, cp 8 -> 1)
+0xB8D4   # `ld d,(ix+6) / ld e,(ix+4) / sub 10h / call 0x4A9D / ...`: tres comparaciones contra (E26C)/(E272) que van entrando por `rl c`; devuelve C & 7. Es el gemelo de 0xB8FF/0xB90B, que si tienen llamador
+0xA086   # cola muerta detras de la tabla del despachador: un `ret` suelto
+0xA087   # cola muerta detras de la tabla del despachador: `jr $` (18 FE), un cuelgue como el de p01 0x7C3C

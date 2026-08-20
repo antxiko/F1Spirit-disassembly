@@ -1401,7 +1401,7 @@ DATA_tabla_68D9:
 	defb 0ffh	; 6909
 
 ; ======================================================================
-; CODIGO 0x690a..0x6b6f  (613 bytes)
+; CODIGO 0x690a..0x6d8e  (1156 bytes)
 ; ======================================================================
 
 
@@ -1735,19 +1735,9 @@ FIN_CAMPEONATO_COCHE_2:		; coche 2 terminado -> C; posicion E3F1 < 2 -> 0x6B6B, 
 	ret c			;6b6a
 PUNTOS_0xB4:		; D = 0xB4 y 0x6B71 (salta el `ld d,0xBD` de 0x6B6F, que no usa nadie)
 	ld d,0b4h		;6b6b
-	jr $+4		;6b6d
-
-; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (2 bytes)
-;   0x6b6f..0x6b71  (2 bytes)
-DATA_6B6F:
-	defb 016h,0bdh	; 6b6f
-
-; ======================================================================
-; CODIGO 0x6b71..0x6d8e  (541 bytes)
-; ======================================================================
-
-
+	jr COMPARA_PUNTOS_D		;6b6d
+L_6B6F:
+	ld d,0bdh		;6b6f
 COMPARA_PUNTOS_D:		; NC si el byte bajo de E295 >= D; si no, con dos jugadores, NC si E355 >= D; si no C
 	ld a,(0e295h)		;6b71
 	cp d			;6b74
@@ -2620,10 +2610,17 @@ MENU_PASSWORD:		; E250 = 5: p00 0x477C si bit 6 de E1C2; vuelca 512 (0x662D); de
 	call 040dah		;71e1   ; el indice es E251 (no E252): 0 cursor, 1 GAME, 2 EXCHANGE, 3 PASSWORD, 4 INPUT PASSWORD, 5 GAME OVER, 6 fin de GAME OVER
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (14 bytes)
+; DATOS tabla_71E1: 7 palabras del despachador de 0x71E1 (`call 0x40DA`),
+;   indice (E251)
 ;   0x71e4..0x71f2  (14 bytes)
-DATA_71E4:
-	defb 0f2h,071h,0a7h,068h,024h,072h,0a8h,072h,051h,073h,050h,074h,058h,074h	; 71e4  .q.h$r.rQsPtXt
+DATA_tabla_71E1:
+	defw 071f2h	; 71e4  -> CURSOR_MENU_PASSWORD
+	defw 068a7h	; 71e6  -> A_ESTADO_19
+	defw 07224h	; 71e8  -> EXCHANGE
+	defw 072a8h	; 71ea  -> PASSWORD
+	defw 07351h	; 71ec  -> INPUT_PASSWORD
+	defw 07450h	; 71ee  -> GAME_OVER_MENU
+	defw 07458h	; 71f0  -> GAME_OVER_MENU_FIN
 
 ; ======================================================================
 ; CODIGO 0x71f2..0x741e  (556 bytes)
@@ -3285,10 +3282,18 @@ HUD_CARRERA:		; 0x77EC (mapa), 0x7652 (combustible) y la tarea E1C3 & 7 de la ta
 	call 040dah		;7618
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (16 bytes)
+; DATOS tabla_7618: 8 palabras del despachador de 0x7618 (`call 0x40DA`),
+;   indice (E1C3) & 7: las tareas del HUD
 ;   0x761b..0x762b  (16 bytes)
-DATA_761B:
-	defb 02bh,076h,02eh,076h,031h,076h,034h,076h,037h,076h,03ah,076h,040h,076h,043h,076h	; 761b  +v.v1v4v7v:v@vCv
+DATA_tabla_7618:
+	defw 0762bh	; 761b  -> HUD_TAREA_0
+	defw 0762eh	; 761d  -> HUD_TAREA_1
+	defw 07631h	; 761f  -> HUD_TAREA_2
+	defw 07634h	; 7621  -> HUD_TAREA_3
+	defw 07637h	; 7623  -> HUD_TAREA_4
+	defw 0763ah	; 7625  -> HUD_TAREA_5
+	defw 07640h	; 7627  -> HUD_TAREA_6
+	defw 07643h	; 7629  -> HUD_TAREA_7
 
 ; ======================================================================
 ; CODIGO 0x762b..0x76aa  (127 bytes)
@@ -4108,10 +4113,13 @@ TILE_Y_CELDA:		; por EA52 (p00 0x4ACB con la tabla de 3 palabras 0x7C49): 0/2 ->
 	call 04acbh		;7c46   ; p00 0x4ACB: salta a la palabra EA52 de las tres que siguen (0x7C56, 0x7C4F, 0x7C56) con A = nivel
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (6 bytes)
+; DATOS tabla_7C46: 3 palabras del despachador de 0x7C46 (`call 0x4ACB`, la
+;   variante con exx/ex af,af'), indice (EA52): 0x7C56, 0x7C4F, 0x7C56
 ;   0x7c49..0x7c4f  (6 bytes)
-DATA_7C49:
-	defb 056h,07ch,04fh,07ch,056h,07ch	; 7c49
+DATA_tabla_7C46:
+	defw 07c56h	; 7c49  -> CELDA_3_BYTES
+	defw 07c4fh	; 7c4b  -> CELDA_1_BYTE
+	defw 07c56h	; 7c4d  -> CELDA_3_BYTES
 
 ; ======================================================================
 ; CODIGO 0x7c4f..0x7dd3  (388 bytes)
@@ -4342,11 +4350,20 @@ FASES_SALIDA:		; si E221 < 10 despacha por E221 (tabla 0x7DD3)
 	call 040dah		;7dd0
 
 ; ----------------------------------------------------------------------
-; DATOS pendiente_de_trazar: Sin trazar ni identificar todavia (20 bytes)
+; DATOS tabla_7DD0: 10 palabras del despachador de 0x7DD0 (`call 0x40DA`),
+;   indice (E221): las fases de la salida
 ;   0x7dd3..0x7de7  (20 bytes)
-DATA_7DD3:
-	defb 0e7h,07dh,028h,07eh,04ch,07eh,050h,07eh,054h,07eh,089h,07eh,0a2h,07eh,0cbh,07eh	; 7dd3  .}(~L~P~T~.~.~.~
-	defb 0d9h,07eh,0f2h,07eh	; 7de3
+DATA_tabla_7DD0:
+	defw 07de7h	; 7dd3  -> SALIDA_0
+	defw 07e28h	; 7dd5  -> SALIDA_1
+	defw 07e4ch	; 7dd7  -> SALIDA_2
+	defw 07e50h	; 7dd9  -> SALIDA_3
+	defw 07e54h	; 7ddb  -> SALIDA_4
+	defw 07e89h	; 7ddd  -> SALIDA_5
+	defw 07ea2h	; 7ddf  -> SALIDA_6
+	defw 07ecbh	; 7de1  -> SALIDA_7
+	defw 07ed9h	; 7de3  -> SALIDA_TODOS_EN_6
+	defw 07ef2h	; 7de5  -> SALIDA_9
 
 ; ======================================================================
 ; CODIGO 0x7de7..0x7f18  (305 bytes)

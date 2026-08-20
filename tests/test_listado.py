@@ -23,7 +23,7 @@ from paginas import org, nombre, N_PAGINAS, TAM_PAGINA  # noqa: E402
 # Bytes dentro de marcadores `pendiente_de_trazar` cuando se escribio este
 # test. La cifra solo puede bajar: si sube es que se ha perdido trazado o
 # alguna explicacion por el camino.
-PENDIENTE_MAX = 3067
+PENDIENTE_MAX = 504
 
 
 def asm(p):

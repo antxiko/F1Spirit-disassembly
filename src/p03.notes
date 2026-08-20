@@ -105,32 +105,70 @@ F 0xa94f w1
 D 0xa955 0xa991 curvas_A955 3 listas de 10 palabras con signo, decrecientes y estabilizadas al final: -412..-435, -1032..-1088 y -2064..-2048 (esta ultima salta a -2048 en la octava). Por su forma son tablas de fisica de la carrera; que magnitud, por identificar
 F 0xa955 w1
 
+
+# --- Cerrado el 2026-08-20 buscando la instruccion que lee cada bloque.
+D 0xA068 0xA086 tabla_A065 15 palabras del despachador de 0xA065 (`call 0x4ABD`, la variante que cambia la direccion de retorno por la palabra A de la tabla que sigue al call); el indice es (ix+0) & 0x0F menos 1, acotado con `dec a / cp 0x0F / ret nc`. Estaba trazada como codigo por error hasta hoy
+F 0xA068 w1
+D 0xA0BE 0xA0C3 tabla_A0BE cinco bytes (00 01 02 03 00) que 0xA092 mete en (ix+37) de las cinco estructuras de 0x38 bytes desde E800; el indice es 5-B (`ld a,5 / sub b / ld hl,0xA0BE / call HL_MAS_A / ld a,(hl)`)
+F 0xA0BE 5
+D 0xA0C3 0xA0C8 tabla_A0C3 los mismos cinco bytes (04 05 06 07 01) para las estructuras desde E928; los lee igual 0xA0AC
+F 0xA0C3 5
+D 0xA3A4 0xA3AB relleno_A3A4 siete bytes a cero entre dos rutinas; ningun lector (comprobado byte a byte)
+F 0xA3A4 7
+D 0xA65E 0xA673 tabla_A65E un byte por carrera (21, indice (E25C)); lo suma 0xA650 (`ld hl,0xA65E / call HL_MAS_A / ex af,af' / add a,(hl)`)
+F 0xA65E 21
+D 0xA7B9 0xA7E3 salida_por_carrera 21 palabras, una por carrera (E25C): la posicion de salida (E = byte bajo -> (ix+4), D = byte alto -> (ix+6)). La lee 0xA691 (`ld hl,0xA7B9 / call HL_PALABRA_A / ex de,hl`)
+F 0xA7B9 w1
+D 0xA7E3 0xA80D rejilla_por_carrera 21 palabras, una por carrera (E25C): puntero a la rejilla de salida. La lee 0xA6A3 y 0xA785 (`ld hl,0xA7E3 / ld a,(E25C) / call HL_PALABRA_A`)
+F 0xA7E3 w1
+D 0xA80D 0xA831 rejillas_de_salida tres rejillas de 6 palabras (desplazamiento del coche B respecto a la posicion de salida: byte bajo a (ix+4), alto a (ix+6)). Los punteros de arriba valen 0xA80B, 0xA817 y 0xA823, dos bytes MENOS que la primera entrada, porque el indice B va de 6 a 1 y no de 0 a 5 (`call HL_PALABRA_A` en 0xA6C9)
+F 0xA80D w1
+D 0xA831 0xA85B tabla_A831 21 palabras, una por carrera (E25C): 0xA74A escoge L o H segun el bit 0 de (iy+71) y lo mete en (iy+4B) y (iy+54)
+F 0xA831 w1
+D 0xA85B 0xA860 tabla_A85B bytes indexados por (EA7F), que 0xA6F1 va incrementando y 0xA7A7 acota a 3: solo se usan los tres primeros (02 04 05). Los mete en (ix+0)
+F 0xA85B 5
+D 0xA991 0xA99D tabla_A991 6 punteros, uno por categoria (E25B), a las seis listas de abajo; los lee 0xA930 (`ld hl,0xA991 / ld a,(E25B) / call HL_PALABRA_A`)
+F 0xA991 w1
+D 0xA99D 0xA9FD listas_A991 seis listas de 16 bytes (una por categoria); 0xA940 coge el byte de indice A acotado a 15 (`cp 0x10 / jr c / ld a,0x0F / call HL_MAS_A / ld a,(hl)`) y lo mete en (ix+12)
+F 0xA99D 16
+D 0xA9FD 0xAA09 tabla_A9FD 6 punteros, uno por categoria (E25B), a las seis tablas de abajo; los lee 0xA0F7 (`ld hl,0xA9FD / call HL_PALABRA_A`)
+F 0xA9FD w1
+D 0xAA09 0xAAF9 tablas_A9FD seis tablas de 20 palabras (una por categoria). 0xA0FD indexa con (((ix+0) & 0x0F) - 1)*2 + (iy+56), por dos, y devuelve la palabra en DE, que 0xA0EA guarda en (ix+1B,1C)
+F 0xAA09 w1
+D 0xAC22 0xAC32 tabla_AC22 16 bytes (00 03 04 05 06 07 01 02 08 09 0A 0B 0C 0D 0E 0F) que 0xAC16 usa como permutacion del nibble bajo de (iy+0) (`ld de,0xAC22 / add hl,de / or (hl)`)
+F 0xAC22 16
+D 0xB52C 0xB52E tabla_B52C dos bytes (E8 F0) que 0xB513 escoge con el bit 0 de (ix+27) y mete en (ix+0E) y (ix+33) (`ld de,0xB52C / add hl,de / ld a,(hl)`)
+F 0xB52C 2
+D 0xB6EC 0xB74D tabla_B6EC tabla de bytes que crece de 0xC8 a 0x37 (dando la vuelta); 0xB6C4 la lee con el indice 0x30 - (ix+0C) (`ld hl,0xB6EC / add hl,de / ld h,(hl)`) y usa el valor para decidir (ix+13)
+F 0xB6EC 16
+D 0xB82F 0xB847 tablas_B82F tres filas de 8 bytes; las escogen 0xB79A (0xB82F), 0xB79F/0xB851 (0xB83F) y 0xB7B2/0xB848/0xB9FD (0xB837), y de cada una 0xB85D coge el byte de indice A y lo suma a (ix+16)
+F 0xB82F 8
+D 0xBBA3 0xBBC3 sprites_BBA3 ocho atributos de sprite (y, x, patron, color); p00 0x5FAA copia el de 0xBBA7 a EA88 con `ld bc,4 / ldir`. De los otros siete no se ha encontrado lector
+F 0xBBA3 4
+D 0xBBC3 0xBBEB posiciones_cursor 20 parejas (y, x) del sprite del cursor; p01 0x626C (CURSOR_A_POSICION) copia a EA88 la pareja de indice (E27E) (`add a,a / call HL_MAS_A / ld bc,2 / ldir`), con HL = 0xBBC3 o 0xBBC5 segun (E25B), que pone p00 0x5FEA/0x5FEF
+F 0xBBC3 2
+D 0xBDD5 0xBDE7 ritmo_por_categoria seis filas de 3 bytes, una por categoria (E25B): la primera es el multiplicador y las otras dos la palabra con la que compara RITMO_COCHE (p01 0x7F85: `ld de,0xBDD5 / hl = de + 3*(E25B)`). El patron de filas de 3 sigue hasta 0xBE14, pero este lector solo llega a la sexta
+F 0xBDD5 3
+D 0xBE8A 0xBFEC pantalla_titulo flujo RLE de la pantalla del titulo: cabecera 0x2A00 (destino en VRAM) y 352 bytes de codigos que PANTALLA_INICIAL descomprime con `ld de,0xBE8A / call 0x485C` (0xBE2E); escribe 1008 bytes
+F 0xBE8A 16
+D 0xBFEC 0xC000 relleno_BFEC veinte bytes a 0xFF hasta el final de la pagina (comprobado byte a byte)
+F 0xBFEC 16
+
+
+# --- Bautizadas las once subrutinas que aparecieron al sembrar el codigo de
+# arriba (2026-08-20). Las descripciones salen de leer sus instrucciones.
+L 0xA0DF APLICA_A_LAS_5_ESTRUCTURAS  `call 0xA0EA / ld de,0x38 / add ix,de / djnz`: repite 0xA0EA en B estructuras de 0x38 bytes seguidas desde IX
+L 0xA3B4 BUSCA_CASILLA_ATRAS  desde la casilla que da p00 0x4A9D recorre hacia atras (dec l) hasta 32 posiciones buscando la primera cuyo byte, menos (E26C), sea menor que (E272)-(E26C); devuelve NC y D = la posicion por 8 (contada desde (EA7D)), o CY si no hay ninguna
+L 0xA3E3 BUSCA_CASILLA_ADELANTE  la gemela de 0xA3B4 recorriendo hacia delante (inc l)
+L 0xA561 AJUSTA_CON_CASILLA_ATRAS  si (iy+66) no es cero: E = (ix+4), BUSCA_CASILLA_ATRAS, (ix+6) = D y 0xB8FF; si es cero, (ix+15) = (ix+6) y (ix+0E) = 0xFF
+L 0xA574 AJUSTA_CON_CASILLA_ADELANTE  la gemela de 0xA561 con BUSCA_CASILLA_ADELANTE y 0xB90B
+L 0xB52E RESTA_OCTAVA_PARTE_A_DOS_PALABRAS  resta a la palabra (ix+0A,0B) y a la (ix+07,08) su octava parte con signo (p00 0x4A8A = tres `sra h / rr l`)
+L 0xB8FF PON_IX15_CASILLA_ATRAS  0xB917, luego E = 0xC8, BUSCA_CASILLA_ATRAS y (ix+15) = D
+L 0xB90B PON_IX15_CASILLA_ADELANTE  la gemela de 0xB8FF con BUSCA_CASILLA_ADELANTE
+L 0xB917 PON_IX16_SEGUN_SENTIDO  E = 0xC8; con el bit 7 de (ix+36) escoge BUSCA_CASILLA_ATRAS o BUSCA_CASILLA_ADELANTE y mete D en (ix+16)
+L 0xB986 AJUSTA_ATRAS_Y_MARCA  (EA7D) = 1, AJUSTA_CON_CASILLA_ATRAS, 0xB996 y (ix+18) = 0
+L 0xB996 PON_IX02_A_1  `ld (ix+02),1 / ret`
+
 # --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
-D 0xa087 0xa089 pendiente_de_trazar Sin trazar ni identificar todavia (2 bytes)
-D 0xa0be 0xa0ea pendiente_de_trazar Sin trazar ni identificar todavia (44 bytes)
-D 0xa3a4 0xa3ab pendiente_de_trazar Sin trazar ni identificar todavia (7 bytes)
-D 0xa3b4 0xa412 pendiente_de_trazar Sin trazar ni identificar todavia (94 bytes)
-D 0xa4b5 0xa4c2 pendiente_de_trazar Sin trazar ni identificar todavia (13 bytes)
-D 0xa561 0xa592 pendiente_de_trazar Sin trazar ni identificar todavia (49 bytes)
-D 0xa65e 0xa673 pendiente_de_trazar Sin trazar ni identificar todavia (21 bytes)
-D 0xa7b9 0xa860 pendiente_de_trazar Sin trazar ni identificar todavia (167 bytes)
-D 0xa991 0xaaf9 pendiente_de_trazar Sin trazar ni identificar todavia (360 bytes)
-D 0xac0d 0xac32 pendiente_de_trazar Sin trazar ni identificar todavia (37 bytes)
-D 0xb137 0xb158 pendiente_de_trazar Sin trazar ni identificar todavia (33 bytes)
-D 0xb4e7 0xb559 pendiente_de_trazar Sin trazar ni identificar todavia (114 bytes)
-D 0xb598 0xb5b6 pendiente_de_trazar Sin trazar ni identificar todavia (30 bytes)
-D 0xb6ec 0xb75c pendiente_de_trazar Sin trazar ni identificar todavia (112 bytes)
-D 0xb82f 0xb847 pendiente_de_trazar Sin trazar ni identificar todavia (24 bytes)
-D 0xb86d 0xb899 pendiente_de_trazar Sin trazar ni identificar todavia (44 bytes)
-D 0xb8d4 0xb92d pendiente_de_trazar Sin trazar ni identificar todavia (89 bytes)
-D 0xb96f 0xb99b pendiente_de_trazar Sin trazar ni identificar todavia (44 bytes)
-D 0xb9b3 0xb9c0 pendiente_de_trazar Sin trazar ni identificar todavia (13 bytes)
-D 0xb9d8 0xb9e5 pendiente_de_trazar Sin trazar ni identificar todavia (13 bytes)
-D 0xba02 0xba0f pendiente_de_trazar Sin trazar ni identificar todavia (13 bytes)
-D 0xba2c 0xba39 pendiente_de_trazar Sin trazar ni identificar todavia (13 bytes)
-D 0xba53 0xba7e pendiente_de_trazar Sin trazar ni identificar todavia (43 bytes)
-D 0xba96 0xba9f pendiente_de_trazar Sin trazar ni identificar todavia (9 bytes)
-D 0xbba3 0xbbeb pendiente_de_trazar Sin trazar ni identificar todavia (72 bytes)
-D 0xbdd5 0xbe14 pendiente_de_trazar Sin trazar ni identificar todavia (63 bytes)
-D 0xbe8a 0xc000 pendiente_de_trazar Sin trazar ni identificar todavia (374 bytes)
+D 0xbde7 0xbe14 pendiente_de_trazar Sin trazar ni identificar todavia (45 bytes)
 # --- fin de la seccion pendiente ---

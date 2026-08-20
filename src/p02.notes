@@ -591,10 +591,22 @@ D 0x88fb 0x8943 tabla_motor una palabra por motor (36) -> (ix-20,-1F) en p02 0x8
 F 0x88fb w6
 # --- fin de los bloques de coches.py ---
 
+
+# --- Las cinco tablas de los despachadores de esta pagina. El lector es
+# siempre el mismo: el `call 0x40DA` que las precede (p00 DESPACHA: `pop hl /
+# add a,a / call HL_MAS_A / ld e,(hl) / inc hl / ld d,(hl) / ex de,hl /
+# jp (hl)`), o sea la palabra A de la tabla que sigue al call. Ya estaban
+# declaradas en src/p02.nocode; aqui van con nombre y anchura. 2026-08-20.
+D 0x8215 0x823B tabla_8212 19 palabras del despachador de 0x8212 (`call 0x40DA` en 0x8212; el indice lo pone el llamador)
+F 0x8215 w1
+D 0x8B12 0x8B26 tabla_8B0F 10 palabras del despachador de 0x8B0F (`call 0x40DA` en 0x8B0F)
+F 0x8B12 w1
+D 0x9111 0x9123 tabla_910E 9 palabras del despachador de 0x910E (`call 0x40DA` en 0x910E)
+F 0x9111 w1
+D 0x94C3 0x94CF tabla_94C0 6 palabras del despachador de 0x94C0 (`call 0x40DA` en 0x94C0)
+F 0x94C3 w1
+D 0x9F53 0x9F71 tabla_9F50 15 palabras del despachador de 0x9F50 (`call 0x40DA` en 0x9F50); las 9 primeras entradas caen en la pagina 3 (medido en el emulador)
+F 0x9F53 w1
+
 # --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
-D 0x8215 0x823b pendiente_de_trazar Sin trazar ni identificar todavia (38 bytes)
-D 0x8b12 0x8b26 pendiente_de_trazar Sin trazar ni identificar todavia (20 bytes)
-D 0x9111 0x9123 pendiente_de_trazar Sin trazar ni identificar todavia (18 bytes)
-D 0x94c3 0x94cf pendiente_de_trazar Sin trazar ni identificar todavia (12 bytes)
-D 0x9f53 0x9f71 pendiente_de_trazar Sin trazar ni identificar todavia (30 bytes)
 # --- fin de la seccion pendiente ---

@@ -301,33 +301,38 @@ L 0x5755 PINTA_ESCENA        IX = IY = E380 (el bloque del segundo coche): posic
 L 0x5778 PINTA_ESCENA_7D88   la escena de piezas p10 0x7D88 y metatiles p10 0x7E38 (26 metatiles; que es, por ver en el emulador)
 L 0x578A PINTA_ESCENA_7DD0   la escena de piezas p10 0x7DD0 y metatiles p10 0x7E18 (2 metatiles macizos de los tiles 0x89 y 0x8A)
 
+
+# --- Bloques de datos cerrados el 2026-08-20 buscando la instruccion que los
+# lee. Cada uno lleva quien lo lee y con que indice.
+D 0x4961 0x4977 rotulos_hud cuatro rotulos del HUD en codigos de tile (tile = 0xE4 + numero de letra (A=1: P=0xF4, I=0xED, T=0xF8), 0x00 = tile 0 (blanco), 0x20 = "no escribir"): "PIT IN" (0x4961), "RETIRE" (0x4967), " EMPTY" (0x496D) y "GOAL" (0x4973); los escribe con WRTVRM el bucle de 0x490E (`ld a,(de) / cp 020h / jr z / call 0x004D`) con DE puesto en 0x4900, 0x4941, 0x4955 y 0x495A y B = 6, 6, 6 y 4
+F 0x4961 6,6,6,4
+D 0x49C4 0x49C7 inicial_E1F0 los tres bytes 03 01 01 que 0x4986 copia a E1F0-E1F2 (`ld hl,0x49C4 / ld de,0xE1F0 / ld bc,3 / ldir`)
+F 0x49C4 3
+D 0x4FB2 0x4FBE inicial_E9B1 dos filas de 6 bytes que 0x4F91 copia a E9B1 y E9B9 (`ld hl,0x4FB2 / ld de,0xE9B1 / ld c,2`, seis bytes por vuelta y dos de salto)
+F 0x4FB2 6
+D 0x514A 0x516A tabla_514A 8 grupos de 4 bytes; los lee 0x512A con A = (ix+3)*4 + B - 1 (`ld hl,0x514A / call HL_MAS_A / ld a,(hl)`)
+F 0x514A 4
+D 0x5452 0x545E inicial_EA90 tres filas de 4 bytes que 0x543C copia a EA90 (`ld hl,0x5452 / ld de,0xEA90 / ld bc,0x0C / ldir`); las tres estructuras se recorren luego con `ld de,4 / ld b,3` desde EA90 (0x54AE)
+F 0x5452 4
+D 0x54D1 0x54D4 byte3_EA90 un byte por cada una de las tres estructuras de EA90: 0x54B2 los mete en (ix+3) (`ld hl,0x54D1 / ld de,4 / ld b,3`)
+F 0x54D1 3
+D 0x584D 0x5865 escenas_demo seis filas de 4 bytes indexadas por (E1CD) desde 0x581D (`ld de,0x584D / hl = de + 4*(E1CD)`): categoria (E25B), subestado (E250), banderas (E1C2) y grupo de paginas (F0F6), copiados con cuatro `ldi`; la fila 5 empieza por 0xFE y devuelve (E1CD) a 1
+F 0x584D 4
+D 0x5909 0x5913 partidas_grabadas cinco punteros a las partidas grabadas de la demo, uno por (E1CD) 0..4: 0xC000, 0xBDC1, 0xBE26, 0xBF3B y 0xBAB9. Los lee 0x58F5 (`ld a,(E1CD) / ld hl,0x5909 / call HL_PALABRA_A / ld (F002),hl`) y de ahi los va sacando el reproductor de 0x5920 (mascara, cuadros). Con el grupo de paginas que pone la fila de 0x584D (4, 4, 0x0A, 0x0D) las tres ultimas caen en p06 0xBDC1/0xBE26, p12 0xBF3B y p15 0xBAB9: los tres bloques de pares que ya estaban medidos
+F 0x5909 w1
+D 0x5993 0x599B sprites_5993 dos atributos de sprite (y, x, patron, color) que 0x597D copia a EA80 (`ld hl,0x5993 / ld bc,8 / ldir`): (0x10, 0xB0, 0xC0, 6) y (0x10, 0xC0, 0xC4, 6)
+F 0x5993 4
+D 0x5E4A 0x5E6C secuencia_5E4A filas de 3 bytes que recorre 0x5E3E con A = 3*(E25D) (`ld hl,0x5E4A / jp HL_MAS_A`): el byte 0 a cero acaba la lista (0x5E2B), el byte 1 lo lee 0x5E14 y el byte 2 va a (E25E) (0x5E31). Once filas y el cero final
+F 0x5E4A 3
+
+
+# --- Bautizadas las dos subrutinas que aparecieron al sembrar 0x4B48 y
+# 0x58A2 (2026-08-20).
+L 0x4B5E COPIA_B_BYTES_ALTERNO  copia B bytes de (HL') a (HL): el origen va en el juego alterno de registros y el destino en el principal, alternando con exx
+L 0x58E2 GRABA_SI_CAMBIA_LA_MASCARA  si A es igual a (HL) no hace nada; si no, la guarda ahi y cae en 0x58E5, que escribe en (F002) el par (cuadros, mascara | D) y pone el contador a cero
+
 # --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
-D 0x430d 0x4317 pendiente_de_trazar Sin trazar ni identificar todavia (10 bytes)
-D 0x467f 0x4689 pendiente_de_trazar Sin trazar ni identificar todavia (10 bytes)
-D 0x47d3 0x47e6 pendiente_de_trazar Sin trazar ni identificar todavia (19 bytes)
-D 0x4835 0x4839 pendiente_de_trazar Sin trazar ni identificar todavia (4 bytes)
-D 0x4961 0x497a pendiente_de_trazar Sin trazar ni identificar todavia (25 bytes)
-D 0x49c4 0x49c7 pendiente_de_trazar Sin trazar ni identificar todavia (3 bytes)
-D 0x49ef 0x49f9 pendiente_de_trazar Sin trazar ni identificar todavia (10 bytes)
-D 0x4a09 0x4a0d pendiente_de_trazar Sin trazar ni identificar todavia (4 bytes)
-D 0x4a55 0x4a61 pendiente_de_trazar Sin trazar ni identificar todavia (12 bytes)
-D 0x4a76 0x4a7e pendiente_de_trazar Sin trazar ni identificar todavia (8 bytes)
-D 0x4a97 0x4a9d pendiente_de_trazar Sin trazar ni identificar todavia (6 bytes)
-D 0x4b48 0x4b67 pendiente_de_trazar Sin trazar ni identificar todavia (31 bytes)
-D 0x4ba3 0x4bb2 pendiente_de_trazar Sin trazar ni identificar todavia (15 bytes)
-D 0x4c8c 0x4c93 pendiente_de_trazar Sin trazar ni identificar todavia (7 bytes)
-D 0x4c9a 0x4ca1 pendiente_de_trazar Sin trazar ni identificar todavia (7 bytes)
-D 0x4caf 0x4cb6 pendiente_de_trazar Sin trazar ni identificar todavia (7 bytes)
-D 0x4fb2 0x4fbe pendiente_de_trazar Sin trazar ni identificar todavia (12 bytes)
-D 0x514a 0x516a pendiente_de_trazar Sin trazar ni identificar todavia (32 bytes)
-D 0x53b7 0x53d2 pendiente_de_trazar Sin trazar ni identificar todavia (27 bytes)
-D 0x5452 0x545e pendiente_de_trazar Sin trazar ni identificar todavia (12 bytes)
-D 0x54d1 0x54d4 pendiente_de_trazar Sin trazar ni identificar todavia (3 bytes)
+D 0x4977 0x497a pendiente_de_trazar Sin trazar ni identificar todavia (3 bytes)
 D 0x57d8 0x57d9 pendiente_de_trazar Sin trazar ni identificar todavia (1 bytes)
-D 0x584d 0x5876 pendiente_de_trazar Sin trazar ni identificar todavia (41 bytes)
-D 0x58a2 0x58f2 pendiente_de_trazar Sin trazar ni identificar todavia (80 bytes)
-D 0x5909 0x5913 pendiente_de_trazar Sin trazar ni identificar todavia (10 bytes)
-D 0x5993 0x599b pendiente_de_trazar Sin trazar ni identificar todavia (8 bytes)
-D 0x5e4a 0x5e6c pendiente_de_trazar Sin trazar ni identificar todavia (34 bytes)
-D 0x5f41 0x5f55 pendiente_de_trazar Sin trazar ni identificar todavia (20 bytes)
+D 0x5865 0x5876 pendiente_de_trazar Sin trazar ni identificar todavia (17 bytes)
 # --- fin de la seccion pendiente ---
