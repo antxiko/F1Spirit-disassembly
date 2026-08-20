@@ -361,7 +361,7 @@ ESTADO_3:		; por el despachador de 0x419D
 	ld hl,0e1c4h		;4223
 	dec (hl)			;4226
 	jr z,L_421C		;4227
-	ld de,0b011h		;4229
+	ld de,0b011h		;4229	--> "(20)(10)  PLAY START   "
 	bit 2,(hl)		;422c
 	jp z,L_4B8F		;422e
 	jp L_4B99		;4231
@@ -373,7 +373,7 @@ L_423B:
 	ld a,(0e1ddh)		;423b
 	cp 005h		;423e
 	call c,L_5DD5		;4240
-	ld de,0b000h		;4243
+	ld de,0b000h		;4243	--> "(20)(9)PUSH SPACE KEY"
 	call L_4B99		;4246
 	ld a,034h		;4249
 	call 0884ch		;424b
@@ -4466,7 +4466,7 @@ L_5D82:
 	dec (hl)			;5d8b
 	ret			;5d8c
 L_5D8D:
-	ld de,0aff6h		;5d8d
+	ld de,0aff6h		;5d8d	--> "(16)(10):KONAMI 1987"
 	call L_4B8F		;5d90
 	ld a,014h		;5d93
 	jr L_5D46		;5d95
@@ -4484,7 +4484,7 @@ L_5D9F:
 	ld a,001h		;5daa
 	jr L_5D46		;5dac
 L_5DAE:
-	ld de,0b000h		;5dae
+	ld de,0b000h		;5dae	--> "(20)(9)PUSH SPACE KEY"
 	ld a,(0e1c3h)		;5db1
 	and 004h		;5db4
 	jp z,L_4B8F		;5db6
@@ -4501,7 +4501,7 @@ L_5DBC:
 	jr nz,L_5DBC		;5dd0
 	jp L_5D46		;5dd2
 L_5DD5:
-	ld de,0aff6h		;5dd5
+	ld de,0aff6h		;5dd5	--> "(16)(10):KONAMI 1987"
 	call L_4B8F		;5dd8
 	call L_5E37		;5ddb
 L_5DDE:
@@ -4812,12 +4812,12 @@ L_5FB0:
 	ld de,0ea88h		;5fb7
 	ld bc,00004h		;5fba
 	ldir		;5fbd
-	ld de,0ab51h		;5fbf
+	ld de,0ab51h		;5fbf	--> "(20)(10)GAME (2)(21)(10)COMMAND"
 	call L_4B8F		;5fc2
 	ld a,(0e25bh)		;5fc5
 	inc a			;5fc8
 	ret z			;5fc9
-	ld de,0ab59h		;5fca
+	ld de,0ab59h		;5fca	--> "(19)(10)TRY AGAIN "
 	jp L_4B8F		;5fcd
 L_5FD0:
 	exx			;5fd0

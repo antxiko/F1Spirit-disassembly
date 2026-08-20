@@ -47,11 +47,11 @@ OPCION_1_ELEGIDA:		; E240 = 0, E27F = 2 (tres opciones), E27E = 0 y E251++ (0x60
 	ld hl,0bbabh		;602d
 	ld bc,00004h		;6030
 	ldir		;6033
-	ld de,0ab51h		;6035
+	ld de,0ab51h		;6035	--> "(20)(10)GAME (2)(21)(10)COMMAND"
 	call 04b99h		;6038
-	ld de,0ab59h		;603b
+	ld de,0ab59h		;603b	--> "(19)(10)TRY AGAIN "
 	call 04b99h		;603e
-	ld de,0ab5eh		;6041
+	ld de,0ab5eh		;6041	--> "(19)(10)1PLAYER (2)(21)(10)2PLAYER (2)(23)(10)BATTLE MODE "
 	jp 04b8fh		;6044
 A_ESTADO_4:		; E250 = 4
 	ld a,004h		;6047
@@ -102,22 +102,22 @@ PINTA_MENU_CATEGORIAS:		; la raya vertical (0x613A), E27E = 0 (0x619E), la lista
 	ld hl,0bbafh		;6093
 	ld bc,00004h		;6096
 	ldir		;6099
-	ld de,0ab5eh		;609b
+	ld de,0ab5eh		;609b	--> "(19)(10)1PLAYER (2)(21)(10)2PLAYER (2)(23)(10)BATTLE MODE "
 	call 04b99h		;609e
-	ld de,0ab74h		;60a1
+	ld de,0ab74h		;60a1	--> "(18)(2)STOCK RACE (2)(19)(2)RALLY(2)(20)(2)F3    RACE "
 	call 04b8fh		;60a4
 	call PUNTOS_MENOS_0C		;60a7   ; carry si los puntos (E295 y E355) no llegan a 0x0C: no hay mas opciones
 	ret c			;60aa
 	ld hl,0e27fh		;60ab
 	inc (hl)			;60ae
 	inc (hl)			;60af
-	ld de,0ab87h		;60b0
+	ld de,0ab87h		;60b0	--> "(21)(2)F3000 RACE (2)(22)(2)ENDURANCE RACE "
 	call 04b8fh		;60b3
 	call PUNTOS_MENOS_19		;60b6   ; idem con 0x19
 	ret c			;60b9
 	ld hl,0e27fh		;60ba
 	inc (hl)			;60bd
-	ld de,0ab93h		;60be
+	ld de,0ab93h		;60be	--> "(18)(18)F1 RACE SELECT(2)(19)(19)ROUND 1-(2)(22)(22)ROUND"
 	call 04b8fh		;60c1
 	xor a			;60c4
 	call GP_MAXIMO		;60c5   ; A = 2 * umbrales superados (0x21..0xB4) -> E35D
@@ -445,7 +445,7 @@ NADA_62D3:		; ret (lo llama p00 0x5FDA)
 PINTA_TEXTOS_CATEGORIAS:		; p09 en A000; texto 0xAC0F -> EC02 -> E501 (7x11, fuente 0x30); 1/2/3; 0x6BF3 y 0x6CF4 (0x60 a E5AB/E5CB) por coche; y 0x631F para E52D (coche 1) y E54D (coche 2)
 	ld a,009h		;62d4
 	call 04457h		;62d6   ; MAPEA_A_EN_A000 con 9: el texto 0xAC0F esta en la pagina 9
-	ld hl,0ac0fh		;62d9
+	ld hl,0ac0fh		;62d9	--> "BEST POINT\n      1P\n      2P\n\nTOTAL POINT      1P\n      2P\n\n"
 	call EXPANDE_TEXTO_5F		;62dc
 	call 043feh		;62df
 	ld de,0ec02h		;62e2
@@ -639,7 +639,7 @@ ENTRA_ELECCION_COCHE:		; E250 = 6: limpia (p00 0x465B, 0x5F8D), tiles 16..58 con
 	ld a,0e0h		;63fd
 	call 04476h		;63ff
 	call 04496h		;6402
-	ld de,0abadh		;6405
+	ld de,0abadh		;6405	--> "\n(3)CAR SELECT(2)(3)(8)1 READY MADE(2)(5)(8)2 ORIGINAL DESIGN"
 	call 04b8fh		;6408
 	ld hl,0e250h		;640b
 	inc (hl)			;640e
@@ -726,7 +726,7 @@ ELECCION_MANDO:		; flancos del mando activo: izquierda (bit 2) -> 0x6580, derech
 	ld l,a			;64a8
 	jp CAMBIA_TEXTOS		;64a9
 CONFIRMA_ELECCION:		; pinta p03 0xAC07; E251 = 7 (o 6 si venia de 0); cursor 0xBBBB, E27E = 0, E27F = 1
-	ld de,0ac07h		;64ac
+	ld de,0ac07h		;64ac	--> "(3)(26)OK(2)(5)(26)NO"
 	call 04b8fh		;64af
 	ld a,(0e251h)		;64b2
 	and a			;64b5
@@ -769,7 +769,7 @@ ELECCION_SI_NO:		; E251 >= 6: cursor por p03 0xBBE1 (0x6266); boton: E27E = 0 ->
 	ld a,(0e27eh)		;64fd
 	and a			;6500
 	jr z,SIGUIENTE_JUGADOR		;6501
-	ld de,0ac07h		;6503
+	ld de,0ac07h		;6503	--> "(3)(26)OK(2)(5)(26)NO"
 	call 04b99h		;6506
 	ld a,(0e251h)		;6509
 	cp 007h		;650c
@@ -792,14 +792,14 @@ ELECCION_POR_E252:		; E252: 1 -> 0x6469; >= 2 -> 0x65DE; 0 -> cursor por p03 0xB
 	ld a,(0e27eh)		;6535
 	and a			;6538
 	jr z,ELECCION_OPCION_0		;6539
-	ld de,0abadh		;653b
-	ld hl,0abd9h		;653e
+	ld de,0abadh		;653b	--> "\n(3)CAR SELECT(2)(3)(8)1 READY MADE(2)(5)(8)2 ORIGINAL DESIGN"
+	ld hl,0abd9h		;653e	--> "\n(3)ORIGINAL CAR DESIGN MODE (2)(5)(8)ENGINE SELECT"
 	call CAMBIA_TEXTOS		;6541
 	jp PINTA_JUGADOR		;6544
 ELECCION_OPCION_0:		; borra 0xABAD, pinta 0xABCA, cursor 0xBBB3, E252++, 0x67CF
-	ld de,0abadh		;6547
+	ld de,0abadh		;6547	--> "\n(3)CAR SELECT(2)(3)(8)1 READY MADE(2)(5)(8)2 ORIGINAL DESIGN"
 	call 04b99h		;654a
-	ld de,0abcah		;654d
+	ld de,0abcah		;654d	--> "\n(3)READY MADE SELECT"
 	call 04b8fh		;6550
 	ld hl,0bbb3h		;6553
 	ld de,0ea88h		;6556
@@ -1218,7 +1218,7 @@ PINTA_JUGADOR:		; pinta el texto p03 0xAC01 y en 0x386C (fila 3, col 12) el tile
 	inc a			;67d7
 PINTA_JUGADOR_TILE:		; el digito del jugador
 	push af			;67d8
-	ld de,0ac01h		;67d9
+	ld de,0ac01h		;67d9	--> "(3)(5)PLAYER"
 	call 04b8fh		;67dc
 	ld hl,0386ch		;67df
 	pop af			;67e2
@@ -1230,11 +1230,11 @@ PINTA_JUGADOR_TILE:		; el digito del jugador
 ;   0xAC01, va en el `ld de` de 0x67D9
 ;   0x67e6..0x67f0  (10 bytes)
 DATA_tabla_textos_pasos:
-	defw 0abe3h	; 67e6
-	defw 0abe9h	; 67e8
-	defw 0abefh	; 67ea
-	defw 0abf5h	; 67ec
-	defw 0abfbh	; 67ee
+	defw 0abe3h	; 67e6	--> "(5)(8)ENGINE SELECT"
+	defw 0abe9h	; 67e8	--> "(5)(8)BODY SELECT"
+	defw 0abefh	; 67ea	--> "(5)(8)BRAKE SELECT"
+	defw 0abf5h	; 67ec	--> "(5)(8)SUSPENSION SELECT"
+	defw 0abfbh	; 67ee	--> "(5)(8)MISSION SELECT"
 
 ; ======================================================================
 ; CODIGO 0x67f0..0x6852  (98 bytes)

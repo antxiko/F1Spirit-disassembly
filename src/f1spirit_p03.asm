@@ -4182,24 +4182,29 @@ DATA_tabla_BD0F:
 ;   la pagina 9 que lee tools/textos.py
 ;   0xbd1b..0xbd3f  (36 bytes)
 DATA_ficha_textos_bd1b:
-	defw 0acb5h	; bd1b
-	defw 0acc2h	; bd1d
-	defw 0acd3h	; bd1f
-	defw 0ace3h	; bd21
-	defw 0acf3h	; bd23
-	defw 0ad01h	; bd25
-	defw 0ac7ah	; bd27
-	defw 0ac8bh	; bd29
-	defw 0ac9eh	; bd2b
-	defw 0ad58h	; bd2d
-	defw 0ad65h	; bd2f
-	defw 0ad72h	; bd31
-	defw 0ad3ch	; bd33
-	defw 0ad45h	; bd35
-	defw 0ad4fh	; bd37  -> L_AD4F
-	defw 0ad11h	; bd39
-	defw 0ad1eh	; bd3b
-	defw 0ad2fh	; bd3d
+	defw 0acb5h	; bd1b	--> "V6  2000\nDOHC-\nTURBO\nAUTO\nMATIC\n   560PS\n  1020KG"
+	defw 0acc2h	; bd1d	--> "V6  2996\nDOHC\nSUPER-\nCHARGER\n\n   480PS\n   985KG"
+	defw 0acd3h	; bd1f	--> "V8  5000\nSOHC\nTURBO\nSUPER-\nCHARGER\n   580PS\n  1000KG"
+;
+	defw 0ace3h	; bd21	--> "V8  2900\nDOHC-\nTURBO\nAUTO\nMATIC\n   595PS\n  1500KG"
+	defw 0acf3h	; bd23	--> "V12 2800\nDOHC\n\n\n\n   560PS\n  1200KG"
+	defw 0ad01h	; bd25	--> "V8  3000\nDOHC\n16VALVE\nTURBO\n\n   680PS\n  1015KG"
+;
+	defw 0ac7ah	; bd27	--> "V8  3000\nDOHC\nAUTO\nMATIC\n\n   865PS\n   850KG"
+	defw 0ac8bh	; bd29	--> "V12 5993\nSOHC\n24VALVE\n\n\n   780PS\n   700KG"
+	defw 0ac9eh	; bd2b	--> "V6  2960\nDOHC\nTWIN\nTURBO\n\n   900PS\n   756KG"
+;
+	defw 0ad58h	; bd2d	--> "4R  1998\nDOHC\n16VALVE\nAUTO\nMATIC\n   180PS\n   460KG"
+	defw 0ad65h	; bd2f	--> "4R  1998\nDOHC\n16VALVE\n\n\n   165PS\n   450KG"
+	defw 0ad72h	; bd31	--> "4R  2000\nDOHC\n16VALVE\n\n\n   170PS\n   455KG"
+;
+	defw 0ad3ch	; bd33	--> "V8  3000\nDOHC\n16VALVE\nAUTO\nMATIC\n   450PS\n   540KG"
+	defw 0ad45h	; bd35	--> "V8  3000\nDOHC\n16VALVE\n\n\n   465PS\n   540KG"
+	defw 0ad4fh	; bd37  --> "V8  3000\nDOHC\n\n\n\n   480PS\n   540KG"
+;
+	defw 0ad11h	; bd39	--> "V6  1500\nDOHC-\nTURBO\nAUTO\nMATIC\n  1300PS\n   540KG"
+	defw 0ad1eh	; bd3b	--> "V8  1400\nDOHC-\nTURBO\n16VALVE\n\n  1060PS\n   540KG"
+	defw 0ad2fh	; bd3d	--> "V6  1500\nDOHC-\nTURBO\n\n\n  1200PS\n   540KG"
 
 ; ----------------------------------------------------------------------
 ; DATOS ficha_textos_bd3f: 36 punteros a texto de ficha, 36 en uso: el paso 1
@@ -4207,42 +4212,47 @@ DATA_ficha_textos_bd1b:
 ;   la pagina 9 que lee tools/textos.py
 ;   0xbd3f..0xbd87  (72 bytes)
 DATA_ficha_textos_bd3f:
-	defw 0adaah	; bd3f  -> L_ADAA
-	defw 0adcbh	; bd41
-	defw 0ade2h	; bd43
-	defw 0adf7h	; bd45
-	defw 0ae0dh	; bd47
-	defw 0ae25h	; bd49
-	defw 0ad83h	; bd4b
-	defw 0ad8ah	; bd4d
-	defw 0ad90h	; bd4f
-	defw 0ad96h	; bd51
-	defw 0ad9dh	; bd53
-	defw 0ada3h	; bd55
-	defw 0ad83h	; bd57
-	defw 0ad8ah	; bd59
-	defw 0ad90h	; bd5b
-	defw 0ad96h	; bd5d
-	defw 0ad9dh	; bd5f
-	defw 0ada3h	; bd61
-	defw 0adb4h	; bd63
-	defw 0adbfh	; bd65
-	defw 0add7h	; bd67
-	defw 0adedh	; bd69
-	defw 0ae01h	; bd6b
-	defw 0ae19h	; bd6d
-	defw 0ae31h	; bd6f  -> L_AE31
-	defw 0ae37h	; bd71
-	defw 0ae3dh	; bd73
-	defw 0ae44h	; bd75
-	defw 0ae4bh	; bd77
-	defw 0ae52h	; bd79
-	defw 0ae59h	; bd7b
-	defw 0ae60h	; bd7d  -> L_AE60
-	defw 0ae67h	; bd7f
-	defw 0ae6dh	; bd81
-	defw 0ae74h	; bd83
-	defw 0ae7bh	; bd85
+	defw 0adaah	; bd3f	--> "V6  2000\nDOHC\nSUPER-\nCHARGER\nLOW-\nCOMPRESS\n   780PS\n"
+	defw 0adcbh	; bd41	--> "V6  2800\nDOHC\nSUPER-\nCHARGER\nWIDE-\nTORUQUE\n   870PS\n"
+	defw 0ade2h	; bd43	--> "V8  3200\nDOHC-\nTURBO\n\nEASY-\nCONTROL\n   900PS\n"
+	defw 0adf7h	; bd45	--> "V6  3000\nDOHC-\nTURBO\n\n2BAND-\nTORUQUE\n   880PS\n"
+	defw 0ae0dh	; bd47	--> "V8  3200\nTURBO\nSUPER-\nCHARGER\nHIGH-\nCOMPRESS\n   990PS\n"
+	defw 0ae25h	; bd49	--> "V6  2400\nDOHC\nSUPER-\nCHARGER\nPEEKY-\nPOWER\n   920PS\n"
+;
+	defw 0ad83h	; bd4b	--> "V6  1500\nDOHC\nSUPER-\nCHARGER\nLOW-\nCOMPRESS\n   580PS\n"
+	defw 0ad8ah	; bd4d	--> "V6  1490\nDOHC\nSUPER-\nCHARGER\nWIDE-\nTORUQUE\n   600PS\n"
+	defw 0ad90h	; bd4f	--> "V8  1200\nDOHC-\nTURBO\n\nEASY-\nCONTROL\n   700PS\n"
+	defw 0ad96h	; bd51	--> "V6  1500\nDOHC-\nTURBO\n\n2BAND-\nTORUQUE\n   680PS\n"
+	defw 0ad9dh	; bd53	--> "V8  1500\nTURBO\nSUPER-\nCHARGER\nHIGH-\nCOMPRESS\n   800PS\n"
+	defw 0ada3h	; bd55	--> "V6  1400\nDOHC\nSUPER-\nCHARGER\nPEEKY-\nPOWER\n   720PS\n"
+;
+	defw 0ad83h	; bd57	--> "V6  1500\nDOHC\nSUPER-\nCHARGER\nLOW-\nCOMPRESS\n   580PS\n"
+	defw 0ad8ah	; bd59	--> "V6  1490\nDOHC\nSUPER-\nCHARGER\nWIDE-\nTORUQUE\n   600PS\n"
+	defw 0ad90h	; bd5b	--> "V8  1200\nDOHC-\nTURBO\n\nEASY-\nCONTROL\n   700PS\n"
+	defw 0ad96h	; bd5d	--> "V6  1500\nDOHC-\nTURBO\n\n2BAND-\nTORUQUE\n   680PS\n"
+	defw 0ad9dh	; bd5f	--> "V8  1500\nTURBO\nSUPER-\nCHARGER\nHIGH-\nCOMPRESS\n   800PS\n"
+	defw 0ada3h	; bd61	--> "V6  1400\nDOHC\nSUPER-\nCHARGER\nPEEKY-\nPOWER\n   720PS\n"
+;
+	defw 0adb4h	; bd63	--> "V6  2000\nDOHC\nSUPER-\nCHARGER\nLOW-\nCOMPRESS\n   175PS\n"
+	defw 0adbfh	; bd65	--> "V6  1800\nDOHC\nSUPER-\nCHARGER\nWIDE-\nTORUQUE\n   165PS\n"
+	defw 0add7h	; bd67	--> "V8  2000\nDOHC-\nTURBO\n\nEASY-\nCONTROL\n   175PS\n"
+	defw 0adedh	; bd69	--> "V6  2000\nDOHC-\nTURBO\n\n2BAND-\nTORUQUE\n   180PS\n"
+	defw 0ae01h	; bd6b	--> "V8  2000\nTURBO\nSUPER-\nCHARGER\nHIGH-\nCOMPRESS\n   190PS\n"
+	defw 0ae19h	; bd6d	--> "V6  2000\nDOHC\nSUPER-\nCHARGER\nPEEKY-\nPOWER\n   185PS\n"
+;
+	defw 0ae31h	; bd6f	--> "V6  1500\nDOHC\nSUPER-\nCHARGER\nLOW-\nCOMPRESS\n   400PS\n"
+	defw 0ae37h	; bd71	--> "V6  1490\nDOHC\nSUPER-\nCHARGER\nWIDE-\nTORUQUE\n   450PS\n"
+	defw 0ae3dh	; bd73	--> "V8  1200\nDOHC-\nTURBO\n\nEASY-\nCONTROL\n   470PS\n"
+	defw 0ae44h	; bd75	--> "V6  1500\nDOHC-\nTURBO\n\n2BAND-\nTORUQUE\n   480PS\n"
+	defw 0ae4bh	; bd77	--> "V8  1500\nTURBO\nSUPER-\nCHARGER\nHIGH-\nCOMPRESS\n   498PS\n"
+	defw 0ae52h	; bd79	--> "V6  1400\nDOHC\nSUPER-\nCHARGER\nPEEKY-\nPOWER\n   487PS\n"
+;
+	defw 0ae59h	; bd7b	--> "V6  1500\nDOHC\nSUPER-\nCHARGER\nLOW-\nCOMPRESS\n  1180PS\n"
+	defw 0ae60h	; bd7d	--> "V6  1490\nDOHC\nSUPER-\nCHARGER\nWIDE-\nTORUQUE\n  1100PS\n"
+	defw 0ae67h	; bd7f	--> "V8  1200\nDOHC-\nTURBO\n\nEASY-\nCONTROL\n  1200PS\n"
+	defw 0ae6dh	; bd81	--> "V6  1500\nDOHC-\nTURBO\n\n2BAND-\nTORUQUE\n  1500PS\n"
+	defw 0ae74h	; bd83	--> "V8  1500\nTURBO\nSUPER-\nCHARGER\nHIGH-\nCOMPRESS\n  1300PS\n"
+	defw 0ae7bh	; bd85	--> "V6  1400\nDOHC\nSUPER-\nCHARGER\nPEEKY-\nPOWER\n  1030PS\n"
 
 ; ----------------------------------------------------------------------
 ; DATOS ficha_textos_bd87: 18 punteros a texto de ficha, 18 en uso: el paso 2
@@ -4250,24 +4260,29 @@ DATA_ficha_textos_bd3f:
 ;   la pagina 9 que lee tools/textos.py
 ;   0xbd87..0xbdab  (36 bytes)
 DATA_ficha_textos_bd87:
-	defw 0ae83h	; bd87
-	defw 0ae94h	; bd89
-	defw 0aea9h	; bd8b
-	defw 0ae83h	; bd8d
-	defw 0ae94h	; bd8f
-	defw 0aea9h	; bd91
-	defw 0ae83h	; bd93
-	defw 0ae94h	; bd95
-	defw 0aea9h	; bd97
-	defw 0ae83h	; bd99
-	defw 0ae94h	; bd9b
-	defw 0aea9h	; bd9d
-	defw 0ae83h	; bd9f
-	defw 0ae94h	; bda1
-	defw 0aea9h	; bda3
-	defw 0ae83h	; bda5
-	defw 0ae94h	; bda7
-	defw 0aea9h	; bda9
+	defw 0ae83h	; bd87	--> "STRONG-\nBODY\n\nCARBON\nFIBER\nFRAME"
+	defw 0ae94h	; bd89	--> "BALANCED-SETTING\n\nCARBON\nFIBER\nFRAME"
+	defw 0aea9h	; bd8b	--> "LIGHT-\nWEIGHT\n\nCARBON\nFIBER\nFRAME"
+;
+	defw 0ae83h	; bd8d	--> "STRONG-\nBODY\n\nCARBON\nFIBER\nFRAME"
+	defw 0ae94h	; bd8f	--> "BALANCED-SETTING\n\nCARBON\nFIBER\nFRAME"
+	defw 0aea9h	; bd91	--> "LIGHT-\nWEIGHT\n\nCARBON\nFIBER\nFRAME"
+;
+	defw 0ae83h	; bd93	--> "STRONG-\nBODY\n\nCARBON\nFIBER\nFRAME"
+	defw 0ae94h	; bd95	--> "BALANCED-SETTING\n\nCARBON\nFIBER\nFRAME"
+	defw 0aea9h	; bd97	--> "LIGHT-\nWEIGHT\n\nCARBON\nFIBER\nFRAME"
+;
+	defw 0ae83h	; bd99	--> "STRONG-\nBODY\n\nCARBON\nFIBER\nFRAME"
+	defw 0ae94h	; bd9b	--> "BALANCED-SETTING\n\nCARBON\nFIBER\nFRAME"
+	defw 0aea9h	; bd9d	--> "LIGHT-\nWEIGHT\n\nCARBON\nFIBER\nFRAME"
+;
+	defw 0ae83h	; bd9f	--> "STRONG-\nBODY\n\nCARBON\nFIBER\nFRAME"
+	defw 0ae94h	; bda1	--> "BALANCED-SETTING\n\nCARBON\nFIBER\nFRAME"
+	defw 0aea9h	; bda3	--> "LIGHT-\nWEIGHT\n\nCARBON\nFIBER\nFRAME"
+;
+	defw 0ae83h	; bda5	--> "STRONG-\nBODY\n\nCARBON\nFIBER\nFRAME"
+	defw 0ae94h	; bda7	--> "BALANCED-SETTING\n\nCARBON\nFIBER\nFRAME"
+	defw 0aea9h	; bda9	--> "LIGHT-\nWEIGHT\n\nCARBON\nFIBER\nFRAME"
 
 ; ----------------------------------------------------------------------
 ; DATOS ficha_textos_bdab: 6 punteros a texto de ficha, 6 en uso: el paso 3 de
@@ -4275,12 +4290,13 @@ DATA_ficha_textos_bd87:
 ;   pagina 9 que lee tools/textos.py
 ;   0xbdab..0xbdb7  (12 bytes)
 DATA_ficha_textos_bdab:
-	defw 0af3ah	; bdab
-	defw 0af42h	; bdad
-	defw 0af4bh	; bdaf
-	defw 0af3ah	; bdb1
-	defw 0af42h	; bdb3
-	defw 0af4bh	; bdb5
+	defw 0af3ah	; bdab	--> "FRONT\n    DISK\nTYPE-A\nREAR\n    DISK\nTYPE-A"
+	defw 0af42h	; bdad	--> "FRONT\n    DISK\nTYPE-B\nREAR\n    DRUM"
+	defw 0af4bh	; bdaf	--> "FRONT\n    DISK\nTYPE-B\nREAR\n    DISK\nTYPE-B"
+;
+	defw 0af3ah	; bdb1	--> "FRONT\n    DISK\nTYPE-A\nREAR\n    DISK\nTYPE-A"
+	defw 0af42h	; bdb3	--> "FRONT\n    DISK\nTYPE-B\nREAR\n    DRUM"
+	defw 0af4bh	; bdb5	--> "FRONT\n    DISK\nTYPE-B\nREAR\n    DISK\nTYPE-B"
 
 ; ----------------------------------------------------------------------
 ; DATOS ficha_textos_bdb7: 6 punteros a texto de ficha, 6 en uso: el paso 4 de
@@ -4288,12 +4304,13 @@ DATA_ficha_textos_bdab:
 ;   pagina 9 que lee tools/textos.py
 ;   0xbdb7..0xbdc3  (12 bytes)
 DATA_ficha_textos_bdb7:
-	defw 0af2dh	; bdb7
-	defw 0af16h	; bdb9
-	defw 0af06h	; bdbb
-	defw 0af2dh	; bdbd
-	defw 0af16h	; bdbf
-	defw 0af06h	; bdc1
+	defw 0af2dh	; bdb7	--> "TWINTUBE\nGASSHOCK\nTYPE\n\nSOFT-\nSETTING\n"
+	defw 0af16h	; bdb9	--> "TWINTUBE\nADJUSTAB\nLE TYPE\n\nMEDIUM-\nSETTING\n"
+	defw 0af06h	; bdbb	--> "MONOTUBE\nOILSHOCK\nTYPE\n\nHARD-\nSETTING\n"
+;
+	defw 0af2dh	; bdbd	--> "TWINTUBE\nGASSHOCK\nTYPE\n\nSOFT-\nSETTING\n"
+	defw 0af16h	; bdbf	--> "TWINTUBE\nADJUSTAB\nLE TYPE\n\nMEDIUM-\nSETTING\n"
+	defw 0af06h	; bdc1	--> "MONOTUBE\nOILSHOCK\nTYPE\n\nHARD-\nSETTING\n"
 
 ; ----------------------------------------------------------------------
 ; DATOS ficha_textos_bdc3: 9 punteros a texto de ficha, 6 en uso: el paso 5 de
@@ -4302,15 +4319,17 @@ DATA_ficha_textos_bdb7:
 ;   que lee tools/textos.py
 ;   0xbdc3..0xbdd5  (18 bytes)
 DATA_ficha_textos_bdc3:
-	defw 0aebbh	; bdc3
-	defw 0aec4h	; bdc5
-	defw 0aedeh	; bdc7
-	defw 0aebbh	; bdc9
-	defw 0aec4h	; bdcb
-	defw 0aedeh	; bdcd
-	defw 0aebbh	; bdcf
-	defw 0aec4h	; bdd1
-	defw 0aedeh	; bdd3
+	defw 0aebbh	; bdc3	--> "4SPEED\nAUTO\nMATIC\n\nNEW TYPE\n\n"
+	defw 0aec4h	; bdc5	--> "4SPEED\nMANUAL\n\n1- 13=26\n2- 18=26\n3- 24=25\n4- 27=21"
+	defw 0aedeh	; bdc7	--> "4SPEED\nMANUAL\nHI-GEARD\n1- 14=29\n2- 22=29\n3- 23=24\n4- 26=21"
+;
+	defw 0aebbh	; bdc9	--> "4SPEED\nAUTO\nMATIC\n\nNEW TYPE\n\n"
+	defw 0aec4h	; bdcb	--> "4SPEED\nMANUAL\n\n1- 13=26\n2- 18=26\n3- 24=25\n4- 27=21"
+	defw 0aedeh	; bdcd	--> "4SPEED\nMANUAL\nHI-GEARD\n1- 14=29\n2- 22=29\n3- 23=24\n4- 26=21"
+;
+	defw 0aebbh	; bdcf	--> "4SPEED\nAUTO\nMATIC\n\nNEW TYPE\n\n"
+	defw 0aec4h	; bdd1	--> "4SPEED\nMANUAL\n\n1- 13=26\n2- 18=26\n3- 24=25\n4- 27=21"
+	defw 0aedeh	; bdd3	--> "4SPEED\nMANUAL\nHI-GEARD\n1- 14=29\n2- 22=29\n3- 23=24\n4- 26=21"
 
 ; ----------------------------------------------------------------------
 ; DATOS ritmo_por_categoria: seis filas de 3 bytes, una por categoria (E25B):
