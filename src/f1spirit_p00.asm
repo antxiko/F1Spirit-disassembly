@@ -436,7 +436,7 @@ L_42B4:
 	xor 001h		;42b5
 	ld (de),a			;42b7
 	ret			;42b8
-ARRANCA_SONIDO:		; D/E/F, 0x6CE9 de la pagina 13 (init), restaura, PSG R7=0xBF, pide el sonido 0x46 y vuelve a 1/2/3
+ARRANCA_SONIDO:		; pone a 1 los 16 bits de E17E/E17F para que 0x6CE9 de la pagina 13 vuelque TODOS los registros del SCC, restaura los bancos, deja el PSG R7 en 0xBF, pide el sonido 0x46 y vuelve a 1/2/3
 	ld a,0ffh		;42b9
 	ld hl,0e17eh		;42bb
 	ld (hl),a			;42be

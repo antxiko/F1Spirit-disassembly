@@ -23,132 +23,135 @@
 ; que suena (0x60C2).
 ; ----------------------------------------------------------------------
 SONIDO_ORDEN:		; A = numero de sonido; 0x80..0x83 control
-	ld c,a			;6000
-	cp 080h		;6001
-	jp z,L_60EE		;6003
-	cp 081h		;6006
-	jp z,L_60F5		;6008
-	cp 082h		;600b
-	jp z,L_6102		;600d
-	cp 083h		;6010
-	call z,L_6110		;6012
-	ld hl,0e161h		;6015
-	ld (hl),c			;6018
-	ld hl,0611eh		;6019
+	ld c,a			;6000   ; el numero pedido se guarda en C porque A hace falta para mirar las ordenes de control
+	cp 080h		;6001   ; 0x80..0x83 no son sonidos: son el mando del fundido y de la pausa
+	jp z,FUNDIDO_QUITA		;6003
+	cp 081h		;6006   ; 0x81 enciende el fundido de salida
+	jp z,FUNDIDO_ARRANCA		;6008
+	cp 082h		;600b   ; 0x82 lo saca de la pausa
+	jp z,PAUSA_QUITA		;600d
+	cp 083h		;6010   ; CALL y no JP a proposito: al volver de la pausa sigue por 0x6015 con C = 0x2D
+	call z,PAUSA_PON		;6012
+	ld hl,0e161h		;6015   ; E161 = el ultimo sonido pedido; SONIDO_CANAL lo copia en cada canal que ocupe
+	ld (hl),c			;6018   ; el sonido queda apuntado antes de repartirlo por los canales
+	ld hl,0611eh		;6019   ; la tabla se indexa como si tuviese entrada 0, que caeria en el codigo: el sonido 0 no existe
 	ld a,c			;601c
-	add a,c			;601d
+	add a,c			;601d   ; dos bytes por entrada, de ahi sumar C dos veces
 	ld e,a			;601e
 	ld d,000h		;601f
 	add hl,de			;6021
-	ld e,(hl)			;6022
+	ld e,(hl)			;6022   ; HL = la cabecera del sonido, dentro de 0x61AC-0x6422
 	inc hl			;6023
 	ld d,(hl)			;6024
-	ex de,hl			;6025
-	ld de,0e162h		;6026
-	ld bc,00012h		;6029
+	ex de,hl			;6025   ; HL = la cabecera en la ROM, DE = donde se copia en RAM
+	ld de,0e162h		;6026   ; la cabecera se copia a RAM para poder recorrerla con esta pagina ya desmapeada
+	ld bc,00012h		;6029   ; 18 bytes fijos: mascara, prioridad y ocho punteros de pista; se copian sobren o no
 	ldir		;602c
-	ld ix,0e164h		;602e
-	ld hl,0e162h		;6032
-	bit 7,(hl)		;6035
+	ld ix,0e164h		;602e   ; IX = el primer puntero de pista de la copia, y avanza dos por cada canal que se use
+	ld hl,0e162h		;6032   ; el primer byte de la cabecera es la mascara de canales
+	bit 7,(hl)		;6035   ; bit 7 = canal 0; el reparto va del canal 0 al 7 en ocho bloques iguales
 	jr z,L_6045		;6037
-	inc hl			;6039
-	ld a,(hl)			;603a
-	ld hl,0e001h		;603b
+	inc hl			;6039   ; el segundo byte de la cabecera es la prioridad
+	ld a,(hl)			;603a   ; E163 = la prioridad, la misma para todos los canales del sonido
+	ld hl,0e001h		;603b   ; canal 0: PSG A
 	call SONIDO_CANAL		;603e
-	inc ix		;6041
+	inc ix		;6041   ; el puntero de pista solo avanza si el canal iba en la mascara
 	inc ix		;6043
 L_6045:
 	ld hl,0e162h		;6045
-	bit 6,(hl)		;6048
+	bit 6,(hl)		;6048   ; bit 6 = canal 1
 	jr z,L_6058		;604a
 	inc hl			;604c
 	ld a,(hl)			;604d
-	ld hl,0e02dh		;604e
+	ld hl,0e02dh		;604e   ; canal 1: PSG B
 	call SONIDO_CANAL		;6051
 	inc ix		;6054
 	inc ix		;6056
 L_6058:
 	ld hl,0e162h		;6058
-	bit 5,(hl)		;605b
+	bit 5,(hl)		;605b   ; bit 5 = canal 2
 	jr z,L_606B		;605d
 	inc hl			;605f
 	ld a,(hl)			;6060
-	ld hl,0e059h		;6061
+	ld hl,0e059h		;6061   ; canal 2: PSG C
 	call SONIDO_CANAL		;6064
 	inc ix		;6067
 	inc ix		;6069
 L_606B:
 	ld hl,0e162h		;606b
-	bit 4,(hl)		;606e
+	bit 4,(hl)		;606e   ; bit 4 = canal 3
 	jr z,L_607E		;6070
 	inc hl			;6072
 	ld a,(hl)			;6073
-	ld hl,0e085h		;6074
+	ld hl,0e085h		;6074   ; canal 3: el primero del SCC
 	call SONIDO_CANAL		;6077
 	inc ix		;607a
 	inc ix		;607c
 L_607E:
 	ld hl,0e162h		;607e
-	bit 3,(hl)		;6081
+	bit 3,(hl)		;6081   ; bit 3 = canal 4
 	jr z,L_6091		;6083
 	inc hl			;6085
 	ld a,(hl)			;6086
-	ld hl,0e0b1h		;6087
+	ld hl,0e0b1h		;6087   ; canal 4: segundo del SCC
 	call SONIDO_CANAL		;608a
 	inc ix		;608d
 	inc ix		;608f
 L_6091:
 	ld hl,0e162h		;6091
-	bit 2,(hl)		;6094
+	bit 2,(hl)		;6094   ; bit 2 = canal 5
 	jr z,L_60A4		;6096
 	inc hl			;6098
 	ld a,(hl)			;6099
-	ld hl,0e0ddh		;609a
+	ld hl,0e0ddh		;609a   ; canal 5: tercero del SCC
 	call SONIDO_CANAL		;609d
 	inc ix		;60a0
 	inc ix		;60a2
 L_60A4:
 	ld hl,0e162h		;60a4
-	bit 1,(hl)		;60a7
+	bit 1,(hl)		;60a7   ; bit 1 = canal 6
 	jr z,L_60B7		;60a9
 	inc hl			;60ab
 	ld a,(hl)			;60ac
-	ld hl,0e109h		;60ad
+	ld hl,0e109h		;60ad   ; canal 6: cuarto del SCC
 	call SONIDO_CANAL		;60b0
 	inc ix		;60b3
 	inc ix		;60b5
 L_60B7:
 	ld hl,0e162h		;60b7
-	bit 0,(hl)		;60ba
+	bit 0,(hl)		;60ba   ; bit 0 = canal 7, el ultimo; por eso aqui se sale con RET y no con salto
 	ret z			;60bc
 	inc hl			;60bd
 	ld a,(hl)			;60be
-	ld hl,0e135h		;60bf
+	ld hl,0e135h		;60bf   ; canal 7: quinto del SCC, y se entra en SONIDO_CANAL cayendo
 SONIDO_CANAL:		; arranca la pista en el canal HL si la prioridad A gana a la suya
-	ld b,(hl)			;60c2
-	cp b			;60c3
-	ret c			;60c4
-	ex de,hl			;60c5
-	ld (de),a			;60c6
-	dec de			;60c7
-	ld hl,0e161h		;60c8
-	ld a,(hl)			;60cb
-	ld (de),a			;60cc
+	ld b,(hl)			;60c2   ; B = la prioridad de lo que ya esta sonando en ese canal
+	cp b			;60c3   ; gana el numero mas alto, y en el empate gana el que llega: el sonido nuevo se queda el canal
+	ret c			;60c4   ; pierde: ni se toca el canal ni se apunta nada
+	ex de,hl			;60c5   ; DE recorre el bloque del canal de corrido a partir de aqui
+	ld (de),a			;60c6   ; +01 = la prioridad nueva
+	dec de			;60c7   ; hacia atras, que el +00 esta por debajo de la base con que se llamo
+	ld hl,0e161h		;60c8   ; E161 sigue guardando el sonido pedido, aunque HL e IX hayan cambiado de manos
+	ld a,(hl)			;60cb   ; A = el sonido pedido, guardado en 0x6015
+	ld (de),a			;60cc   ; +00 = el numero de sonido: es lo que mira 0x645D para saber si el canal esta ocupado
 	inc de			;60cd
-	inc de			;60ce
-	ld a,(ix+000h)		;60cf
+	inc de			;60ce   ; se salta el +01, que ya lleva la prioridad
+	ld a,(ix+000h)		;60cf   ; +02/+03 = la pista de ESTE canal, la que apunto IX en la copia de la cabecera
 	ld (de),a			;60d2
 	inc de			;60d3
-	ld a,(ix+001h)		;60d4
+	ld a,(ix+001h)		;60d4   ; el byte alto de la pista
 	ld (de),a			;60d7
 	inc de			;60d8
-	ld hl,060e2h		;60d9
-	ld bc,0000ch		;60dc
-	ldir		;60df
+	ld hl,060e2h		;60d9   ; los doce bytes con que arranca todo lo demas del bloque
+	ld bc,0000ch		;60dc   ; doce bytes: de +04 a +0F
+	ldir		;60df   ; +04 a 1 y +05..+0F a cero: la cuenta atras salta en el fotograma siguiente y el canal empieza sin interprete
 	ret			;60e1
 
 ; ----------------------------------------------------------------------
-; DATOS tabla_60D9: 12 bytes que lee 0x60D9 (`ld hl,60E2h`); formato pendiente
+; DATOS tabla_60D9: los 12 bytes con que SONIDO_CANAL (0x60D9) inicializa un
+;   canal: +04 a 1 (la cuenta atras salta en el fotograma siguiente) y
+;   +05..+0F a cero, asi que el canal arranca sin interprete, sin banderas y
+;   con la mezcla callada
 ;   0x60e2..0x60ee  (12 bytes)
 DATA_tabla_60D9:
 	defb 001h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; 60e2  ............
@@ -158,38 +161,38 @@ DATA_tabla_60D9:
 ; ======================================================================
 
 
-L_60EE:
-	ld hl,0e160h		;60ee
+FUNDIDO_QUITA:		; orden 0x80: cancela el fundido y pone su reloj a cero
+	ld hl,0e160h		;60ee   ; bit 0 de E160 = fundido en marcha
 	res 0,(hl)		;60f1
-	jr L_60FA		;60f3
-L_60F5:
+	jr FUNDIDO_A_CERO		;60f3
+FUNDIDO_ARRANCA:		; orden 0x81: enciende el fundido de salida
 	ld hl,0e160h		;60f5
-	set 0,(hl)		;60f8
-L_60FA:
-	ld hl,0e174h		;60fa
-	xor a			;60fd
+	set 0,(hl)		;60f8   ; encender el fundido es solo el bit: el trabajo lo hace 0x679C fotograma a fotograma
+FUNDIDO_A_CERO:		; reloj (E174) y nivel (E175) del fundido a cero
+	ld hl,0e174h		;60fa   ; las dos ordenes dejan el fundido en el escalon cero
+	xor a			;60fd   ; un fundido siempre empieza desde arriba
 	ld (hl),a			;60fe
 	inc hl			;60ff
 	ld (hl),a			;6100
 	ret			;6101
-L_6102:
+PAUSA_QUITA:		; orden 0x82: quita la pausa y devuelve el fundido que aparco
 	ld hl,0e160h		;6102
-	res 1,(hl)		;6105
-	bit 3,(hl)		;6107
+	res 1,(hl)		;6105   ; bit 1 = pausa
+	bit 3,(hl)		;6107   ; si el fundido quedo aparcado en el bit 3 al pausar, se devuelve al bit 0
 	jr z,L_610F		;6109
-	res 3,(hl)		;610b
+	res 3,(hl)		;610b   ; el fundido que se aparco al pausar vuelve a estar en marcha
 	set 0,(hl)		;610d
 L_610F:
 	ret			;610f
-L_6110:
+PAUSA_PON:		; orden 0x83: pausa, aparca el fundido y deja C = sonido 0x2D
 	ld hl,0e160h		;6110
-	set 1,(hl)		;6113
-	bit 0,(hl)		;6115
+	set 1,(hl)		;6113   ; pausar es encender el bit 1
+	bit 0,(hl)		;6115   ; el fundido no sigue corriendo durante la pausa: se aparca en el bit 3
 	jr z,L_611D		;6117
 	res 0,(hl)		;6119
-	set 3,(hl)		;611b
+	set 3,(hl)		;611b   ; el bit 3 recuerda que al pausar habia un fundido en marcha
 L_611D:
-	ld c,02dh		;611d
+	ld c,02dh		;611d   ; vuelve a 0x6015 pidiendo el sonido 0x2D, que es lo que se oye al pausar
 	ret			;611f
 
 ; ----------------------------------------------------------------------
@@ -261,151 +264,154 @@ DATA_cabeceras_sonidos:
 
 
 SONIDO_6422:		; desde la interrupcion (0x4061), tras vaciar la cola de ordenes; que hace, pendiente
-	ld a,(0e176h)		;6422
-	call L_6B68		;6425
-	ld a,(0e160h)		;6428
+	ld a,(0e176h)		;6422   ; el registro 7 del PSG se reescribe cada fotograma desde su copia en RAM
+	call L_6B68		;6425   ; el registro 7 se escribe entero aunque nadie lo haya cambiado
+	ld a,(0e160h)		;6428   ; el fundido corre aunque ninguna partitura avance
 	bit 0,a		;642b
-	call nz,L_679C		;642d
-	ld a,001h		;6430
+	call nz,FUNDIDO_TICK		;642d   ; el fundido va primero, antes de que los canales calculen sus volumenes
+	ld a,001h		;6430   ; E177 lleva la mascara del canal que se atiende, no su numero
 	ld (0e177h),a		;6432
-	ld ix,0e000h		;6435
-	call L_64C4		;6439
-	ld a,002h		;643c
+	ld ix,0e000h		;6435   ; canal 0 (PSG A)
+	call CANAL_ATIENDE		;6439
+	ld a,002h		;643c   ; canal 1 (PSG B)
 	ld (0e177h),a		;643e
 	ld ix,0e02ch		;6441
-	call L_64C4		;6445
-	ld a,004h		;6448
+	call CANAL_ATIENDE		;6445
+	ld a,004h		;6448   ; canal 2 (PSG C)
 	ld (0e177h),a		;644a
 	ld ix,0e058h		;644d
-	call L_64C4		;6451
-	ld a,008h		;6454
+	call CANAL_ATIENDE		;6451
+	ld a,008h		;6454   ; canal 3, el primero del SCC
 	ld (0e177h),a		;6456
-	ld ix,0e084h		;6459
-	ld a,(ix+000h)		;645d
+	ld ix,0e084h		;6459   ; IX = el bloque del canal, que es como se le pasa a todo lo demas
+	ld a,(ix+000h)		;645d   ; si no hay sonido ocupando el canal se puede usar para el motor
 	or a			;6460
-	jr nz,L_6475		;6461
-	ld a,(0e190h)		;6463
+	jr nz,L_6475		;6461   ; con un sonido de partitura encima, el motor no suena: manda el sonido
+	ld a,(0e190h)		;6463   ; E190 lo lleva la pagina 2: dice si el ruido del motor tiene que sonar
 	and 008h		;6466
 	jr nz,L_6470		;6468
-	ld (ix+00dh),000h		;646a
+	ld (ix+00dh),000h		;646a   ; ni sonido ni motor: se calla la mezcla del canal
 	jr L_6478		;646e
 L_6470:
-	call 0a5dfh		;6470
+	call 0a5dfh		;6470   ; el motor no es una partitura: lo genera la rutina 0xA5DF de la pagina 15
 	jr L_6478		;6473
 L_6475:
-	call L_64C4		;6475
+	call CANAL_ATIENDE		;6475
 L_6478:
-	ld a,010h		;6478
+	ld a,010h		;6478   ; canal 4, segundo del SCC
 	ld (0e177h),a		;647a
 	ld ix,0e0b0h		;647d
 	ld a,(ix+000h)		;6481
 	or a			;6484
 	jr nz,L_6499		;6485
-	ld a,(0e190h)		;6487
+	ld a,(0e190h)		;6487   ; el otro bit del motor en E190
 	and 080h		;648a
 	jr nz,L_6494		;648c
 	ld (ix+00dh),000h		;648e
 	jr L_649C		;6492
 L_6494:
-	call 0a6feh		;6494
+	call 0a6feh		;6494   ; el segundo generador de motor, 0xA6FE de la pagina 15
 	jr L_649C		;6497
 L_6499:
-	call L_64C4		;6499
+	call CANAL_ATIENDE		;6499
 L_649C:
-	ld a,020h		;649c
+	ld a,020h		;649c   ; canal 5
 	ld (0e177h),a		;649e
 	ld ix,0e0dch		;64a1
-	call L_64C4		;64a5
-	ld a,040h		;64a8
+	call CANAL_ATIENDE		;64a5
+	ld a,040h		;64a8   ; canal 6
 	ld (0e177h),a		;64aa
 	ld ix,0e108h		;64ad
-	call L_64C4		;64b1
-	ld a,080h		;64b4
+	call CANAL_ATIENDE		;64b1
+	ld a,080h		;64b4   ; canal 7
 	ld (0e177h),a		;64b6
 	ld ix,0e134h		;64b9
-	call L_64C4		;64bd
-	call SONIDO_PASO		;64c0
+	call CANAL_ATIENDE		;64bd
+	call SONIDO_PASO		;64c0   ; con los ocho canales al dia, se vuelca todo a los chips
 	ret			;64c3
-L_64C4:
-	ld a,(ix+000h)		;64c4
+CANAL_ATIENDE:		; el paso de un canal, si es que tiene sonido
+	ld a,(ix+000h)		;64c4   ; +00 a cero es canal libre: no hay nada que descontar
 	or a			;64c7
-	call nz,L_64CC		;64c8
+	call nz,CANAL_TICK		;64c8
 	ret			;64cb
-L_64CC:
-	dec (ix+004h)		;64cc
-	jp nz,L_665F		;64cf
-	ld l,(ix+002h)		;64d2
-	ld h,(ix+003h)		;64d5
-L_64D8:
+CANAL_TICK:		; descuenta un fotograma y, si toca, lee la partitura
+	dec (ix+004h)		;64cc   ; un fotograma menos para el proximo evento de la partitura
+	jp nz,CANAL_ENTRE_NOTAS		;64cf   ; todavia no toca nota: solo corren la envolvente, el vibrato y el ADSR
+	ld l,(ix+002h)		;64d2   ; HL = por donde iba la partitura de este canal
+	ld h,(ix+003h)		;64d5   ; HL = la partitura, y a partir de aqui manda ella
+PARTITURA_LEE:		; el bucle de lectura: ordenes hasta dar con una nota
 	ld a,(hl)			;64d8
-	cp 0ffh		;64d9
-	jp z,L_681A		;64db
-	cp 0d0h		;64de
-	jr c,L_64E9		;64e0
-	call PARTITURA_ORDEN		;64e2
-	inc hl			;64e5
-	jp L_64D8		;64e6
-L_64E9:
-	bit 0,(ix+009h)		;64e9
-	call nz,L_64FF		;64ed
+	cp 0ffh		;64d9   ; 0xFF cierra la pista y suelta el canal
+	jp z,CANAL_LIBERA		;64db
+	cp 0d0h		;64de   ; de 0xD0 arriba son ordenes; por debajo, notas
+	jr c,NOTA_REPARTE		;64e0
+	call PARTITURA_ORDEN		;64e2   ; las ordenes no consumen tiempo: se ejecutan y se sigue leyendo hasta dar con una nota
+	inc hl			;64e5   ; el byte de la orden queda consumido
+	jp PARTITURA_LEE		;64e6
+NOTA_REPARTE:		; la nota va al interprete que diga +09
+	bit 0,(ix+009h)		;64e9   ; +09 lo fija la orden 0xFE, y dice que clase de canal es este
+	call nz,NOTA_NIBBLES		;64ed   ; bit 0: la nota son dos nibbles, altura y duracion
 	bit 1,(ix+009h)		;64f0
-	call nz,L_6564		;64f4
+	call nz,NOTA_CRUDA		;64f4   ; bit 1: la nota trae el periodo escrito tal cual
 	bit 2,(ix+009h)		;64f7
-	call nz,L_65DD		;64fb
+	call nz,NOTA_ENVOLVENTE		;64fb   ; bit 2: la nota elige envolvente
 	ret			;64fe
-L_64FF:
-	ld a,(hl)			;64ff
-	and 00fh		;6500
+NOTA_NIBBLES:		; nota de un byte: nibble alto la altura, nibble bajo la duracion
+	ld a,(hl)			;64ff   ; el nibble bajo es cuantas unidades de nota dura
+	and 00fh		;6500   ; el nibble bajo
 	ld b,a			;6502
-	ld a,(ix+014h)		;6503
-	jr z,L_650C		;6506
+	ld a,(ix+014h)		;6503   ; A = el tempo, la duracion de una unidad
+	jr z,L_650C		;6506   ; el cero del AND: nibble bajo 0 es una unidad justa, sin multiplicar
 	ld e,a			;6508
 L_6509:
-	add a,e			;6509
-	djnz L_6509		;650a
+	add a,e			;6509   ; duracion = tempo por (nibble + 1), a base de sumas
+	djnz L_6509		;650a   ; tantas sumas como diga el nibble
 L_650C:
-	ld (ix+004h),a		;650c
-	ld a,(hl)			;650f
-	and 0f0h		;6510
+	ld (ix+004h),a		;650c   ; +04 = los fotogramas que va a durar la nota
+	ld a,(hl)			;650f   ; el nibble alto es la altura dentro de la octava
+	and 0f0h		;6510   ; el nibble alto
 	rrca			;6512
 	rrca			;6513
 	rrca			;6514
 	rrca			;6515
-	call L_6794		;6516
-	bit 3,(ix+009h)		;6519
-	ret nz			;651d
-	cp 00ch		;651e
-	jr nc,L_6552		;6520
-	ld hl,06557h		;6522
+	call PARTITURA_AVANZA		;6516   ; la partitura ya se puede dejar apuntando al byte siguiente
+	bit 3,(ix+009h)		;6519   ; bit 3 de +09: este canal solo cuenta el tiempo; la altura la usa quien llamo (0x65E4)
+	ret nz			;651d   ; la altura se devuelve en A para quien la sepa aprovechar
+	cp 00ch		;651e   ; las alturas 0..11 son las doce notas de la octava; de 12 arriba, silencio
+	jr nc,NOTA_SILENCIO		;6520
+	ld hl,06557h		;6522   ; la tabla de 0x6557 son los periodos de una octava, de la nota mas aguda a la mas grave
 	ld e,a			;6525
 	ld d,000h		;6526
-	add hl,de			;6528
-	ld l,(hl)			;6529
-	ld h,000h		;652a
-	ld a,(ix+016h)		;652c
+	add hl,de			;6528   ; la altura indexa la tabla de periodos
+	ld l,(hl)			;6529   ; el periodo cabe en un byte porque es la octava mas alta
+	ld h,000h		;652a   ; un periodo de un byte, que la tabla es de la octava mas alta
+	ld a,(ix+016h)		;652c   ; +16 = cuantas octavas hay que bajar
 	or a			;652f
 	jr z,L_6536		;6530
 	ld b,a			;6532
 L_6533:
-	add hl,hl			;6533
-	djnz L_6533		;6534
+	add hl,hl			;6533   ; bajar una octava es doblar el periodo
+	djnz L_6533		;6534   ; una vuelta por octava
 L_6536:
-	ld (ix+010h),l		;6536
-	ld (ix+011h),h		;6539
-	ld e,(ix+015h)		;653c
+	ld (ix+010h),l		;6536   ; +10/+11 = el periodo que pide la nota
+	ld (ix+011h),h		;6539   ; el byte alto lo pone el desplazamiento
+	ld e,(ix+015h)		;653c   ; esta nota no trae volumen: se toca con el volumen base del canal
 	ld a,(0e160h)		;653f
-	bit 0,a		;6542
-	call nz,L_67F6		;6544
-	ld (ix+012h),e		;6547
-	ld (ix+00dh),002h		;654a
-	call L_660E		;654e
+	bit 0,a		;6542   ; con el fundido en marcha, el volumen baja antes de escribirse
+	call nz,FUNDIDO_APLICA		;6544
+	ld (ix+012h),e		;6547   ; +12 = el volumen de la nota, ya atenuado si habia fundido
+	ld (ix+00dh),002h		;654a   ; mezcla 2 = solo tono; una nota de altura siempre enciende el tono
+	call NOTA_MONTA		;654e   ; y con eso la nota queda montada
 	ret			;6551
-L_6552:
-	ld (ix+00dh),000h		;6552
+NOTA_SILENCIO:		; alturas 12..15: silencio, se apaga la mezcla del canal
+	ld (ix+00dh),000h		;6552   ; silencio no es volumen cero: se apaga la mezcla y el canal deja de sonar
 	ret			;6556
 
 ; ----------------------------------------------------------------------
-; DATOS tabla_6522: 13 bytes que lee 0x6522 (`ld hl,6557h`); formato pendiente
+; DATOS tabla_6522: los periodos de una octava, que es lo que indexa la altura
+;   de la nota en 0x6522: 12 semitonos (0x6A a 0x38, cada uno un 6 % menor que
+;   el anterior) mas el 0x35 de la octava siguiente, al que no llega nadie
+;   porque 0x651E rechaza las alturas de 12 arriba
 ;   0x6557..0x6564  (13 bytes)
 DATA_tabla_6522:
 	defb 06ah,064h,05eh,059h,054h,04fh,04ah,046h,042h,03fh,03bh,038h,035h	; 6557  jd^YTOJFB?;85
@@ -415,383 +421,383 @@ DATA_tabla_6522:
 ; ======================================================================
 
 
-L_6564:
-	ld a,(ix+00dh)		;6564
+NOTA_CRUDA:		; nota con el periodo escrito tal cual, en uno o dos bytes
+	ld a,(ix+00dh)		;6564   ; los dos bits bajos de +0D son la mezcla que pidieron las ordenes 0xE0..0xE3
 	and 003h		;6567
-	jr z,L_65CE		;6569
+	jr z,NOTA_CRUDA_FIN		;6569   ; mezcla 0: no suena nada, asi que la nota solo hace pasar el tiempo
 	cp 001h		;656b
-	jr z,L_65A5		;656d
-	ld a,(hl)			;656f
-	bit 6,(ix+00eh)		;6570
-	jr nz,L_6591		;6574
-	bit 5,(ix+00eh)		;6576
-	jr nz,L_6596		;657a
-	and 0f0h		;657c
+	jr z,NOTA_CRUDA_RUIDO		;656d   ; mezcla 1: solo ruido, y el ruido no tiene periodo
+	ld a,(hl)			;656f   ; A = el primer byte de la nota
+	bit 6,(ix+00eh)		;6570   ; bit 6: la nota es un solo byte y es el byte bajo del periodo
+	jr nz,NOTA_CRUDA_BAJO		;6574
+	bit 5,(ix+00eh)		;6576   ; bit 5: la nota es un solo byte con volumen y byte alto del periodo
+	jr nz,NOTA_CRUDA_ALTO		;657a
+	and 0f0h		;657c   ; el formato largo: nibble alto volumen, nibble bajo el alto del periodo
 	ld b,a			;657e
-	xor (hl)			;657f
-	ld d,a			;6580
-	inc hl			;6581
-	ld a,(hl)			;6582
-	ld (ix+010h),a		;6583
+	xor (hl)			;657f   ; el XOR contra el byte entero deja el nibble bajo
+	ld d,a			;6580   ; D = el nibble bajo, que es la parte alta del periodo
+	inc hl			;6581   ; el segundo byte de la nota
+	ld a,(hl)			;6582   ; el segundo byte es la parte baja
+	ld (ix+010h),a		;6583   ; +10/+11 = periodo de doce bits, byte bajo primero
 	ld (ix+011h),d		;6586
 	ld a,b			;6589
-	rrca			;658a
+	rrca			;658a   ; el volumen estaba en el nibble alto
 	rrca			;658b
 	rrca			;658c
 	rrca			;658d
-	ld b,a			;658e
-	jr L_65A9		;658f
-L_6591:
-	ld (ix+010h),a		;6591
-	jr L_65BD		;6594
-L_6596:
-	and 0f0h		;6596
+	ld b,a			;658e   ; B = el volumen que pedia la nota
+	jr NOTA_CRUDA_VOL		;658f
+NOTA_CRUDA_BAJO:		; formato corto (+0E bit 6): solo el byte bajo del periodo
+	ld (ix+010h),a		;6591   ; formato corto: solo cambia el byte bajo del periodo
+	jr NOTA_CRUDA_APLICA		;6594   ; y no trae volumen, asi que se salta el calculo
+NOTA_CRUDA_ALTO:		; formato corto (+0E bit 5): volumen y byte alto del periodo
+	and 0f0h		;6596   ; formato corto con volumen: nibble alto el volumen
 	rrca			;6598
 	rrca			;6599
 	rrca			;659a
 	rrca			;659b
-	ld b,a			;659c
+	ld b,a			;659c   ; B = el volumen
 	ld a,(hl)			;659d
-	and 00fh		;659e
-	ld (ix+011h),a		;65a0
-	jr L_65A9		;65a3
-L_65A5:
-	ld a,(hl)			;65a5
+	and 00fh		;659e   ; y el nibble bajo es el alto del periodo
+	ld (ix+011h),a		;65a0   ; +11 = el nibble bajo, el alto del periodo
+	jr NOTA_CRUDA_VOL		;65a3
+NOTA_CRUDA_RUIDO:		; mezcla 1 (solo ruido): el byte es volumen, no hay periodo
+	ld a,(hl)			;65a5   ; en el ruido el byte entero es volumen
 	and 00fh		;65a6
 	ld b,a			;65a8
-L_65A9:
-	ld a,(0e177h)		;65a9
+NOTA_CRUDA_VOL:		; el volumen de la nota, con el apano de la envolvente por hardware
+	ld a,(0e177h)		;65a9   ; lo que sigue solo vale para los tres canales del PSG
 	cp 008h		;65ac
 	jr nc,L_65B8		;65ae
-	bit 2,(ix+00dh)		;65b0
+	bit 2,(ix+00dh)		;65b0   ; con la envolvente por hardware el volumen no es un numero: es el bit 4 del registro
 	jr z,L_65B8		;65b4
-	ld b,010h		;65b6
+	ld b,010h		;65b6   ; 0x10 en el registro de volumen del PSG = manda la envolvente
 L_65B8:
-	inc b			;65b8
-	inc b			;65b9
-	ld (ix+012h),b		;65ba
-L_65BD:
-	ld e,(ix+012h)		;65bd
+	inc b			;65b8   ; el nibble se escribe en la pista con dos escalones menos de los que suenan
+	inc b			;65b9   ; con la envolvente por hardware el 0x10 queda en 0x12, que para el PSG sigue siendo el bit 4
+	ld (ix+012h),b		;65ba   ; +12 = el volumen que pide la nota
+NOTA_CRUDA_APLICA:		; pasa el volumen por el fundido y monta la nota
+	ld e,(ix+012h)		;65bd   ; el volumen que se escribe sale de +12, no del byte de la nota
 	ld a,(0e160h)		;65c0
 	bit 0,a		;65c3
-	call nz,L_67F6		;65c5
-	ld (ix+012h),e		;65c8
-	call L_660E		;65cb
-L_65CE:
-	bit 3,(ix+009h)		;65ce
+	call nz,FUNDIDO_APLICA		;65c5   ; el fundido resta antes de que el volumen llegue al chip
+	ld (ix+012h),e		;65c8   ; +12 se queda ya atenuado: en el formato corto de un byte, que no lo recalcula, el fundido vuelve a restar sobre lo restado
+	call NOTA_MONTA		;65cb   ; con periodo y volumen en su sitio, se monta la nota
+NOTA_CRUDA_FIN:		; avanza el puntero y carga la duracion fija de +13
+	bit 3,(ix+009h)		;65ce   ; bit 3 de +09: viene de la envolvente, que lleva su propio puntero y su propio reloj
 	ret nz			;65d2
-	call L_6794		;65d3
-	ld a,(ix+013h)		;65d6
+	call PARTITURA_AVANZA		;65d3   ; la nota cruda ya esta leida: el puntero pasa al byte siguiente
+	ld a,(ix+013h)		;65d6   ; estas notas no traen duracion: dura lo que dijeron las ordenes 0xE0..0xE3
 	ld (ix+004h),a		;65d9
 	ret			;65dc
-L_65DD:
-	ld (ix+009h),009h		;65dd
-	call L_64FF		;65e1
-	ld hl,06e23h		;65e4
-	add a,a			;65e7
+NOTA_ENVOLVENTE:		; nota de canal con envolvente: la altura elige una de las diez
+	ld (ix+009h),009h		;65dd   ; 9 = bits 0 y 3: se usa el lector de nibbles, pero sin tocar la altura
+	call NOTA_NIBBLES		;65e1   ; asi calcula la duracion y devuelve la altura en A
+	ld hl,06e23h		;65e4   ; la altura no es una nota: es cual de las diez envolventes
+	add a,a			;65e7   ; dos bytes por entrada en la tabla de envolventes
 	ld e,a			;65e8
 	ld d,000h		;65e9
 	add hl,de			;65eb
-	ld e,(hl)			;65ec
+	ld e,(hl)			;65ec   ; HL = la envolvente, que es otra partitura
 	inc hl			;65ed
 	ld d,(hl)			;65ee
 	ex de,hl			;65ef
-	ld a,(hl)			;65f0
-	set 0,(ix+00eh)		;65f1
-L_65F5:
-	ld (ix+009h),00ah		;65f5
-	call L_64D8		;65f9
-	ld a,(ix+013h)		;65fc
-	ld (ix+019h),a		;65ff
-	inc hl			;6602
+	ld a,(hl)			;65f0   ; este byte no lo usa nadie: 0x64D8 vuelve a leer (HL) nada mas entrar
+	set 0,(ix+00eh)		;65f1   ; bit 0 de +0E = hay envolvente corriendo en este canal
+ENVOLVENTE_PASO:		; lee un paso de la envolvente con el mismo interprete que la partitura
+	ld (ix+009h),00ah		;65f5   ; 0x0A = bits 1 y 3: los pasos de la envolvente son notas crudas sin avanzar la partitura
+	call PARTITURA_LEE		;65f9   ; la envolvente se lee con el mismo interprete que la partitura, ordenes incluidas
+	ld a,(ix+013h)		;65fc   ; la duracion que dejo el paso es lo que dura este escalon
+	ld (ix+019h),a		;65ff   ; +19 = los fotogramas que dura este escalon
+	inc hl			;6602   ; +17/+18 = por donde sigue la envolvente el proximo escalon
 	ld (ix+017h),l		;6603
 	ld (ix+018h),h		;6606
-	ld (ix+009h),004h		;6609
+	ld (ix+009h),004h		;6609   ; y el canal vuelve a ser de los de envolvente
 	ret			;660d
-L_660E:
-	call L_6691		;660e
-	res 4,(ix+00eh)		;6611
-	ld a,(ix+00fh)		;6615
+NOTA_MONTA:		; deja periodo y volumen listos para que 0x6AA5 los escriba
+	call PERIODO_EFECTIVO		;660e   ; el periodo efectivo se recalcula porque el detune puede haber cambiado
+	res 4,(ix+00eh)		;6611   ; nota nueva, vibrato desde el principio: se olvida el retardo cumplido
+	ld a,(ix+00fh)		;6615   ; borra las fases 3 y 5 del ADSR y conserva el resto
 	and 0d7h		;6618
 	ld (ix+00fh),a		;661a
-	xor a			;661d
-	ld (ix+01dh),a		;661e
+	xor a			;661d   ; contadores del vibrato y del ADSR a cero
+	ld (ix+01dh),a		;661e   ; los contadores del vibrato
 	ld (ix+01eh),a		;6621
-	ld (ix+01fh),a		;6624
+	ld (ix+01fh),a		;6624   ; y los del ADSR
 	ld (ix+020h),a		;6627
-	set 2,(ix+00fh)		;662a
-	ld a,(ix+012h)		;662e
-	bit 7,(ix+00eh)		;6631
+	set 2,(ix+00fh)		;662a   ; por defecto se da el ataque por cumplido: solo lo deshace el tener ataque de verdad
+	ld a,(ix+012h)		;662e   ; el volumen que pidio la nota
+	bit 7,(ix+00eh)		;6631   ; bit 7: el volumen de la nota es relativo al volumen base del canal
 	jr z,L_663E		;6635
-	ld e,(ix+015h)		;6637
+	ld e,(ix+015h)		;6637   ; el volumen base del canal hace de cero
 	sub e			;663a
-	call m,L_665D		;663b
+	call m,VOLUMEN_A_CERO		;663b   ; si la resta se pasa de cero, se queda en cero
 L_663E:
-	ld (ix+00ch),a		;663e
-	ld a,(0e177h)		;6641
+	ld (ix+00ch),a		;663e   ; +0C es lo que 0x6AB9 escribira en el chip
+	ld a,(0e177h)		;6641   ; lo que sigue solo estorba en el PSG
 	cp 008h		;6644
 	jr nc,L_664D		;6646
-	bit 2,(ix+00dh)		;6648
+	bit 2,(ix+00dh)		;6648   ; con la envolvente por hardware el volumen no se toca mas
 	ret nz			;664c
 L_664D:
-	bit 1,(ix+00fh)		;664d
+	bit 1,(ix+00fh)		;664d   ; bit 1 de +0F: sin ataque el volumen ya esta puesto y no hay nada mas que hacer
 	ret z			;6651
-	ld a,(ix+025h)		;6652
-	ld (ix+00ch),a		;6655
-	res 2,(ix+00fh)		;6658
+	ld a,(ix+025h)		;6652   ; con ataque, la nota empieza en el volumen de +25 y sube desde ahi
+	ld (ix+00ch),a		;6655   ; el volumen efectivo arranca donde diga +25
+	res 2,(ix+00fh)		;6658   ; y se marca que el ataque esta por hacer
 	ret			;665c
-L_665D:
+VOLUMEN_A_CERO:		; el volumen relativo no puede quedar por debajo de cero
 	xor a			;665d
 	ret			;665e
-L_665F:
-	bit 0,(ix+00eh)		;665f
-	call nz,L_6675		;6663
+CANAL_ENTRE_NOTAS:		; lo que se hace en los fotogramas en que no hay evento
+	bit 0,(ix+00eh)		;665f   ; entre nota y nota corren los tres efectos, cada uno con su bandera
+	call nz,ENVOLVENTE_TICK		;6663   ; la envolvente puede cambiar la nota sin que la partitura avance
 	bit 2,(ix+00eh)		;6666
-	call nz,L_66AC		;666a
-	bit 0,(ix+00fh)		;666d
-	call nz,L_66FA		;6671
+	call nz,VIBRATO_TICK		;666a   ; el vibrato mueve el periodo
+	bit 0,(ix+00fh)		;666d   ; bit 0 de +0F: el ADSR esta encendido
+	call nz,ADSR_TICK		;6671   ; el ADSR mueve el volumen
 	ret			;6674
-L_6675:
-	dec (ix+019h)		;6675
+ENVOLVENTE_TICK:		; descuenta el paso de la envolvente y lee el siguiente
+	dec (ix+019h)		;6675   ; un fotograma menos de este escalon de la envolvente
 	ret nz			;6678
-	ld l,(ix+017h)		;6679
+	ld l,(ix+017h)		;6679   ; +17/+18 = donde se quedo la envolvente
 	ld h,(ix+018h)		;667c
-	ld a,(hl)			;667f
-	cp 0ffh		;6680
-	jr z,L_6688		;6682
-	call L_65F5		;6684
+	ld a,(hl)			;667f   ; el byte del escalon siguiente
+	cp 0ffh		;6680   ; 0xFF cierra la envolvente
+	jr z,ENVOLVENTE_FIN		;6682
+	call ENVOLVENTE_PASO		;6684   ; y si no, se lee el escalon siguiente
 	ret			;6687
-L_6688:
-	res 0,(ix+00eh)		;6688
-	ld (ix+00dh),000h		;668c
+ENVOLVENTE_FIN:		; 0xFF en la envolvente: se apaga y calla el canal
+	res 0,(ix+00eh)		;6688   ; la envolvente se apaga y de paso calla el canal
+	ld (ix+00dh),000h		;668c   ; y el canal se queda callado hasta la nota que venga
 	ret			;6690
-L_6691:
-	ld e,(ix+010h)		;6691
+PERIODO_EFECTIVO:		; suma el detune al periodo de la nota
+	ld e,(ix+010h)		;6691   ; el periodo que pide la nota
 	ld d,(ix+011h)		;6694
-	bit 1,(ix+00eh)		;6697
+	bit 1,(ix+00eh)		;6697   ; bit 1 de +0E: hay detune
 	jr z,L_66A5		;669b
-	ld a,(ix+026h)		;669d
+	ld a,(ix+026h)		;669d   ; el detune se suma con acarreo al periodo de doce bits
 	add a,e			;66a0
 	ld e,a			;66a1
 	jr nc,L_66A5		;66a2
 	inc d			;66a4
 L_66A5:
-	ld (ix+00ah),e		;66a5
+	ld (ix+00ah),e		;66a5   ; +0A/+0B es lo que 0x6AB9 y 0x6C97 comparan y escriben en los chips
 	ld (ix+00bh),d		;66a8
 	ret			;66ab
-L_66AC:
-	inc (ix+01eh)		;66ac
-	ld a,(ix+01eh)		;66af
-	ld b,(ix+00eh)		;66b2
-	bit 4,b		;66b5
+VIBRATO_TICK:		; cuenta hasta el retardo y luego hasta el periodo del vibrato
+	inc (ix+01eh)		;66ac   ; un fotograma mas de vibrato
+	ld a,(ix+01eh)		;66af   ; A = el contador de fotogramas del vibrato
+	ld b,(ix+00eh)		;66b2   ; las banderas se copian a B porque se miran dos veces seguidas
+	bit 4,b		;66b5   ; bit 4: el retardo ya paso, se va derecho a mover el periodo
 	jr nz,L_66CB		;66b7
-	bit 3,b		;66b9
+	bit 3,b		;66b9   ; bit 3: este vibrato empieza con retardo
 	jr z,L_66CB		;66bb
-	cp (ix+01ah)		;66bd
+	cp (ix+01ah)		;66bd   ; el retardo se cumple cuando el contador llega a +1A
 	ret nz			;66c0
-	ld (ix+01eh),000h		;66c1
-	set 4,(ix+00eh)		;66c5
-	jr L_66CF		;66c9
+	ld (ix+01eh),000h		;66c1   ; y a partir de aqui el mismo contador vale para el periodo del vibrato
+	set 4,(ix+00eh)		;66c5   ; el retardo queda cumplido para lo que le quede a la nota
+	jr VIBRATO_APLICA		;66c9
 L_66CB:
-	cp (ix+01bh)		;66cb
+	cp (ix+01bh)		;66cb   ; sin retardo pendiente, la oscilacion va cada +1B fotogramas
 	ret nz			;66ce
-L_66CF:
-	ld e,(ix+00ah)		;66cf
+VIBRATO_APLICA:		; suma o resta la amplitud al periodo, alternando el signo
+	ld e,(ix+00ah)		;66cf   ; se trabaja sobre el periodo efectivo, no sobre el de la nota
 	ld d,(ix+00bh)		;66d2
-	ld b,(ix+01ch)		;66d5
-	ld a,(ix+01dh)		;66d8
-	cpl			;66db
-	ld (ix+01dh),a		;66dc
-	and a			;66df
+	ld b,(ix+01ch)		;66d5   ; B = la amplitud
+	ld a,(ix+01dh)		;66d8   ; el signo de la oscilacion anterior
+	cpl			;66db   ; el signo se invierte en cada oscilacion: 0 y 0xFF alternandose
+	ld (ix+01dh),a		;66dc   ; y se guarda ya invertido para la siguiente
+	and a			;66df   ; el signo de antes de invertirlo es el que manda en esta
 	ld a,e			;66e0
 	jr nz,L_66EA		;66e1
-	add a,b			;66e3
+	add a,b			;66e3   ; medio ciclo hacia arriba
 	ld e,a			;66e4
 	jr nc,L_66EF		;66e5
-	inc d			;66e7
+	inc d			;66e7   ; el acarreo sube al byte alto del periodo
 	jr L_66EF		;66e8
 L_66EA:
-	sub b			;66ea
+	sub b			;66ea   ; y el otro medio hacia abajo
 	ld e,a			;66eb
 	jr nc,L_66EF		;66ec
-	dec d			;66ee
+	dec d			;66ee   ; y el prestamo lo baja
 L_66EF:
-	ld (ix+00ah),e		;66ef
+	ld (ix+00ah),e		;66ef   ; el periodo movido, ya listo para el chip
 	ld (ix+00bh),d		;66f2
-	ld (ix+01eh),000h		;66f5
+	ld (ix+01eh),000h		;66f5   ; el contador arranca de nuevo para la proxima oscilacion
 	ret			;66f9
-L_66FA:
-	ld a,(0e177h)		;66fa
+ADSR_TICK:		; mueve el volumen del canal, salvo si manda la envolvente del PSG
+	ld a,(0e177h)		;66fa   ; otra vez, esto solo estorba en el PSG
 	cp 008h		;66fd
 	jr nc,L_6706		;66ff
-	bit 2,(ix+00dh)		;6701
+	bit 2,(ix+00dh)		;6701   ; con la envolvente por hardware el ADSR sobra
 	ret nz			;6705
 L_6706:
-	call L_670D		;6706
-	ld (ix+00ch),e		;6709
+	call ADSR_FASE		;6706   ; E vuelve con el volumen nuevo
+	ld (ix+00ch),e		;6709   ; +0C = el volumen que se escribira en el chip
 	ret			;670c
-L_670D:
-	ld e,(ix+00ch)		;670d
-	inc (ix+01fh)		;6710
+ADSR_FASE:		; la fase en que esta la nota decide si el volumen sube o baja
+	ld e,(ix+00ch)		;670d   ; E = el volumen que hay ahora mismo
+	inc (ix+01fh)		;6710   ; B = fotogramas dentro de la fase actual
 	ld b,(ix+01fh)		;6713
-	bit 5,(ix+00fh)		;6716
-	jr nz,L_6788		;671a
-	bit 3,(ix+00fh)		;671c
-	jr nz,L_674F		;6720
-	bit 2,(ix+00fh)		;6722
-	jr nz,L_673B		;6726
-	ld a,e			;6728
-	inc a			;6729
+	bit 5,(ix+00fh)		;6716   ; bit 5: ya se llego a la fase final
+	jr nz,ADSR_EXTINCION		;671a
+	bit 3,(ix+00fh)		;671c   ; bit 3: la caida esta hecha
+	jr nz,ADSR_DESCENSO		;6720
+	bit 2,(ix+00fh)		;6722   ; bit 2: el ataque esta hecho
+	jr nz,ADSR_CAIDA		;6726
+	ld a,e			;6728   ; ataque: un escalon de volumen por fotograma
+	inc a			;6729   ; un escalon de volumen arriba
 	ld e,a			;672a
-	cp (ix+012h)		;672b
-	ret c			;672e
-	set 2,(ix+00fh)		;672f
-	ld e,(ix+012h)		;6733
-	ld (ix+01fh),000h		;6736
+	cp (ix+012h)		;672b   ; hasta llegar al volumen que pidio la nota
+	ret c			;672e   ; todavia no ha llegado al volumen de la nota
+	set 2,(ix+00fh)		;672f   ; llegado ahi, el ataque se da por cumplido
+	ld e,(ix+012h)		;6733   ; y el volumen se clava en el objetivo, sin pasarse
+	ld (ix+01fh),000h		;6736   ; el contador arranca de cero para la fase siguiente
 	ret			;673a
-L_673B:
-	ld a,e			;673b
-	dec a			;673c
-	jp m,L_6741		;673d
+ADSR_CAIDA:		; despues del ataque el volumen baja uno por fotograma
+	ld a,e			;673b   ; caida: el volumen baja de uno en uno
+	dec a			;673c   ; un escalon abajo
+	jp m,L_6741		;673d   ; sin bajar de cero
 	ld e,a			;6740
 L_6741:
 	ld a,b			;6741
-	cp (ix+021h)		;6742
+	cp (ix+021h)		;6742   ; la caida dura +21 fotogramas
 	ret c			;6745
-	ld (ix+01fh),000h		;6746
-	set 3,(ix+00fh)		;674a
+	ld (ix+01fh),000h		;6746   ; el contador arranca para la fase siguiente
+	set 3,(ix+00fh)		;674a   ; la caida queda cumplida
 	ret			;674e
-L_674F:
-	bit 4,(ix+00fh)		;674f
-	jp nz,L_6772		;6753
+ADSR_DESCENSO:		; la caida larga, uno a uno o a saltos de +22
+	bit 4,(ix+00fh)		;674f   ; bit 4: el descenso resta de golpe en vez de escalon a escalon
+	jp nz,ADSR_DESCENSO_SALTO		;6753
 	ld a,b			;6756
-	cp (ix+022h)		;6757
+	cp (ix+022h)		;6757   ; solo se mueve el volumen cada +22 fotogramas
 	ret nz			;675a
 	ld a,e			;675b
-	dec a			;675c
+	dec a			;675c   ; un escalon, con suelo en cero
 	ret m			;675d
 	ld e,a			;675e
-	inc (ix+020h)		;675f
+	inc (ix+020h)		;675f   ; un paso mas de descenso dado
 	ld a,(ix+020h)		;6762
-	cp (ix+023h)		;6765
-	ld (ix+01fh),000h		;6768
+	cp (ix+023h)		;6765   ; tras +23 pasos se pasa a la fase final
+	ld (ix+01fh),000h		;6768   ; el contador de fotogramas se reinicia lo baje o no
 	ret nz			;676c
 	set 5,(ix+00fh)		;676d
 	ret			;6771
-L_6772:
-	ld a,(ix+022h)		;6772
+ADSR_DESCENSO_SALTO:		; el descenso a saltos: resta +22 de una vez
+	ld a,(ix+022h)		;6772   ; aqui el descenso no es un escalon: se resta +22 entero
 	ld d,a			;6775
 	ld a,e			;6776
 	sub d			;6777
-	ld e,000h		;6778
+	ld e,000h		;6778   ; y si se pasa de cero, cero
 	jp m,L_677E		;677a
 	ld e,a			;677d
 L_677E:
 	ld a,b			;677e
-	cp (ix+023h)		;677f
+	cp (ix+023h)		;677f   ; la fase final llega tras +23 fotogramas
 	ret nz			;6782
 	set 5,(ix+00fh)		;6783
 	ret			;6787
-L_6788:
-	ld a,(ix+004h)		;6788
-	cp (ix+024h)		;678b
+ADSR_EXTINCION:		; la ultima fase: baja de uno en uno al acercarse el fin de la nota
+	ld a,(ix+004h)		;6788   ; +04 = los fotogramas que le quedan a la nota
+	cp (ix+024h)		;678b   ; mientras falte mas de +24 no se apaga nada
 	ret nc			;678e
 	ld a,e			;678f
-	dec a			;6790
+	dec a			;6790   ; en los ultimos +24 fotogramas el volumen se extingue de uno en uno
 	ret m			;6791
 	ld e,a			;6792
 	ret			;6793
-L_6794:
-	inc hl			;6794
+PARTITURA_AVANZA:		; deja el puntero del canal en el byte siguiente al leido
+	inc hl			;6794   ; el byte leido se da por consumido
 	ld (ix+002h),l		;6795
 	ld (ix+003h),h		;6798
 	ret			;679b
-L_679C:
-	ld hl,0e174h		;679c
+FUNDIDO_TICK:		; un escalon de fundido cada 32 fotogramas, nueve escalones
+	ld hl,0e174h		;679c   ; el reloj del fundido
 	inc (hl)			;679f
 	ld a,(hl)			;67a0
-	cp 020h		;67a1
+	cp 020h		;67a1   ; un escalon cada 32 fotogramas
 	ret nz			;67a3
 	ld (hl),000h		;67a4
 	inc hl			;67a6
-	inc (hl)			;67a7
+	inc (hl)			;67a7   ; E175 = el escalon en que va el fundido
 	ld a,(hl)			;67a8
-	cp 009h		;67a9
+	cp 009h		;67a9   ; nueve escalones y se acabo
 	ret nz			;67ab
 	ld hl,0e160h		;67ac
-	res 0,(hl)		;67af
+	res 0,(hl)		;67af   ; el fundido se apaga solo al llegar al final
 	xor a			;67b1
 	ld hl,0e174h		;67b2
 	ld (hl),a			;67b5
 	inc hl			;67b6
 	ld (hl),a			;67b7
-	ld a,(0e02ch)		;67b8
+	ld a,(0e02ch)		;67b8   ; los canales 1 y 2 llevando el mismo sonido es la senal de que tambien hay que callarlos
 	ld e,a			;67bb
 	ld a,(0e058h)		;67bc
 	cp e			;67bf
-	jr nz,L_67D0		;67c0
-	ld ix,0e058h		;67c2
-	call L_681A		;67c6
+	jr nz,FUNDIDO_CALLA		;67c0
+	ld ix,0e058h		;67c2   ; esos dos son los unicos que el fundido no calla por su cuenta
+	call CANAL_LIBERA		;67c6
 	ld ix,0e084h		;67c9
-	call L_681A		;67cd
-L_67D0:
-	ld de,0002ch		;67d0
+	call CANAL_LIBERA		;67cd
+FUNDIDO_CALLA:		; apaga los canales al terminar el fundido
+	ld de,0002ch		;67d0   ; 0x2C bytes de un canal al siguiente
 	ld ix,0e000h		;67d3
-	call L_681A		;67d7
+	call CANAL_LIBERA		;67d7
 	add ix,de		;67da
-	call L_681A		;67dc
+	call CANAL_LIBERA		;67dc
 	ld ix,0e0b0h		;67df
-	call L_681A		;67e3
+	call CANAL_LIBERA		;67e3
 	add ix,de		;67e6
-	call L_681A		;67e8
+	call CANAL_LIBERA		;67e8
 	add ix,de		;67eb
-	call L_681A		;67ed
+	call CANAL_LIBERA		;67ed
 	add ix,de		;67f0
-	call L_681A		;67f2
+	call CANAL_LIBERA		;67f2
 	ret			;67f5
-L_67F6:
-	ld a,(0e02ch)		;67f6
+FUNDIDO_APLICA:		; resta el nivel del fundido al volumen que iba a sonar
+	ld a,(0e02ch)		;67f6   ; la misma comprobacion que en 0x67B8: canales 1 y 2 con el mismo sonido
 	ld b,a			;67f9
 	ld a,(0e058h)		;67fa
 	cp b			;67fd
-	jr z,L_6806		;67fe
-	ld a,(0e177h)		;6800
+	jr z,FUNDIDO_RESTA		;67fe
+	ld a,(0e177h)		;6800   ; la mascara sin los bits de los canales 2 y 3
 	and 0f3h		;6803
-	ret z			;6805
-L_6806:
-	bit 2,(ix+00dh)		;6806
+	ret z			;6805   ; esos dos canales no se atenuan: son los que siguen sonando durante el fundido
+FUNDIDO_RESTA:		; E menos E175, con suelo en cero
+	bit 2,(ix+00dh)		;6806   ; con la envolvente por hardware no hay volumen que restar: se calla y ya
 	jr nz,L_6817		;680a
-	ld a,(0e175h)		;680c
+	ld a,(0e175h)		;680c   ; el nivel del fundido se resta al volumen
 	ld b,a			;680f
 	ld a,e			;6810
 	sub b			;6811
-	ld e,000h		;6812
+	ld e,000h		;6812   ; y no se da la vuelta: el suelo es cero
 	ret m			;6814
 	ld e,a			;6815
 	ret			;6816
 L_6817:
 	ld e,000h		;6817
 	ret			;6819
-L_681A:
-	xor a			;681a
+CANAL_LIBERA:		; deja el canal libre y borra lo que estaba sonando
+	xor a			;681a   ; soltar un canal es olvidar el sonido, la prioridad y las banderas
 	ld (ix+000h),a		;681b
 	ld (ix+001h),a		;681e
-	ld (ix+005h),a		;6821
+	ld (ix+005h),a		;6821   ; tambien las vueltas de los dos bucles de repeticion
 	ld (ix+006h),a		;6824
-	ld (ix+00ah),a		;6827
+	ld (ix+00ah),a		;6827   ; y el periodo y el volumen que iban a escribirse
 	ld (ix+00bh),a		;682a
 	ld (ix+00ch),a		;682d
 	ld (ix+00dh),a		;6830
 	ld (ix+00eh),a		;6833
 	ld (ix+00fh),a		;6836
-	ld a,(0e177h)		;6839
+	ld a,(0e177h)		;6839   ; lo que queda solo vale para el PSG
 	cp 008h		;683c
 	ret nc			;683e
-	cp 004h		;683f
-	ld hl,0e17ah		;6841
+	cp 004h		;683f   ; el canal 2 pide el ruido por un lado y los otros dos por otro
+	ld hl,0e17ah		;6841   ; E17A dice que registros del PSG estan pendientes de escribir
 	jr nz,L_6850		;6844
-	res 1,(hl)		;6846
-	bit 3,(hl)		;6848
+	res 1,(hl)		;6846   ; se retira la peticion de ruido de este canal
+	bit 3,(hl)		;6848   ; si estaba servida, se pasa al bit que lo recuerda
 	ret z			;684a
 	res 3,(hl)		;684b
 	set 2,(hl)		;684d
@@ -800,12 +806,12 @@ L_6850:
 	res 3,(hl)		;6850
 	ret			;6852
 PARTITURA_ORDEN:		; byte >= 0xE0 del flujo: orden (A & 1F) por la tabla de 0x6868
-	cp 0e0h		;6853
+	cp 0e0h		;6853   ; de 0xD0 a 0xDF son octava y volumen, que no gastan tabla
 	jp c,L_6A90		;6855
-	and 01fh		;6858
-	push hl			;685a
+	and 01fh		;6858   ; quedan 31 ordenes, de la 0xE0 a la 0xFE
+	push hl			;685a   ; HL vuelve por la pila: cada orden lo recupera con su POP
 	ld hl,06868h		;685b
-	add a,a			;685e
+	add a,a			;685e   ; dos bytes por entrada
 	ld e,a			;685f
 	ld d,000h		;6860
 	add hl,de			;6862
@@ -813,7 +819,7 @@ PARTITURA_ORDEN:		; byte >= 0xE0 del flujo: orden (A & 1F) por la tabla de 0x686
 	inc hl			;6864
 	ld d,(hl)			;6865
 	ex de,hl			;6866
-	jp (hl)			;6867
+	jp (hl)			;6867   ; se salta a la orden, y su RET devuelve al lector de la partitura
 
 ; ----------------------------------------------------------------------
 ; DATOS tabla_partitura: 31 palabras: las ordenes 0xE0..0xFE del interprete de
@@ -1312,7 +1318,7 @@ DATA_tabla_6B49:
 L_6B85:
 	call L_6B92		;6b85
 	call L_6C97		;6b88
-	call SONIDO_INIT		;6b8b
+	call SCC_VUELCA_REGISTROS		;6b8b
 	call SCC_FORMAS_ONDA		;6b8e
 	ret			;6b91
 L_6B92:
@@ -1529,7 +1535,7 @@ L_6CE3:
 	ld hl,0e17fh		;6ce3
 	res 7,(hl)		;6ce6
 	ret			;6ce8
-SONIDO_INIT:		; desde INIT (0x42DE): inicializa los canales y el SCC (0x9880)
+SCC_VUELCA_REGISTROS:		; escribe en el SCC (0x9880-0x988F) los registros que E17E/E17F marcan cambiados, leyendolos de su copia en E180-E18F; corre en CADA fotograma desde 0x6B8B, y 0x42B9 lo usa con los 16 bits a 1 para forzar el volcado entero al arrancar
 	ld ix,0e17eh		;6ce9
 	ld hl,0e180h		;6ced
 	ld de,09880h		;6cf0

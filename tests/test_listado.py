@@ -242,7 +242,7 @@ class TestDatosContraHerramientas(unittest.TestCase):
 # Rutinas llamadas con CALL y aun sin bautizar, por pagina, al escribir este
 # test. Solo pueden bajar. p03: 103 el 2026-08-19 (es la logica de carrera,
 # por bautizar; antes el tope era 77 y el test estaba rojo a proposito).
-SUELTAS_MAX = {0: 104, 13: 31, 3: 103, 15: 0}
+SUELTAS_MAX = {0: 104, 13: 12, 3: 103, 15: 0}
 
 
 class TestParcheCircuitos(unittest.TestCase):

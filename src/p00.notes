@@ -74,7 +74,7 @@ L 0x4221 ESTADO_3          por el despachador de 0x419D
 L 0x4252 ESTADO_4          por el despachador de 0x419D
 L 0x4279 ESTADO_5          `jp 0x5A27`
 L 0x427C TRAS_ESTADO_012   retorno empujado por 0x418C para los estados 0, 1 y 2: mira F006 y los mandos
-L 0x42B9 ARRANCA_SONIDO    D/E/F, 0x6CE9 de la pagina 13 (init), restaura, PSG R7=0xBF, pide el sonido 0x46 y vuelve a 1/2/3
+L 0x42B9 ARRANCA_SONIDO    pone a 1 los 16 bits de E17E/E17F para que 0x6CE9 de la pagina 13 vuelque TODOS los registros del SCC, restaura los bancos, deja el PSG R7 en 0xBF, pide el sonido 0x46 y vuelve a 1/2/3
 L 0x4317 VDP_REGISTROS     escribe R0..R7 desde la tabla de 0x4328
 D 0x4328 0x4330 tabla_vdp los ocho registros del VDP: R0=02 (G2), R1=E2, R2=0E (nombres 0x3800), R3=7F (colores 0x0000), R4=07 (patrones 0x2000), R5=76 (atributos de sprites 0x3B00), R6=03 (patrones de sprites 0x1800), R7=E4 (fondo azul oscuro)
 F 0x4328 8
