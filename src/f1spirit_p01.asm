@@ -2333,11 +2333,11 @@ SPRITE_OBJETO_XY:		; bit 0 de (ix+31) = 0; fuera si y >= B' o x >= C'; suma D'E'
 	ld (ix+031h),a		;7024
 	rl b		;7027
 	ret c			;7029
-	ld a,(0e1deh)		;702a   ; E1DE = 1: patron 0 en vez de (ix+33)
-	cp 001h		;702d
-	jr nz,SPRITE_PATRON		;702f
-	xor a			;7031
-	jr SPRITE_ESCRIBE_PAR		;7032
+	ld a,(0e1deh)		;702a   ; E1DE = 1: patron 0 en vez de (ix+33)	; Variable detección cartucho Konami
+	cp 001h			;702d	; (es 2 si hay cartucho Konami; nunca es 1.
+	jr nz,SPRITE_PATRON	;702f	; Este código formaba parte del truco para usar sprites de pingüinos,
+	xor a			;7031	; pero en esta versión está incompleto y sólo aplica los mismos patrones
+	jr SPRITE_ESCRIBE_PAR	;7032	; a todos los sprites, sin la definición especial de esos patrones)
 SPRITE_PATRON:		; A = (ix+33)
 	ld a,(ix+033h)		;7034
 SPRITE_ESCRIBE_PAR:		; los dos sprites del objeto
@@ -3075,9 +3075,9 @@ CODIGO_UJM3EDC:		; si F0FE != 0 y E1DE != 2: F006 = 1, E25B = 0xFF, E29D = 0 y p
 	ret z			;74c8
 	ld a,001h		;74c9
 	ld c,a			;74cb
-	ld a,(0e1deh)		;74cc
-	cp 002h		;74cf
-	ret z			;74d1
+	ld a,(0e1deh)		;74cc	; Variable detección cartucho Konami
+	cp 002h			;74cf	; (es 2 si hay cartucho Konami)
+	ret z			;74d1	; (no hace nada si hay cartucho Konami)
 	ld a,c			;74d2
 	ld (0f006h),a		;74d3
 	ld a,0ffh		;74d6

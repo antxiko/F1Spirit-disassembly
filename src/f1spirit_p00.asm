@@ -1482,8 +1482,8 @@ L_497A:
 	ld a,(0f0feh)		;499c
 	dec a			;499f
 	call z,L_49AF		;49a0
-	ld a,(0e1deh)		;49a3
-	cp 002h		;49a6
+	ld a,(0e1deh)		;49a3	; Variable detección cartucho Konami
+	cp 002h			;49a6	; (es 2 si hay cartucho Konami)
 	ret nz			;49a8
 	ld a,001h		;49a9
 	ld (0e1dfh),a		;49ab
@@ -3802,8 +3802,8 @@ L_58A0:
 L_58A1:
 	ret			;58a1
 L_58A2:
-	ld a,(0e1deh)		;58a2
-	cp 002h		;58a5
+	ld a,(0e1deh)		;58a2	; Variable detección cartucho Konami
+	cp 002h			;58a5	; (es 2 si hay cartucho Konami)
 	ret z			;58a7
 	ld a,(0f001h)		;58a8
 	ld c,a			;58ab
