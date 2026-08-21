@@ -169,7 +169,7 @@
 0x9F72   # sin llamador: un `jr $` (dos bytes)
 0x86CB   # sin llamador: xor a / ld (E190),a / ret (la segunda rutina del hueco de 0x86BC)
 0x8E3E   # sin llamador: la segunda rutina del hueco de 0x8E27 (contador que gira el coche)
-0x80F4   # sin llamador: ld a,2 / ld (E208),a / ret
+0x80F4   # sin llamador EN LA PAGINA: entra p03 0xB983 con un `jp 0x80F4`; ld a,2 / ld (E208),a / ret
 0x875F   # sin llamador: xor a y salta a 0x8763 (cola de otra rutina)
 0x8C64   # sin llamador: (ix+13) = 0, (ix+12) = 0xE0 y call 0x8CC1
 0x9CC5   # sin llamador: (ix+12) = 0 / ret

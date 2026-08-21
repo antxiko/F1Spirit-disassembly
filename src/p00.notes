@@ -131,7 +131,7 @@ F 0x5D29 w1
 # de 0x800 de la pantalla 2 (HL += 0x800 dos veces).
 # =============================================================================
 L 0x4460 LIMPIA_EA80_Y_ATRIBUTOS  borra 0x7F bytes de RAM desde EA80 (con 0xE0) y los atributos de sprites (0x3B00, 0x80 bytes a 0xE0 = fuera de pantalla)
-L 0x4474 TILES_16_58_F0     como 0x4476 con A=0xF0: patrones de los tiles 16..58 llenos de 0xF0 (mitad izquierda)
+L 0x4474 TILES_16_58_F0     como 0x4476 con A=0xF0, y ese 0xF0 es el COLOR, no el patron: cae en 0x4476, que llena los COLORES de los tiles 16..58 con A y trae los patrones del RLE de p15 0xB777. La nota anterior decia "patrones llenos de 0xF0" y su propia vecina de 0x4476 ya lo desmentia
 L 0x4476 TILES_16_58_A      mapea D/E/F, llena los colores de los tiles 16..58 con A, trae sus patrones de p15:0xB777 (RLE) y vuelve a 1/2/3
 L 0x4484 PATRONES_16_DESDE_B777  descomprime (RLE) p15:0xB777 en los patrones desde el tile 16 (VRAM 0x2080), 3 tercios
 L 0x448D COLORES_16_58_A    llena 0x158 bytes de la tabla de colores desde el tile 16 (VRAM 0x0080) con A, 3 tercios

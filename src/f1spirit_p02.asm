@@ -27,278 +27,323 @@ DATA_operando_sub:
 
 
 E208_POR_X_COLA:		; cola de p01 0x7FFC: E208 = 0 si (ix+4) >= 0xD4, si no 1
-	ld a,000h		;8001
+	ld a,000h		;8001   ; A = 0 si el `sub 0xD4` que empieza en p01 0x7FFF no dio negativo
 	jp p,E208_GUARDA_COLA		;8003
-	inc a			;8006
+	inc a			;8006   ; dio negativo, o sea (ix+4) < 0xD4: A = 1
 E208_GUARDA_COLA:		; ld (E208),a de la cola de p01 0x7FFC
-	ld (0e208h),a		;8007
+	ld (0e208h),a		;8007   ; E208 queda en 0 o en 1, y de ahi p01 0x7FDB saca el 4 o el 3 que fuerzan el tipo del rival siguiente
 	ret			;800a
 E20F_CADA_64:		; cada 64 fotogramas E20F++ (tope 0xFF) (desde p01 0x7F62)
-	ld a,(0e1c3h)		;800b
-	and 03fh		;800e
+	ld a,(0e1c3h)		;800b   ; E1C3 = el contador de fotogramas, que p00 0x418C sube en cada interrupcion
+	and 03fh		;800e   ; uno de cada 64, algo mas de un segundo
 	ret nz			;8010
 	ld a,(0e20fh)		;8011
 	inc a			;8014
-	ret z			;8015
-	ld (0e20fh),a		;8016
+	ret z			;8015   ; se planta en 0xFF: el `inc` que daria la vuelta no llega a guardarse
+	ld (0e20fh),a		;8016   ; E20F es el factor con el que p01 0x7F85 mide el ritmo; sube durante toda la carrera
 	ret			;8019
 INICIA_RIVALES:		; pagina 15 en A000; 0x8025; 1/2/3
-	ld a,00fh		;801a
-	call 04457h		;801c
+	ld a,00fh		;801a   ; las dos tablas de rivales estan en la pagina 15...
+	call 04457h		;801c   ; ...que p00 0x4457 pone en 0xA000, encima de la 3
 	call INICIA_RIVALES_VA		;801f
-	jp 043feh		;8022
-INICIA_RIVALES_VA:		; E2AD, E2B1, E36D, E2AC, E36C, E321, E3E1, E308, E3C8, E208 = 5; tramo (0x814E) del coche 1 y, con dos jugadores, del 2
-	push iy		;8025
-	ld a,005h		;8027
-	ld (0e2adh),a		;8029
-	ld (0e2b1h),a		;802c
-	ld (0e36dh),a		;802f
-	ld (0e2ach),a		;8032
+	jp 043feh		;8022   ; y p00 0x43FE devuelve el mapeo 1/2/3 al salir
+
+; ----------------------------------------------------------------------
+; Arranque de la carrera (desde p00 0x59F0). Pone los contadores de los
+; dos coches a 5 y les busca el tramo de la primera vuelta. OJO, LA
+; SEGUNDA LLAMADA A 0x814E NO HACE NADA: 0x8047 deja IY en E2C0 y nadie
+; lo cambia antes del `call nz` de 0x8053, asi que con dos jugadores se
+; repite el coche 1 en vez de hacer el 2. Falta un `ld iy,0E380h`, el
+; mismo descuido que la errata de p03 0xA779. No se nota: el unico que
+; lee (iy-16) es 0x8171, y 0x8129 llama a 0x814E justo antes cada vez.
+; ----------------------------------------------------------------------
+INICIA_RIVALES_VA:		; E2AD, E2B1, E36D, E2AC, E36C, E321, E3E1, E308, E3C8, E208 = 5; tramo (0x814E) del coche 1 y, con dos jugadores, OTRA VEZ el coche 1: falta el `ld iy,0E380h` antes de 0x8053
+	push iy		;8025   ; IY lo trae el llamador y hay que devolverselo
+	ld a,005h		;8027   ; los contadores de la cadencia arrancan todos en 5
+	ld (0e2adh),a		;8029   ; E2AD = (iy-13) del coche 1: el tope de rivales con el que se trabaja
+	ld (0e2b1h),a		;802c   ; E2B1 = (iy-0F) del coche 1: el tope que trae la tabla de tramos
+	ld (0e36dh),a		;802f   ; E36D = (iy-13) del coche 2; su gemela E371 ((iy-0F)) NO esta en esta lista
+	ld (0e2ach),a		;8032   ; E2AC y E36C = (iy-14): lo que le queda al tramo, en pasos de 32 fotogramas
 	ld (0e36ch),a		;8035
-	ld (0e321h),a		;8038
+	ld (0e321h),a		;8038   ; E321 y E3E1 = (iy+61): la cuenta atras hasta el rival siguiente
 	ld (0e3e1h),a		;803b
-	ld (0e308h),a		;803e
+	ld (0e308h),a		;803e   ; E308 y E3C8 = (iy+48): lo que se recarga en esa cuenta atras
 	ld (0e3c8h),a		;8041
-	ld (0e208h),a		;8044
-	ld iy,0e2c0h		;8047
-	call TRAMO_POR_VUELTA		;804b
-	ld a,(0e1c2h)		;804e
+	ld (0e208h),a		;8044   ; E208 = 5, que no es ni 3 ni 4: al empezar no se fuerza ningun tipo
+	ld iy,0e2c0h		;8047   ; el coche 1
+	call TRAMO_POR_VUELTA		;804b   ; (iy-16) = el tramo que toca por categoria y vuelta
+	ld a,(0e1c2h)		;804e   ; bit 5 de E1C2 = dos jugadores
 	bit 5,a		;8051
-	call nz,TRAMO_POR_VUELTA		;8053
+	call nz,TRAMO_POR_VUELTA		;8053   ; tendria que ser el coche 2, pero IY sigue en E2C0: se repite el 1
 	pop iy		;8056
 	ret			;8058
 PASO_RIVALES:		; pagina 15 en A000; 0x8064; 1/2/3 (desde p03 0xA150)
-	ld a,00fh		;8059
+	ld a,00fh		;8059   ; otra vez la pagina 15 en 0xA000
 	call 04457h		;805b
 	call PASO_RIVALES_VA		;805e
-	jp 043feh		;8061
-PASO_RIVALES_VA:		; 0x80DE; cada 8 fotogramas 0x8129; (iy+61)-- (0x819D): al pasar por 0 lee la entrada siguiente (0x80FA), 0x8084, sonido 0x2C si E1DA != 0; C = ha tocado
-	call E208_6_7_A_3_4		;8064
-	ld a,(0e1c3h)		;8067
-	and 007h		;806a
+	jp 043feh		;8061   ; y 1/2/3 al salir; la CY que trae 0x8064 sobrevive porque el `inc a` de p00 0x43FE no toca el acarreo
+PASO_RIVALES_VA:		; 0x80DE; cada 8 fotogramas 0x8129; (iy+61)-- (0x819D): al pasar por 0 lee la entrada siguiente (0x80FA), 0x8084 y devuelve CY; el sonido 0x2C de 0x807F depende de E1DA, que no la escribe nadie, asi que no suena nunca
+	call E208_6_7_A_3_4		;8064   ; lo primero, rearmar E208 si el rival forzado ya se ha ido
+	ld a,(0e1c3h)		;8067   ; el contador de fotogramas
+	and 007h		;806a   ; uno de cada 8: mirar si hay que cambiar de tramo
 	call z,TRAMO_RIVALES		;806c
-	call CUENTA_RIVAL		;806f
-	ret nc			;8072
-	call RIVAL_SIGUIENTE		;8073
-	call RIVAL_NUEVO		;8076
-	ld a,(0e1dah)		;8079
+	call CUENTA_RIVAL		;806f   ; la cuenta atras hasta el rival siguiente
+	ret nc			;8072   ; mientras no pase de 0 no hay nada que hacer
+	call RIVAL_SIGUIENTE		;8073   ; lee el registro que toca: D = espera, C = tipo, B = el byte de (ix+36)
+	call RIVAL_NUEVO		;8076   ; y decide si el tipo se fuerza; de paso mueve el tope de rivales
+	ld a,(0e1dah)		;8079   ; E1DA no la escribe NADIE en las 16 paginas, y p00 0x4117 pone a cero E000-F0FF al arrancar...
 	or a			;807c
-	ld a,02ch		;807d
+	ld a,02ch		;807d   ; ...asi que este sonido 0x2C no llega a sonar nunca
 	call nz,04174h		;807f
-	scf			;8082
+	scf			;8082   ; CY = toca sacar un rival; p03 0xA153 le da la vuelta con un `ccf`
 	ret			;8083
 RIVAL_NUEVO:		; E209-- (si > 0); a cero 0x80AF (C = nada); si (iy+7E)+7 < (iy+71): (iy-13) = (iy-0F) (+1 si < E91C) y (iy+56) = 0
-	ld a,(0e209h)		;8084
+	ld a,(0e209h)		;8084   ; E209 = los fotogramas de gracia que quedan desde que se forzo un tipo
 	or a			;8087
 	jr z,RIVAL_NUEVO_E209		;8088
-	dec a			;808a
+	dec a			;808a   ; mientras no sea cero, baja de uno en uno
 RIVAL_NUEVO_E209:		; E209 = A
-	ld (0e209h),a		;808b
+	ld (0e209h),a		;808b   ; se guarda el valor nuevo (o el mismo cero)
 	or a			;808e
-	call z,RIVAL_POR_E208		;808f
-	ret c			;8092
-	ld a,(iy+07eh)		;8093
+	call z,RIVAL_POR_E208		;808f   ; justo al llegar a cero se vuelve a mirar E208
+	ret c			;8092   ; CY = 0x80AF ha forzado el tipo, y entonces el tope no se toca
+	ld a,(iy+07eh)		;8093   ; (iy+7E) = la posicion virtual que lleva p01 0x7F85 (1 el primero, 99 el ultimo)
 	add a,007h		;8096
-	cp (iy+071h)		;8098
-	ret nc			;809b
-	ld a,(iy-00fh)		;809c
-	ld hl,0e91ch		;809f
+	cp (iy+071h)		;8098   ; (iy+71) = la posicion que sale en el marcador
+	ret nc			;809b   ; si la virtual no va mas de 7 puestos por delante, se sale
+	ld a,(iy-00fh)		;809c   ; (iy-0F) = el tope de rivales que puso la tabla de tramos
+	ld hl,0e91ch		;809f   ; E91C = cuantos objetos hay en pista ahora mismo
 	cp (hl)			;80a2
-	jr nc,RIVAL_GUARDA_13		;80a3
-	add a,001h		;80a5
+	jr nc,RIVAL_GUARDA_13		;80a3   ; con tantos o mas, el tope se queda como estaba
+	add a,001h		;80a5   ; con menos, sube uno: mas trafico para el que va sobrado
 RIVAL_GUARDA_13:		; (iy-13) = A, (iy+56) = 0
-	ld (iy-013h),a		;80a7
-	ld (iy+056h),000h		;80aa
+	ld (iy-013h),a		;80a7   ; (iy-13) es el tope con el que compara p03 0xA42E
+	ld (iy+056h),000h		;80aa   ; y los rivales de este tramo vuelven a la velocidad lenta (p03 0xA104)
 	ret			;80ae
+
+; ----------------------------------------------------------------------
+; El tipo FORZADO. Con un solo jugador el juego se guarda dos tipos, el
+; 8 y el 9, para el rival que hay que batir: p02 0x9E40 manda a p01
+; 0x7FFC el que desaparece, alli E208 queda en 0 o 1 segun la x, p01
+; 0x7FDB lo convierte en 4 o 3, y aqui ese 3 o ese 4 pisa en C el tipo
+; que traia la lista de p15. Los tipos 8 y 9 son ademas los dos que
+; p03 0xA539 no cuenta en E91C.
+; ----------------------------------------------------------------------
 RIVAL_POR_E208:		; un jugador: E208 = 3 -> C = 8, E208 = 6, E209 = 10, carry; E208 = 4 -> C = 9, E208 = 7, E209 = 10, carry; si no NC
-	ld a,(0e1c2h)		;80af
+	ld a,(0e1c2h)		;80af   ; con dos jugadores esto no se hace...
 	bit 5,a		;80b2
-	ret nz			;80b4
-	ld a,(0e208h)		;80b5
-	cp 003h		;80b8
+	ret nz			;80b4   ; ...se vuelve sin CY y el tipo lo manda la lista de p15
+	ld a,(0e208h)		;80b5   ; E208 lo dejo p01 0x7FDB al desaparecer el rival anterior
+	cp 003h		;80b8   ; el 3 saca el tipo 8
 	jr z,RIVAL_E208_3		;80ba
-	cp 004h		;80bc
+	cp 004h		;80bc   ; el 4 saca el tipo 9
 	jr z,RIVAL_E208_4		;80be
-	or a			;80c0
+	or a			;80c0   ; cualquier otro valor: NC, no se fuerza nada
 	ret			;80c1
 RIVAL_E208_3:		; E208 = 6, E209 = 10
-	ld c,008h		;80c2
-	ld a,006h		;80c4
+	ld c,008h		;80c2   ; C = 8, el tipo que va a montar p03 0xA19F pisando el de la lista
+	ld a,006h		;80c4   ; E208 = 6: forzado y a la espera
 	ld (0e208h),a		;80c6
-	ld a,00ah		;80c9
+	ld a,00ah		;80c9   ; E209 = 10 fotogramas hasta poder forzar otra vez
 	ld (0e209h),a		;80cb
-	scf			;80ce
+	scf			;80ce   ; CY = tipo forzado
 	ret			;80cf
 RIVAL_E208_4:		; E208 = 7, E209 = 10
-	ld c,009h		;80d0
-	ld a,007h		;80d2
+	ld c,009h		;80d0   ; C = 9, el otro de la pareja
+	ld a,007h		;80d2   ; E208 = 7, el que hace juego con el 6
 	ld (0e208h),a		;80d4
-	ld a,00ah		;80d7
+	ld a,00ah		;80d7   ; los mismos 10 fotogramas
 	ld (0e209h),a		;80d9
-	scf			;80dc
+	scf			;80dc   ; CY, igual que en 0x80CE
 	ret			;80dd
 E208_6_7_A_3_4:		; si E209 = 0 y E208 es 6 o 7: E208 -= 3
-	ld a,(0e209h)		;80de
+	ld a,(0e209h)		;80de   ; mientras queden fotogramas de gracia no se rearma nada
 	or a			;80e1
 	ret nz			;80e2
-	ld a,(0e208h)		;80e3
+	ld a,(0e208h)		;80e3   ; E208 - 6: da 0 o 1 si estaba en 6 o en 7
 	sub 006h		;80e6
-	cp 002h		;80e8
+	cp 002h		;80e8   ; con cualquier otro valor (0 a 5) se deja como esta
 	ret nc			;80ea
-	ld a,(0e208h)		;80eb
+	ld a,(0e208h)		;80eb   ; el 6 vuelve a 3 y el 7 a 4...
 	sub 003h		;80ee
-	ld (0e208h),a		;80f0
+	ld (0e208h),a		;80f0   ; ...y a la primera cuenta atras que venza se fuerza otro tipo 8 o 9
 	ret			;80f3
-L_80F4:
-	ld a,002h		;80f4
+E208_2:		; E208 = 2, o sea ni 3 ni 4: apaga el tipo forzado (entra p03 0xB983 con un `jp`)
+	ld a,002h		;80f4   ; E208 = 2, que no es ni 3 ni 4: apaga el forzado (entra p03 0xB983 con un `jp`)
 	ld (0e208h),a		;80f6
 	ret			;80f9
-RIVAL_SIGUIENTE:		; (iy+48) = tipo D de la entrada (0x8105), (iy+61) = 8
-	call ENTRADA_RIVAL		;80fa
-	ld (iy+048h),d		;80fd
-	ld (iy+061h),008h		;8100
+RIVAL_SIGUIENTE:		; (iy+48) = D, la espera que trae la entrada (0x8105); (iy+61) = 8
+	call ENTRADA_RIVAL		;80fa   ; lee el registro (iy-17) de la lista de rivales
+	ld (iy+048h),d		;80fd   ; (iy+48) = D, el primer byte: la espera hasta el rival de DESPUES
+	ld (iy+061h),008h		;8100   ; (iy+61) = 8: si este no llega a entrar, se reintenta en 8 fotogramas
 	ret			;8104
-ENTRADA_RIVAL:		; HL = p15 0xB9C3[(iy-18)] + 3*(iy-17): D = tipo, C, B; 0xFF -> (iy-17) = 0 y repite
-	ld a,(iy-018h)		;8105
-	ld hl,0b9c3h		;8108
-	call 04a44h		;810b
-	ld a,(iy-017h)		;810e
+ENTRADA_RIVAL:		; HL = p15 0xB9C3[(iy-18)] + 3*(iy-17): D = espera, C = tipo, B = (ix+36); 0xFF -> (iy-17) = 0 y repite
+	ld a,(iy-018h)		;8105   ; (iy-18) = cual de las nueve listas, lo escogio la tabla de tramos
+	ld hl,0b9c3h		;8108   ; tabla_B9C3 de la pagina 15: nueve punteros
+	call 04a44h		;810b   ; p00 0x4A44: HL = la palabra A de la tabla HL
+	ld a,(iy-017h)		;810e   ; (iy-17) = por que registro va la lista
 	ld e,a			;8111
-	add a,a			;8112
+	add a,a			;8112   ; por tres, que es lo que ocupa cada registro
 	add a,e			;8113
 	ld e,a			;8114
 	ld d,000h		;8115
 	add hl,de			;8117
-	ld a,(hl)			;8118
-	cp 0ffh		;8119
+	ld a,(hl)			;8118   ; el primer byte del registro
+	cp 0ffh		;8119   ; un 0xFF ahi cierra la lista
 	jr z,ENTRADA_RIVAL_REINICIA		;811b
-	ld d,a			;811d
+	ld d,a			;811d   ; D = espera, C = tipo, B = el byte que p03 0xA1A2 mete en (ix+36)
 	inc hl			;811e
 	ld c,(hl)			;811f
 	inc hl			;8120
 	ld b,(hl)			;8121
 	ret			;8122
 ENTRADA_RIVAL_REINICIA:		; (iy-17) = 0
-	ld (iy-017h),000h		;8123
+	ld (iy-017h),000h		;8123   ; se vuelve al primer registro y se relee
 	jr ENTRADA_RIVAL		;8127
-TRAMO_RIVALES:		; cada 32 fotogramas: tramo (0x814E); (iy-14)-- a cero: entrada de 4 bytes (0x8162) -> (iy-13), (iy-0F), (iy-18), (iy-14), (iy+56); (iy-17) = 0
-	ld a,(0e1c3h)		;8129
-	and 01fh		;812c
+TRAMO_RIVALES:		; cada 32 fotogramas: tramo (0x814E); (iy-14)-- a cero: registro de 3 bytes (0x8162) -> tope (iy-13)/(iy-0F), lista (iy-18), duracion (iy-14), velocidad (iy+56); y (iy-17) = 0
+	ld a,(0e1c3h)		;8129   ; el contador de fotogramas otra vez
+	and 01fh		;812c   ; uno de cada 32 (el llamador ya filtraba uno de cada 8)
 	ret nz			;812e
-	call TRAMO_POR_VUELTA		;812f
-	ld a,(iy-014h)		;8132
+	call TRAMO_POR_VUELTA		;812f   ; la vuelta puede haber cambiado, asi que el tramo se recalcula siempre
+	ld a,(iy-014h)		;8132   ; (iy-14) = lo que le queda al tramo, en pasos de 32 fotogramas
 	dec a			;8135
 	ld (iy-014h),a		;8136
-	ret nz			;8139
-	call ENTRADA_TRAMO		;813a
-	ld (iy-013h),c		;813d
+	ret nz			;8139   ; mientras no llegue a cero, el tramo sigue
+	call ENTRADA_TRAMO		;813a   ; el registro siguiente de la lista de tramos
+	ld (iy-013h),c		;813d   ; (iy-13) y (iy-0F) = cuantos rivales caben a la vez en el tramo nuevo
 	ld (iy-00fh),c		;8140
-	ld (iy-018h),d		;8143
-	ld (iy-014h),e		;8146
-	ld (iy+056h),b		;8149
-	jr ENTRADA_RIVAL_REINICIA		;814c
+	ld (iy-018h),d		;8143   ; (iy-18) = cual de las nueve listas de rivales se usa
+	ld (iy-014h),e		;8146   ; (iy-14) = cuanto dura
+	ld (iy+056h),b		;8149   ; (iy+56) = 0 o 1: la velocidad lenta o la rapida del tipo (p03 0xA104)
+	jr ENTRADA_RIVAL_REINICIA		;814c   ; el salto solo se aprovecha para poner (iy-17) a 0; la lectura que hace 0x8123 detras se tira
 TRAMO_POR_VUELTA:		; (iy-16) = p15 0xB8BD[E25B][(iy-2) vueltas]
-	ld a,(0e25bh)		;814e
-	ld hl,0b8bdh		;8151
+	ld a,(0e25bh)		;814e   ; E25B = la categoria, 0 a 5
+	ld hl,0b8bdh		;8151   ; tabla_B8BD de la pagina 15: los seis primeros punteros van a filas de 9 bytes
 	call 04a44h		;8154
-	ld e,(iy-002h)		;8157
+	ld e,(iy-002h)		;8157   ; (iy-2) = vueltas dadas, 0 a 8, que es la columna de la fila
 	ld d,000h		;815a
 	add hl,de			;815c
 	ld a,(hl)			;815d
-	ld (iy-016h),a		;815e
+	ld (iy-016h),a		;815e   ; (iy-16) = el tramo: que lista de rivales toca en esta vuelta
 	ret			;8161
-ENTRADA_TRAMO:		; HL = p15 0xB8C9[(iy-16)] + 3*(iy-15); (iy-15)++; D, E, C = byte&0x0F, B = bit 4; si el 4o byte es 0xFF, (iy-15) = 0
-	ld a,(iy-015h)		;8162
+
+; ----------------------------------------------------------------------
+; Un registro de la lista de tramos. Tres bytes: el primero dice cual
+; de las nueve listas de rivales se usa (0 a 8), el segundo cuanto dura
+; el tramo en pasos de 32 fotogramas (5, 8, 10, 15 o 20 en esta ROM) y
+; el tercero lleva DOS cosas: el nibble bajo es el tope de rivales a la
+; vez (0 a 4) y el bit alto escoge la velocidad. Ese bit se saca con
+; `xor b / rlca / and 1`, o sea es el bit 7 y NO el bit 4: en los datos
+; el bit 4 no aparece puesto ni una vez y el 7 si (0x80 a 0x84).
+; ----------------------------------------------------------------------
+ENTRADA_TRAMO:		; HL = p15 0xB8C9[(iy-16)] + 3*(iy-15); (iy-15)++; D = lista de rivales, E = duracion, C = byte2 & 0x0F (tope), B = bit 7 de byte2 (NO el bit 4); si el byte siguiente es 0xFF, (iy-15) = 0
+	ld a,(iy-015h)		;8162   ; (iy-15) = por que registro va la lista de tramos
 	ld e,a			;8165
-	inc a			;8166
+	inc a			;8166   ; y ya queda apuntado el siguiente
 	ld (iy-015h),a		;8167
 	ld d,000h		;816a
-	ld h,d			;816c
+	ld h,d			;816c   ; HL = E...
 	ld l,e			;816d
-	add hl,hl			;816e
-	add hl,de			;816f
+	add hl,hl			;816e   ; ...por dos...
+	add hl,de			;816f   ; ...mas uno: tres bytes por registro
 	push hl			;8170
-	ld a,(iy-016h)		;8171
-	ld de,0b8c9h		;8174
-	call 04a3bh		;8177
+	ld a,(iy-016h)		;8171   ; (iy-16) = cual de las diez listas de tramos
+	ld de,0b8c9h		;8174   ; 0xB8C9 es la tabla 0xB8BD corrida seis palabras: sus entradas 6 a 15
+	call 04a3bh		;8177   ; p00 0x4A3B: DE = la palabra A de la tabla DE
 	pop hl			;817a
-	add hl,de			;817b
-	ld d,(hl)			;817c
+	add hl,de			;817b   ; DE + 3*(iy-15) = el registro
+	ld d,(hl)			;817c   ; D = primer byte: cual de las nueve listas de rivales
 	inc hl			;817d
-	ld e,(hl)			;817e
+	ld e,(hl)			;817e   ; E = segundo byte: lo que dura el tramo, en pasos de 32 fotogramas
 	inc hl			;817f
-	ld a,(hl)			;8180
+	ld a,(hl)			;8180   ; tercer byte, que va partido en dos
 	ld b,a			;8181
-	and 00fh		;8182
+	and 00fh		;8182   ; C = el nibble bajo: cuantos rivales caben a la vez
 	ld c,a			;8184
-	xor b			;8185
-	rlca			;8186
+	xor b			;8185   ; A = el nibble alto, que es lo que sobra al quitarle el bajo
+	rlca			;8186   ; el `rlca` sube el bit 7 al bit 0...
 	and 001h		;8187
-	ld b,a			;8189
-	inc hl			;818a
+	ld b,a			;8189   ; ...asi que B se queda con el bit 7, no con el 4
+	inc hl			;818a   ; se asoma al primer byte del registro siguiente
 	ld a,(hl)			;818b
-	inc a			;818c
+	inc a			;818c   ; 0xFF: la lista se ha acabado
 	ret nz			;818d
-	ld (iy-015h),000h		;818e
+	ld (iy-015h),000h		;818e   ; se vuelve al primer registro; el de ahora ya esta leido y sirve igual
 	ret			;8192
 RIVAL_OTRA_VEZ:		; (iy-17)++ y (iy+61) = (iy+48) (desde p03 0xA13D)
-	inc (iy-017h)		;8193
-	ld a,(iy+048h)		;8196
+	inc (iy-017h)		;8193   ; el rival ha entrado: se pasa al registro siguiente de la lista
+	ld a,(iy+048h)		;8196   ; y la cuenta atras se recarga con la espera que traia la entrada usada
 	ld (iy+061h),a		;8199
 	ret			;819c
 CUENTA_RIVAL:		; (iy+61)--; C al pasar de 0
-	ld a,(iy+061h)		;819d
-	sub 001h		;81a0
-	ld (iy+061h),a		;81a2
+	ld a,(iy+061h)		;819d   ; (iy+61), la cuenta atras
+	sub 001h		;81a0   ; el `sub 1` da CY justo cuando valia 0, y entonces se queda en 0xFF
+	ld (iy+061h),a		;81a2   ; o sea que si nadie la recarga vuelve a avisar 256 fotogramas despues
 	ret			;81a5
+
+; ----------------------------------------------------------------------
+; Estado E250 = 16, la antesala del final: musica, fundido a blanco y
+; la pantalla entera del tile 0xFE, tambien blanco. Deja E250 en 17,
+; que es donde estan los 19 pasos de verdad.
+; ----------------------------------------------------------------------
 FINAL_16:		; E251 = 0: E252 = 0, musica 0x40 (0x884C) y paso siguiente; 1: fundido (0x83BA) y paso; 2: E300 = 0, colores 0x8..0x52F a 0xFF (0x83FB), E400 lleno de 0xFE, colores del tile 254 (0x7F0) a 0xFF, vuelca, E25E = EA6D = E25D = E251 = 0 y p00 0x5BA2 (E250 = 17)
-	ld a,(0e251h)		;81a6
+	ld a,(0e251h)		;81a6   ; E251 = el paso dentro del estado
 	and a			;81a9
-	jr z,FINAL_16_ARRANCA		;81aa
-	dec a			;81ac
+	jr z,FINAL_16_ARRANCA		;81aa   ; paso 0
+	dec a			;81ac   ; paso 1
 	jr z,FINAL_16_FUNDIDO		;81ad
-	xor a			;81af
-	ld (0e300h),a		;81b0
-	call COLORES_A_FF		;81b3
-	ld hl,0e400h		;81b6
+	xor a			;81af   ; paso 2, el ultimo
+	ld (0e300h),a		;81b0   ; E300 = 0
+	call COLORES_A_FF		;81b3   ; 0x520 bytes de 0xFF (blanco sobre blanco) en la tabla de colores desde el tile 1
+	ld hl,0e400h		;81b6   ; el buffer de nombres, E400..E6FF...
 	ld bc,002ffh		;81b9
-	ld a,0feh		;81bc
-	call 04b88h		;81be
-	ld a,0ffh		;81c1
-	ld hl,007f0h		;81c3
+	ld a,0feh		;81bc   ; ...lleno del tile 0xFE
+	call 04b88h		;81be   ; p00 0x4B88 rellena por ldir y escribe BC+1 bytes: los 768 justos
+	ld a,0ffh		;81c1   ; y el color del tile 0xFE tambien a blanco...
+	ld hl,007f0h		;81c3   ; ...su entrada de la tabla de colores es la 254*8 = 0x7F0
 	ld bc,00008h		;81c6
-	call 047e6h		;81c9
-	ld iy,0e2c0h		;81cc
-	call 044bch		;81d0
-	xor a			;81d3
+	call 047e6h		;81c9   ; p00 0x47E6 lo hace en los tres tercios de la pantalla
+	ld iy,0e2c0h		;81cc   ; p00 0x44BC pide IY en el bloque de un coche
+	call 044bch		;81d0   ; y vuelca los 768 bytes de E400 a la tabla de nombres: pantalla en blanco
+	xor a			;81d3   ; E25E = 0
 	ld (0e25eh),a		;81d4
-	xor a			;81d7
-	ld (0ea6dh),a		;81d8
-	ld (0e25dh),a		;81db
+	xor a			;81d7   ; este segundo `xor a` no hace falta: A ya vale cero
+	ld (0ea6dh),a		;81d8   ; EA6D = 0, y en las 16 paginas nadie mas toca esa direccion
+	ld (0e25dh),a		;81db   ; E25D (la espera) y E251 (el paso) a cero
 	ld (0e251h),a		;81de
-	jp 05ba2h		;81e1
+	jp 05ba2h		;81e1   ; p00 0x5BA2: E250++ (a 17) y p01 0x604C pone E251, E252 y E27E a cero
 FINAL_16_FUNDIDO:		; 0x83BA hasta acabar y paso siguiente
-	call FUNDIDO_FF		;81e4
+	call FUNDIDO_FF		;81e4   ; una fila de 8 px de todos los tiles por fotograma, ocho fotogramas
 	ret nz			;81e7
-	jp PASO_SIGUIENTE		;81e8
+	jp PASO_SIGUIENTE		;81e8   ; fundido hecho: al paso 2
 FINAL_16_ARRANCA:		; E252 = 0, musica 0x40, paso siguiente
-	xor a			;81eb
+	xor a			;81eb   ; E252 = 0, la banda por la que va el fundido
 	ld (0e252h),a		;81ec
-	ld a,040h		;81ef
+	ld a,040h		;81ef   ; la musica 0x40, la del final
 	call MUSICA_A		;81f1
-	jp PASO_SIGUIENTE		;81f4
+	jp PASO_SIGUIENTE		;81f4   ; al paso 1
+
+; ----------------------------------------------------------------------
+; Estado E250 = 17: los 19 pasos del final, uno por fotograma, con la
+; tabla de 0x8215. La espera funciona al reves de lo que parece: el
+; `ld a,N` de cada paso NO es lo que dura ese paso, es lo que va a
+; durar el SIGUIENTE, porque 0x83E6 primero descuenta E25D y solo
+; cuando llega a cero guarda A y avanza E251. Por eso los pasos van
+; por parejas: uno pone la escena y carga el numero, y el de detras se
+; repite ese numero de fotogramas moviendo sprites.
+; ----------------------------------------------------------------------
 FINAL_17:		; pagina 9 en A000; p00 0x477C; vuelca E400 si E251 < 14; despacha por E251 (tabla 0x8215, 19 pasos) y vuelve a 1/2/3 (retorno 0x43FE empujado)
-	ld a,009h		;81f7
-	call 04457h		;81f9
-	call 0477ch		;81fc
-	ld iy,0e2c0h		;81ff
-	ld a,(0e251h)		;8203
+	ld a,009h		;81f7   ; las cinco imagenes del final estan en la pagina 9...
+	call 04457h		;81f9   ; ...que se mapea en 0xA000
+	call 0477ch		;81fc   ; p00 0x477C saca los atributos de sprite de EA80 a la VRAM 0x3B00, rotando la lista en los fotogramas impares
+	ld iy,0e2c0h		;81ff   ; p00 0x44BC pide IY en el bloque de un coche
+	ld a,(0e251h)		;8203   ; hasta el paso 13...
 	cp 00eh		;8206
-	call c,044bch		;8208
-	ld hl,043feh		;820b
-	push hl			;820e
+	call c,044bch		;8208   ; ...se vuelca el buffer de nombres; del 14 en adelante ya no
+	ld hl,043feh		;820b   ; el retorno se empuja a mano...
+	push hl			;820e   ; ...para que el `ret` del paso al que se despache acabe en p00 0x43FE y deje 1/2/3
 	ld a,(0e251h)		;820f
-	call 040dah		;8212
+	call 040dah		;8212   ; p00 0x40DA salta a la palabra E251 de la tabla que sigue al call
 
 ; ----------------------------------------------------------------------
 ; DATOS tabla_8212: 19 palabras del despachador de 0x8212 (`call 0x40DA` en
@@ -330,139 +375,162 @@ DATA_tabla_8212:
 ; ======================================================================
 
 
+
+; ----------------------------------------------------------------------
+; Paso 0: monta la pantalla del final. Alfabeto y tiles, el recuadro
+; de 16x8 donde van a ir las imagenes (E50C = fila 8, columna 12 del
+; buffer de nombres), el texto de tres filas y los sprites.
+; ----------------------------------------------------------------------
 FINAL_PASO_0:		; tiles p04 0x6DB5 y 0x6DBC, sprites p04 0x7502, limpia, 16x8 de tile 0xFF en E50C (p00 0x4B6C), texto (0x8370), vuelca, tiles 0x6DAE por filas, 0x8367, sprites (0x851D); E25D = 1 y paso siguiente
-	ld hl,06db5h		;823b
+	ld hl,06db5h		;823b   ; lista p04 0x6DB5: los tiles 16 a 58, el alfabeto
 	call 04ccdh		;823e
-	ld hl,06dbch		;8241
+	ld hl,06dbch		;8241   ; lista p04 0x6DBC: los tiles 1 a 44
 	call 04ccdh		;8244
-	ld hl,07502h		;8247
+	ld hl,07502h		;8247   ; lista p04 0x7502: un solo recurso de sprites
 	call 04f11h		;824a
-	call 04460h		;824d
-	ld bc,01008h		;8250
-	ld hl,0e50ch		;8253
-	ld a,0ffh		;8256
-	call 04b6ch		;8258
-	call TEXTO_FINAL		;825b
-	call 044bch		;825e
-	ld de,00100h		;8261
-	ld hl,06daeh		;8264
+	call 04460h		;824d   ; p00 0x4460 aparca los sprites fuera de pantalla
+	ld bc,01008h		;8250   ; 16 columnas de ancho por 8 filas de alto...
+	ld hl,0e50ch		;8253   ; ...desde E50C, la fila 8 columna 12 del buffer de nombres
+	ld a,0ffh		;8256   ; del tile 0xFF, el que 0x81C1 dejo blanco
+	call 04b6ch		;8258   ; p00 0x4B6C pinta el rectangulo en el buffer
+	call TEXTO_FINAL		;825b   ; el texto del final, tres filas de 16 en E62C
+	call 044bch		;825e   ; y todo a la tabla de nombres
+	ld de,00100h		;8261   ; 0x100 de espera entre fila y fila
+	ld hl,06daeh		;8264   ; lista p04 0x6DAE: solo el tile 255
 	call 04c93h		;8267
-	call CARGA_6DB5_POR_FILAS		;826a
-	call SPRITES_FINAL_4		;826d
-	ld a,001h		;8270
+	call CARGA_6DB5_POR_FILAS		;826a   ; y otra vez el alfabeto, ahora fila a fila para que se vea aparecer
+	call SPRITES_FINAL_4		;826d   ; los cuatro sprites de 0x8533
+	ld a,001h		;8270   ; el paso 1 dura un fotograma
 	jp PASO_SIGUIENTE_CON_ESPERA		;8272
 FINAL_PASO_1:		; espera 0x32 fotogramas (0x83E6)
-	ld a,032h		;8275
+	ld a,032h		;8275   ; 0x32 = 50 fotogramas, pero para el paso 2, no para este
 	jp ESPERA_E25D		;8277
 FINAL_PASO_2:		; sprites (0x8537) y espera 1
-	call SPRITES_FINAL_MUEVE		;827a
-	ld a,001h		;827d
+	call SPRITES_FINAL_MUEVE		;827a   ; un paso de los dos grupos de sprites
+	ld a,001h		;827d   ; y a repetir mientras dure la espera que cargo el paso 1
 	jp ESPERA_E25D		;827f
 FINAL_PASO_3:		; imagen p09 0xB217 en E50C (0x82C4), p00 0x543C, espera 0xF0
-	ld de,0b217h		;8282
-	call FINAL_IMAGEN		;8285
-	call 0543ch		;8288
-	ld a,0f0h		;828b
+	ld de,0b217h		;8282   ; p09 0xB217, la primera de las cinco imagenes del final
+	call FINAL_IMAGEN		;8285   ; se descomprime en E50C, 16 columnas
+	call 0543ch		;8288   ; p00 0x543C copia los tres sprites de EA90 y pone E800..E802 a cero
+	ld a,0f0h		;828b   ; 0xF0 = 240 fotogramas para el paso 4
 	jp ESPERA_E25D		;828d
 FINAL_PASO_4:		; sprites (0x8537), p00 0x545E, espera 1
-	call SPRITES_FINAL_MUEVE		;8290
-	call 0545eh		;8293
-	ld a,001h		;8296
+	call SPRITES_FINAL_MUEVE		;8290   ; los dos grupos de sprites
+	call 0545eh		;8293   ; p00 0x545E mueve los tres de EA90: x + 1 y una subida cada vez menor
+	ld a,001h		;8296   ; y a repetir los 240 fotogramas
 	jp ESPERA_E25D		;8298
 FINAL_PASO_5:		; fundido y la imagen p09 0xB266 con la lista 0x6DD6 (0x8390); espera 0x64
-	ld de,0b266h		;829b
-	ld hl,06dd6h		;829e
-	call FINAL_FUNDE_Y_PINTA		;82a1
-	ret nz			;82a4
-	ld a,064h		;82a5
+	ld de,0b266h		;829b   ; p09 0xB266, la segunda imagen
+	ld hl,06dd6h		;829e   ; lista p04 0x6DD6: los tiles 80 a 218
+	call FINAL_FUNDE_Y_PINTA		;82a1   ; funde a blanco, pinta la imagen y el texto y carga los tiles fila a fila
+	ret nz			;82a4   ; mientras el fundido no acabe se repite el paso
+	ld a,064h		;82a5   ; 0x64 = 100 fotogramas para el paso 6
 	jp ESPERA_E25D		;82a7
 FINAL_PASO_6:		; espera 0x8C
-	ld a,08ch		;82aa
+	ld a,08ch		;82aa   ; 0x8C = 140 fotogramas para el parpadeo del paso 7
 	jp ESPERA_E25D		;82ac
 FINAL_PASO_7:		; parpadeo: (E1C3 & 0x15) != 0 -> imagen 0xB266 y espera 1; si no imagen 0xB2E3
-	ld a,(0e1c3h)		;82af
-	and 015h		;82b2
+	ld a,(0e1c3h)		;82af   ; el contador de fotogramas
+	and 015h		;82b2   ; mascara 0x15 = bits 0, 2 y 4: sale cero en 1 de cada 8 fotogramas
 	jr z,FINAL_IMAGEN_B2E3		;82b4
-	ld de,0b266h		;82b6
+	ld de,0b266h		;82b6   ; los otros 7 de cada 8, la imagen 0xB266
 	call FINAL_IMAGEN		;82b9
-	ld a,001h		;82bc
+	ld a,001h		;82bc   ; y a repetir los 140 fotogramas
 	jp ESPERA_E25D		;82be
 FINAL_IMAGEN_B2E3:		; DE = p09 0xB2E3
-	ld de,0b2e3h		;82c1
+	ld de,0b2e3h		;82c1   ; 1 de cada 8: la otra imagen, y eso es el parpadeo
 FINAL_IMAGEN:		; descomprime DE (16 columnas) en E50C (p01 0x637A)
-	ld hl,0e50ch		;82c4
-	ld a,010h		;82c7
-	jp 0637ah		;82c9
+	ld hl,0e50ch		;82c4   ; E50C, el mismo recuadro que preparo el paso 0
+	ld a,010h		;82c7   ; 16 columnas de ancho: los 128 bytes que salen son 16 x 8, no 8 x 16
+	jp 0637ah		;82c9   ; p01 0x637A, el descompresor a buffer
 FINAL_PASO_8:		; fundido y p09 0xB360 con la lista 0x6DC3; E821..E823 = 0 (0x85B0); espera 0xFA
-	ld de,0b360h		;82cc
-	ld hl,06dc3h		;82cf
+	ld de,0b360h		;82cc   ; p09 0xB360, la tercera imagen
+	ld hl,06dc3h		;82cf   ; lista p04 0x6DC3: los tiles 45 a 82
 	call FINAL_FUNDE_Y_PINTA		;82d2
-	ret nz			;82d5
-	call E821_E823_CERO		;82d6
-	ld a,0fah		;82d9
+	ret nz			;82d5   ; el fundido se lleva sus ocho fotogramas
+	call E821_E823_CERO		;82d6   ; E821, E822 y E823 a cero antes de los sprites de tabla
+	ld a,0fah		;82d9   ; 0xFA = 250 fotogramas para el paso 9
 	jp ESPERA_E25D		;82db
 FINAL_PASO_9:		; sprites de la tabla p06 0x8639 (0x85BB) y espera 1
-	call SPRITES_FINAL_TABLA		;82de
-	ld a,001h		;82e1
+	call SPRITES_FINAL_TABLA		;82de   ; los sprites que salen de la tabla 0x8639 (las listas p06 0xBC97 y 0xBD2C)
+	ld a,001h		;82e1   ; y a repetir los 250 fotogramas
 	jp ESPERA_E25D		;82e3
 FINAL_PASO_10:		; fundido y p09 0xB3BF con la lista 0x6DE3; limpia sprites; espera 0xB4
-	ld de,0b3bfh		;82e6
-	ld hl,06de3h		;82e9
+	ld de,0b3bfh		;82e6   ; p09 0xB3BF, la cuarta imagen
+	ld hl,06de3h		;82e9   ; lista p04 0x6DE3: los tiles 150 a 221
 	call FINAL_FUNDE_Y_PINTA		;82ec
 	ret nz			;82ef
-	call 04460h		;82f0
-	ld a,0b4h		;82f3
+	call 04460h		;82f0   ; fuera los sprites
+	ld a,0b4h		;82f3   ; 0xB4 = 180 fotogramas para el paso 11
 	jp ESPERA_E25D		;82f5
 FINAL_PASO_11:		; sprites (0x851D) y espera 1
-	call SPRITES_FINAL_4		;82f8
-	ld a,001h		;82fb
+	call SPRITES_FINAL_4		;82f8   ; vuelven los cuatro sprites de 0x8533
+	ld a,001h		;82fb   ; y a repetir los 180 fotogramas
 	jp ESPERA_E25D		;82fd
 FINAL_PASO_12:		; fundido y p09 0xB217 con la lista 0x6DBC; sprites; p00 0x543C; espera 0xFA
-	ld de,0b217h		;8300
-	ld hl,06dbch		;8303
+	ld de,0b217h		;8300   ; otra vez p09 0xB217, la primera imagen
+	ld hl,06dbch		;8303   ; lista p04 0x6DBC: los tiles 1 a 44
 	call FINAL_FUNDE_Y_PINTA		;8306
 	ret nz			;8309
-	call SPRITES_FINAL_4		;830a
-	call 0543ch		;830d
-	ld a,0fah		;8310
+	call SPRITES_FINAL_4		;830a   ; los cuatro sprites
+	call 0543ch		;830d   ; p00 0x543C reinicia los tres de EA90
+	ld a,0fah		;8310   ; 0xFA = 250 fotogramas para el paso 13
 	jp ESPERA_E25D		;8312
 FINAL_PASO_13:		; sprites (0x8537), p00 0x545E, espera 0x14
-	call SPRITES_FINAL_MUEVE		;8315
-	call 0545eh		;8318
-	ld a,014h		;831b
+	call SPRITES_FINAL_MUEVE		;8315   ; los dos grupos de sprites
+	call 0545eh		;8318   ; y los tres de EA90
+	ld a,014h		;831b   ; 0x14 = 20 fotogramas para el paso 14
 	jp ESPERA_E25D		;831d
+
+; ----------------------------------------------------------------------
+; Paso 14, los creditos: funde a blanco, borra la pantalla, RECUPERA
+; el alfabeto (p00 0x4474 vuelve a traer los patrones de los tiles 16
+; a 58 desde p15 0xB777 y les pone el color 0xF0) y escribe el flujo
+; de 0x848A. Del paso 14 en adelante 0x8208 ya no vuelca el buffer de
+; nombres, asi que todo esto se escribe directo en la VRAM.
+; ----------------------------------------------------------------------
 FINAL_PASO_14:		; limpia sprites; fundido; nombres a cero, tiles 16..58 con 0xF0 (p00 0x4474), 1/2/3; los creditos 0x848A (p00 0x480D); espera 0x96
-	call 04460h		;8320
-	call FUNDIDO_FF		;8323
+	call 04460h		;8320   ; fuera los sprites
+	call FUNDIDO_FF		;8323   ; y otro fundido a blanco de ocho bandas
 	ret nz			;8326
-	xor a			;8327
+	xor a			;8327   ; la tabla de nombres, 0x3800...
 	ld hl,03800h		;8328
-	ld bc,00300h		;832b
+	ld bc,00300h		;832b   ; ...768 bytes al tile 0
 	call 00056h		;832e   ; BIOS FILVRM - Fills VRAM with value
-	call 04474h		;8331
-	call 043feh		;8334
-	ld de,0848ah		;8337
-	call 0480dh		;833a
-	ld a,096h		;833d
+	call 04474h		;8331   ; p00 0x4474: A = 0xF0 es el COLOR de los tiles 16 a 58 (blanco sobre el borde), no el patron; los patrones los trae otra vez de p15 0xB777
+	call 043feh		;8334   ; redundante: 0x4474 ya acaba en p00 0x43FE por su cuenta
+	ld de,0848ah		;8337   ; el flujo de creditos de 0x848A (STAFF, PROGRAM, GRAPHIC, SOUND)
+	call 0480dh		;833a   ; p00 0x480D lo pinta restando 0x20 a cada byte: de ASCII a numero de tile
+	ld a,096h		;833d   ; 0x96 = 150 fotogramas para el paso 15
 	jp PASO_SIGUIENTE_CON_ESPERA		;833f
+
+; ----------------------------------------------------------------------
+; Los dos fundidos del cierre, los dos por 0x83C1: este deja la tabla
+; de colores en 0xFE (blanco sobre gris) para los tiles 0 a 254, o sea
+; los creditos en blanco sobre un fondo gris; y el del paso 17 la deja
+; en 0x00 para los 256, que es transparente sobre transparente, o sea
+; el color del borde en toda la pantalla. Ninguno de los dos gasta
+; espera: los 0x96 del paso 14 se los acaba comiendo el paso 16.
+; ----------------------------------------------------------------------
 FINAL_PASO_15:		; fundido con tiles 0xFE (0x83C1 con C = 0xFE, B = 0xFF) y paso
-	ld bc,0fffeh		;8342
-	ld hl,00000h		;8345
+	ld bc,0fffeh		;8342   ; C = 0xFE (blanco sobre gris) y B = 0xFF, o sea 255 tiles: el 255 se queda como esta
+	ld hl,00000h		;8345   ; desde la primera entrada de la tabla de colores
 	call FUNDIDO_BANDA		;8348
-	ret nz			;834b
-	jp PASO_SIGUIENTE		;834c
+	ret nz			;834b   ; ocho fotogramas, una fila de 8 px por fotograma
+	jp PASO_SIGUIENTE		;834c   ; y al paso 16 sin tocar la espera
 FINAL_PASO_16:		; espera 0x64 y sonido 0x81
-	ld a,064h		;834f
-	call ESPERA_E25D		;8351
-	ret nz			;8354
-	ld a,081h		;8355
-	jp 04174h		;8357
+	ld a,064h		;834f   ; 0x64 = 100 fotogramas para el paso 17
+	call ESPERA_E25D		;8351   ; lo que se gasta aqui es la espera que quedaba: los 0x96 del paso 14
+	ret nz			;8354   ; mientras no venza no suena nada
+	ld a,081h		;8355   ; sonido 0x81, justo en el fotograma en que se pasa al 17
+	jp 04174h		;8357   ; p00 0x4174 lo mete en la cola de E245
 FINAL_PASO_17:		; fundido con tiles 0 (0x83C1) y paso
-	ld hl,00000h		;835a
-	ld bc,00000h		;835d
+	ld hl,00000h		;835a   ; desde el principio de la tabla de colores
+	ld bc,00000h		;835d   ; C = 0 (el color del borde) y B = 0, que en el `djnz` son los 256 tiles
 	call FUNDIDO_BANDA		;8360
-	ret nz			;8363
-	jp PASO_SIGUIENTE		;8364
+	ret nz			;8363   ; otras ocho pasadas
+	jp PASO_SIGUIENTE		;8364   ; y al paso 18 (0x847F), que espera y deja E250 en 0x1D
 CARGA_6DB5_POR_FILAS:		; lista p04 0x6DB5 por filas (p00 0x4C93) con espera 0x100
 	ld hl,06db5h		;8367
 	ld de,00100h		;836a

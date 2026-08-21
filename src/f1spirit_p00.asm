@@ -735,7 +735,7 @@ LIMPIA_EA80_Y_ATRIBUTOS:		; borra 0x7F bytes de RAM desde EA80 (con 0xE0) y los 
 	ld hl,03b00h		;446b
 	ld bc,00080h		;446e
 	jp 00056h		;4471   ; BIOS FILVRM - Fills VRAM with value
-TILES_16_58_F0:		; como 0x4476 con A=0xF0: patrones de los tiles 16..58 llenos de 0xF0 (mitad izquierda)
+TILES_16_58_F0:		; como 0x4476 con A=0xF0, y ese 0xF0 es el COLOR, no el patron: cae en 0x4476, que llena los COLORES de los tiles 16..58 con A y trae los patrones del RLE de p15 0xB777. La nota anterior decia "patrones llenos de 0xF0" y su propia vecina de 0x4476 ya lo desmentia
 	ld a,0f0h		;4474
 TILES_16_58_A:		; mapea D/E/F, llena los colores de los tiles 16..58 con A, trae sus patrones de p15:0xB777 (RLE) y vuelve a 1/2/3
 	push af			;4476
