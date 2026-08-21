@@ -227,15 +227,86 @@ F 0x4328 8
 # =============================================================================
 # MANDOS Y TECLADO
 # =============================================================================
+B 0x4335 Las entradas. Todo el juego las lee por aqui, una vez por paso de
+B 0x4335 logica (0x40A4). Un mando es UN byte con el reparto de bits del
+B 0x4335 PSG: 0 arriba, 1 abajo, 2 izquierda, 3 derecha, 4 boton A, 5 boton
+B 0x4335 B. Las teclas se cuelan en esos mismos bits, asi que de aqui en
+B 0x4335 adelante nadie distingue si el jugador va con mando o con teclado,
+B 0x4335 y las dos cosas a la vez se suman.
+B 0x4335 El teclado del jugador 1 son los cursores, el ESPACIO como boton A
+B 0x4335 y la M o la N como boton B; el del jugador 2, W A S D con SHIFT y
+B 0x4335 CTRL. Cada entrada guarda dos bytes seguidos en RAM: lo que hay
+B 0x4335 pulsado AHORA y, en el byte de antes, lo que ACABA de pulsarse.
+B 0x4335 Son E1D9/E1D8 las teclas de funcion, E1C9/E1C8 el mando 1 y
+B 0x4335 E1CC/E1CB el mando 2.
 L 0x4335 LEE_ENTRADAS      teclas F, mando 1 (E1D9/E1D8 ahora/flancos) y, si E1C2 lo pide, mando 2 (E1CC)
+C 0x4335 las cinco teclas de funcion se leen siempre; los mandos, solo si E1C2 lo pide
+C 0x4338 E1D9 = F1..F5 ahora, E1D8 = las que acaban de pulsarse
+C 0x433E bit 6 de E1C2 = hay jugador 1. Apagado -y en la presentacion lo esta- aqui se acaba la rutina
+C 0x4344 el mando 1 a E1C9, y sus flancos a E1C8
+C 0x434A bit 5 de E1C2 = hay jugador 2
+C 0x4353 E1CC lo de ahora, E1CB los flancos
+C 0x4356 `jr` y no `call`: el `ret` de FLANCOS es el que cierra LEE_ENTRADAS
 L 0x4358 FLANCOS_E1CC      flancos del mando 2
+C 0x4358 aqui entra LA DEMO: 0x589A le pasa el byte grabado del mando 2 (F005) y 0x5894 hace lo mismo con el del mando 1 por 0x435D. La partida grabada mueve el juego por la misma puerta que los mandos de verdad
 L 0x435D FLANCOS_E1C9      flancos en E1C9/E1C8
+C 0x435D y la del mando 1
 L 0x4360 FLANCOS           (hl) = A; (hl-1) = bits que acaban de pulsarse
+C 0x4360 C = lo que habia en el paso anterior...
+C 0x4361 ...y (hl) pasa a ser lo de ahora
+C 0x4362 los bits que han cambiado...
+C 0x4363 ...y de esos, los que ahora valen 1: el flanco de PULSAR. Soltar no deja rastro
+C 0x4365 los flancos van en el byte de ANTES, por eso las dos parejas estan pegadas en RAM
 L 0x4367 LEE_MANDO_1       joystick 1 por el PSG (0x43EC) mas cursores y espacio del teclado (filas 8 y 4)
+C 0x4367 primero el joystick del puerto 1
+C 0x436A E se queda con lo del joystick y las teclas se van sumando encima
+C 0x436B fila 4 de la matriz del teclado: K L M N O P Q R
+C 0x4370 bits 2 y 3 = M y N; el `xor` deja cero solo si NINGUNA de las dos esta pulsada
+C 0x4376 cualquiera de las dos hace de boton B
+L 0x4378 MANDO_1_TECLADO   la fila 8 (espacio y cursores) repartida a los bits del mando con rotaciones
+C 0x4378 fila 8: ESPACIO, HOME, INS, DEL y los cuatro cursores
+C 0x437D en la matriz un cero es tecla pulsada: `cpl` y a partir de aqui se trabaja con unos
+C 0x437E dos rotaciones y una mascara por grupo de bits. B guarda el valor rotado para la vuelta siguiente, asi la fila se lee UNA vez y no cuatro
+C 0x4381 izquierda: del bit 4 de la fila al bit 2, que es el suyo en el mando
+C 0x4386 dos rotaciones mas
+C 0x4389 derecha al bit 3 y ESPACIO al bit 4, o sea que el espacio es el boton A
+C 0x438E y una mas
+C 0x438F arriba al bit 0 y abajo al bit 1
+C 0x4392 encima de lo que dijera el joystick: mando y teclado se suman, no se elige uno
 L 0x4394 LEE_MANDO_2       joystick 2 por el PSG (E=0xCF) mas teclas de las filas 6, 3, 2 y 5
+C 0x4394 0xCF y no 0x8F: el bit 6 del registro 15 del PSG es el que elige puerto de mando, y este es el segundo
+C 0x4399 las teclas del jugador 2 no son las del 1: W A S D con SHIFT y CTRL
+C 0x439A fila 6: SHIFT, CTRL, GRAPH, CAPS, CODE, F1, F2, F3
+C 0x43A0 SHIFT y CTRL, que estan en los bits 0 y 1...
+C 0x43A2 ...cuatro veces por dos, o sea al bit 4 (boton A) y al bit 5 (boton B)
+C 0x43A8 fila 3: C D E F G H I J
+C 0x43AD la D, al bit 3: derecha
+L 0x43B3 MANDO_2_IZQUIERDA la A de la fila 2
+C 0x43B3 fila 2: apostrofe, acento, coma, punto, barra, subrayado, A y B
+C 0x43B8 la A, al bit 2: izquierda
+L 0x43BE MANDO_2_ABAJO     la S de la fila 5
+C 0x43BE fila 5: S T U V W X Y Z
+C 0x43C3 la S, al bit 1: abajo
+L 0x43C9 MANDO_2_ARRIBA    la W, de la misma fila 5
+C 0x43C9 y de la misma fila la W, al bit 0: arriba
+L 0x43CF MANDO_2_DEVUELVE  A = el byte del mando 2 ya montado
+C 0x43CF el resultado sale en A, como el del mando 1
 L 0x43D1 LEE_TECLAS_F      F1..F5 en los bits 0..4 (filas 7 y 6 del teclado)
+C 0x43D1 fila 7: F4, F5, ESC, TAB, STOP, BS, SELECT y RETURN
+C 0x43D7 F4 y F5, que estan en los bits 0 y 1...
+C 0x43D9 ...tres veces por dos: a los bits 3 y 4
+C 0x43DC y a la pila, que hace falta A para la otra fila
+C 0x43DD fila 6: F1, F2 y F3 ocupan los bits 5, 6 y 7
+C 0x43E3 tres rotaciones a la IZQUIERDA los bajan a los bits 0, 1 y 2
+C 0x43EA F1 a F5 en los bits 0 a 4, en orden
 L 0x43EC LEE_JOY_PSG       E=0x8F: joystick 1; entra en 0x43EE con E=0xCF para el 2
+C 0x43EC 0x8F: bit 6 a cero (puerto de mando 1) y las salidas del PSG en alto
 L 0x43EE LEE_JOY_PSG_E     PSG R15=E, lee R14, invierte, 6 bits
+C 0x43EE el registro 15 del PSG elige que puerto de mando se va a leer...
+C 0x43F3 ...y el 14 lo devuelve
+C 0x43F5 `di` alrededor de la lectura: la interrupcion tambien escribe en el PSG (p13 0x6422) y dejaria el registro 15 apuntando a otro sitio entre la escritura y la lectura
+C 0x43FA en el PSG el cero es "pulsado"
+C 0x43FB seis bits: cuatro direcciones y dos botones
 
 # =============================================================================
 # EL MAPPER: que pagina va en cada ranura
@@ -247,14 +318,36 @@ B 0x43FE sombra F0F1/F0F2/F0F3. Las paginas van siempre en grupos de tres
 B 0x43FE consecutivas (1/2/3, 4/5/6, 7/8/9, A/B/C, D/E/F), y sueltas solo a
 B 0x43FE la ranura que les toca por su numero: tools/paginas.py.
 L 0x43FE MAPEA_1_2_3       1/2/3 en 6000/8000/A000: el mapeo "por defecto"
+C 0x43FE el `di` no es opcional: la interrupcion cambia los tres bancos por su cuenta (0x4029) y volveria con otros puestos
+C 0x43FF HL se respeta, que es con el que anda por las tablas quien llama
+C 0x4400 F0F1 es la sombra de 0x6000, F0F2 la de 0x8000 y F0F3 la de 0xA000
+C 0x4405 escribir en 0x7000 es lo que mueve el banco de 0x6000; el mapper mira el bloque, no la direccion exacta
+C 0x4408 y la sombra se entera del cambio
+C 0x4409 1, 2 y 3 van seguidas: un `inc a` por ranura
+C 0x4416 aqui se vuelven a abrir las interrupciones, y eso es lo que hace reentrante a la logica del juego: ver el bloque de 0x4018
 L 0x4418 MAPEA_4_5_6       4/5/6 por 0x441B
+C 0x4418 este `di` lo repite el de 0x441B: entrar por aqui o por alla da igual
 L 0x441B MAPEA_DESDE_A     A, A+1, A+2 en 6000/8000/A000
+C 0x441B la version generica: A, A+1 y A+2. Las cinco entradas de arriba solo ponen el numero y caen aqui
+C 0x441D los tres bytes de la sombra van seguidos...
+C 0x4424 ...asi que basta `inc l`: F0F1 a F0F3 no cruzan pagina
+C 0x4426 la segunda ranura, 0x8000
+C 0x442C y la tercera, 0xA000. Esta SI deja bien la sombra, al reves que la copia de la interrupcion (0x4042)
+C 0x4431 con `ei`, como todas
 L 0x4433 MAPEA_1_2_3_B     como 0x43FE pero por 0x441B
+C 0x4433 hace lo mismo que 0x43FE en cinco bytes en vez de veintiseis; las dos estan vivas y las dos se llaman
 L 0x4438 MAPEA_7_8_9       7/8/9 por 0x441B
+C 0x4439 7/8/9: la que trae las secuencias de circuito (p07) y sus dos vecinas
 L 0x443D MAPEA_A_B_C       A/B/C por 0x441B
+C 0x443E A/B/C: las tablas de piezas y de metatiles (p10 a p12)
 L 0x4442 MAPEA_D_E_F       la pagina del sonido (13) y las 14 y 15
+C 0x4443 D/E/F: el motor de sonido (p13) y los datos residentes (p15)
 L 0x4447 MAPEA_A_EN_8000   A en 8000 y A+1 en A000
+C 0x4447 esta pareja no toca 0x6000 y no necesita HL: escribe la sombra por direccion
+C 0x444E A y A+1, en ese orden: quien llama pide un par consecutivo
+C 0x4455 y a soltar las interrupciones
 L 0x4457 MAPEA_A_EN_A000   A en A000 (la llaman las paginas 1 y 2)
+C 0x4458 solo la ranura de 0xA000: es la unica que las paginas 1 y 2 pueden cambiar sin quedarse ellas mismas sin sitio
 
 # =============================================================================
 # TABLAS DE LOS OTROS DESPACHADORES DE ESTA PAGINA
@@ -276,16 +369,54 @@ F 0x5D29 w1
 # de 0x800 de la pantalla 2 (HL += 0x800 dos veces).
 # =============================================================================
 L 0x4460 LIMPIA_EA80_Y_ATRIBUTOS  borra 0x80 bytes de RAM desde EA80 (con 0xE0) y los atributos de sprites (0x3B00, 0x80 bytes a 0xE0 = fuera de pantalla). El BC de 0x7F no enganna: RELLENA_RAM siembra el primer byte con `ld (hl),a` y el `ldir` copia otros BC, o sea EA80..EAFF
+C 0x4460 EA80 es la copia en RAM de los atributos de sprites, la que vuelca 0x477C en cada repintado
+C 0x4466 0xE0 en los cuatro bytes de las 32 entradas. Como Y, 224: con sprites de 16x16 y sin ampliar (R1 = 0xE2) ninguno asoma por las 192 lineas de pantalla
+C 0x446B y lo mismo en la VRAM, para que no se vea nada hasta el vuelco siguiente
 L 0x4474 TILES_16_58_F0     como 0x4476 con A=0xF0, y ese 0xF0 es el COLOR, no el patron: cae en 0x4476, que llena los COLORES de los tiles 16..58 con A y trae los patrones del RLE de p15 0xB777. La nota anterior decia "patrones llenos de 0xF0" y su propia vecina de 0x4476 ya lo desmentia
+C 0x4474 0xF0 como byte de color es tinta 15 sobre fondo 0: blanco sobre transparente
 L 0x4476 TILES_16_58_A      mapea D/E/F, llena los colores de los tiles 16..58 con A, trae sus patrones de p15:0xB777 (RLE) y vuelve a 1/2/3
+C 0x4476 A es el color y hay que salvarlo: MAPEA_D_E_F lo usa
+C 0x4477 los patrones estan en la pagina 15, o sea hay que ponerla en 0xA000
+C 0x447B primero el color de los 43 tiles y despues sus patrones
+C 0x4481 `jp`: el `ret` de MAPEA_1_2_3 es el que cierra la rutina
 L 0x4484 PATRONES_16_DESDE_B777  descomprime (RLE) p15:0xB777 en los patrones desde el tile 16 (VRAM 0x2080), 3 tercios
+C 0x4484 p15:0xB777, comprimido con el RLE de 0x4862
+C 0x4487 VRAM 0x2080 = el patron del tile 16 (0x2000 + 16*8)
 L 0x448D COLORES_16_58_A    llena 0x158 bytes de la tabla de colores desde el tile 16 (VRAM 0x0080) con A, 3 tercios
+C 0x448D VRAM 0x0080 = el color del tile 16
+C 0x4490 0x158 bytes son 43 tiles de 8, o sea del 16 al 58
 L 0x4496 TILES_0_15_MACIZOS mapea D/E/F; patrones de los tiles 0..15 a cero y el color del tile i = i (fondo del color i): 16 bloques macizos, 3 tercios; vuelve a 1/2/3
+C 0x4496 aqui NO se lee nada de la pagina 15: entre este `call` y el `jp` del final solo hay escrituras a la VRAM por la BIOS. Es el mismo par de llamadas que en 0x4476, que si lo necesita
+C 0x4499 los patrones de los tiles 0 a 15, a cero: en el tile no queda un solo pixel de tinta
+C 0x449F y como el patron es todo ceros, el que manda es el nibble BAJO del byte de color
+C 0x44A9 dieciseis tiles
 L 0x44AB BUCLE_TILES_0_15   un tile por vuelta: 8 bytes de color A (= indice) en VRAM HL, HL += 8
+C 0x44AB B lleva la cuenta de tiles y BC el tamano de la llenada: hay que guardarlo
+C 0x44AC ocho bytes = las ocho filas de un tile
+C 0x44B0 en los tres tercios, que en la pantalla 2 cada uno tiene su propia tabla de color
+C 0x44B4 el tile siguiente, ocho bytes mas alla
+C 0x44B5 y su color es su propio numero: el tile 5 sale macizo del color 5
 L 0x44BC VUELCA_NOMBRES_E400  copia los 768 bytes del buffer de pantalla E400 a la tabla de nombres (0x3800)
-L 0x44C4 VUELCA_768_A_NOMBRES HL = buffer de RAM; SETWRT 0x3800 y 3 x 256 bytes por el puerto del VDP (hay otra entrada en 0x44C1 con el buffer EC00, sin trazar)
+C 0x44BC E400 es el buffer de nombres del jugador 1
+L 0x44C1 VUELCA_NOMBRES_EC00  la gemela con el buffer del jugador 2; la llaman p01 0x7D19 y 0x7D33 (la escena de meta)
+C 0x44C1 y EC00 el del jugador 2
+L 0x44C4 VUELCA_768_A_NOMBRES HL = buffer de RAM; SETWRT 0x3800 y 3 x 256 bytes por el puerto del VDP
+C 0x44C5 0x3800 es la tabla de nombres entera, 24 filas de 32
+C 0x44C8 SETWRT y, de paso, el puerto de datos del VDP en el C del OTRO juego de registros
+C 0x44CD y estas cuatro instrucciones lo traen al C de este, porque el vuelco no juega con los dos juegos
+C 0x44D0 768 bytes son tres vueltas de 256, y la tercera es la caida a 0x44D6
 L 0x44D6 OUT_256_VRAM       256 bytes desde (HL) al puerto del VDP (C' lo dejo 0x4673)
+C 0x44D6 B = 0 son 256 vueltas
+L 0x44D8 OUT_256_BUCLE      un byte por vuelta
+C 0x44D8 un byte por vuelta y sin escribir en la VRAM la direccion: la deja el SETWRT y la va subiendo el propio VDP
 L 0x4673 PREPARA_ESCRITURA_VRAM  SETWRT en HL y deja en C' el puerto de datos del VDP (byte de la BIOS 0x0007)
+C 0x4673 AF se guarda en AF' y vuelve al salir: quien llama no pierde ni A ni las banderas
+C 0x4677 el puerto se deja en el OTRO juego de registros, que es justo como lo quiere el bucle de la ventana (0x4529): alli HL' lleva la VRAM y el C de aqui, el dato
+C 0x4678 el byte 0x0007 de la BIOS es el puerto de datos del VDP de esta maquina, que no tiene por que ser el 0x98
+L 0x467F PREPARA_LECTURA_VRAM  la gemela de lectura: SETRD en HL y el puerto de LECTURA (byte 0x0006 de la BIOS) en C'. Codigo muerto: los bytes 7F 46 no aparecen en los 128 KB del cartucho ni detras de un `call`, ni detras de un `jp`, ni sueltos en ninguna tabla
+C 0x467F SETRD en vez de SETWRT...
+C 0x4683 ...y el byte 0x0006 en vez del 0x0007
+C 0x4687 y sin el `ex af,af'` de su gemela: esta devuelve en A el numero de puerto
 L 0x47E6 LLENA_VRAM_3_TERCIOS  FILVRM: BC bytes de A en VRAM HL, y otra vez en HL+0x800 y HL+0x1000
 L 0x47E8 BUCLE_LLENA_TERCIO  un tercio por vuelta
 L 0x47F7 RLE_VRAM_3_TERCIOS  descomprime (DE) en VRAM HL con 0x4862, tres veces (HL += 0x800), el mismo flujo cada vez
@@ -401,6 +532,12 @@ L 0x4F61 RECURSO_SPRITE_COPIA  tipo 2: copia [4..5] bytes tal cual
 # jugador 2 (E380) en 0x1840: cada fotograma se copia ahi al cambiar.
 # =============================================================================
 L 0x4689 FOTOGRAMAS_COCHES   4/5/6; el coche 1 (E2C0 -> patrones 0x1800) y, con el bit 5 de E1C2, el 2 (E380 -> 0x1840); vuelve a 1/2/3
+C 0x4689 los fotogramas de los coches estan en la pagina 4 (0x6000) y en la 5 (0x8000)
+C 0x468C el bloque del coche 1...
+C 0x4690 ...y su fotograma va a VRAM 0x1800, que con R6 = 03 es el principio de los patrones de sprite: los 64 bytes de los sprites 0 y 1 de 16x16
+C 0x4699 el coche 2 solo si esta jugando: si no, sus patrones se quedan como estaban
+C 0x469F los del coche 2 van 0x40 bytes mas alla, en los sprites 2 y 3
+C 0x46A5 y a dejar el mapeo de siempre
 L 0x46A8 FOTOGRAMA_COCHE     si (ix-3) != 0 -> tiles (0x4701); fotograma (ix+0E): >= 0x80 -> 0x46DF, bit 6 -> 0x4740; si cambio respecto a (ix+3E), 64 bytes del juego (tabla p04 0x7431 por (ix+18)) + fotograma*64 a VRAM HL
 L 0x46DF FOTOGRAMA_COCHE_80  fotogramas 0x80..: (fotograma & 0x0F)*64 desde p05 0x8A71 (E25B < 3) o 0x8BF1
 L 0x4701 TILES_COCHE         (ix-3) = 1..6: los 16 bytes (2 tiles) de p04 0x75D1 + (n-1)*16 a los patrones 0x2670 (bit 0 de ix+9) o 0x2680, en los 3 tercios
@@ -481,3 +618,112 @@ D 0x4977 0x497a pendiente_de_trazar Sin trazar ni identificar todavia (3 bytes)
 D 0x57d8 0x57d9 pendiente_de_trazar Sin trazar ni identificar todavia (1 bytes)
 D 0x5865 0x5876 pendiente_de_trazar Sin trazar ni identificar todavia (17 bytes)
 # --- fin de la seccion pendiente ---
+
+
+# =============================================================================
+# LA VENTANA DE LA PISTA: del buffer de nombres a la pantalla
+# =============================================================================
+B 0x44DF El repintado de la pista, lo que llama la interrupcion en 0x40C7.
+B 0x44DF Cada jugador tiene en RAM un buffer de nombres de 1 KB -E400 el
+B 0x44DF jugador 1 y EC00 el 2- que es un mapa de 32 x 32 casillas CIRCULAR
+B 0x44DF en los dos sentidos: la pista se va escribiendo ahi fila a fila
+B 0x44DF (0x564C) y de ahi se copia a la VRAM la ventana que toque.
+B 0x44DF
+B 0x44DF La casilla por la que empieza la ventana la da 0x4A9D: fila =
+B 0x44DF (iy+40) / 8 y columna = (ix+54) / 8, o sea la camara en pixeles
+B 0x44DF partida por el tamano del tile, las dos modulo 32.
+B 0x44DF
+B 0x44DF 0x45F7 vuelca UNA fila de la ventana, quince casillas con `outi`.
+B 0x44DF Las dos vueltas del mapa estan ahi: si el puntero llega al final de
+B 0x44DF su fila de 32 bytes, 0x4656 lo hace retroceder 32 -la vuelta
+B 0x44DF horizontal-; y al acabar, la fila siguiente es HL + 0x20, con `res
+B 0x44DF 2,h / inc h / set 2,h` para no salirse del kilobyte -la vertical-.
+B 0x44DF
+B 0x44DF Con un jugador la ventana son 15 columnas x 24 filas desde 0x3802,
+B 0x44DF o sea la columna 2, los pixeles 16 a 135; y es tambien el
+B 0x44DF x desde 16 y 118 pixeles de ancho.
+B 0x44DF Con dos, la pantalla va partida y DESPLAZADA: el jugador 2 ocupa
+B 0x44DF las columnas 0..14 en las filas 0..20, el jugador 1 las columnas
+B 0x44DF 17..31 en las filas 3..23, y entre los dos van las columnas 15 y
+B 0x44DF 16 con una barra que sale de una tabla de 18 bytes de p15:0xB764
+B 0x44DF (00 DE, trece F7, E3, 00, 00). Los dos huecos que quedan -arriba a
+B 0x44DF la derecha y abajo a la izquierda- son los marcadores.
+L 0x44DF VENTANA_JUGADOR_2  la ventana de un jugador pero con el bloque del coche 2 (E380) y el buffer EC00; la llaman 0x520A y 0x5C5C
+C 0x44DF el bloque del segundo coche, que es el que mueven las escenas fijas (0x5755)
+C 0x44E3 D = 0 es la columna 0 y E = 0 no desplaza la fila: esta ventana NO sigue a la camara horizontal, arranca siempre por el principio de la fila
+C 0x44E6 (iy+9) = 2 fuerza el buffer EC00 en 0x4A9D, que es donde pintan esas escenas
+C 0x44EE la casilla del buffer por la que empieza la ventana
+C 0x44F1 y de ahi en adelante, la ventana de un jugador de siempre
+L 0x44F3 BORRA_VENTANA_PISTA  pone a cero las 15 columnas x 24 filas de la ventana de un jugador (desde 0x3802); la llaman p02 0x91F1 y 0x9263
+C 0x44F3 24 filas, la pantalla entera de alto
+C 0x44F5 0x3802: fila 0, columna 2, la esquina de la ventana
+L 0x44F8 BORRA_VENTANA_FILA  una fila de la ventana por vuelta
+C 0x44F8 SETWRT en la fila, y el puerto de datos queda en el C del otro juego de registros
+C 0x44FB la fila siguiente, 32 casillas mas alla
+C 0x44FF al juego donde esta el puerto
+L 0x4503 BORRA_VENTANA_BUCLE  una casilla por vuelta
+C 0x4503 el cero que borra la casilla
+C 0x4505 este `dec b` no es un descuido: con el `djnz` B baja DOS veces por vuelta, asi que 0x1E son 15 casillas y no 30, justo el ancho de la ventana. Y de paso mete cuatro estados entre `out` y `out`: con el `out` a 12 y el `djnz` a 13 salen 29, que es lo que el VDP pide entre dos bytes (?)
+C 0x4508 y de vuelta al juego que lleva la direccion de VRAM
+L 0x450C PINTA_VENTANA_PISTA  la ventana de la pista a la tabla de nombres: con un jugador 15 x 24 desde 0x3802 (0x4523), con dos la pantalla partida (0x4538)
+C 0x450C bit 5 de E1C2: si hay jugador 2, la pantalla va partida
+C 0x4513 con uno solo manda el bloque del coche 1 (E2C0), que es tambien la camara
+C 0x451B D = (ix+54), la camara en pixeles: 0x4A9D se queda con la columna, que es D / 8
+C 0x451E E = 0: la fila es (iy+40) / 8 sin desplazar
+C 0x4520 HL = la casilla del buffer por la que empieza la ventana
+L 0x4523 VENTANA_1_JUGADOR  24 filas de 15 casillas desde 0x3802: el juego principal lleva el puntero del buffer y el alterno la direccion de VRAM
+C 0x4523 se cambia de juego de registros: HL' llevara la VRAM y HL el buffer
+C 0x4524 24 filas
+C 0x4526 fila 0, columna 2
+L 0x4529 VENTANA_FILA       una fila de la ventana por vuelta
+C 0x4529 SETWRT con HL' y, desde dentro, el puerto en el C del juego principal
+C 0x452C la fila de VRAM siguiente, 32 casillas mas alla
+C 0x4530 al juego principal, el que lleva el buffer
+C 0x4531 y ahi van las 15 casillas de esta fila
+L 0x4538 VENTANA_2_JUGADORES  pantalla partida: el coche 2 (E380) a la izquierda -columnas 0..14, filas 0..20-, el coche 1 (E2C0) a la derecha -columnas 17..31, filas 3..23- y entre ellos la barra de p15:0xB764
+C 0x4538 el puerto de datos del VDP (el byte 7 de la BIOS)...
+C 0x453C ...y se deja en el C de LOS DOS juegos de registros, porque aqui se salta de uno a otro en cada fila
+C 0x453F la esquina de arriba a la izquierda: en la pantalla partida no sobra ni una columna
+C 0x4545 el juego principal se queda con la casilla del coche 1
+C 0x4555 y el alterno con la del coche 2
+C 0x4566 las filas 0, 1 y 2 son solo del jugador 2: encima de la mitad derecha va su marcador
+C 0x4580 de la fila 3 solo se deja hecho el SETWRT: la vuelca ya el bucle de abajo, que escribe la fila entera
+C 0x4587 la barra que separa las dos mitades: 18 bytes en la pagina 15, uno por fila. Cuando esto corre, D/E/F estan mapeadas -la interrupcion las deja puestas en 0x4049 y el otro llamador, 0x4BE9, llama antes a MAPEA_D_E_F-, asi que 0xB764 es p15 y no p03
+C 0x458B dieciocho filas enteras de 32 casillas, de la 3 a la 20
+C 0x45C1 al juego del coche 1: le faltan tres filas por abajo
+C 0x45C3 0x3AB1 es la fila 21, columna 17; luego la 22 y la 23. Debajo de la mitad izquierda va el otro marcador
+C 0x45E0 la ultima por `jp`: el `ret` de 0x45F7 cierra la rutina
+L 0x45E3 FILA_PARTIDA       una fila entera de la pantalla partida: 15 casillas del jugador 2, la barra dos veces y 15 del jugador 1
+C 0x45E3 la mitad izquierda, con el juego de registros que viene puesto
+C 0x45E6 el trozo de barra que le toca a esta fila
+C 0x45EB entre las dos escrituras van dos `nop` y el `inc ix`: avanzan la tabla y ademas separan los dos `out` 18 estados, que con los 12 del propio `out` son los 30 que necesita el VDP (?)
+C 0x45EF el mismo byte en las dos columnas: la barra es igual de ancha en todas las filas
+C 0x45F1 se cambia de coche...
+C 0x45F2 ...y va la mitad derecha
+C 0x45F5 y el juego se deja como estaba, que el bucle de arriba cuenta con ello
+L 0x45F7 VUELCA_FILA_VENTANA  15 casillas desde (HL) al puerto del VDP, dando la vuelta por la izquierda al llegar al final de la fila de 32 del buffer; al salir HL apunta a la fila siguiente, tambien con vuelta
+C 0x45F7 HL vuelve a salir del final: la fila siguiente se cuenta desde donde se entro, no desde donde acabo el vuelco
+C 0x45F8 los cinco bits bajos de L son la columna dentro de la fila de 32...
+C 0x45FB ...y `cpl` mas 0x21 los convierte en 32 - columna, o sea lo que falta para el final de la fila
+C 0x45FE ese es el B de los `outi`
+C 0x45FF quince `outi` desenrollados, uno por casilla: quince es el ancho de la ventana
+C 0x4601 el `outi` deja Z cuando B llega a cero, que es justo al pasarse del final de la fila; entonces 0x4656 retrocede las 32 casillas y la ventana da la vuelta por la izquierda. Solo puede saltar una vez, porque el `outi` siguiente deja B en 0xFF
+C 0x464A la casilla por la que se entro
+C 0x464B 32 casillas mas abajo: la fila siguiente del buffer
+C 0x464F sin acarreo no se ha salido del bloque de 256 y no hay nada mas que hacer
+C 0x4650 y con acarreo, esto sube H sin salirse del kilobyte: E4 a E5 a E6 a E7 y otra vez E4, o EC a ED a EE a EF y otra vez EC. El bit 2 de H vale 1 en las dos bases, asi que borrarlo, sumar uno y volver a ponerlo es sumar 1 modulo 4 a los dos bits de abajo
+L 0x4656 RETROCEDE_FILA_BUFFER  HL -= 32: la vuelta horizontal dentro de la fila del buffer
+C 0x4656 -32 en complemento a dos, que no hay `sub hl,de`
+L 0x465B BORRA_SPRITES_Y_NOMBRES  deja la pantalla en blanco: los atributos de sprites de RAM a 0xE0, el sprite 0 con Y = 0xD0 (que apaga TODOS) y la tabla de nombres a cero
+C 0x465B 0xE0 en los 128 bytes de EA80: los sprites, aparcados por debajo de la pantalla
+C 0x4666 y ademas Y = 0xD0 en el sprite 0 de la VRAM, que en el TMS9918 no es una posicion: es el fin de la lista, y de un byte apaga los 32
+C 0x4669 0x300 bytes son las 24 filas de 32 de la tabla de nombres
+C 0x466F el tile 0, que despues de 0x4496 es un bloque macizo del color 0, o sea del fondo
+L 0x4A9D CASILLA_BUFFER_NOMBRES  HL = la casilla del buffer de nombres: base -E400 si (iy+9) = 1, EC00 si no- mas fila * 32 + columna, con fila = ((iy+40) + E) / 8 y columna = D / 8, las dos modulo 32, que el buffer es un mapa circular de 1 KB
+C 0x4A9D (iy+40) es la posicion vertical de la camara en pixeles, y E el desplazamiento vertical, tambien en pixeles, que pida quien llama
+C 0x4AA1 nueve rotaciones que parten el par A:D por ocho...
+C 0x4AAD ...con lo que L acaba siendo (A & 0x38) * 4 + D / 8, o sea fila * 32 mas columna dentro de la fila
+C 0x4AAE de A solo sobreviven sus dos bits altos, los que pasan de 256: por eso la fila da la vuelta a las 32
+C 0x4AB0 (iy+9) es el numero de jugador dentro del bloque; el `dec e` es la comparacion y el `ld e` de despues no toca las banderas
+C 0x4ABA el jugador 1 pinta en E400 y el 2 en EC00
+L 0x49F9 APAGA_TODOS_LOS_SPRITES  Y = 0xD0 en el sprite 0: el VDP lo lee como fin de la lista y no pinta ninguno

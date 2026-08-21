@@ -145,7 +145,7 @@ REPINTA_PENDIENTE:		; si (E1D5) != 0 lo pone a cero y repinta: sprites (0x477C),
 	sub a			;40c0
 	ld (0e1d5h),a		;40c1   ; un aviso, un repintado: solo el primer hueco libre despues de cada paso de logica
 	call L_477C		;40c4   ; los atributos de sprites de EA80 a la VRAM 0x3B00, alternando el orden en los fotogramas impares
-	call L_450C		;40c7   ; la ventana de la pista: 24 filas desde 0x3802 (fila 0, columna 2)
+	call PINTA_VENTANA_PISTA		;40c7   ; la ventana de la pista: 24 filas desde 0x3802 (fila 0, columna 2)
 	jp L_4887		;40ca   ; y los rotulos del HUD: PIT IN, RETIRE, EMPTY y GOAL
 VDP_REG:		; escribe el registro C del VDP con B (BIOS WRTVDP)
 	jp 00047h		;40cd   ; BIOS WRTVDP - Writes data in the VDP-register
@@ -333,7 +333,7 @@ L_41CE:
 	ld bc,00008h		;41d4
 	xor a			;41d7
 	call LLENA_VRAM_3_TERCIOS_B		;41d8
-	call L_465B		;41db   ; borra los sprites y la tabla de nombres entera
+	call BORRA_SPRITES_Y_NOMBRES		;41db   ; borra los sprites y la tabla de nombres entera
 	call 0be14h		;41de   ; p03 0xBE14 dibuja el titulo
 	jr L_421C		;41e1
 ESTADO_1:		; la ronda de pantallas de presentacion: un paso de 0x5D19 (el despachador de E1DD) por fotograma
@@ -535,135 +535,150 @@ DATA_tabla_vdp:
 VDP_REG_7:		; solo el registro 7 (color de texto y borde) con el valor en B; 0x5CBE lo usa con 0xE0 para dejar el borde negro
 	ld c,007h		;4330   ; el unico registro que se retoca suelto
 	jp VDP_REG		;4332
+
+; ----------------------------------------------------------------------
+; Las entradas. Todo el juego las lee por aqui, una vez por paso de
+; logica (0x40A4). Un mando es UN byte con el reparto de bits del
+; PSG: 0 arriba, 1 abajo, 2 izquierda, 3 derecha, 4 boton A, 5 boton
+; B. Las teclas se cuelan en esos mismos bits, asi que de aqui en
+; adelante nadie distingue si el jugador va con mando o con teclado,
+; y las dos cosas a la vez se suman.
+; El teclado del jugador 1 son los cursores, el ESPACIO como boton A
+; y la M o la N como boton B; el del jugador 2, W A S D con SHIFT y
+; CTRL. Cada entrada guarda dos bytes seguidos en RAM: lo que hay
+; pulsado AHORA y, en el byte de antes, lo que ACABA de pulsarse.
+; Son E1D9/E1D8 las teclas de funcion, E1C9/E1C8 el mando 1 y
+; E1CC/E1CB el mando 2.
+; ----------------------------------------------------------------------
 LEE_ENTRADAS:		; teclas F, mando 1 (E1D9/E1D8 ahora/flancos) y, si E1C2 lo pide, mando 2 (E1CC)
-	call LEE_TECLAS_F		;4335
-	ld hl,0e1d9h		;4338
+	call LEE_TECLAS_F		;4335   ; las cinco teclas de funcion se leen siempre; los mandos, solo si E1C2 lo pide
+	ld hl,0e1d9h		;4338   ; E1D9 = F1..F5 ahora, E1D8 = las que acaban de pulsarse
 	call FLANCOS		;433b
-	ld a,(0e1c2h)		;433e
+	ld a,(0e1c2h)		;433e   ; bit 6 de E1C2 = hay jugador 1. Apagado -y en la presentacion lo esta- aqui se acaba la rutina
 	and 040h		;4341
 	ret z			;4343
-	call LEE_MANDO_1		;4344
+	call LEE_MANDO_1		;4344   ; el mando 1 a E1C9, y sus flancos a E1C8
 	call FLANCOS_E1C9		;4347
-	ld a,(0e1c2h)		;434a
+	ld a,(0e1c2h)		;434a   ; bit 5 de E1C2 = hay jugador 2
 	and 020h		;434d
 	ret z			;434f
 	call LEE_MANDO_2		;4350
-	ld hl,0e1cch		;4353
-	jr FLANCOS		;4356
+	ld hl,0e1cch		;4353   ; E1CC lo de ahora, E1CB los flancos
+	jr FLANCOS		;4356   ; `jr` y no `call`: el `ret` de FLANCOS es el que cierra LEE_ENTRADAS
 FLANCOS_E1CC:		; flancos del mando 2
-	ld hl,0e1cch		;4358
+	ld hl,0e1cch		;4358   ; aqui entra LA DEMO: 0x589A le pasa el byte grabado del mando 2 (F005) y 0x5894 hace lo mismo con el del mando 1 por 0x435D. La partida grabada mueve el juego por la misma puerta que los mandos de verdad
 	jr FLANCOS		;435b
 FLANCOS_E1C9:		; flancos en E1C9/E1C8
-	ld hl,0e1c9h		;435d
+	ld hl,0e1c9h		;435d   ; y la del mando 1
 FLANCOS:		; (hl) = A; (hl-1) = bits que acaban de pulsarse
-	ld c,(hl)			;4360
-	ld (hl),a			;4361
-	xor c			;4362
-	and (hl)			;4363
+	ld c,(hl)			;4360   ; C = lo que habia en el paso anterior...
+	ld (hl),a			;4361   ; ...y (hl) pasa a ser lo de ahora
+	xor c			;4362   ; los bits que han cambiado...
+	and (hl)			;4363   ; ...y de esos, los que ahora valen 1: el flanco de PULSAR. Soltar no deja rastro
 	dec hl			;4364
-	ld (hl),a			;4365
+	ld (hl),a			;4365   ; los flancos van en el byte de ANTES, por eso las dos parejas estan pegadas en RAM
 	ret			;4366
 LEE_MANDO_1:		; joystick 1 por el PSG (0x43EC) mas cursores y espacio del teclado (filas 8 y 4)
-	call LEE_JOY_PSG		;4367
-	ld e,a			;436a
-	ld a,004h		;436b
+	call LEE_JOY_PSG		;4367   ; primero el joystick del puerto 1
+	ld e,a			;436a   ; E se queda con lo del joystick y las teclas se van sumando encima
+	ld a,004h		;436b   ; fila 4 de la matriz del teclado: K L M N O P Q R
 	call 00141h		;436d   ; BIOS SNSMAT - Returns the value of the specified line from the keyboard matrix
-	and 00ch		;4370
+	and 00ch		;4370   ; bits 2 y 3 = M y N; el `xor` deja cero solo si NINGUNA de las dos esta pulsada
 	xor 00ch		;4372
-	jr z,L_4378		;4374
-	set 5,e		;4376
-L_4378:
-	ld a,008h		;4378
+	jr z,MANDO_1_TECLADO		;4374
+	set 5,e		;4376   ; cualquiera de las dos hace de boton B
+MANDO_1_TECLADO:		; la fila 8 (espacio y cursores) repartida a los bits del mando con rotaciones
+	ld a,008h		;4378   ; fila 8: ESPACIO, HOME, INS, DEL y los cuatro cursores
 	call 00141h		;437a   ; BIOS SNSMAT - Returns the value of the specified line from the keyboard matrix
-	cpl			;437d
-	rrca			;437e
+	cpl			;437d   ; en la matriz un cero es tecla pulsada: `cpl` y a partir de aqui se trabaja con unos
+	rrca			;437e   ; dos rotaciones y una mascara por grupo de bits. B guarda el valor rotado para la vuelta siguiente, asi la fila se lee UNA vez y no cuatro
 	rrca			;437f
 	ld b,a			;4380
-	and 004h		;4381
+	and 004h		;4381   ; izquierda: del bit 4 de la fila al bit 2, que es el suyo en el mando
 	or e			;4383
 	ld c,a			;4384
 	ld a,b			;4385
-	rrca			;4386
+	rrca			;4386   ; dos rotaciones mas
 	rrca			;4387
 	ld b,a			;4388
-	and 018h		;4389
+	and 018h		;4389   ; derecha al bit 3 y ESPACIO al bit 4, o sea que el espacio es el boton A
 	or c			;438b
 	ld c,a			;438c
 	ld a,b			;438d
-	rrca			;438e
-	and 003h		;438f
+	rrca			;438e   ; y una mas
+	and 003h		;438f   ; arriba al bit 0 y abajo al bit 1
 	or c			;4391
-	or e			;4392
+	or e			;4392   ; encima de lo que dijera el joystick: mando y teclado se suman, no se elige uno
 	ret			;4393
 LEE_MANDO_2:		; joystick 2 por el PSG (E=0xCF) mas teclas de las filas 6, 3, 2 y 5
-	ld e,0cfh		;4394
+	ld e,0cfh		;4394   ; 0xCF y no 0x8F: el bit 6 del registro 15 del PSG es el que elige puerto de mando, y este es el segundo
 	call LEE_JOY_PSG_E		;4396
-	ld e,a			;4399
-	ld a,006h		;439a
+	ld e,a			;4399   ; las teclas del jugador 2 no son las del 1: W A S D con SHIFT y CTRL
+	ld a,006h		;439a   ; fila 6: SHIFT, CTRL, GRAPH, CAPS, CODE, F1, F2, F3
 	call 00141h		;439c   ; BIOS SNSMAT - Returns the value of the specified line from the keyboard matrix
 	cpl			;439f
-	and 003h		;43a0
-	add a,a			;43a2
+	and 003h		;43a0   ; SHIFT y CTRL, que estan en los bits 0 y 1...
+	add a,a			;43a2   ; ...cuatro veces por dos, o sea al bit 4 (boton A) y al bit 5 (boton B)
 	add a,a			;43a3
 	add a,a			;43a4
 	add a,a			;43a5
 	or e			;43a6
 	ld e,a			;43a7
-	ld a,003h		;43a8
+	ld a,003h		;43a8   ; fila 3: C D E F G H I J
 	call 00141h		;43aa   ; BIOS SNSMAT - Returns the value of the specified line from the keyboard matrix
-	bit 1,a		;43ad
-	jr nz,L_43B3		;43af
+	bit 1,a		;43ad   ; la D, al bit 3: derecha
+	jr nz,MANDO_2_IZQUIERDA		;43af
 	set 3,e		;43b1
-L_43B3:
-	ld a,002h		;43b3
+MANDO_2_IZQUIERDA:		; la A de la fila 2
+	ld a,002h		;43b3   ; fila 2: apostrofe, acento, coma, punto, barra, subrayado, A y B
 	call 00141h		;43b5   ; BIOS SNSMAT - Returns the value of the specified line from the keyboard matrix
-	bit 6,a		;43b8
-	jr nz,L_43BE		;43ba
+	bit 6,a		;43b8   ; la A, al bit 2: izquierda
+	jr nz,MANDO_2_ABAJO		;43ba
 	set 2,e		;43bc
-L_43BE:
-	ld a,005h		;43be
+MANDO_2_ABAJO:		; la S de la fila 5
+	ld a,005h		;43be   ; fila 5: S T U V W X Y Z
 	call 00141h		;43c0   ; BIOS SNSMAT - Returns the value of the specified line from the keyboard matrix
-	bit 0,a		;43c3
-	jr nz,L_43C9		;43c5
+	bit 0,a		;43c3   ; la S, al bit 1: abajo
+	jr nz,MANDO_2_ARRIBA		;43c5
 	set 1,e		;43c7
-L_43C9:
-	bit 4,a		;43c9
-	jr nz,L_43CF		;43cb
+MANDO_2_ARRIBA:		; la W, de la misma fila 5
+	bit 4,a		;43c9   ; y de la misma fila la W, al bit 0: arriba
+	jr nz,MANDO_2_DEVUELVE		;43cb
 	set 0,e		;43cd
-L_43CF:
-	ld a,e			;43cf
+MANDO_2_DEVUELVE:		; A = el byte del mando 2 ya montado
+	ld a,e			;43cf   ; el resultado sale en A, como el del mando 1
 	ret			;43d0
 LEE_TECLAS_F:		; F1..F5 en los bits 0..4 (filas 7 y 6 del teclado)
-	ld a,007h		;43d1
+	ld a,007h		;43d1   ; fila 7: F4, F5, ESC, TAB, STOP, BS, SELECT y RETURN
 	call 00141h		;43d3   ; BIOS SNSMAT - Returns the value of the specified line from the keyboard matrix
 	cpl			;43d6
-	and 003h		;43d7
-	add a,a			;43d9
+	and 003h		;43d7   ; F4 y F5, que estan en los bits 0 y 1...
+	add a,a			;43d9   ; ...tres veces por dos: a los bits 3 y 4
 	add a,a			;43da
 	add a,a			;43db
-	push af			;43dc
-	ld a,006h		;43dd
+	push af			;43dc   ; y a la pila, que hace falta A para la otra fila
+	ld a,006h		;43dd   ; fila 6: F1, F2 y F3 ocupan los bits 5, 6 y 7
 	call 00141h		;43df   ; BIOS SNSMAT - Returns the value of the specified line from the keyboard matrix
 	cpl			;43e2
-	rlca			;43e3
+	rlca			;43e3   ; tres rotaciones a la IZQUIERDA los bajan a los bits 0, 1 y 2
 	rlca			;43e4
 	rlca			;43e5
 	and 007h		;43e6
 	ld d,a			;43e8
 	pop af			;43e9
-	or d			;43ea
+	or d			;43ea   ; F1 a F5 en los bits 0 a 4, en orden
 	ret			;43eb
 LEE_JOY_PSG:		; E=0x8F: joystick 1; entra en 0x43EE con E=0xCF para el 2
-	ld e,08fh		;43ec
+	ld e,08fh		;43ec   ; 0x8F: bit 6 a cero (puerto de mando 1) y las salidas del PSG en alto
 LEE_JOY_PSG_E:		; PSG R15=E, lee R14, invierte, 6 bits
-	ld a,00fh		;43ee
+	ld a,00fh		;43ee   ; el registro 15 del PSG elige que puerto de mando se va a leer...
 	call 00093h		;43f0   ; BIOS WRTPSG - Writes data to PSG-register
-	ld a,00eh		;43f3
-	di			;43f5
+	ld a,00eh		;43f3   ; ...y el 14 lo devuelve
+	di			;43f5   ; `di` alrededor de la lectura: la interrupcion tambien escribe en el PSG (p13 0x6422) y dejaria el registro 15 apuntando a otro sitio entre la escritura y la lectura
 	call 00096h		;43f6   ; BIOS RDPSG - Reads value from PSG-register
 	ei			;43f9
-	cpl			;43fa
-	and 03fh		;43fb
+	cpl			;43fa   ; en el PSG el cero es "pulsado"
+	and 03fh		;43fb   ; seis bits: cuatro direcciones y dos botones
 	ret			;43fd
 
 ; ----------------------------------------------------------------------
@@ -675,13 +690,13 @@ LEE_JOY_PSG_E:		; PSG R15=E, lee R14, invierte, 6 bits
 ; la ranura que les toca por su numero: tools/paginas.py.
 ; ----------------------------------------------------------------------
 MAPEA_1_2_3:		; 1/2/3 en 6000/8000/A000: el mapeo "por defecto"
-	di			;43fe
-	push hl			;43ff
-	ld hl,0f0f1h		;4400
+	di			;43fe   ; el `di` no es opcional: la interrupcion cambia los tres bancos por su cuenta (0x4029) y volveria con otros puestos
+	push hl			;43ff   ; HL se respeta, que es con el que anda por las tablas quien llama
+	ld hl,0f0f1h		;4400   ; F0F1 es la sombra de 0x6000, F0F2 la de 0x8000 y F0F3 la de 0xA000
 	ld a,001h		;4403
-	ld (07000h),a		;4405
-	ld (hl),a			;4408
-	inc a			;4409
+	ld (07000h),a		;4405   ; escribir en 0x7000 es lo que mueve el banco de 0x6000; el mapper mira el bloque, no la direccion exacta
+	ld (hl),a			;4408   ; y la sombra se entera del cambio
+	inc a			;4409   ; 1, 2 y 3 van seguidas: un `inc a` por ranura
 	ld (09000h),a		;440a
 	inc hl			;440d
 	ld (hl),a			;440e
@@ -690,342 +705,370 @@ MAPEA_1_2_3:		; 1/2/3 en 6000/8000/A000: el mapeo "por defecto"
 	inc hl			;4413
 	ld (hl),a			;4414
 	pop hl			;4415
-	ei			;4416
+	ei			;4416   ; aqui se vuelven a abrir las interrupciones, y eso es lo que hace reentrante a la logica del juego: ver el bloque de 0x4018
 	ret			;4417
 MAPEA_4_5_6:		; 4/5/6 por 0x441B
-	di			;4418
+	di			;4418   ; este `di` lo repite el de 0x441B: entrar por aqui o por alla da igual
 	ld a,004h		;4419
 MAPEA_DESDE_A:		; A, A+1, A+2 en 6000/8000/A000
-	di			;441b
+	di			;441b   ; la version generica: A, A+1 y A+2. Las cinco entradas de arriba solo ponen el numero y caen aqui
 	push hl			;441c
-	ld hl,0f0f1h		;441d
+	ld hl,0f0f1h		;441d   ; los tres bytes de la sombra van seguidos...
 	ld (07000h),a		;4420
 	ld (hl),a			;4423
-	inc l			;4424
+	inc l			;4424   ; ...asi que basta `inc l`: F0F1 a F0F3 no cruzan pagina
 	inc a			;4425
-	ld (09000h),a		;4426
+	ld (09000h),a		;4426   ; la segunda ranura, 0x8000
 	ld (hl),a			;4429
 	inc l			;442a
 	inc a			;442b
-	ld (0b000h),a		;442c
+	ld (0b000h),a		;442c   ; y la tercera, 0xA000. Esta SI deja bien la sombra, al reves que la copia de la interrupcion (0x4042)
 	ld (hl),a			;442f
 	pop hl			;4430
-	ei			;4431
+	ei			;4431   ; con `ei`, como todas
 	ret			;4432
 MAPEA_1_2_3_B:		; como 0x43FE pero por 0x441B
-	di			;4433
+	di			;4433   ; hace lo mismo que 0x43FE en cinco bytes en vez de veintiseis; las dos estan vivas y las dos se llaman
 	ld a,001h		;4434
 	jr MAPEA_DESDE_A		;4436
 MAPEA_7_8_9:		; 7/8/9 por 0x441B
 	di			;4438
-	ld a,007h		;4439
+	ld a,007h		;4439   ; 7/8/9: la que trae las secuencias de circuito (p07) y sus dos vecinas
 	jr MAPEA_DESDE_A		;443b
 MAPEA_A_B_C:		; A/B/C por 0x441B
 	di			;443d
-	ld a,00ah		;443e
+	ld a,00ah		;443e   ; A/B/C: las tablas de piezas y de metatiles (p10 a p12)
 	jr MAPEA_DESDE_A		;4440
 MAPEA_D_E_F:		; la pagina del sonido (13) y las 14 y 15
 	di			;4442
-	ld a,00dh		;4443
+	ld a,00dh		;4443   ; D/E/F: el motor de sonido (p13) y los datos residentes (p15)
 	jr MAPEA_DESDE_A		;4445
 MAPEA_A_EN_8000:		; A en 8000 y A+1 en A000
-	di			;4447
+	di			;4447   ; esta pareja no toca 0x6000 y no necesita HL: escribe la sombra por direccion
 	ld (0f0f2h),a		;4448
 	ld (09000h),a		;444b
-	inc a			;444e
+	inc a			;444e   ; A y A+1, en ese orden: quien llama pide un par consecutivo
 	ld (0f0f3h),a		;444f
 	ld (0b000h),a		;4452
-	ei			;4455
+	ei			;4455   ; y a soltar las interrupciones
 	ret			;4456
 MAPEA_A_EN_A000:		; A en A000 (la llaman las paginas 1 y 2)
 	di			;4457
-	ld (0f0f3h),a		;4458
+	ld (0f0f3h),a		;4458   ; solo la ranura de 0xA000: es la unica que las paginas 1 y 2 pueden cambiar sin quedarse ellas mismas sin sitio
 	ld (0b000h),a		;445b
 	ei			;445e
 	ret			;445f
 LIMPIA_EA80_Y_ATRIBUTOS:		; borra 0x80 bytes de RAM desde EA80 (con 0xE0) y los atributos de sprites (0x3B00, 0x80 bytes a 0xE0 = fuera de pantalla). El BC de 0x7F no enganna: RELLENA_RAM siembra el primer byte con `ld (hl),a` y el `ldir` copia otros BC, o sea EA80..EAFF
-	ld hl,0ea80h		;4460
+	ld hl,0ea80h		;4460   ; EA80 es la copia en RAM de los atributos de sprites, la que vuelca 0x477C en cada repintado
 	ld bc,0007fh		;4463
-	ld a,0e0h		;4466
+	ld a,0e0h		;4466   ; 0xE0 en los cuatro bytes de las 32 entradas. Como Y, 224: con sprites de 16x16 y sin ampliar (R1 = 0xE2) ninguno asoma por las 192 lineas de pantalla
 	call RELLENA_RAM		;4468
-	ld hl,03b00h		;446b
+	ld hl,03b00h		;446b   ; y lo mismo en la VRAM, para que no se vea nada hasta el vuelco siguiente
 	ld bc,00080h		;446e
 	jp 00056h		;4471   ; BIOS FILVRM - Fills VRAM with value
 TILES_16_58_F0:		; como 0x4476 con A=0xF0, y ese 0xF0 es el COLOR, no el patron: cae en 0x4476, que llena los COLORES de los tiles 16..58 con A y trae los patrones del RLE de p15 0xB777. La nota anterior decia "patrones llenos de 0xF0" y su propia vecina de 0x4476 ya lo desmentia
-	ld a,0f0h		;4474
+	ld a,0f0h		;4474   ; 0xF0 como byte de color es tinta 15 sobre fondo 0: blanco sobre transparente
 TILES_16_58_A:		; mapea D/E/F, llena los colores de los tiles 16..58 con A, trae sus patrones de p15:0xB777 (RLE) y vuelve a 1/2/3
-	push af			;4476
-	call MAPEA_D_E_F		;4477
+	push af			;4476   ; A es el color y hay que salvarlo: MAPEA_D_E_F lo usa
+	call MAPEA_D_E_F		;4477   ; los patrones estan en la pagina 15, o sea hay que ponerla en 0xA000
 	pop af			;447a
-	call COLORES_16_58_A		;447b
+	call COLORES_16_58_A		;447b   ; primero el color de los 43 tiles y despues sus patrones
 	call PATRONES_16_DESDE_B777		;447e
-	jp MAPEA_1_2_3		;4481
+	jp MAPEA_1_2_3		;4481   ; `jp`: el `ret` de MAPEA_1_2_3 es el que cierra la rutina
 PATRONES_16_DESDE_B777:		; descomprime (RLE) p15:0xB777 en los patrones desde el tile 16 (VRAM 0x2080), 3 tercios
-	ld de,0b777h		;4484
-	ld hl,02080h		;4487
+	ld de,0b777h		;4484   ; p15:0xB777, comprimido con el RLE de 0x4862
+	ld hl,02080h		;4487   ; VRAM 0x2080 = el patron del tile 16 (0x2000 + 16*8)
 	jp RLE_VRAM_3_TERCIOS		;448a
 COLORES_16_58_A:		; llena 0x158 bytes de la tabla de colores desde el tile 16 (VRAM 0x0080) con A, 3 tercios
-	ld hl,00080h		;448d
-	ld bc,00158h		;4490
+	ld hl,00080h		;448d   ; VRAM 0x0080 = el color del tile 16
+	ld bc,00158h		;4490   ; 0x158 bytes son 43 tiles de 8, o sea del 16 al 58
 	jp LLENA_VRAM_3_TERCIOS		;4493
 TILES_0_15_MACIZOS:		; mapea D/E/F; patrones de los tiles 0..15 a cero y el color del tile i = i (fondo del color i): 16 bloques macizos, 3 tercios; vuelve a 1/2/3
-	call MAPEA_D_E_F		;4496
-	ld hl,02000h		;4499
+	call MAPEA_D_E_F		;4496   ; aqui NO se lee nada de la pagina 15: entre este `call` y el `jp` del final solo hay escrituras a la VRAM por la BIOS. Es el mismo par de llamadas que en 0x4476, que si lo necesita
+	ld hl,02000h		;4499   ; los patrones de los tiles 0 a 15, a cero: en el tile no queda un solo pixel de tinta
 	ld bc,00080h		;449c
-	xor a			;449f
+	xor a			;449f   ; y como el patron es todo ceros, el que manda es el nibble BAJO del byte de color
 	call LLENA_VRAM_3_TERCIOS		;44a0
 	ld hl,00000h		;44a3
 	ld de,00008h		;44a6
-	ld b,010h		;44a9
+	ld b,010h		;44a9   ; dieciseis tiles
 BUCLE_TILES_0_15:		; un tile por vuelta: 8 bytes de color A (= indice) en VRAM HL, HL += 8
-	push bc			;44ab
-	ld bc,00008h		;44ac
+	push bc			;44ab   ; B lleva la cuenta de tiles y BC el tamano de la llenada: hay que guardarlo
+	ld bc,00008h		;44ac   ; ocho bytes = las ocho filas de un tile
 	push hl			;44af
-	call LLENA_VRAM_3_TERCIOS		;44b0
+	call LLENA_VRAM_3_TERCIOS		;44b0   ; en los tres tercios, que en la pantalla 2 cada uno tiene su propia tabla de color
 	pop hl			;44b3
-	add hl,de			;44b4
-	inc a			;44b5
+	add hl,de			;44b4   ; el tile siguiente, ocho bytes mas alla
+	inc a			;44b5   ; y su color es su propio numero: el tile 5 sale macizo del color 5
 	pop bc			;44b6
 	djnz BUCLE_TILES_0_15		;44b7
 	jp MAPEA_1_2_3		;44b9
 VUELCA_NOMBRES_E400:		; copia los 768 bytes del buffer de pantalla E400 a la tabla de nombres (0x3800)
-	ld hl,0e400h		;44bc
+	ld hl,0e400h		;44bc   ; E400 es el buffer de nombres del jugador 1
 	jr VUELCA_768_A_NOMBRES		;44bf
-L_44C1:
-	ld hl,0ec00h		;44c1
-VUELCA_768_A_NOMBRES:		; HL = buffer de RAM; SETWRT 0x3800 y 3 x 256 bytes por el puerto del VDP (hay otra entrada en 0x44C1 con el buffer EC00, sin trazar)
+VUELCA_NOMBRES_EC00:		; la gemela con el buffer del jugador 2; la llaman p01 0x7D19 y 0x7D33 (la escena de meta)
+	ld hl,0ec00h		;44c1   ; y EC00 el del jugador 2
+VUELCA_768_A_NOMBRES:		; HL = buffer de RAM; SETWRT 0x3800 y 3 x 256 bytes por el puerto del VDP
 	push hl			;44c4
-	ld hl,03800h		;44c5
-	call PREPARA_ESCRITURA_VRAM		;44c8
+	ld hl,03800h		;44c5   ; 0x3800 es la tabla de nombres entera, 24 filas de 32
+	call PREPARA_ESCRITURA_VRAM		;44c8   ; SETWRT y, de paso, el puerto de datos del VDP en el C del OTRO juego de registros
 	pop hl			;44cb
 	exx			;44cc
-	ld a,c			;44cd
+	ld a,c			;44cd   ; y estas cuatro instrucciones lo traen al C de este, porque el vuelco no juega con los dos juegos
 	exx			;44ce
 	ld c,a			;44cf
-	call OUT_256_VRAM		;44d0
+	call OUT_256_VRAM		;44d0   ; 768 bytes son tres vueltas de 256, y la tercera es la caida a 0x44D6
 	call OUT_256_VRAM		;44d3
 OUT_256_VRAM:		; 256 bytes desde (HL) al puerto del VDP (C' lo dejo 0x4673)
-	ld b,000h		;44d6
-L_44D8:
-	ld a,(hl)			;44d8
+	ld b,000h		;44d6   ; B = 0 son 256 vueltas
+OUT_256_BUCLE:		; un byte por vuelta
+	ld a,(hl)			;44d8   ; un byte por vuelta y sin escribir en la VRAM la direccion: la deja el SETWRT y la va subiendo el propio VDP
 	inc hl			;44d9
 	out (c),a		;44da
-	djnz L_44D8		;44dc
+	djnz OUT_256_BUCLE		;44dc
 	ret			;44de
-L_44DF:
-	ld iy,0e380h		;44df
-	ld de,00000h		;44e3
-	ld (iy+009h),002h		;44e6
+
+; ----------------------------------------------------------------------
+; El repintado de la pista, lo que llama la interrupcion en 0x40C7.
+; Cada jugador tiene en RAM un buffer de nombres de 1 KB -E400 el
+; jugador 1 y EC00 el 2- que es un mapa de 32 x 32 casillas CIRCULAR
+; en los dos sentidos: la pista se va escribiendo ahi fila a fila
+; (0x564C) y de ahi se copia a la VRAM la ventana que toque.
+;
+; La casilla por la que empieza la ventana la da 0x4A9D: fila =
+; (iy+40) / 8 y columna = (ix+54) / 8, o sea la camara en pixeles
+; partida por el tamano del tile, las dos modulo 32.
+;
+; 0x45F7 vuelca UNA fila de la ventana, quince casillas con `outi`.
+; Las dos vueltas del mapa estan ahi: si el puntero llega al final de
+; su fila de 32 bytes, 0x4656 lo hace retroceder 32 -la vuelta
+; horizontal-; y al acabar, la fila siguiente es HL + 0x20, con `res
+; 2,h / inc h / set 2,h` para no salirse del kilobyte -la vertical-.
+;
+; Con un jugador la ventana son 15 columnas x 24 filas desde 0x3802,
+; o sea la columna 2, los pixeles 16 a 135; y es tambien el
+; x desde 16 y 118 pixeles de ancho.
+; Con dos, la pantalla va partida y DESPLAZADA: el jugador 2 ocupa
+; las columnas 0..14 en las filas 0..20, el jugador 1 las columnas
+; 17..31 en las filas 3..23, y entre los dos van las columnas 15 y
+; 16 con una barra que sale de una tabla de 18 bytes de p15:0xB764
+; (00 DE, trece F7, E3, 00, 00). Los dos huecos que quedan -arriba a
+; la derecha y abajo a la izquierda- son los marcadores.
+; ----------------------------------------------------------------------
+VENTANA_JUGADOR_2:		; la ventana de un jugador pero con el bloque del coche 2 (E380) y el buffer EC00; la llaman 0x520A y 0x5C5C
+	ld iy,0e380h		;44df   ; el bloque del segundo coche, que es el que mueven las escenas fijas (0x5755)
+	ld de,00000h		;44e3   ; D = 0 es la columna 0 y E = 0 no desplaza la fila: esta ventana NO sigue a la camara horizontal, arranca siempre por el principio de la fila
+	ld (iy+009h),002h		;44e6   ; (iy+9) = 2 fuerza el buffer EC00 en 0x4A9D, que es donde pintan esas escenas
 	ld ix,0e380h		;44ea
-	call L_4A9D		;44ee
-	jr L_4523		;44f1
-L_44F3:
-	ld b,018h		;44f3
-	ld hl,03802h		;44f5
-L_44F8:
-	call PREPARA_ESCRITURA_VRAM		;44f8
-	ld de,00020h		;44fb
+	call CASILLA_BUFFER_NOMBRES		;44ee   ; la casilla del buffer por la que empieza la ventana
+	jr VENTANA_1_JUGADOR		;44f1   ; y de ahi en adelante, la ventana de un jugador de siempre
+BORRA_VENTANA_PISTA:		; pone a cero las 15 columnas x 24 filas de la ventana de un jugador (desde 0x3802); la llaman p02 0x91F1 y 0x9263
+	ld b,018h		;44f3   ; 24 filas, la pantalla entera de alto
+	ld hl,03802h		;44f5   ; 0x3802: fila 0, columna 2, la esquina de la ventana
+BORRA_VENTANA_FILA:		; una fila de la ventana por vuelta
+	call PREPARA_ESCRITURA_VRAM		;44f8   ; SETWRT en la fila, y el puerto de datos queda en el C del otro juego de registros
+	ld de,00020h		;44fb   ; la fila siguiente, 32 casillas mas alla
 	add hl,de			;44fe
-	exx			;44ff
+	exx			;44ff   ; al juego donde esta el puerto
 	ld b,01eh		;4500
 	xor a			;4502
-L_4503:
-	out (c),a		;4503
-	dec b			;4505
-	djnz L_4503		;4506
-	exx			;4508
-	djnz L_44F8		;4509
+BORRA_VENTANA_BUCLE:		; una casilla por vuelta
+	out (c),a		;4503   ; el cero que borra la casilla
+	dec b			;4505   ; este `dec b` no es un descuido: con el `djnz` B baja DOS veces por vuelta, asi que 0x1E son 15 casillas y no 30, justo el ancho de la ventana. Y de paso mete cuatro estados entre `out` y `out`: con el `out` a 12 y el `djnz` a 13 salen 29, que es lo que el VDP pide entre dos bytes (?)
+	djnz BORRA_VENTANA_BUCLE		;4506
+	exx			;4508   ; y de vuelta al juego que lleva la direccion de VRAM
+	djnz BORRA_VENTANA_FILA		;4509
 	ret			;450b
-L_450C:
-	ld hl,0e1c2h		;450c
+PINTA_VENTANA_PISTA:		; la ventana de la pista a la tabla de nombres: con un jugador 15 x 24 desde 0x3802 (0x4523), con dos la pantalla partida (0x4538)
+	ld hl,0e1c2h		;450c   ; bit 5 de E1C2: si hay jugador 2, la pantalla va partida
 	bit 5,(hl)		;450f
-	jr nz,L_4538		;4511
-	ld ix,0e2c0h		;4513
+	jr nz,VENTANA_2_JUGADORES		;4511
+	ld ix,0e2c0h		;4513   ; con uno solo manda el bloque del coche 1 (E2C0), que es tambien la camara
 	ld iy,0e2c0h		;4517
-	ld d,(ix+054h)		;451b
-	ld e,000h		;451e
-	call L_4A9D		;4520
-L_4523:
-	exx			;4523
-	ld b,018h		;4524
-	ld hl,03802h		;4526
-L_4529:
-	call PREPARA_ESCRITURA_VRAM		;4529
-	ld de,00020h		;452c
+	ld d,(ix+054h)		;451b   ; D = (ix+54), la camara en pixeles: 0x4A9D se queda con la columna, que es D / 8
+	ld e,000h		;451e   ; E = 0: la fila es (iy+40) / 8 sin desplazar
+	call CASILLA_BUFFER_NOMBRES		;4520   ; HL = la casilla del buffer por la que empieza la ventana
+VENTANA_1_JUGADOR:		; 24 filas de 15 casillas desde 0x3802: el juego principal lleva el puntero del buffer y el alterno la direccion de VRAM
+	exx			;4523   ; se cambia de juego de registros: HL' llevara la VRAM y HL el buffer
+	ld b,018h		;4524   ; 24 filas
+	ld hl,03802h		;4526   ; fila 0, columna 2
+VENTANA_FILA:		; una fila de la ventana por vuelta
+	call PREPARA_ESCRITURA_VRAM		;4529   ; SETWRT con HL' y, desde dentro, el puerto en el C del juego principal
+	ld de,00020h		;452c   ; la fila de VRAM siguiente, 32 casillas mas alla
 	add hl,de			;452f
-	exx			;4530
-	call L_45F7		;4531
+	exx			;4530   ; al juego principal, el que lleva el buffer
+	call VUELCA_FILA_VENTANA		;4531   ; y ahi van las 15 casillas de esta fila
 	exx			;4534
-	djnz L_4529		;4535
+	djnz VENTANA_FILA		;4535
 	ret			;4537
-L_4538:
-	ld a,(00007h)		;4538
+VENTANA_2_JUGADORES:		; pantalla partida: el coche 2 (E380) a la izquierda -columnas 0..14, filas 0..20-, el coche 1 (E2C0) a la derecha -columnas 17..31, filas 3..23- y entre ellos la barra de p15:0xB764
+	ld a,(00007h)		;4538   ; el puerto de datos del VDP (el byte 7 de la BIOS)...
 	ld c,a			;453b
-	exx			;453c
+	exx			;453c   ; ...y se deja en el C de LOS DOS juegos de registros, porque aqui se salta de uno a otro en cada fila
 	ld c,a			;453d
 	exx			;453e
-	ld hl,03800h		;453f
+	ld hl,03800h		;453f   ; la esquina de arriba a la izquierda: en la pantalla partida no sobra ni una columna
 	call 00053h		;4542   ; BIOS SETWRT - Enables VDP to write
-	ld ix,0e2c0h		;4545
+	ld ix,0e2c0h		;4545   ; el juego principal se queda con la casilla del coche 1
 	ld iy,0e2c0h		;4549
 	ld d,(ix+054h)		;454d
 	ld e,000h		;4550
-	call L_4A9D		;4552
-	exx			;4555
+	call CASILLA_BUFFER_NOMBRES		;4552
+	exx			;4555   ; y el alterno con la del coche 2
 	ld ix,0e380h		;4556
 	ld iy,0e380h		;455a
 	ld d,(ix+054h)		;455e
 	ld e,000h		;4561
-	call L_4A9D		;4563
-	call L_45F7		;4566
+	call CASILLA_BUFFER_NOMBRES		;4563
+	call VUELCA_FILA_VENTANA		;4566   ; las filas 0, 1 y 2 son solo del jugador 2: encima de la mitad derecha va su marcador
 	push hl			;4569
 	ld hl,03820h		;456a
 	call 00053h		;456d   ; BIOS SETWRT - Enables VDP to write
 	pop hl			;4570
-	call L_45F7		;4571
+	call VUELCA_FILA_VENTANA		;4571
 	push hl			;4574
 	ld hl,03840h		;4575
 	call 00053h		;4578   ; BIOS SETWRT - Enables VDP to write
 	pop hl			;457b
-	call L_45F7		;457c
+	call VUELCA_FILA_VENTANA		;457c
 	push hl			;457f
-	ld hl,03860h		;4580
+	ld hl,03860h		;4580   ; de la fila 3 solo se deja hecho el SETWRT: la vuelca ya el bucle de abajo, que escribe la fila entera
 	call 00053h		;4583   ; BIOS SETWRT - Enables VDP to write
 	pop hl			;4586
-	ld ix,0b764h		;4587
-	call L_45E3		;458b
-	call L_45E3		;458e
-	call L_45E3		;4591
-	call L_45E3		;4594
-	call L_45E3		;4597
-	call L_45E3		;459a
-	call L_45E3		;459d
-	call L_45E3		;45a0
-	call L_45E3		;45a3
-	call L_45E3		;45a6
-	call L_45E3		;45a9
-	call L_45E3		;45ac
-	call L_45E3		;45af
-	call L_45E3		;45b2
-	call L_45E3		;45b5
-	call L_45E3		;45b8
-	call L_45E3		;45bb
-	call L_45E3		;45be
-	exx			;45c1
+	ld ix,0b764h		;4587   ; la barra que separa las dos mitades: 18 bytes en la pagina 15, uno por fila. Cuando esto corre, D/E/F estan mapeadas -la interrupcion las deja puestas en 0x4049 y el otro llamador, 0x4BE9, llama antes a MAPEA_D_E_F-, asi que 0xB764 es p15 y no p03
+	call FILA_PARTIDA		;458b   ; dieciocho filas enteras de 32 casillas, de la 3 a la 20
+	call FILA_PARTIDA		;458e
+	call FILA_PARTIDA		;4591
+	call FILA_PARTIDA		;4594
+	call FILA_PARTIDA		;4597
+	call FILA_PARTIDA		;459a
+	call FILA_PARTIDA		;459d
+	call FILA_PARTIDA		;45a0
+	call FILA_PARTIDA		;45a3
+	call FILA_PARTIDA		;45a6
+	call FILA_PARTIDA		;45a9
+	call FILA_PARTIDA		;45ac
+	call FILA_PARTIDA		;45af
+	call FILA_PARTIDA		;45b2
+	call FILA_PARTIDA		;45b5
+	call FILA_PARTIDA		;45b8
+	call FILA_PARTIDA		;45bb
+	call FILA_PARTIDA		;45be
+	exx			;45c1   ; al juego del coche 1: le faltan tres filas por abajo
 	push hl			;45c2
-	ld hl,03ab1h		;45c3
+	ld hl,03ab1h		;45c3   ; 0x3AB1 es la fila 21, columna 17; luego la 22 y la 23. Debajo de la mitad izquierda va el otro marcador
 	call 00053h		;45c6   ; BIOS SETWRT - Enables VDP to write
 	pop hl			;45c9
-	call L_45F7		;45ca
+	call VUELCA_FILA_VENTANA		;45ca
 	push hl			;45cd
 	ld hl,03ad1h		;45ce
 	call 00053h		;45d1   ; BIOS SETWRT - Enables VDP to write
 	pop hl			;45d4
-	call L_45F7		;45d5
+	call VUELCA_FILA_VENTANA		;45d5
 	push hl			;45d8
 	ld hl,03af1h		;45d9
 	call 00053h		;45dc   ; BIOS SETWRT - Enables VDP to write
 	pop hl			;45df
-	jp L_45F7		;45e0
-L_45E3:
-	call L_45F7		;45e3
-	ld a,(ix+000h)		;45e6
+	jp VUELCA_FILA_VENTANA		;45e0   ; la ultima por `jp`: el `ret` de 0x45F7 cierra la rutina
+FILA_PARTIDA:		; una fila entera de la pantalla partida: 15 casillas del jugador 2, la barra dos veces y 15 del jugador 1
+	call VUELCA_FILA_VENTANA		;45e3   ; la mitad izquierda, con el juego de registros que viene puesto
+	ld a,(ix+000h)		;45e6   ; el trozo de barra que le toca a esta fila
 	out (c),a		;45e9
-	nop			;45eb
+	nop			;45eb   ; entre las dos escrituras van dos `nop` y el `inc ix`: avanzan la tabla y ademas separan los dos `out` 18 estados, que con los 12 del propio `out` son los 30 que necesita el VDP (?)
 	nop			;45ec
 	inc ix		;45ed
-	out (c),a		;45ef
-	exx			;45f1
-	call L_45F7		;45f2
-	exx			;45f5
+	out (c),a		;45ef   ; el mismo byte en las dos columnas: la barra es igual de ancha en todas las filas
+	exx			;45f1   ; se cambia de coche...
+	call VUELCA_FILA_VENTANA		;45f2   ; ...y va la mitad derecha
+	exx			;45f5   ; y el juego se deja como estaba, que el bucle de arriba cuenta con ello
 	ret			;45f6
-L_45F7:
-	push hl			;45f7
-	ld a,l			;45f8
+VUELCA_FILA_VENTANA:		; 15 casillas desde (HL) al puerto del VDP, dando la vuelta por la izquierda al llegar al final de la fila de 32 del buffer; al salir HL apunta a la fila siguiente, tambien con vuelta
+	push hl			;45f7   ; HL vuelve a salir del final: la fila siguiente se cuenta desde donde se entro, no desde donde acabo el vuelco
+	ld a,l			;45f8   ; los cinco bits bajos de L son la columna dentro de la fila de 32...
 	and 01fh		;45f9
-	cpl			;45fb
+	cpl			;45fb   ; ...y `cpl` mas 0x21 los convierte en 32 - columna, o sea lo que falta para el final de la fila
 	add a,021h		;45fc
-	ld b,a			;45fe
-	outi		;45ff
-	call z,L_4656		;4601
+	ld b,a			;45fe   ; ese es el B de los `outi`
+	outi		;45ff   ; quince `outi` desenrollados, uno por casilla: quince es el ancho de la ventana
+	call z,RETROCEDE_FILA_BUFFER		;4601   ; el `outi` deja Z cuando B llega a cero, que es justo al pasarse del final de la fila; entonces 0x4656 retrocede las 32 casillas y la ventana da la vuelta por la izquierda. Solo puede saltar una vez, porque el `outi` siguiente deja B en 0xFF
 	outi		;4604
-	call z,L_4656		;4606
+	call z,RETROCEDE_FILA_BUFFER		;4606
 	outi		;4609
-	call z,L_4656		;460b
+	call z,RETROCEDE_FILA_BUFFER		;460b
 	outi		;460e
-	call z,L_4656		;4610
+	call z,RETROCEDE_FILA_BUFFER		;4610
 	outi		;4613
-	call z,L_4656		;4615
+	call z,RETROCEDE_FILA_BUFFER		;4615
 	outi		;4618
-	call z,L_4656		;461a
+	call z,RETROCEDE_FILA_BUFFER		;461a
 	outi		;461d
-	call z,L_4656		;461f
+	call z,RETROCEDE_FILA_BUFFER		;461f
 	outi		;4622
-	call z,L_4656		;4624
+	call z,RETROCEDE_FILA_BUFFER		;4624
 	outi		;4627
-	call z,L_4656		;4629
+	call z,RETROCEDE_FILA_BUFFER		;4629
 	outi		;462c
-	call z,L_4656		;462e
+	call z,RETROCEDE_FILA_BUFFER		;462e
 	outi		;4631
-	call z,L_4656		;4633
+	call z,RETROCEDE_FILA_BUFFER		;4633
 	outi		;4636
-	call z,L_4656		;4638
+	call z,RETROCEDE_FILA_BUFFER		;4638
 	outi		;463b
-	call z,L_4656		;463d
+	call z,RETROCEDE_FILA_BUFFER		;463d
 	outi		;4640
-	call z,L_4656		;4642
+	call z,RETROCEDE_FILA_BUFFER		;4642
 	outi		;4645
-	call z,L_4656		;4647
-	pop hl			;464a
-	ld a,020h		;464b
+	call z,RETROCEDE_FILA_BUFFER		;4647
+	pop hl			;464a   ; la casilla por la que se entro
+	ld a,020h		;464b   ; 32 casillas mas abajo: la fila siguiente del buffer
 	add a,l			;464d
 	ld l,a			;464e
-	ret nc			;464f
-	res 2,h		;4650
+	ret nc			;464f   ; sin acarreo no se ha salido del bloque de 256 y no hay nada mas que hacer
+	res 2,h		;4650   ; y con acarreo, esto sube H sin salirse del kilobyte: E4 a E5 a E6 a E7 y otra vez E4, o EC a ED a EE a EF y otra vez EC. El bit 2 de H vale 1 en las dos bases, asi que borrarlo, sumar uno y volver a ponerlo es sumar 1 modulo 4 a los dos bits de abajo
 	inc h			;4652
 	set 2,h		;4653
 	ret			;4655
-L_4656:
-	ld de,0ffe0h		;4656
+RETROCEDE_FILA_BUFFER:		; HL -= 32: la vuelta horizontal dentro de la fila del buffer
+	ld de,0ffe0h		;4656   ; -32 en complemento a dos, que no hay `sub hl,de`
 	add hl,de			;4659
 	ret			;465a
-L_465B:
-	ld a,0e0h		;465b
+BORRA_SPRITES_Y_NOMBRES:		; deja la pantalla en blanco: los atributos de sprites de RAM a 0xE0, el sprite 0 con Y = 0xD0 (que apaga TODOS) y la tabla de nombres a cero
+	ld a,0e0h		;465b   ; 0xE0 en los 128 bytes de EA80: los sprites, aparcados por debajo de la pantalla
 	ld hl,0ea80h		;465d
 	ld bc,0007fh		;4660
 	call RELLENA_RAM		;4663
-	call L_49F9		;4666
-	ld hl,03800h		;4669
+	call APAGA_TODOS_LOS_SPRITES		;4666   ; y ademas Y = 0xD0 en el sprite 0 de la VRAM, que en el TMS9918 no es una posicion: es el fin de la lista, y de un byte apaga los 32
+	ld hl,03800h		;4669   ; 0x300 bytes son las 24 filas de 32 de la tabla de nombres
 	ld bc,00300h		;466c
-	xor a			;466f
+	xor a			;466f   ; el tile 0, que despues de 0x4496 es un bloque macizo del color 0, o sea del fondo
 	jp 00056h		;4670   ; BIOS FILVRM - Fills VRAM with value
 PREPARA_ESCRITURA_VRAM:		; SETWRT en HL y deja en C' el puerto de datos del VDP (byte de la BIOS 0x0007)
-	ex af,af'			;4673
+	ex af,af'			;4673   ; AF se guarda en AF' y vuelve al salir: quien llama no pierde ni A ni las banderas
 	call 00053h		;4674   ; BIOS SETWRT - Enables VDP to write
-	exx			;4677
-	ld a,(00007h)		;4678
+	exx			;4677   ; el puerto se deja en el OTRO juego de registros, que es justo como lo quiere el bucle de la ventana (0x4529): alli HL' lleva la VRAM y el C de aqui, el dato
+	ld a,(00007h)		;4678   ; el byte 0x0007 de la BIOS es el puerto de datos del VDP de esta maquina, que no tiene por que ser el 0x98
 	ld c,a			;467b
 	exx			;467c
 	ex af,af'			;467d
 	ret			;467e
-L_467F:
-	call 00050h		;467f   ; BIOS SETRD - Enables VDP to read
+PREPARA_LECTURA_VRAM:		; la gemela de lectura: SETRD en HL y el puerto de LECTURA (byte 0x0006 de la BIOS) en C'. Codigo muerto: los bytes 7F 46 no aparecen en los 128 KB del cartucho ni detras de un `call`, ni detras de un `jp`, ni sueltos en ninguna tabla
+	call 00050h		;467f   ; BIOS SETRD - Enables VDP to read | SETRD en vez de SETWRT...
 	exx			;4682
-	ld a,(00006h)		;4683
+	ld a,(00006h)		;4683   ; ...y el byte 0x0006 en vez del 0x0007
 	ld c,a			;4686
-	exx			;4687
+	exx			;4687   ; y sin el `ex af,af'` de su gemela: esta devuelve en A el numero de puerto
 	ret			;4688
 FOTOGRAMAS_COCHES:		; 4/5/6; el coche 1 (E2C0 -> patrones 0x1800) y, con el bit 5 de E1C2, el 2 (E380 -> 0x1840); vuelve a 1/2/3
-	call MAPEA_4_5_6		;4689
-	ld ix,0e2c0h		;468c
-	ld hl,01800h		;4690
+	call MAPEA_4_5_6		;4689   ; los fotogramas de los coches estan en la pagina 4 (0x6000) y en la 5 (0x8000)
+	ld ix,0e2c0h		;468c   ; el bloque del coche 1...
+	ld hl,01800h		;4690   ; ...y su fotograma va a VRAM 0x1800, que con R6 = 03 es el principio de los patrones de sprite: los 64 bytes de los sprites 0 y 1 de 16x16
 	call FOTOGRAMA_COCHE		;4693
 	ld a,(0e1c2h)		;4696
-	bit 5,a		;4699
+	bit 5,a		;4699   ; el coche 2 solo si esta jugando: si no, sus patrones se quedan como estaban
 	ld ix,0e380h		;469b
-	ld hl,01840h		;469f
+	ld hl,01840h		;469f   ; los del coche 2 van 0x40 bytes mas alla, en los sprites 2 y 3
 	call nz,FOTOGRAMA_COCHE		;46a2
-	jp MAPEA_1_2_3		;46a5
+	jp MAPEA_1_2_3		;46a5   ; y a dejar el mapeo de siempre
 FOTOGRAMA_COCHE:		; si (ix-3) != 0 -> tiles (0x4701); fotograma (ix+0E): >= 0x80 -> 0x46DF, bit 6 -> 0x4740; si cambio respecto a (ix+3E), 64 bytes del juego (tabla p04 0x7431 por (ix+18)) + fotograma*64 a VRAM HL
 	ld a,(ix-003h)		;46a8
 	or a			;46ab
@@ -1555,7 +1598,7 @@ L_49EF:
 	ld a,(0e1c2h)		;49f2
 	and 040h		;49f5
 	jr z,L_49FC		;49f7
-L_49F9:
+APAGA_TODOS_LOS_SPRITES:		; Y = 0xD0 en el sprite 0: el VDP lo lee como fin de la lista y no pinta ninguno
 	ld hl,03b00h		;49f9
 L_49FC:
 	ld a,0d0h		;49fc
@@ -1679,10 +1722,10 @@ L_4A8A:
 L_4A97:
 	ld d,(ix+006h)		;4a97
 	ld e,(ix+004h)		;4a9a
-L_4A9D:
-	ld a,(iy+040h)		;4a9d
+CASILLA_BUFFER_NOMBRES:		; HL = la casilla del buffer de nombres: base -E400 si (iy+9) = 1, EC00 si no- mas fila * 32 + columna, con fila = ((iy+40) + E) / 8 y columna = D / 8, las dos modulo 32, que el buffer es un mapa circular de 1 KB
+	ld a,(iy+040h)		;4a9d   ; (iy+40) es la posicion vertical de la camara en pixeles, y E el desplazamiento vertical, tambien en pixeles, que pida quien llama
 	add a,e			;4aa0
-	rra			;4aa1
+	rra			;4aa1   ; nueve rotaciones que parten el par A:D por ocho...
 	rra			;4aa2
 	rra			;4aa3
 	rra			;4aa4
@@ -1691,15 +1734,15 @@ L_4A9D:
 	rr d		;4aa8
 	rra			;4aaa
 	rr d		;4aab
-	ld l,d			;4aad
-	and 003h		;4aae
-	ld e,(iy+009h)		;4ab0
+	ld l,d			;4aad   ; ...con lo que L acaba siendo (A & 0x38) * 4 + D / 8, o sea fila * 32 mas columna dentro de la fila
+	and 003h		;4aae   ; de A solo sobreviven sus dos bits altos, los que pasan de 256: por eso la fila da la vuelta a las 32
+	ld e,(iy+009h)		;4ab0   ; (iy+9) es el numero de jugador dentro del bloque; el `dec e` es la comparacion y el `ld e` de despues no toca las banderas
 	dec e			;4ab3
 	ld e,0e4h		;4ab4
 	jr z,L_4ABA		;4ab6
 	ld e,0ech		;4ab8
 L_4ABA:
-	add a,e			;4aba
+	add a,e			;4aba   ; el jugador 1 pinta en E400 y el 2 en EC00
 	ld h,a			;4abb
 	ret			;4abc
 L_4ABD:
@@ -1821,7 +1864,7 @@ L_4B32:
 	jr nz,L_4B32		;4b45
 	ret			;4b47
 L_4B48:
-	call L_4A9D		;4b48
+	call CASILLA_BUFFER_NOMBRES		;4b48
 L_4B4B:
 	push hl			;4b4b
 	push bc			;4b4c
@@ -1846,7 +1889,7 @@ COPIA_B_BYTES_ALTERNO:		; copia B bytes de (HL') a (HL): el origen va en el jueg
 	ret			;4b66
 L_4B67:
 	ex af,af'			;4b67
-	call L_4A9D		;4b68
+	call CASILLA_BUFFER_NOMBRES		;4b68
 	ex af,af'			;4b6b
 L_4B6C:
 	ex af,af'			;4b6c
@@ -1933,7 +1976,7 @@ CARGA_TILES_CIRCUITO:		; lista p04 0x61FD y la de la carrera (E25C) de la tabla 
 CARGA_TILES_CIRCUITO_2_PASOS:		; 0x4689 (sprites de los coches), 0x450C con D/E/F, las listas de 0x4BCE, y los colores por filas 0-3 (0x4CA1), p01 0x6EF8, 0x477C, y filas 4-7 (0x4CA8)
 	call FOTOGRAMAS_COCHES		;4be3
 	call MAPEA_D_E_F		;4be6
-	call L_450C		;4be9
+	call PINTA_VENTANA_PISTA		;4be9
 	ld hl,061fdh		;4bec
 	call CARGA_LISTA_TILES		;4bef
 	call MAPEA_4_5_6		;4bf2
@@ -2826,7 +2869,7 @@ L_51FC:
 	ret			;5206
 L_5207:
 	call L_477C		;5207
-	call L_44DF		;520a
+	call VENTANA_JUGADOR_2		;520a
 	call 07134h		;520d
 	call 0b44ch		;5210
 	call L_521C		;5213
@@ -3007,7 +3050,7 @@ L_531D:
 L_532A:
 	ld de,03040h		;532a
 	ld iy,0e380h		;532d
-	call L_4A9D		;5331
+	call CASILLA_BUFFER_NOMBRES		;5331
 	ld iy,0e2c0h		;5334
 	ret			;5338
 L_5339:
@@ -3994,7 +4037,7 @@ DATA_sprites_5993:
 
 
 L_599B:
-	call L_465B		;599b
+	call BORRA_SPRITES_Y_NOMBRES		;599b
 	call LIMPIA_EA80_Y_ATRIBUTOS		;599e
 	ld hl,00000h		;59a1
 	ld bc,03000h		;59a4
@@ -4210,7 +4253,7 @@ L_5B58:
 	ld c,011h		;5b58
 	call 083bch		;5b5a
 	ret nz			;5b5d
-	call L_465B		;5b5e
+	call BORRA_SPRITES_Y_NOMBRES		;5b5e
 	ld a,00eh		;5b61
 	jp 06049h		;5b63
 L_5B66:
@@ -4327,7 +4370,7 @@ L_5C27:
 L_5C5B:
 	ret			;5c5b
 L_5C5C:
-	call L_44DF		;5c5c
+	call VENTANA_JUGADOR_2		;5c5c
 	call 07134h		;5c5f
 	call 07dcah		;5c62
 	call L_5CAA		;5c65
@@ -4371,7 +4414,7 @@ L_5CB5:
 	ld (0e1ddh),a		;5cb9
 	ld b,0e0h		;5cbc
 	call VDP_REG_7		;5cbe
-	call L_465B		;5cc1
+	call BORRA_SPRITES_Y_NOMBRES		;5cc1
 	ld hl,0e400h		;5cc4
 	ld bc,002ffh		;5cc7
 	ld a,0ffh		;5cca
@@ -4674,7 +4717,7 @@ L_5ECA:
 	ld e,0c0h		;5eca
 	ld d,080h		;5ecc
 	push hl			;5ece
-	call L_4A9D		;5ecf
+	call CASILLA_BUFFER_NOMBRES		;5ecf
 	pop de			;5ed2
 	ld a,(de)			;5ed3
 	bit 7,a		;5ed4
@@ -4793,7 +4836,7 @@ L_5F5D:
 	ld (0e273h),hl		;5f6b
 	ret			;5f6e
 L_5F6F:
-	call L_465B		;5f6f
+	call BORRA_SPRITES_Y_NOMBRES		;5f6f
 	call TILES_16_58_F0		;5f72
 	call 06342h		;5f75
 	call L_5F8D		;5f78
