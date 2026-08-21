@@ -3057,7 +3057,9 @@ PUNTOS_200:		; E295 = E355 = 0xC8 (desde p00 0x57F4)
 	ret			;74ba
 
 ; ----------------------------------------------------------------------
-; DATOS password_ujm3edc: " UJM3EDC", 0xFF (dos columnas del teclado)
+; DATOS password_ujm3edc: "7UJM3EDC", 0xFF (dos columnas del teclado)
+; pero el primer caracter está tachado con un espacio en blanco (" UJM3EDC")
+; para evitar que este password pueda ser introducido
 ;   0x74bb..0x74c4  (9 bytes)
 DATA_password_ujm3edc:
 	defb 020h,055h,04ah,04dh,033h,045h,044h,043h,0ffh	; 74bb   UJM3EDC.
