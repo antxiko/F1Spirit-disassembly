@@ -1527,3 +1527,142 @@ C 0x5E31 y el byte 2 es por que tile empieza el tramo
 L 0x5E37 DESVANECIDO_EMPIEZA  E25D = 0xFF y el primer tramo (el `inc` de 0x5E27 lo deja en 0)
 L 0x5E3E TRAMO_ACTUAL      HL = 0x5E4A + 3 * (E25D)
 C 0x5E45 por tres, que las filas son de tres bytes
+
+# =============================================================================
+# LOS OBJETOS DE LA PISTA (0x5E6C-0x5F5C)
+# =============================================================================
+B 0x5E6C Los carteles y los adornos del borde de la pista no van en el
+B 0x5E6C dibujo de las piezas: van en una lista aparte por circuito, que
+B 0x5E6C monta 0x5F5D -(E275) cuantos son y (E273) donde estan-. Cada
+B 0x5E6C entrada son TRES bytes: una palabra con la pieza en los 12 bits de
+B 0x5E6C arriba y la fila en los 4 de abajo, y un byte con el dibujo.
+B 0x5E6C
+B 0x5E6C Como la lista va ordenada por posicion, basta con un indice
+B 0x5E6C ((ix+57)) que avanza y no vuelve. Cuando la entrada coincide con
+B 0x5E6C la fila que se esta pintando, 0x5ECA le busca sitio; si el byte
+B 0x5E6C del dibujo trae el bit 7 no es un tile, y se guarda en la tabla de
+B 0x5E6C EB00 de esa fila (0x5F33) para que lo pinte otro.
+L 0x5E6C OBJETOS_DE_LA_FILA  los objetos de pista que caen en la fila que se acaba de pintar
+C 0x5E6C (ix+57) es por que objeto de la lista va este coche; por tres, que las entradas son de tres bytes
+L 0x5E7B OBJETO_SIGUIENTE   compara la entrada con la fila actual y la coloca, la salta o se para
+C 0x5E7F cuatro corrimientos: la palabra trae la pieza arriba y la fila en el nibble de abajo
+C 0x5E93 se compara con la pieza (ix+46,47) y la fila (ix+45) de este coche
+C 0x5EA0 acarreo: la entrada ya ha quedado atras, se pasa a la siguiente
+C 0x5EA2 distinta fila: no toca todavia, y solo se limpia la tabla de EB00
+C 0x5EB6 y (E275) es cuantas entradas tiene la lista: al llegar al final el indice se queda ahi
+L 0x5EC0 BORRA_FILA_EB00    las dos palabras de la fila en la tabla de EB00 a cero
+L 0x5ECA COLOCA_OBJETO      le busca un hueco al objeto en la fila y lo pinta, dos tiles de alto
+C 0x5ED3 el tercer byte de la entrada es el dibujo; con el bit 7 puesto no es un tile y aqui no se pinta
+C 0x5EDA el jugador 1 usa los tiles 0xCE y 0xCF y el 2 el 0xD0 y el 0xD1
+C 0x5EE4 se empieza por el principio de la fila
+C 0x5EE8 diez sitios, de tres en tres columnas: no se prueban las 32 casillas
+C 0x5EEB E26D y E272 marcan el rango de tiles que se considera "sitio libre": el `sub` y el `cp` juntos preguntan si el tile esta dentro
+C 0x5EF9 y ademas hacen falta cuatro casillas mas libres a la derecha (0x5F15), que ese es el hueco que pide el objeto
+C 0x5EFE el dibujo va en la casilla y el de debajo -el tile siguiente- en la fila de abajo, con la vuelta del kilobyte
+L 0x5F15 HUECO_DE_CINCO     mira las cuatro casillas siguientes; sin acarreo si valen, y deja L en el centro del hueco
+C 0x5F18 las cuatro de la derecha, una por vuelta
+C 0x5F20 sale dos casillas por detras de la ultima mirada: el objeto se planta en el centro del hueco
+C 0x5F25 si la que falla es LA CUARTA, el hueco se acepta igual: solo mandan de verdad las tres primeras
+C 0x5F2D y si falla antes, L vuelve a donde estaba y se sigue buscando
+L 0x5F33 OBJETO_A_LA_TABLA_EB00  el dibujo con el bit 7 no se pinta: se guarda en la tabla de EB00 de la fila
+L 0x5F41 FILA_ABSOLUTA      HL = pieza * 12 + fila: la fila contada desde el principio de la vuelta
+C 0x5F41 por doce, que cada pieza son doce filas de tiles
+L 0x5F55 COMPARA_PIEZA_Y_FILA  Z si la entrada es de esta pieza, y entonces compara la fila
+L 0x5F5D CARGA_LISTA_OBJETOS  la lista de objetos de la carrera: cuantos en (E275) y donde en (E273)
+L 0x5F6F MONTA_SELECCION    limpia la pantalla y monta la pantalla de eleccion
+L 0x5F8D BORRA_BUFFER_E400  las 24 filas del buffer del jugador 1 a cero
+L 0x5F96 DIBUJO_SELECCION   el dibujo p05 0xA3B4 descomprimido en el buffer, 0x20 columnas
+L 0x5FA4 ROTULOS_SELECCION  el cursor en EA88 y los rotulos p09 0xAB51 y 0xAB59
+C 0x5FA4 con E25B = 0xFF -sin categoria elegida- se pone 1, y con categoria 2
+C 0x5FBD cuatro bytes: un atributo de sprite entero, el del cursor
+C 0x5FC5 el segundo rotulo solo sale si ya hay categoria
+L 0x5FD0 DESCOMPRIME_20_COLUMNAS  C' = 0x20 y a 0x637F
+L 0x5FD7 SELECCION_PASO     un paso de la pantalla de eleccion
+C 0x5FE1 esta rutina se sale de la pagina: el `jr` cae en 0x6057 y el `jp p` en 0x60F3, los dos ya en la pagina 1. Es legal porque p00 esta fija en 0x4000 y la 1 en 0x6000, pero el listado no puede seguir el salto
+C 0x5FEA con categoria elegida el bloque es p03 0xBBC3 y sin ella el 0xBBC5
+
+# =============================================================================
+# BARRIDA FINAL: LAS RUTINAS QUE SE QUEDABAN POR DEBAJO DEL LISTON
+# =============================================================================
+C 0x534A los segundos se copian tal cual, tres bytes: la division los deja en EA60 y de ahi no pueden quedarse, que EA60 hace falta otra vez
+C 0x535D entre dos, que la multiplicacion por 100 los dejo al doble
+C 0x5380 el sitio de los digitos se guarda: los tres bloques se escriben seguidos en EA50..EA56
+C 0x53A2 y por ultimo los minutos, que son los que se pintan a la izquierda
+C 0x53B0 las cuatro rotaciones sacan el nibble de arriba: el segundo digito de cada pareja
+C 0x5AC9 E1FD encendido: la repeticion se puede cortar con el mando
+C 0x5AD0 y sin musica sonando no hay atajo que valga
+C 0x497A la RAM de la partida: 0xE13 bytes desde E1EB a cero, y de ahi cuelga todo lo que se conserva entre carreras
+C 0x4983 el trocito de 0x49C4 son tres bytes de arranque que no pueden quedarse a cero
+C 0x4999 E25B a 0xFF es "todavia no hay categoria elegida"
+C 0x499C F0FE con un 1 viene del reinicio de 0x5B90: entonces ademas se limpia el bloque de E280
+C 0x49A3 E1DE = 2 es el desbloqueo, y deja E1DF a 1
+C 0x49AF con E1C0 = 2 no se toca nada
+C 0x49B9 0x15 bytes de E280 a 9: no es un borrado, es un valor de arranque
+C 0x5C62 en la repeticion la pista se mueve sola: el mando no pinta nada
+C 0x5C93 y aqui, en cambio, si se repintan los objetos de tiles, que la repeticion los enseña igual
+C 0x5410 la resta va byte a byte y cruzando los dos juegos de registros: el dividendo esta en uno y el divisor en el otro
+C 0x5414 el resultado no toca el dividendo: se deja aparte en EA63..EA66 por si no cabe
+C 0x53B7 por aqui entra quien ya trae el divisor montado y solo quiere ocho vueltas
+C 0x53C2 el cociente siempre empieza a cero
+C 0x4BBB los tres tercios se hacen a mano porque FILVRM no sabe de tercios: se le llama tres veces con la misma cuenta
+C 0x5735 se guardan las tres tablas porque la escena las machaca y luego hay que volver a la carrera
+C 0x52AA los dos tiempos, el de ahora y el guardado, para restarlos
+C 0x52B2 el cronometro en curso son tres bytes desde E210
+C 0x575B IX e IY apuntan los dos al bloque de sombra: la escena no es de ningun coche, pero las rutinas de pista piden un bloque
+C 0x5771 (iy+9) = 2 manda la escena al buffer de EC00
+C 0x5F4A la pieza por cuatro, luego por ocho, y la suma de las dos es por doce
+C 0x4B6D una fila por vuelta, con el rectangulo entero en B y C
+C 0x5636 la fila que si cabe se pinta...
+C 0x5641 ...y lo que sobra se descuenta y se aplica a la posicion sin pintar nada
+C 0x47D9 un tercio por vuelta, y DE y BC se guardan porque LDIRVM se los come
+C 0x4A65 cinco parejas: dividir por 32 es correr cinco veces
+C 0x4CC1 el bucle esta vacio a proposito: es tiempo, no cuenta
+C 0x4DF6 las dos filas se cambian a la vez, una con C y otra con A
+C 0x50D3 al cortar la parada se les da a los mecanicos su ultima pose
+C 0x5222 la segunda resta va con `ccf` porque el rango que interesa es el de EN MEDIO, y ahi el acarreo sale al reves
+C 0x52E4 el origen sube y el destino baja: por eso salen en el orden bueno
+C 0x52F5 la pareja de en medio, los segundos
+C 0x556F la fila dentro de la pieza y la pieza misma, todo a cero: la carrera empieza en la casilla cero de la vuelta
+C 0x5EAE el indice sube y el puntero tambien: la lista se recorre una sola vez por vuelta
+C 0x5F72 los tiles 16, 58 y F0 son los del marco y las letras, que hacen falta en todas las pantallas
+C 0x5F7F E25E a cero: el desvanecido empieza por el primer tile
+C 0x58E8 el `or d` es lo que marca la mascara del segundo jugador con el bit 7
+C 0x5BB8 hace falta que no haya ninguna tecla ni boton pulsados: si no, el salto seria el mismo que acaba de pulsar el jugador
+C 0x5F38 la tabla de EB00 guarda un byte por fila, y ese byte lo lee quien pinta los objetos altos
+C 0x47FB un tercio por vuelta, y el puntero de VRAM sube 0x800
+C 0x49B5 F0FE se apaga: el reinicio ya esta consumido
+C 0x542D el cociente se va montando por abajo, un bit por vuelta
+C 0x58F8 cada escena de la demo tiene su grabacion, y la tabla de 0x5909 las reparte
+C 0x5941 E1F3 a cero y el sonido 0x81: es la unica orden que trae la grabacion, y marca el final de la escena
+C 0x5DED tres tiles por vuelta, y a la primera que devuelva acarreo se acabo la lista
+C 0x47C5 los dos primeros atributos de EA80 y nada mas: son los del coche del jugador
+C 0x4AF3 la unica diferencia con 0x4ADC es de donde sale el jugador: aqui de IY
+C 0x4B60 el origen va en HL' y el destino en HL, y el `exx` cambia de uno a otro en cada byte
+C 0x577C las piezas y los metatiles de la escena viven en la pagina 10
+C 0x5791 esta escena son dos metatiles macizos: un fondo liso
+C 0x5AF4 el bit 4 de E1D8 es la tecla de cortar
+C 0x5B2E con dos jugadores el que manda es el que haya ganado (E91B)
+C 0x5B7B el bit 0 de E1D8 es lo que saca de este estado
+C 0x5BAC solo desde los estados 7 y 3 se puede saltar la espera
+C 0x5F60 una palabra por carrera: la lista de objetos es distinta en cada circuito
+C 0x4D84 un byte por vuelta, y el `exx` de cada lado es para dejar el tile de paso en el otro juego
+C 0x51E9 la primera ficha apagada vale, y sale con IY ya puesto encima
+C 0x530B las centesimas, la pareja de la derecha
+C 0x5DA2 el parpadeo va por su cuenta y la espera por la suya
+C 0x5EC2 dos bytes por fila, que es lo que ocupa la entrada en la tabla
+C 0x5F57 la resta de 16 bits es la de la pieza; la fila se compara despues, y solo si la pieza coincide
+C 0x4817 los dos bytes que vienen detras del codigo son la direccion de VRAM nueva
+C 0x4B82 el byte vive en A' toda la vuelta: asi el bucle no gasta ningun registro del juego principal
+C 0x50EF por debajo del subestado 3 la parada sigue, y con ella el sonido de la herramienta
+C 0x51FF los cuatro bits de abajo del azar por dos: entre 0 y 30 fotogramas de propina
+C 0x5253 el que esta en la pose 6 ya esta trabajando: le toca al otro
+C 0x529B el cronometro se copia entero, byte a byte: no hay `ldir` para tres bytes que valga la pena
+C 0x5321 el fondo guardado vuelve a su sitio, diez casillas
+C 0x54BA un byte por estructura, y de cuatro en cuatro
+C 0x5950 el `and 0x7f` y el `cp d` juntos preguntan si el bit 7 estaba puesto
+C 0x5B5A p02 0x83BC con C = 0x11; mientras no acabe, no se limpia nada
+C 0x5E10 E25E es el tile por el que va el desvanecido
+C 0x5F10 de tres en tres columnas: se prueban diez sitios de la fila y no las 32
+C 0x5FF5 con Z se sale: la eleccion no ha cambiado
+C 0x5419 el byte de en medio va con `sbc`: la resta de 32 bits se encadena por el acarreo
+C 0x52FC el separador de en medio, el mismo que el otro

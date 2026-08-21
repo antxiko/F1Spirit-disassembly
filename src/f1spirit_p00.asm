@@ -1230,7 +1230,7 @@ DOS_SPRITES_A_VRAM:		; solo los sprites 0 y 1 de la copia, sin rotar
 	ld hl,03b00h		;47be
 	call PREPARA_ESCRITURA_VRAM		;47c1
 	exx			;47c4
-	ld hl,0ea80h		;47c5
+	ld hl,0ea80h		;47c5   ; los dos primeros atributos de EA80 y nada mas: son los del coche del jugador
 	ld de,00000h		;47c8
 	ld b,008h		;47cb
 	jr OUTI_CUATRO_SPRITES		;47cd
@@ -1244,7 +1244,7 @@ L_47D6:
 	exx			;47d6
 	push bc			;47d7
 	push de			;47d8
-	call COPIA_A_VRAM		;47d9
+	call COPIA_A_VRAM		;47d9   ; un tercio por vuelta, y DE y BC se guardan porque LDIRVM se los come
 	ld de,00800h		;47dc   ; 0x800 es lo que ocupa un tercio de la tabla de patrones
 	add hl,de			;47df
 	pop de			;47e0
@@ -1270,7 +1270,7 @@ RLE_VRAM_3_TERCIOS:		; descomprime (DE) en VRAM HL con 0x4862, tres veces (HL +=
 BUCLE_RLE_TERCIO:		; un tercio por vuelta
 	push bc			;47f9
 	push de			;47fa
-	call RLE_A_VRAM		;47fb
+	call RLE_A_VRAM		;47fb   ; un tercio por vuelta, y el puntero de VRAM sube 0x800
 	ld de,00800h		;47fe
 	add hl,de			;4801
 	pop de			;4802
@@ -1291,7 +1291,7 @@ L_4813:
 PINTA_TILES_DIRECCION:		; lee la palabra de (DE) como nueva direccion de VRAM y sigue
 	ex de,hl			;4815
 	ld e,(hl)			;4816
-	inc hl			;4817
+	inc hl			;4817   ; los dos bytes que vienen detras del codigo son la direccion de VRAM nueva
 	ld d,(hl)			;4818
 	ex de,hl			;4819
 	inc de			;481a
@@ -1525,10 +1525,10 @@ DATA_4977:
 
 
 L_497A:
-	call 08666h		;497a
+	call 08666h		;497a   ; la RAM de la partida: 0xE13 bytes desde E1EB a cero, y de ahi cuelga todo lo que se conserva entre carreras
 	ld hl,0e1ebh		;497d
 	ld bc,00e13h		;4980
-	call RELLENA_RAM_CERO		;4983
+	call RELLENA_RAM_CERO		;4983   ; el trocito de 0x49C4 son tres bytes de arranque que no pueden quedarse a cero
 	ld hl,049c4h		;4986
 	ld de,0e1f0h		;4989
 	ld bc,00003h		;498c
@@ -1537,23 +1537,23 @@ L_497A:
 	ld (0e300h),a		;4992
 	ld (0e1c3h),a		;4995
 	dec a			;4998
-	ld (0e25bh),a		;4999
-	ld a,(0f0feh)		;499c
+	ld (0e25bh),a		;4999   ; E25B a 0xFF es "todavia no hay categoria elegida"
+	ld a,(0f0feh)		;499c   ; F0FE con un 1 viene del reinicio de 0x5B90: entonces ademas se limpia el bloque de E280
 	dec a			;499f
 	call z,L_49AF		;49a0
-	ld a,(0e1deh)		;49a3
+	ld a,(0e1deh)		;49a3   ; E1DE = 2 es el desbloqueo, y deja E1DF a 1
 	cp 002h		;49a6
 	ret nz			;49a8
 	ld a,001h		;49a9
 	ld (0e1dfh),a		;49ab
 	ret			;49ae
 L_49AF:
-	ld a,(0e1c0h)		;49af
+	ld a,(0e1c0h)		;49af   ; con E1C0 = 2 no se toca nada
 	cp 002h		;49b2
 	ret z			;49b4
-	xor a			;49b5
+	xor a			;49b5   ; F0FE se apaga: el reinicio ya esta consumido
 	ld (0f0feh),a		;49b6
-	ld hl,0e280h		;49b9
+	ld hl,0e280h		;49b9   ; 0x15 bytes de E280 a 9: no es un borrado, es un valor de arranque
 	ld bc,00015h		;49bc
 	ld a,009h		;49bf
 	jp RELLENA_RAM		;49c1
@@ -1706,7 +1706,7 @@ HL_ENTRE_256:		; HL / 256 sin signo: los tres corrimientos de aqui mas los cinco
 HL_ENTRE_32:		; HL / 32 sin signo: los cinco corrimientos que quedan hasta el `ret`
 	srl h		;4a61   ; la usa p01 0x7AF8, el marcador de velocidad
 	rr l		;4a63
-	srl h		;4a65
+	srl h		;4a65   ; cinco parejas: dividir por 32 es correr cinco veces
 	rr l		;4a67
 	srl h		;4a69
 	rr l		;4a6b
@@ -1807,7 +1807,7 @@ L_4AEC:
 	ret			;4aef
 FILA_TABLA_EB00_IY:		; igual, pero el jugador sale de (iy+9) en vez de (ix+9)
 	ld a,(iy+040h)		;4af0
-	add a,e			;4af3
+	add a,e			;4af3   ; la unica diferencia con 0x4ADC es de donde sale el jugador: aqui de IY
 	rra			;4af4
 	rra			;4af5
 	and 03eh		;4af6
@@ -1898,7 +1898,7 @@ COPIA_RECTANGULO_FILA:		; una fila por vuelta
 COPIA_B_BYTES_ALTERNO:		; copia B bytes de (HL') a (HL): el origen va en el juego alterno de registros y el destino en el principal, alternando con exx
 	exx			;4b5e
 	ld a,(hl)			;4b5f
-	inc hl			;4b60
+	inc hl			;4b60   ; el origen va en HL' y el destino en HL, y el `exx` cambia de uno a otro en cada byte
 	exx			;4b61
 	ld (hl),a			;4b62
 	inc hl			;4b63
@@ -1911,7 +1911,7 @@ RELLENA_RECTANGULO_BUFFER:		; el mismo rectangulo pero de un solo byte, el A que
 RELLENA_RECTANGULO:		; con la casilla ya en HL y el byte en A. La llaman p01 0x69DB (22 x 15 de tile 0) y p02 0x8258 y 0x8378
 	ex af,af'			;4b6c
 RELLENA_RECTANGULO_FILA:		; una fila por vuelta
-	push bc			;4b6d
+	push bc			;4b6d   ; una fila por vuelta, con el rectangulo entero en B y C
 	push hl			;4b6e
 	call RELLENA_B_BYTES		;4b6f
 	pop hl			;4b72
@@ -1926,7 +1926,7 @@ RELLENA_RECTANGULO_FILA:		; una fila por vuelta
 RELLENA_B_BYTES:		; B veces el byte que espera en A'
 	ex af,af'			;4b80
 	ld (hl),a			;4b81
-	ex af,af'			;4b82
+	ex af,af'			;4b82   ; el byte vive en A' toda la vuelta: asi el bucle no gasta ningun registro del juego principal
 	inc hl			;4b83
 	djnz RELLENA_B_BYTES		;4b84
 	ret			;4b86
@@ -1962,7 +1962,7 @@ COLORES_0_210_A_CERO:		; la tabla de colores de los tiles 0..210 (0x698 bytes de
 LLENA_VRAM_3_TERCIOS_B:		; como 0x47E6: FILVRM de BC bytes de A en HL, HL+0x800 y HL+0x1000
 	ld d,003h		;4bb9   ; en el modo 2 cada tercio de pantalla tiene su propia tabla, 0x800 mas alla; borrar un tile es borrarlo tres veces
 BUCLE_LLENA_TERCIO_B:		; un tercio por vuelta
-	push de			;4bbb
+	push de			;4bbb   ; los tres tercios se hacen a mano porque FILVRM no sabe de tercios: se le llama tres veces con la misma cuenta
 	push hl			;4bbc
 	push bc			;4bbd
 	push af			;4bbe
@@ -2118,7 +2118,7 @@ ESPERA_DE:		; bucle de espera de DE vueltas
 	dec de			;4cbe   ; un bucle vacio de DE vueltas: con DE = 1 la carga es de golpe, y cuanto mas grande sea DE mas despacio va apareciendo el dibujo
 	ld a,e			;4cbf
 	or d			;4cc0
-	jr nz,ESPERA_DE		;4cc1
+	jr nz,ESPERA_DE		;4cc1   ; el bucle esta vacio a proposito: es tiempo, no cuenta
 	call CARGA_LISTA_TILES_MODO		;4cc3
 	pop de			;4cc6
 	pop hl			;4cc7
@@ -2239,7 +2239,7 @@ RLE_TILES_COPIA:		; n bytes tal cual, uno a uno por 0x4D97
 	ld a,(de)			;4d81
 	inc de			;4d82
 	exx			;4d83
-	call RLE_TILES_BYTE		;4d84
+	call RLE_TILES_BYTE		;4d84   ; un byte por vuelta, y el `exx` de cada lado es para dejar el tile de paso en el otro juego
 	exx			;4d87
 	djnz RLE_TILES_COPIA		;4d88
 	jr RLE_TILES_BUCLE		;4d8a
@@ -2311,7 +2311,7 @@ VOLTEA_TILE_BUCLE:		; una pareja de filas por vuelta
 	ld c,(hl)			;4df3   ; una pareja por vuelta, un puntero subiendo y otro bajando
 	ld a,(de)			;4df4
 	ex de,hl			;4df5
-	ld (hl),c			;4df6
+	ld (hl),c			;4df6   ; las dos filas se cambian a la vez, una con C y otra con A
 	ld (de),a			;4df7
 	ex de,hl			;4df8
 	inc l			;4df9
@@ -2764,7 +2764,7 @@ BOXES_CORTA:		; el boton del jugador: 0x12 fotogramas y al subestado 3, la salid
 	ld a,(0e251h)		;50cd
 	cp 003h		;50d0   ; si ya se estaba saliendo no hay nada que cortar
 	ret z			;50d2
-	call MECANICO_1_POSE		;50d3
+	call MECANICO_1_POSE		;50d3   ; al cortar la parada se les da a los mecanicos su ultima pose
 	call MECANICO_2_POSE		;50d6
 	call SPRITES_MECANICOS		;50d9
 	ld a,012h		;50dc
@@ -2777,7 +2777,7 @@ SONIDO_HERRAMIENTA:		; el sonido 0x23 mientras la parada no haya llegado al sube
 	dec a			;50ea
 	cp 002h		;50eb
 	ld a,023h		;50ed
-	call c,ENCOLA_SONIDO		;50ef
+	call c,ENCOLA_SONIDO		;50ef   ; por debajo del subestado 3 la parada sigue, y con ella el sonido de la herramienta
 	ret			;50f2
 HAY_TRABAJO:		; Z si E1D6 vale cero
 	ld a,(0e1d6h)		;50f3
@@ -2918,7 +2918,7 @@ RIVAL_HUECO:		; Z y IY en el primer hueco de las tres fichas; NZ si estan las tr
 	ld b,003h		;51e4
 L_51E6:
 	ld a,(iy+000h)		;51e6
-	and a			;51e9
+	and a			;51e9   ; la primera ficha apagada vale, y sale con IY ya puesto encima
 	ret z			;51ea
 	add iy,de		;51eb
 	djnz L_51E6		;51ed
@@ -2932,7 +2932,7 @@ RIVAL_HUECO_TIEMPO:		; sortea los fotogramas hasta el siguiente rival: (azar & 0
 	ld b,01eh		;51fa
 L_51FC:
 	call AZAR		;51fc
-	and 00fh		;51ff
+	and 00fh		;51ff   ; los cuatro bits de abajo del azar por dos: entre 0 y 30 fotogramas de propina
 	add a,a			;5201
 	add a,b			;5202
 	ld (0e3dch),a		;5203
@@ -2949,7 +2949,7 @@ CARRERA_EN_GRUPO:		; acarreo si la carrera (E25C) esta en 0-2 o en 9-11; sin aca
 	ld a,(0e25ch)		;521c   ; cuatro restas encadenadas y dos `ccf`: es una tabla de rangos escrita como cuentas, sin tabla
 	sub 003h		;521f
 	ret c			;5221
-	sub 006h		;5222
+	sub 006h		;5222   ; la segunda resta va con `ccf` porque el rango que interesa es el de EN MEDIO, y ahi el acarreo sale al reves
 	ccf			;5224
 	ret nc			;5225
 	sub 003h		;5226
@@ -2985,7 +2985,7 @@ L_5233:
 	ret			;524e
 MECANICO_QUE_TOCA:		; el que no esta en la pose 6
 	ld ix,0e9b1h		;524f
-	ld a,(ix+003h)		;5253
+	ld a,(ix+003h)		;5253   ; el que esta en la pose 6 ya esta trabajando: le toca al otro
 	cp 006h		;5256
 	jr nz,MECANICO_ANIMA		;5258
 	ld ix,0e9b9h		;525a
@@ -3021,19 +3021,19 @@ L_528A:
 	ret			;5297
 TIEMPO_A_E30D:		; el cronometro (E210..E212) copiado a E30D..E30F
 	ld a,(0e210h)		;5298
-	ld (0e30dh),a		;529b
+	ld (0e30dh),a		;529b   ; el cronometro se copia entero, byte a byte: no hay `ldir` para tres bytes que valga la pena
 	ld a,(0e211h)		;529e
 	ld (0e30eh),a		;52a1
 	ld a,(0e212h)		;52a4
 	ld (0e30fh),a		;52a7
 TIEMPO_DIFERENCIA:		; la resta de los dos tiempos a EA57..EA59, por p02 0xA5AF
-	ld hl,0e30dh		;52aa
+	ld hl,0e30dh		;52aa   ; los dos tiempos, el de ahora y el guardado, para restarlos
 	ld c,(hl)			;52ad
 	inc hl			;52ae
 	ld e,(hl)			;52af
 	inc hl			;52b0
 	ld d,(hl)			;52b1
-	ld hl,0e210h		;52b2
+	ld hl,0e210h		;52b2   ; el cronometro en curso son tres bytes desde E210
 	ld b,(hl)			;52b5
 	inc hl			;52b6
 	ld a,(hl)			;52b7
@@ -3068,7 +3068,7 @@ L_52E1:
 	ld a,(de)			;52e1
 	add a,c			;52e2
 	ld (hl),a			;52e3
-	inc de			;52e4
+	inc de			;52e4   ; el origen sube y el destino baja: por eso salen en el orden bueno
 	dec hl			;52e5
 	djnz L_52E1		;52e6
 	ld a,c			;52e8
@@ -3081,13 +3081,13 @@ L_52F1:
 	dec hl			;52f2
 	ld b,002h		;52f3
 L_52F5:
-	ld a,(de)			;52f5
+	ld a,(de)			;52f5   ; la pareja de en medio, los segundos
 	add a,c			;52f6
 	ld (hl),a			;52f7
 	inc de			;52f8
 	dec hl			;52f9
 	djnz L_52F5		;52fa
-	ld a,c			;52fc
+	ld a,c			;52fc   ; el separador de en medio, el mismo que el otro
 	cp 0f5h		;52fd
 	ld a,0ffh		;52ff
 	jr z,L_5305		;5301
@@ -3099,7 +3099,7 @@ L_5305:
 L_5309:
 	ld a,(de)			;5309
 	add a,c			;530a
-	ld (hl),a			;530b
+	ld (hl),a			;530b   ; las centesimas, la pareja de la derecha
 	inc de			;530c
 	dec hl			;530d
 	djnz L_5309		;530e
@@ -3113,7 +3113,7 @@ RELOJ_GUARDA_FONDO:		; se guarda en E9A7 lo que habia en las diez casillas del r
 RELOJ_DEVUELVE_FONDO:		; y aqui se devuelve
 	call CASILLA_DEL_RELOJ		;531d
 	ex de,hl			;5320
-	ld hl,0e9a7h		;5321
+	ld hl,0e9a7h		;5321   ; el fondo guardado vuelve a su sitio, diez casillas
 	ld bc,0000ah		;5324
 	ldir		;5327
 	ret			;5329
@@ -3134,7 +3134,7 @@ TIEMPO_A_DIGITOS:		; los 24 bits de EA57 pasados a minutos, segundos y milesimas
 	call DIVIDE_24		;5343   ; EA60..EA62 se queda con los segundos y en HL:DE queda el resto
 	push de			;5346
 	ld hl,0ea60h		;5347   ; los segundos se apartan en EA67, que EA60 hace falta otra vez
-	ld de,0ea67h		;534a
+	ld de,0ea67h		;534a   ; los segundos se copian tal cual, tres bytes: la division los deja en EA60 y de ahi no pueden quedarse, que EA60 hace falta otra vez
 	ld bc,00003h		;534d
 	ldir		;5350
 	pop de			;5352
@@ -3143,7 +3143,7 @@ TIEMPO_A_DIGITOS:		; los 24 bits de EA57 pasados a minutos, segundos y milesimas
 	ex de,hl			;5358
 	ld l,000h		;5359
 	ld a,002h		;535b
-	call DIVIDE_24		;535d
+	call DIVIDE_24		;535d   ; entre dos, que la multiplicacion por 100 los dejo al doble
 	ld hl,0ea60h		;5360
 	ld a,(hl)			;5363
 	inc hl			;5364
@@ -3167,7 +3167,7 @@ TIEMPO_A_DIGITOS:		; los 24 bits de EA57 pasados a minutos, segundos y milesimas
 	and 00fh		;537c
 	ld (hl),a			;537e
 	inc hl			;537f
-	push hl			;5380
+	push hl			;5380   ; el sitio de los digitos se guarda: los tres bloques se escriben seguidos en EA50..EA56
 	ld hl,0ea67h		;5381
 	ld e,(hl)			;5384
 	inc hl			;5385
@@ -3192,7 +3192,7 @@ TIEMPO_A_DIGITOS:		; los 24 bits de EA57 pasados a minutos, segundos y milesimas
 	ld (hl),a			;539f
 	inc hl			;53a0
 	push hl			;53a1
-	ld hl,(0ea60h)		;53a2
+	ld hl,(0ea60h)		;53a2   ; y por ultimo los minutos, que son los que se pintan a la izquierda
 	call HL_A_BCD		;53a5   ; ...y dos de minutos, que son los que se pintan a la izquierda
 	pop hl			;53a8
 	ld a,e			;53a9
@@ -3201,20 +3201,20 @@ TIEMPO_A_DIGITOS:		; los 24 bits de EA57 pasados a minutos, segundos y milesimas
 	inc hl			;53ad
 	ld a,e			;53ae
 	rra			;53af
-	rra			;53b0
+	rra			;53b0   ; las cuatro rotaciones sacan el nibble de arriba: el segundo digito de cada pareja
 	rra			;53b1
 	rra			;53b2
 	and 00fh		;53b3
 	ld (hl),a			;53b5
 	ret			;53b6
 DIVIDE_8_VUELTAS:		; la misma division, con el divisor ya montado y solo ocho vueltas
-	ld h,000h		;53b7
+	ld h,000h		;53b7   ; por aqui entra quien ya trae el divisor montado y solo quiere ocho vueltas
 	exx			;53b9
 	push hl			;53ba
 	push de			;53bb
 	ld hl,0ea60h		;53bc
 	ld bc,00003h		;53bf
-	call RELLENA_RAM_CERO		;53c2
+	call RELLENA_RAM_CERO		;53c2   ; el cociente siempre empieza a cero
 	pop de			;53c5
 	pop hl			;53c6
 	ld h,000h		;53c7
@@ -3266,14 +3266,14 @@ DIVISOR_BAJA_UN_BIT:		; H:L:D:E entre dos
 	rr e		;540d
 	ret			;540f
 RESTA_32:		; EA63..EA66 = dividendo - divisor, byte a byte y cruzando los dos juegos de registros
-	exx			;5410
+	exx			;5410   ; la resta va byte a byte y cruzando los dos juegos de registros: el dividendo esta en uno y el divisor en el otro
 	ld a,e			;5411
 	exx			;5412
 	sub e			;5413
-	ld (0ea63h),a		;5414
+	ld (0ea63h),a		;5414   ; el resultado no toca el dividendo: se deja aparte en EA63..EA66 por si no cabe
 	exx			;5417
 	ld a,d			;5418
-	exx			;5419
+	exx			;5419   ; el byte de en medio va con `sbc`: la resta de 32 bits se encadena por el acarreo
 	sbc a,d			;541a
 	ld (0ea64h),a		;541b
 	exx			;541e
@@ -3288,7 +3288,7 @@ RESTA_32:		; EA63..EA66 = dividendo - divisor, byte a byte y cruzando los dos ju
 	ld (0ea66h),a		;5429
 	ret			;542c
 CORRE_COCIENTE:		; mete el acarreo por abajo en los tres bytes de EA60
-	push hl			;542d
+	push hl			;542d   ; el cociente se va montando por abajo, un bit por vuelta
 	ld hl,0ea60h		;542e
 	rl (hl)		;5431
 	inc hl			;5433
@@ -3378,7 +3378,7 @@ L_549F:
 	ld de,00004h		;54b5
 	ld b,003h		;54b8
 L_54BA:
-	ld a,(hl)			;54ba
+	ld a,(hl)			;54ba   ; un byte por estructura, y de cuatro en cuatro
 	ld (ix+003h),a		;54bb
 	inc hl			;54be
 	add ix,de		;54bf
@@ -3487,13 +3487,13 @@ PREPARA_CIRCUITO:		; E1FE = 0x3C; (E257), (E259) y (E253) de las tres tablas por
 	call HL_PALABRA_A		;5559
 	ld (0e253h),hl		;555c
 	call MAPEA_7_8_9		;555f
-	call L_5F5D		;5562   ; y se acaba con el coche en la casilla cero de la pista
+	call CARGA_LISTA_OBJETOS		;5562   ; y se acaba con el coche en la casilla cero de la pista
 	call POSICION_PISTA_A_CERO		;5565
 	jp MAPEA_1_2_3		;5568
 POSICION_PISTA_A_CERO:		; vueltas (ix-2), fila (ix+45), pieza (ix+46,47), posicion (ix+3F..42) y (ix+57) a cero
 	xor a			;556b   ; (ix+3F..42) es la posicion en la pista, 32 bits; (ix+45) la fila dentro de la pieza y (ix+46,47) la pieza
 	ld (ix-002h),a		;556c
-	ld (ix+045h),a		;556f
+	ld (ix+045h),a		;556f   ; la fila dentro de la pieza y la pieza misma, todo a cero: la carrera empieza en la casilla cero de la vuelta
 	ld (ix+046h),a		;5572
 	ld (ix+047h),a		;5575
 	ld (ix+042h),a		;5578
@@ -3587,12 +3587,12 @@ AVANZA_DOS_FILAS:		; dos filas enteras pintadas y el resto
 AVANZA_UNA_FILA:		; una fila entera pintada y el resto
 	push de			;5632
 	ld de,00800h		;5633
-	call AVANZA_POSICION		;5636
+	call AVANZA_POSICION		;5636   ; la fila que si cabe se pinta...
 	call PINTA_FILA_PISTA		;5639
 	pop hl			;563c
 	ld de,00800h		;563d
 	or a			;5640
-	sbc hl,de		;5641
+	sbc hl,de		;5641   ; ...y lo que sobra se descuenta y se aplica a la posicion sin pintar nada
 	ex de,hl			;5643
 	call AVANZA_POSICION		;5644
 	ld (ix+04ch),002h		;5647   ; y aqui 2: una fila nueva y pico
@@ -3666,7 +3666,7 @@ L_5699:
 	pop hl			;56ca
 	call PINTA_8_METATILES		;56cb   ; los ocho metatiles de la fila, y detras 0x5E6C, que es quien pone encima los objetos de la pista
 	call MAPEA_7_8_9		;56ce
-	call L_5E6C		;56d1
+	call OBJETOS_DE_LA_FILA		;56d1
 	jp MAPEA_1_2_3		;56d4
 FIN_DE_VUELTA:		; 1/2/3; fila y pieza a cero, (ix+57) = 0, (ix-2)++ (vueltas); p01 0x77A7; y pinta la fila ya desde el principio
 	push ix		;56d7   ; fin de vuelta: fila y pieza a cero y una vuelta mas en (ix-2)
@@ -3723,7 +3723,7 @@ PINTA_METATILE:		; los 4 tiles de una fila del metatile
 PINTA_ESCENA_FIJA:		; guarda (E257), (E259), (E253); pinta una escena de 3 piezas con las piezas HL y los metatiles DE (0x5755); y los restaura
 	ld bc,(0e257h)		;5730   ; la escena fija se pinta con las mismas rutinas que la carrera, asi que hay que guardar y devolver las tres tablas
 	push bc			;5734
-	ld bc,(0e259h)		;5735
+	ld bc,(0e259h)		;5735   ; se guardan las tres tablas porque la escena las machaca y luego hay que volver a la carrera
 	push bc			;5739
 	ld bc,(0e253h)		;573a
 	push bc			;573e
@@ -3755,7 +3755,7 @@ PINTA_ESCENA:		; IX = IY = E380 (el bloque del segundo coche): posicion a cero, 
 	push de			;5755
 	push hl			;5756
 	ld iy,0e380h		;5757
-	ld ix,0e380h		;575b
+	ld ix,0e380h		;575b   ; IX e IY apuntan los dos al bloque de sombra: la escena no es de ningun coche, pero las rutinas de pista piden un bloque
 	call POSICION_PISTA_A_CERO		;575f   ; la escena siempre se pinta desde la casilla cero
 	pop hl			;5762
 	pop de			;5763
@@ -3763,12 +3763,12 @@ PINTA_ESCENA:		; IX = IY = E380 (el bloque del segundo coche): posicion a cero, 
 	ld (0e259h),hl		;5768
 	ld hl,0574fh		;576b
 	ld (0e257h),hl		;576e
-	ld (iy+009h),002h		;5771
+	ld (iy+009h),002h		;5771   ; (iy+9) = 2 manda la escena al buffer de EC00
 	jp PINTA_PISTA_32_FILAS		;5775
 PINTA_ESCENA_7D88:		; la escena de piezas p10 0x7D88 y metatiles p10 0x7E38 (26 metatiles; que es, por ver en el emulador)
 	push ix		;5778
 	push iy		;577a
-	ld de,07e38h		;577c
+	ld de,07e38h		;577c   ; las piezas y los metatiles de la escena viven en la pagina 10
 	ld hl,07d88h		;577f
 	call PINTA_ESCENA_FIJA		;5782
 	pop iy		;5785
@@ -3778,7 +3778,7 @@ PINTA_ESCENA_7DD0:		; la escena de piezas p10 0x7DD0 y metatiles p10 0x7E18 (2 m
 	push ix		;578a
 	push iy		;578c
 	ld de,07e18h		;578e
-	ld hl,07dd0h		;5791
+	ld hl,07dd0h		;5791   ; esta escena son dos metatiles macizos: un fondo liso
 	call PINTA_ESCENA_FIJA		;5794
 	pop iy		;5797
 	pop ix		;5799
@@ -3983,7 +3983,7 @@ L_58E5:
 	exx			;58e5
 	ld (hl),c			;58e6
 	inc hl			;58e7
-	or d			;58e8
+	or d			;58e8   ; el `or d` es lo que marca la mascara del segundo jugador con el bit 7
 	ld (hl),a			;58e9
 	inc hl			;58ea
 	ld (0f002h),hl		;58eb
@@ -3993,7 +3993,7 @@ L_58E5:
 DEMO_CARGA_GRABACION:		; el puntero de la grabacion de la escena (E1CD) y los contadores a cero
 	ld a,(0e1cdh)		;58f2
 	ld hl,05909h		;58f5
-	call HL_PALABRA_A		;58f8
+	call HL_PALABRA_A		;58f8   ; cada escena de la demo tiene su grabacion, y la tabla de 0x5909 las reparte
 	ld (0f002h),hl		;58fb
 	xor a			;58fe
 	ld (0f001h),a		;58ff
@@ -4052,7 +4052,7 @@ DEMO_ORDEN:		; la unica orden que hace algo es el 0x4F: apaga E1F3 y suena el 0x
 	ld a,d			;593d
 	cp 04fh		;593e
 	ret nz			;5940
-	xor a			;5941
+	xor a			;5941   ; E1F3 a cero y el sonido 0x81: es la unica orden que trae la grabacion, y marca el final de la escena
 	ld (0e1f3h),a		;5942
 	ld a,081h		;5945
 	call ENCOLA_SONIDO		;5947
@@ -4061,7 +4061,7 @@ DEMO_ORDEN:		; la unica orden que hace algo es el 0x4F: apaga E1F3 y suena el 0x
 DEMO_MASCARA:		; la mascara a F004, o a F005 si trae el bit 7 (el segundo jugador)
 	ld a,d			;594d
 	and 07fh		;594e
-	cp d			;5950
+	cp d			;5950   ; el `and 0x7f` y el `cp d` juntos preguntan si el bit 7 estaba puesto
 	jr nz,L_5957		;5951
 	ld (0f004h),a		;5953
 	ret			;5956
@@ -4244,9 +4244,9 @@ ESTADO_2_MUSICA:		; la musica 0x35 y 0x5F6F
 	ld a,035h		;5a86
 	call 0884ch		;5a88
 L_5A8B:
-	jp L_5F6F		;5a8b
+	jp MONTA_SELECCION		;5a8b
 L_5A8E:
-	call L_5FD7		;5a8e
+	call SELECCION_PASO		;5a8e
 	jp SALTA_LA_ESPERA		;5a91
 L_5A94:
 	jp 07162h		;5a94
@@ -4276,10 +4276,10 @@ L_5ABA:
 	inc a			;5ac3
 	ld a,00eh		;5ac4
 	jp z,06049h		;5ac6
-	ld a,(0e1fdh)		;5ac9
+	ld a,(0e1fdh)		;5ac9   ; E1FD encendido: la repeticion se puede cortar con el mando
 	or a			;5acc
 	call nz,CORTA_REPETICION		;5acd
-	ld a,(0e20ah)		;5ad0
+	ld a,(0e20ah)		;5ad0   ; y sin musica sonando no hay atajo que valga
 	or a			;5ad3
 	ret z			;5ad4
 	ld a,(0e1c0h)		;5ad5   ; el atajo de saltarse la carrera pide varias cosas a la vez: E20A con musica, E1C0 = 5, el bit 0 de E1D8 y ningun boton pulsado
@@ -4297,7 +4297,7 @@ L_5ABA:
 	jp 06049h		;5aee
 CORTA_REPETICION:		; con el bit 4 de E1D8 y sin botones, p02 0x928A
 	ld a,(0e1d8h)		;5af1
-	bit 4,a		;5af4
+	bit 4,a		;5af4   ; el bit 4 de E1D8 es la tecla de cortar
 	ret z			;5af6
 	ld a,(0e1cch)		;5af7
 	ld hl,0e1c9h		;5afa
@@ -4324,7 +4324,7 @@ ESTADO_14_FINAL:		; se acabo la carrera: puntos, musica y a limpiar
 L_5B28:
 	ld hl,0e2c1h		;5b28
 	ld a,(0e1c2h)		;5b2b
-	bit 5,a		;5b2e
+	bit 5,a		;5b2e   ; con dos jugadores el que manda es el que haya ganado (E91B)
 	jr z,L_5B3B		;5b30
 	ld a,(0e91bh)		;5b32
 	dec a			;5b35
@@ -4348,7 +4348,7 @@ L_5B55:
 	jp 081f7h		;5b55
 L_5B58:
 	ld c,011h		;5b58
-	call 083bch		;5b5a
+	call 083bch		;5b5a   ; p02 0x83BC con C = 0x11; mientras no acabe, no se limpia nada
 	ret nz			;5b5d
 	call BORRA_SPRITES_Y_NOMBRES		;5b5e
 	ld a,00eh		;5b61
@@ -4365,7 +4365,7 @@ ESTADO_22:		; E1D5 = (E1DC) y, con el bit 0 de E1D8, p02 0x864B y el estado 11
 	ld a,(0e1dch)		;5b72
 	ld (0e1d5h),a		;5b75
 	ld a,(0e1d8h)		;5b78
-	bit 0,a		;5b7b
+	bit 0,a		;5b7b   ; el bit 0 de E1D8 es lo que saca de este estado
 	ret z			;5b7d
 	call 0864bh		;5b7e
 	ld a,00bh		;5b81
@@ -4390,7 +4390,7 @@ ESTADO_MAS_UNO:		; E250++ y p01 0x604C
 	jp 0604ch		;5ba6
 SALTA_LA_ESPERA:		; en los estados 7 y 3 (con subestado), el bit 4 de E1D8 y sin botones se salta a p01 0x68A7 con E25B = 0xFF
 	ld a,(0e250h)		;5ba9
-	cp 007h		;5bac
+	cp 007h		;5bac   ; solo desde los estados 7 y 3 se puede saltar la espera
 	jr z,L_5BB8		;5bae
 	cp 003h		;5bb0
 	ret nz			;5bb2
@@ -4398,7 +4398,7 @@ SALTA_LA_ESPERA:		; en los estados 7 y 3 (con subestado), el bit 4 de E1D8 y sin
 	and a			;5bb6
 	ret z			;5bb7
 L_5BB8:
-	ld a,(0e1c8h)		;5bb8
+	ld a,(0e1c8h)		;5bb8   ; hace falta que no haya ninguna tecla ni boton pulsados: si no, el salto seria el mismo que acaba de pulsar el jugador
 	ld hl,0e1cbh		;5bbb
 	or (hl)			;5bbe
 	ret nz			;5bbf
@@ -4469,7 +4469,7 @@ L_5C5B:
 FOTOGRAMA_REPETICION:		; el mismo fotograma pero para la repeticion: un solo coche y sin mando
 	call VENTANA_JUGADOR_2		;5c5c   ; en la repeticion no hay segundo coche: ni pista, ni camara, ni HUD para el
 	call 07134h		;5c5f
-	call 07dcah		;5c62
+	call 07dcah		;5c62   ; en la repeticion la pista se mueve sola: el mando no pinta nada
 	call CRONOMETRO_MAS_UNO		;5c65
 	ld ix,0e2c0h		;5c68
 	ld iy,0e2c0h		;5c6c
@@ -4484,7 +4484,7 @@ FOTOGRAMA_REPETICION:		; el mismo fotograma pero para la repeticion: un solo coc
 	call 09d06h		;5c8a
 	call 0a110h		;5c8d
 	call 0ab63h		;5c90
-	call 0b44ch		;5c93
+	call 0b44ch		;5c93   ; y aqui, en cambio, si se repintan los objetos de tiles, que la repeticion los enseña igual
 	call 070dfh		;5c96
 	call 0760dh		;5c99
 	call L_5CA0		;5c9c
@@ -4643,7 +4643,7 @@ PRESENTACION_6:		; espera y pasa con 0x30
 	jr PRESENTACION_SIGUIENTE		;5d9d
 PRESENTACION_7:		; hace parpadear "PUSH SPACE KEY" mientras espera
 	call PARPADEA_PUSH_SPACE		;5d9f
-	call BAJA_E1C4		;5da2
+	call BAJA_E1C4		;5da2   ; el parpadeo va por su cuenta y la espera por la suya
 	ret nz			;5da5
 	xor a			;5da6
 	ld (0e252h),a		;5da7
@@ -4680,7 +4680,7 @@ DESVANECE_TRES:		; tres pasos de desvanecido y vuelve
 	ld b,003h		;5dea   ; tres tiles por fotograma: asi el dibujo tarda lo que tiene que tardar en aparecer
 L_5DEC:
 	push bc			;5dec
-	call TRAMO_COLOR		;5ded
+	call TRAMO_COLOR		;5ded   ; tres tiles por vuelta, y a la primera que devuelva acarreo se acabo la lista
 	call PINTA_COLOR_TILE		;5df0
 	call TRAMO_AVANZA		;5df3
 	pop bc			;5df6
@@ -4701,7 +4701,7 @@ PINTA_COLOR_TILE:		; los ocho bytes de color del tile A a valor C, en los tres t
 	jp LLENA_VRAM_3_TERCIOS_B		;5e0a
 TRAMO_COLOR:		; A = el tile por el que va (E25E) y C = el color del tramo
 	call TRAMO_ACTUAL		;5e0d
-	ld a,(0e25eh)		;5e10
+	ld a,(0e25eh)		;5e10   ; E25E es el tile por el que va el desvanecido
 	inc hl			;5e13
 	ld c,(hl)			;5e14
 	or a			;5e15
@@ -4765,8 +4765,22 @@ DATA_secuencia_5E4A:
 ; ======================================================================
 
 
-L_5E6C:
-	ld a,(ix+057h)		;5e6c
+
+; ----------------------------------------------------------------------
+; Los carteles y los adornos del borde de la pista no van en el
+; dibujo de las piezas: van en una lista aparte por circuito, que
+; monta 0x5F5D -(E275) cuantos son y (E273) donde estan-. Cada
+; entrada son TRES bytes: una palabra con la pieza en los 12 bits de
+; arriba y la fila en los 4 de abajo, y un byte con el dibujo.
+;
+; Como la lista va ordenada por posicion, basta con un indice
+; ((ix+57)) que avanza y no vuelve. Cuando la entrada coincide con
+; la fila que se esta pintando, 0x5ECA le busca sitio; si el byte
+; del dibujo trae el bit 7 no es un tile, y se guarda en la tabla de
+; EB00 de esa fila (0x5F33) para que lo pinte otro.
+; ----------------------------------------------------------------------
+OBJETOS_DE_LA_FILA:		; los objetos de pista que caen en la fila que se acaba de pintar
+	ld a,(ix+057h)		;5e6c   ; (ix+57) es por que objeto de la lista va este coche; por tres, que las entradas son de tres bytes
 	ld l,a			;5e6f
 	ld h,000h		;5e70
 	ld e,l			;5e72
@@ -4775,12 +4789,12 @@ L_5E6C:
 	add hl,de			;5e75
 	ld de,(0e273h)		;5e76
 	add hl,de			;5e7a
-L_5E7B:
+OBJETO_SIGUIENTE:		; compara la entrada con la fila actual y la coloca, la salta o se para
 	ld e,(hl)			;5e7b
 	ld a,e			;5e7c
 	inc hl			;5e7d
 	ld d,(hl)			;5e7e
-	srl d		;5e7f
+	srl d		;5e7f   ; cuatro corrimientos: la palabra trae la pieza arriba y la fila en el nibble de abajo
 	rr e		;5e81
 	srl d		;5e83
 	rr e		;5e85
@@ -4791,56 +4805,56 @@ L_5E7B:
 	and 00fh		;5e8f
 	inc hl			;5e91
 	push hl			;5e92
-	ld h,(ix+045h)		;5e93
+	ld h,(ix+045h)		;5e93   ; se compara con la pieza (ix+46,47) y la fila (ix+45) de este coche
 	ld c,(ix+046h)		;5e96
 	ld b,(ix+047h)		;5e99
-	call L_5F55		;5e9c
+	call COMPARA_PIEZA_Y_FILA		;5e9c
 	pop hl			;5e9f
-	jr c,L_5EAA		;5ea0
-	jr nz,L_5EC0		;5ea2
-	call L_5ECA		;5ea4
-	jp L_5F33		;5ea7
+	jr c,L_5EAA		;5ea0   ; acarreo: la entrada ya ha quedado atras, se pasa a la siguiente
+	jr nz,BORRA_FILA_EB00		;5ea2   ; distinta fila: no toca todavia, y solo se limpia la tabla de EB00
+	call COLOCA_OBJETO		;5ea4
+	jp OBJETO_A_LA_TABLA_EB00		;5ea7
 L_5EAA:
 	push hl			;5eaa
-	call L_5EC0		;5eab
-	pop hl			;5eae
+	call BORRA_FILA_EB00		;5eab
+	pop hl			;5eae   ; el indice sube y el puntero tambien: la lista se recorre una sola vez por vuelta
 	inc hl			;5eaf
 	inc (ix+057h)		;5eb0
 	ld b,(ix+057h)		;5eb3
-	ld a,(0e275h)		;5eb6
+	ld a,(0e275h)		;5eb6   ; y (E275) es cuantas entradas tiene la lista: al llegar al final el indice se queda ahi
 	cp b			;5eb9
-	jr nc,L_5E7B		;5eba
+	jr nc,OBJETO_SIGUIENTE		;5eba
 	ld (ix+057h),a		;5ebc
 	ret			;5ebf
-L_5EC0:
+BORRA_FILA_EB00:		; las dos palabras de la fila en la tabla de EB00 a cero
 	ld e,0c0h		;5ec0
-	call FILA_TABLA_EB00		;5ec2
+	call FILA_TABLA_EB00		;5ec2   ; dos bytes por fila, que es lo que ocupa la entrada en la tabla
 	xor a			;5ec5
 	ld (hl),a			;5ec6
 	inc hl			;5ec7
 	ld (hl),a			;5ec8
 	ret			;5ec9
-L_5ECA:
+COLOCA_OBJETO:		; le busca un hueco al objeto en la fila y lo pinta, dos tiles de alto
 	ld e,0c0h		;5eca
 	ld d,080h		;5ecc
 	push hl			;5ece
 	call CASILLA_BUFFER_NOMBRES		;5ecf
 	pop de			;5ed2
-	ld a,(de)			;5ed3
+	ld a,(de)			;5ed3   ; el tercer byte de la entrada es el dibujo; con el bit 7 puesto no es un tile y aqui no se pinta
 	bit 7,a		;5ed4
 	ret nz			;5ed6
 	ld (ix-003h),a		;5ed7
-	bit 0,(ix+009h)		;5eda
+	bit 0,(ix+009h)		;5eda   ; el jugador 1 usa los tiles 0xCE y 0xCF y el 2 el 0xD0 y el 0xD1
 	ld c,0ceh		;5ede
 	jr nz,L_5EE4		;5ee0
 	ld c,0d0h		;5ee2
 L_5EE4:
-	ld a,l			;5ee4
+	ld a,l			;5ee4   ; se empieza por el principio de la fila
 	and 0e0h		;5ee5
 	ld l,a			;5ee7
-	ld b,00ah		;5ee8
+	ld b,00ah		;5ee8   ; diez sitios, de tres en tres columnas: no se prueban las 32 casillas
 	push de			;5eea
-	ld a,(0e26dh)		;5eeb
+	ld a,(0e26dh)		;5eeb   ; E26D y E272 marcan el rango de tiles que se considera "sitio libre": el `sub` y el `cp` juntos preguntan si el tile esta dentro
 	ld d,a			;5eee
 	ld a,(0e272h)		;5eef
 	sub d			;5ef2
@@ -4850,9 +4864,9 @@ L_5EF4:
 	sub d			;5ef5
 	cp e			;5ef6
 	jr nc,L_5F0E		;5ef7
-	call L_5F15		;5ef9
+	call HUECO_DE_CINCO		;5ef9   ; y ademas hacen falta cuatro casillas mas libres a la derecha (0x5F15), que ese es el hueco que pide el objeto
 	jr c,L_5F0E		;5efc
-	ld (hl),c			;5efe
+	ld (hl),c			;5efe   ; el dibujo va en la casilla y el de debajo -el tile siguiente- en la fila de abajo, con la vuelta del kilobyte
 	push hl			;5eff
 	push de			;5f00
 	res 2,h		;5f01
@@ -4867,55 +4881,55 @@ L_5EF4:
 L_5F0E:
 	inc l			;5f0e
 	inc l			;5f0f
-	inc l			;5f10
+	inc l			;5f10   ; de tres en tres columnas: se prueban diez sitios de la fila y no las 32
 	djnz L_5EF4		;5f11
 	pop de			;5f13
 	ret			;5f14
-L_5F15:
+HUECO_DE_CINCO:		; mira las cuatro casillas siguientes; sin acarreo si valen, y deja L en el centro del hueco
 	push bc			;5f15
 	ld b,004h		;5f16
 L_5F18:
-	inc l			;5f18
+	inc l			;5f18   ; las cuatro de la derecha, una por vuelta
 	ld a,(hl)			;5f19
 	sub d			;5f1a
 	cp e			;5f1b
 	jr nc,L_5F25		;5f1c
 	djnz L_5F18		;5f1e
 L_5F20:
-	dec l			;5f20
+	dec l			;5f20   ; sale dos casillas por detras de la ultima mirada: el objeto se planta en el centro del hueco
 	dec l			;5f21
 	pop bc			;5f22
 	or a			;5f23
 	ret			;5f24
 L_5F25:
-	ld a,b			;5f25
+	ld a,b			;5f25   ; si la que falla es LA CUARTA, el hueco se acepta igual: solo mandan de verdad las tres primeras
 	dec a			;5f26
 	jr z,L_5F20		;5f27
 	ld a,005h		;5f29
 	sub b			;5f2b
 	ld b,a			;5f2c
 L_5F2D:
-	dec l			;5f2d
+	dec l			;5f2d   ; y si falla antes, L vuelve a donde estaba y se sigue buscando
 	djnz L_5F2D		;5f2e
 	pop bc			;5f30
 	scf			;5f31
 	ret			;5f32
-L_5F33:
+OBJETO_A_LA_TABLA_EB00:		; el dibujo con el bit 7 no se pinta: se guarda en la tabla de EB00 de la fila
 	ld a,(de)			;5f33
 	bit 7,a		;5f34
 	ret z			;5f36
 	push de			;5f37
-	ld e,0c0h		;5f38
+	ld e,0c0h		;5f38   ; la tabla de EB00 guarda un byte por fila, y ese byte lo lee quien pinta los objetos altos
 	call FILA_TABLA_EB00		;5f3a
 	pop de			;5f3d
 	ld a,(de)			;5f3e
 	ld (hl),a			;5f3f
 	ret			;5f40
-L_5F41:
-	ld l,(ix+046h)		;5f41
+FILA_ABSOLUTA:		; HL = pieza * 12 + fila: la fila contada desde el principio de la vuelta
+	ld l,(ix+046h)		;5f41   ; por doce, que cada pieza son doce filas de tiles
 	ld h,(ix+047h)		;5f44
 	ld a,(ix+045h)		;5f47
-	add hl,hl			;5f4a
+	add hl,hl			;5f4a   ; la pieza por cuatro, luego por ocho, y la suma de las dos es por doce
 	add hl,hl			;5f4b
 	ld c,l			;5f4c
 	ld b,h			;5f4d
@@ -4925,47 +4939,47 @@ L_5F41:
 	ld b,000h		;5f51
 	add hl,bc			;5f53
 	ret			;5f54
-L_5F55:
+COMPARA_PIEZA_Y_FILA:		; Z si la entrada es de esta pieza, y entonces compara la fila
 	ex de,hl			;5f55
 	or a			;5f56
-	sbc hl,bc		;5f57
+	sbc hl,bc		;5f57   ; la resta de 16 bits es la de la pieza; la fila se compara despues, y solo si la pieza coincide
 	ex de,hl			;5f59
 	ret nz			;5f5a
 	cp h			;5f5b
 	ret			;5f5c
-L_5F5D:
+CARGA_LISTA_OBJETOS:		; la lista de objetos de la carrera: cuantos en (E275) y donde en (E273)
 	ld hl,09b20h		;5f5d
-	ld a,(0e25ch)		;5f60
+	ld a,(0e25ch)		;5f60   ; una palabra por carrera: la lista de objetos es distinta en cada circuito
 	call HL_PALABRA_A		;5f63
 	ld a,(hl)			;5f66
 	ld (0e275h),a		;5f67
 	inc hl			;5f6a
 	ld (0e273h),hl		;5f6b
 	ret			;5f6e
-L_5F6F:
+MONTA_SELECCION:		; limpia la pantalla y monta la pantalla de eleccion
 	call BORRA_SPRITES_Y_NOMBRES		;5f6f
-	call TILES_16_58_F0		;5f72
+	call TILES_16_58_F0		;5f72   ; los tiles 16, 58 y F0 son los del marco y las letras, que hacen falta en todas las pantallas
 	call 06342h		;5f75
-	call L_5F8D		;5f78
+	call BORRA_BUFFER_E400		;5f78
 	xor a			;5f7b
 	ld (0e91fh),a		;5f7c
-	ld (0e25eh),a		;5f7f
-	call L_5F96		;5f82
+	ld (0e25eh),a		;5f7f   ; E25E a cero: el desvanecido empieza por el primer tile
+	call DIBUJO_SELECCION		;5f82
 	ld a,003h		;5f85
 	call 06049h		;5f87
-	jp L_5FA4		;5f8a
-L_5F8D:
+	jp ROTULOS_SELECCION		;5f8a
+BORRA_BUFFER_E400:		; las 24 filas del buffer del jugador 1 a cero
 	ld hl,0e400h		;5f8d
 	ld bc,002ffh		;5f90
 	jp RELLENA_RAM_CERO		;5f93
-L_5F96:
+DIBUJO_SELECCION:		; el dibujo p05 0xA3B4 descomprimido en el buffer, 0x20 columnas
 	ld a,005h		;5f96
 	call MAPEA_A_EN_8000		;5f98
 	ld de,0a3b4h		;5f9b
-	call L_5FD0		;5f9e
+	call DESCOMPRIME_20_COLUMNAS		;5f9e
 	jp MAPEA_1_2_3		;5fa1
-L_5FA4:
-	ld a,(0e25bh)		;5fa4
+ROTULOS_SELECCION:		; el cursor en EA88 y los rotulos p09 0xAB51 y 0xAB59
+	ld a,(0e25bh)		;5fa4   ; con E25B = 0xFF -sin categoria elegida- se pone 1, y con categoria 2
 	inc a			;5fa7
 	ld a,001h		;5fa8
 	ld hl,0bba7h		;5faa
@@ -4977,34 +4991,34 @@ L_5FB0:
 	ld (0e27eh),a		;5fb4
 	ld de,0ea88h		;5fb7
 	ld bc,00004h		;5fba
-	ldir		;5fbd
+	ldir		;5fbd   ; cuatro bytes: un atributo de sprite entero, el del cursor
 	ld de,0ab51h		;5fbf
 	call PINTA_ROTULO		;5fc2
-	ld a,(0e25bh)		;5fc5
+	ld a,(0e25bh)		;5fc5   ; el segundo rotulo solo sale si ya hay categoria
 	inc a			;5fc8
 	ret z			;5fc9
 	ld de,0ab59h		;5fca
 	jp PINTA_ROTULO		;5fcd
-L_5FD0:
+DESCOMPRIME_20_COLUMNAS:		; C' = 0x20 y a 0x637F
 	exx			;5fd0
 	ld c,020h		;5fd1
 	exx			;5fd3
 	jp 0637fh		;5fd4
-L_5FD7:
+SELECCION_PASO:		; un paso de la pantalla de eleccion
 	call 0662ah		;5fd7
 	call 062d3h		;5fda
 	ld a,(0e251h)		;5fdd
 	dec a			;5fe0
-	jr z,$+118		;5fe1
+	jr z,$+118		;5fe1   ; esta rutina se sale de la pagina: el `jr` cae en 0x6057 y el `jp p` en 0x60F3, los dos ya en la pagina 1. Es legal porque p00 esta fija en 0x4000 y la 1 en 0x6000, pero el listado no puede seguir el salto
 	jp p,060f3h		;5fe3
 	ld a,(0e25bh)		;5fe6
 	inc a			;5fe9
-	ld hl,0bbc5h		;5fea
+	ld hl,0bbc5h		;5fea   ; con categoria elegida el bloque es p03 0xBBC3 y sin ella el 0xBBC5
 	jr z,L_5FF2		;5fed
 	ld hl,0bbc3h		;5fef
 L_5FF2:
 	call 0626ch		;5ff2
-	call 062ach		;5ff5
+	call 062ach		;5ff5   ; con Z se sale: la eleccion no ha cambiado
 	ret z			;5ff8
 	ld a,(0e25bh)		;5ff9
 	inc a			;5ffc
