@@ -421,16 +421,39 @@ L 0x47E6 LLENA_VRAM_3_TERCIOS  FILVRM: BC bytes de A en VRAM HL, y otra vez en H
 L 0x47E8 BUCLE_LLENA_TERCIO  un tercio por vuelta
 L 0x47F7 RLE_VRAM_3_TERCIOS  descomprime (DE) en VRAM HL con 0x4862, tres veces (HL += 0x800), el mismo flujo cada vez
 L 0x47F9 BUCLE_RLE_TERCIO   un tercio por vuelta
+L 0x4807 PINTA_TILES_EN_HL  como 0x4811 pero la direccion de VRAM ya viene en HL: se salta la palabra de cabecera y entra directo al bucle
+L 0x480D PINTA_TILES_TEXTO  como 0x4811 con B = 0x20: el flujo lleva caracteres ASCII y el tile es el caracter menos 0x20, o sea que el tile 0 es el espacio
 L 0x4811 PINTA_TILES        flujo en (DE): palabra = direccion de VRAM; luego bytes: FF fin, FE nueva direccion, 02 fila/columna (0x3800 + fila*32 + columna), otro = tile (menos B, AND C) por WRTVRM en HL++ (B=0, C=0xFF: tal cual)
+C 0x4811 los dos registros que mandan en todo el bucle: B es cuanto se le RESTA al byte del flujo para sacar el tile -0 si ya son tiles, 0x20 si son letras- y C la mascara -0xFF pinta, 0x00 escribe el tile 0, o sea borra-
+C 0x481D el codigo 02 no es un tile: detras vienen fila y columna
+C 0x4821 y el 0xFF es el final del flujo
+C 0x4824 el 0xFE cambia de sitio en la VRAM sin salir del flujo: una lista puede pintar en varios sitios de la pantalla
+C 0x4828 aqui se aplican los dos registros: primero la resta y luego la mascara
 L 0x4815 PINTA_TILES_DIRECCION  lee la palabra de (DE) como nueva direccion de VRAM y sigue
 L 0x481B PINTA_TILES_BUCLE  un byte del flujo por vuelta
 L 0x4830 BORRA_TILES        como 0x4811 con B=C=0: escribe ceros en las mismas posiciones (borra lo que pinto)
-L 0x483F PINTA_TILES_POSICION  el codigo 02 del flujo: columna y fila -> VRAM 0x3800 + fila*32 + columna
+L 0x4835 PINTA_TILES_TEXTO_DE  igual que 0x483D; la fila y la columna las trae ya el DE del llamante. INALCANZABLE: no la llama nadie y los bytes 35 48 no salen ni una vez en los 128 KB
+L 0x4839 BORRA_TILES_TEXTO  la pareja de 0x483D: mismo recorrido pero con C = 0, asi que en vez de la letra escribe el tile 0. Es la que borra los rotulos que pinto su gemela (p00 0x4B99)
+L 0x483D PINTA_TILES_TEXTO_POSICION  texto empezando por el codigo de posicion: B = 0x20 (letra - 0x20) y C = 0xFF. La usa 0x4B8F para los rotulos del flujo 0xEC02
+L 0x483F PINTA_TILES_POSICION  el codigo 02 del flujo: la palabra que viene detras es FILA y luego COLUMNA -> VRAM 0x3800 + fila*32 + columna
+C 0x483F entrando por aqui B vale 0x20, o sea que este camino es siempre el del texto
+C 0x484A el segundo byte -la columna- se guarda en A mientras HL se monta con el primero
+C 0x484D cinco `add hl,hl` = fila * 32, que es lo que ocupa una fila de la tabla de nombres
+C 0x4855 y 0x3800 es donde empieza esa tabla
+C 0x4859 se recupera el flujo, que quedo apuntando al byte de detras de la posicion
 L 0x4862 RLE_A_VRAM         descomprime en VRAM HL el flujo de (DE): 0x00 = fin; 0x01..0x7F = repetir el byte siguiente n veces; 0x81..0xFF = copiar n&0x7F bytes tal cual; 0x80 = seguir en el puntero que viene (0x485C)
+C 0x4862 SETWRT una sola vez: a partir de aqui todo va por `out (c),a` con el puerto en C', que es mas rapido que WRTVRM y no hace falta volver a dar la direccion
+C 0x4866 el 0 es el final, y se mira antes de nada
+C 0x4869 B se queda con el codigo entero y A con sus siete bits de abajo...
+C 0x486C ...asi que si son iguales el bit 7 estaba a cero: es una REPETICION
+C 0x486F y si al quitarle el bit 7 no queda nada, el codigo era 0x80: el flujo sigue en otro sitio
 L 0x4865 RLE_A_VRAM_BUCLE   un codigo del flujo por vuelta
 L 0x4873 RLE_COPIA_N        n bytes tal cual al VDP
+C 0x4875 el `exx` es para llegar al C' que dejo PREPARA_ESCRITURA_VRAM con el puerto de datos del VDP
 L 0x487F RLE_REPITE_N       el mismo byte n veces al VDP
+C 0x487D el byte que se repite se lee UNA vez, fuera del bucle
 L 0x485C RLE_SIGUE_PUNTERO  DE = la palabra de (DE): el flujo continua en otro sitio
+C 0x485C sin volver a dar la direccion de VRAM: el destino sigue donde iba, solo cambia de donde se leen los datos
 L 0x4B88 RELLENA_RAM        (HL..HL+BC) = A, por ldir
 
 # =============================================================================
@@ -538,12 +561,77 @@ C 0x4690 ...y su fotograma va a VRAM 0x1800, que con R6 = 03 es el principio de 
 C 0x4699 el coche 2 solo si esta jugando: si no, sus patrones se quedan como estaban
 C 0x469F los del coche 2 van 0x40 bytes mas alla, en los sprites 2 y 3
 C 0x46A5 y a dejar el mapeo de siempre
-L 0x46A8 FOTOGRAMA_COCHE     si (ix-3) != 0 -> tiles (0x4701); fotograma (ix+0E): >= 0x80 -> 0x46DF, bit 6 -> 0x4740; si cambio respecto a (ix+3E), 64 bytes del juego (tabla p04 0x7431 por (ix+18)) + fotograma*64 a VRAM HL
+L 0x46A8 FOTOGRAMA_COCHE     si (ix-3) != 0 -> patrones del objeto de pista (0x4701); fotograma (ix+0E): >= 0x80 -> 0x46DF, bit 6 -> 0x4740; si cambio respecto a (ix+3E), 64 bytes del juego (tabla p04 0x7431 por (ix+18)) + fotograma*64 a VRAM HL
+C 0x46A8 (ix-3) no es un fotograma: es el aviso de que hay dos tiles de objeto de pista pendientes de cargar, y se atiende ANTES que el coche y en vez de el. Lo pone 0x5ECA con el dibujo que toca
+C 0x46AE (ix+0E) es el numero de fotograma que dejo p02 0x9A01 mirando el angulo del coche; aqui solo se copia
+C 0x46B1 de 0x80 para arriba no es un fotograma del coche: es un efecto -su tabla la eligen 0x9A83/0x9A93- y sus patrones estan en otra pagina
+C 0x46B5 el bit 6 parte los diecisiete angulos en dos juegos de dibujo: la tabla p02 0x9AA3 da 0x40..0x44 para los nueve angulos de en medio y 0..4 para los siete de los extremos
+C 0x46BA (ix+3E) es el fotograma que YA esta en la VRAM: mientras no cambie no se copian los 64 bytes, que es una vez por fotograma y por coche
+C 0x46BE y en cuanto cambia se apunta, antes de copiar nada
+C 0x46C2 (ix+18) es la carroceria, 0 a 17 (p02 0x8943 la saca de los cinco bytes del coche elegido)
+C 0x46C5 21 palabras, las tres ultimas a cero: las 18 carrocerias repiten puntero cuando comparten dibujo, asi que juegos distintos hay menos
+C 0x46CB seis `add hl,hl` = fotograma * 64...
+C 0x46D9 ...porque un fotograma son 64 bytes, o sea los dos patrones de sprite de 16x16 que forman un coche
 L 0x46DF FOTOGRAMA_COCHE_80  fotogramas 0x80..: (fotograma & 0x0F)*64 desde p05 0x8A71 (E25B < 3) o 0x8BF1
-L 0x4701 TILES_COCHE         (ix-3) = 1..6: los 16 bytes (2 tiles) de p04 0x75D1 + (n-1)*16 a los patrones 0x2670 (bit 0 de ix+9) o 0x2680, en los 3 tercios
-L 0x471E TILES_COCHE_TERCIOS  los tres LDIRVM de 16 bytes
+C 0x46E0 del efecto solo cuentan los cuatro bits de abajo: dieciseis fotogramas como mucho
+C 0x46EB E25B es la categoria: 0 RALLY, 1 STOCK, 2 ENDURANCE, 3 F3, 4 F3000, 5 F1
+C 0x46EE de F3 para arriba el juego de 0x8BF1...
+C 0x46F5 ...y en las tres primeras el de 0x8A71: el efecto se dibuja sobre el coche, y un turismo y un monoplaza no tienen la misma silueta
+C 0x46FB los mismos 64 bytes y al mismo sitio de la VRAM que un fotograma normal: el efecto SUSTITUYE al coche, no se le suma
+L 0x4701 TILES_OBJETO_PISTA  (ix-3) = 1..6: los 16 bytes (dos tiles apilados, 8x16 pixeles) de p04 0x75D1 + (n-1)*16 a los patrones del tile 206 (bit 0 de ix+9) o del 208, en los tres tercios
+C 0x4701 el aviso se consume aqui: los patrones se recargan una vez y hasta que 0x5ECA vuelva a pedirlo
+C 0x4705 el aviso va de 1 a 6 y la tabla empieza en el dibujo 1, de ahi el `dec a`
+C 0x4706 cuatro `add a,a` = n * 16, que son los dos tiles de cada dibujo
+C 0x470D la tabla esta en la pagina 4, ya mapeada en 0x6000 por 0x4689
+C 0x4712 0x2670 es el patron del tile 206 (0x2000 + 206*8) y 0x2680 el del 208
+C 0x4715 (ix+9) es el numero de jugador: cada uno tiene reservada su pareja de tiles -206/207 uno, 208/209 el otro-, porque en pantalla partida los dos buffers se pintan a la vez con objetos distintos
+L 0x471E TILES_OBJETO_PISTA_TERCIOS  los tres LDIRVM de 16 bytes: el mismo dibujo en los tres tercios de la tabla de patrones
+C 0x471E DE (origen) y HL (destino) se guardan y se recuperan porque COPIA_A_VRAM los machaca
+C 0x472A 0x800 mas alla esta el mismo tile en el segundo tercio de la pantalla...
+C 0x4736 ...y 0x1000 en el tercero. En G2 cada tercio tiene su juego de patrones, asi que un tile que puede salir en cualquier fila hay que cargarlo tres veces
 L 0x4740 FOTOGRAMA_COCHE_40  fotogramas con el bit 6: (fotograma & 0xBF)*64 desde el juego de la tabla p04 0x745B por (ix+18)
+C 0x4741 la misma carroceria, pero otra tabla de punteros: el segundo juego de dibujos
+C 0x474D quitado el bit 6 queda el numero de fotograma dentro de ese juego, 0 a 4
+C 0x475A y los mismos 64 bytes al mismo sitio: para el VDP los dos juegos son el mismo par de sprites
 L 0x47CF COPIA_A_VRAM        LDIRVM: BC bytes desde DE (RAM o ROM) a VRAM HL
+
+# =============================================================================
+# LOS ATRIBUTOS DE SPRITES: de la copia en RAM (EA80, 32 sprites x 4 bytes) a
+# la tabla del VDP (0x3B00). No se usa LDIRVM sino `outi` desenrollados de
+# cuatro en cuatro -un sprite por grupo- con tres `nop` entre ellos, que es la
+# espera que pide el VDP; asi el volcado puede ir HACIA ATRAS, que es lo que
+# hace falta para rotar la prioridad.
+#
+# POR QUE HACIA ATRAS: el TMS9918 solo pinta cuatro sprites por linea y los
+# que sobran DESAPARECEN, siempre los de numero mas alto. Volcando la copia de
+# RAM al reves un fotograma si y otro no -el bit 0 de E1C3, que es el contador
+# de fotogramas de logica-, el que se queda sin pintar va cambiando y en vez
+# de desaparecer PARPADEA. Los sprites 30 y 31 se libran del baile: van
+# siempre al derecho y al final.
+# =============================================================================
+L 0x4760 SPRITE_31_A_VRAM    los 4 bytes del sprite 31 de la copia (EAFC) al sprite 0 de la VRAM si hay jugador 1, y al sprite 2 si no lo hay
+C 0x4761 bit 6 de E1C2 = hay jugador 1
+C 0x4766 sin jugador 1 -o sea en la presentacion- este sprite va al 2...
+C 0x476B ...y jugando, al 0
+C 0x4772 EAFC es el ultimo bloque de la copia, el sprite 31
+C 0x4778 cuatro bytes: Y, X, patron y color de UN sprite
+L 0x477C SPRITES_A_VRAM      los 32 sprites de la copia (EA80) a la tabla 0x3B00; en los fotogramas impares los 30 primeros van al reves (0x4794) y los dos ultimos al derecho
+C 0x4784 E1C3 es el contador de fotogramas de logica; el `rrca` deja su bit 0 en el acarreo
+C 0x478A con el bit 0 a cero, el volcado normal: 128 bytes seguidos, los 32 sprites en su orden
+C 0x4790 0x80 = 32 sprites x 4 bytes
+L 0x4794 SPRITES_A_VRAM_AL_REVES  los 30 primeros del reves -EAF4 hacia abajo de ocho en ocho- y luego los sprites 30 y 31 al derecho
+C 0x4794 EAF4 es el sprite 29, el ultimo de los que rotan
+C 0x4797 -8: los cuatro `outi` avanzan cuatro, asi que restar ocho deja HL cuatro bytes MAS ATRAS, o sea en el sprite anterior
+C 0x479A 0x78 = 30 sprites; el 29 acaba en el hueco 0 de la VRAM, el 28 en el 1, y asi hasta el 0, que acaba en el 29
+C 0x479F y los sprites 30 y 31 se vuelcan aparte y en su sitio: no entran en la rotacion
+L 0x47A7 OUTI_CUATRO_SPRITES  el bucle: cuatro `outi` (un sprite) con tres `nop` de espera entre ellos, HL += DE y otra vuelta hasta que B llegue a cero
+C 0x47A7 tres `nop` entre `outi` y `outi`: la espera que pide el VDP entre dos accesos seguidos al puerto de datos
+C 0x47B8 `outi` deja Z cuando B llega a cero, y como solo se mira aqui, la salida cae SIEMPRE en un multiplo de cuatro: nunca se corta un sprite por la mitad
+C 0x47B9 DE es 0 para ir hacia delante y -8 para ir hacia atras: es el unico sitio donde se decide el sentido
+L 0x47BD DOS_SPRITES_A_VRAM  solo los sprites 0 y 1 de la copia, sin rotar
+L 0x47D3 COPIA_VRAM_3_TERCIOS  la gemela LDIRVM de LLENA_VRAM_3_TERCIOS: BC bytes de DE a HL, HL+0x800 y HL+0x1000. CODIGO MUERTO: nadie la llama, y los bytes D3 47 solo salen una vez en los 128 KB, dentro de una partitura de p14 (0x9F6F)
+C 0x47D4 tres tercios, y el contador va en B' para no gastar un registro del juego de fuera
+C 0x47DC 0x800 es lo que ocupa un tercio de la tabla de patrones
 
 # =============================================================================
 # LA PISTA: secuencia -> piezas -> metatiles -> tiles. Por carrera (E25C):
@@ -588,6 +676,58 @@ L 0x578A PINTA_ESCENA_7DD0   la escena de piezas p10 0x7DD0 y metatiles p10 0x7E
 # lee. Cada uno lleva quien lo lee y con que indice.
 D 0x4961 0x4977 rotulos_hud cuatro rotulos del HUD en codigos de tile (tile = 0xE4 + numero de letra (A=1: P=0xF4, I=0xED, T=0xF8), 0x00 = tile 0 (blanco), 0x20 = "no escribir"): "PIT IN" (0x4961), "RETIRE" (0x4967), " EMPTY" (0x496D) y "GOAL" (0x4973); los escribe con WRTVRM el bucle de 0x490E (`ld a,(de) / cp 020h / jr z / call 0x004D`) con DE puesto en 0x4900, 0x4941, 0x4955 y 0x495A y B = 6, 6, 6 y 4
 F 0x4961 6,6,6,4
+
+# =============================================================================
+# EL HUD DEL COCHE: el numero de seis digitos y los cuatro rotulos. Se despacha
+# por el ESTADO del coche (ix+5D, la maquina de p02 0x8B0C): 2 "en boxes" saca
+# PIT IN, 6 "parado" saca GOAL si el coche llego a meta y RETIRE + EMPTY si no,
+# y en cualquier otro estado se pinta el numero mientras dure su cuenta atras.
+#
+# DONDE SE PINTA, Y POR QUE HAY DOS SITIOS: 0x3965 es la fila 11 columna 5 y
+# 0x3975 la fila 11 columna 21. Con la pantalla partida el jugador 2 va a la
+# izquierda y el 1 a la derecha (ver 0x4538), asi que el bit 0 de (ix+9) elige
+# columna. Con un solo jugador siempre es la de la izquierda.
+#
+# Y LOS TILES SE APARTAN PARA NO PISARSE: los digitos salen del tile 0xF5 con
+# un jugador y del 0xD4 con dos, y las letras de los rotulos son siempre
+# 0xE4 + numero de letra, o sea 0xE5..0xFE. Con un jugador los digitos
+# ocupan 0xF5..0xFE, que es donde estarian las letras -y por eso los tres
+# rotulos empiezan por `bit 5,(E1C2) / ret z` y NO se pintan-; con dos
+# jugadores los digitos se van a 0xD4..0xDD y entonces caben las dos cosas.
+# =============================================================================
+L 0x4887 HUD_DE_LOS_COCHES  el HUD del coche 1 (E2C0) y, si hay jugador 2 (bit 5 de E1C2), tambien el del 2 (E380)
+C 0x4887 IX e IY apuntan al mismo bloque: las rutinas de abajo usan IX, pero las que llaman por debajo esperan IY
+L 0x48A0 HUD_DE_UN_COCHE    despacha por el estado (ix+5D): 2 -> PIT IN, 6 -> GOAL o RETIRE+EMPTY, cualquier otro -> el numero, mientras (ix-7) no se agote
+C 0x48A0 (ix+5D) es el estado del coche, el mismo que despacha p02 0x8B0C
+C 0x48A3 estado 2 = en boxes
+C 0x48A8 estado 6 = parado
+C 0x48AD (ix-7) es la cuenta atras del rotulo, en fotogramas: a cero no se pinta nada...
+C 0x48B2 ...y se gasta de uno en uno; el `ret z` de detras hace que el ULTIMO fotograma tampoco pinte, asi que el numero se ve mientras (ix-7) valga 2 o mas
+L 0x48B7 HUD_NUMERO_6_DIGITOS  seis digitos desde (ix+0x78) en tres parejas separadas por el tile 0xFF, escritos de derecha a izquierda en las ocho casillas que empiezan en 0x3965 o 0x3975
+C 0x48BD los seis digitos estan en el bloque del coche a partir del desplazamiento 0x78, y el primero es el de MENOS peso
+C 0x48C4 siete casillas mas a la derecha: el numero se escribe hacia atras, empezando por la unidad
+C 0x48C7 de dos en dos digitos
+C 0x48C9 el digito 0 es el tile 0xF5 con un jugador...
+C 0x48D2 ...y el 0xD4 con dos, para dejar libres los tiles de las letras
+C 0x48DA HL va HACIA ATRAS mientras DE avanza: por eso el digito de menos peso acaba a la derecha del todo
+C 0x48DD el tile 0xFF es el separador entre parejas; van dos, asi que el numero sale en tres grupos de dos
+L 0x48D4 HUD_DIGITOS_PAREJA  los dos digitos de una pareja
+L 0x4900 HUD_PIT_IN         el rotulo "PIT IN" (0x4961), solo con dos jugadores
+C 0x4908 sin jugador 2 no hay sitio en los tiles para las letras: no se pinta
+L 0x4909 HUD_ROTULO_6       un rotulo de seis tiles en la casilla que toque
+L 0x490B HUD_ROTULO         pide la casilla y escribe B tiles
+L 0x490E HUD_ROTULO_BUCLE   un tile por vuelta, saltandose los 0x20
+C 0x490F el 0x20 del rotulo no es un espacio: es "no toques esta casilla", y por eso avanza sin escribir
+L 0x491B HUD_CASILLA_DEL_JUGADOR  HL = 0x3965 (fila 11, columna 5) o, con dos jugadores y el bit 0 de (ix+9), 0x3975 (columna 21)
+C 0x4923 con un solo jugador todo el HUD va a la izquierda
+C 0x4924 (ix+9) es el numero de jugador: el 1 pinta en la mitad derecha de la pantalla partida
+L 0x492D HUD_COCHE_PARADO   estado 6: con el bit 1 de (ix+1) el rotulo es "GOAL"; si no, " EMPTY" en la fila de abajo y "RETIRE" encima
+C 0x4933 el bit 1 de (ix+1) separa las dos formas de acabar parado
+C 0x4939 (ix+15) es lo que le queda de rotulo; a cero ya no se repinta
+C 0x4944 0x3985 es la fila 12 columna 5, o sea justo debajo del sitio de siempre...
+C 0x494D ...y 0x3995 la columna 21 de esa misma fila
+C 0x4955 y encima del EMPTY, en la fila 11, el RETIRE
+L 0x495A HUD_GOAL           el rotulo "GOAL" (0x4973), cuatro tiles
 D 0x49C4 0x49C7 inicial_E1F0 los tres bytes 03 01 01 que 0x4986 copia a E1F0-E1F2 (`ld hl,0x49C4 / ld de,0xE1F0 / ld bc,3 / ldir`)
 F 0x49C4 3
 D 0x4FB2 0x4FBE inicial_E9B1 dos filas de 6 bytes que 0x4F91 copia a E9B1 y E9B9 (`ld hl,0x4FB2 / ld de,0xE9B1 / ld c,2`, seis bytes por vuelta y dos de salto)
@@ -727,3 +867,30 @@ C 0x4AAE de A solo sobreviven sus dos bits altos, los que pasan de 256: por eso 
 C 0x4AB0 (iy+9) es el numero de jugador dentro del bloque; el `dec e` es la comparacion y el `ld e` de despues no toca las banderas
 C 0x4ABA el jugador 1 pinta en E400 y el 2 en EC00
 L 0x49F9 APAGA_TODOS_LOS_SPRITES  Y = 0xD0 en el sprite 0: el VDP lo lee como fin de la lista y no pinta ninguno
+
+# =============================================================================
+# LA CORTINILLA, EL APAGADO DE SPRITES Y LOS NUMEROS BCD
+# =============================================================================
+L 0x49C7 CORTINILLA_COLUMNA  borra de la tabla de nombres la columna que dice E1C4, las 24 filas; E1C4 baja de uno en uno y al pasar de 0 la cortinilla se acaba
+C 0x49CA `ret m` en vez de `ret z`: la rutina se llama un fotograma de mas y es el paso a 0xFF -no el 0- el que la corta, asi que la columna 0 llega a borrarse
+C 0x49CF invierte la cuenta: con E1C4 = 31 se borra la columna 0 y con 0 la 31, o sea que la cortinilla va de izquierda a derecha aunque el contador baje
+C 0x49D1 este `add a,0` no hace nada, y no puede ser un hueco para parchear en caliente porque la pagina 0 es ROM; las banderas que deja tampoco las mira nadie, que las machaca el `xor a` de dos instrucciones despues
+C 0x49D4 24 filas
+C 0x49D7 32 casillas de una fila a la de abajo: se baja en vertical por la misma columna
+L 0x49DA CORTINILLA_BUCLE   una fila por vuelta
+L 0x49E0 APAGA_SPRITES_DEL_1  Y = 0xD0 en el sprite 1 si hay jugador 1 y en el 3 si no: deja vivos los del coche o los de la presentacion y apaga el resto
+C 0x49E3 bit 6 de E1C2 = hay jugador 1
+C 0x49EA jugando, los sprites del coche 1 son el 0 y el 1, asi que se corta en el 1... y en la presentacion, dos mas alla
+L 0x49EF APAGA_SPRITES_DEL_0  igual, pero cortando en el sprite 0 (jugando) o en el 2 (presentacion): no queda ninguno
+L 0x49FC APAGA_DESDE_HL     escribe el 0xD0 y devuelve A = 0
+C 0x49FC 0xD0 en el byte Y de un sprite no es una posicion: el VDP lo lee como fin de la lista y deja de pintar ESE y todos los de detras. De un byte se apagan los que hagan falta
+L 0x4A03 NUMERO_BCD_TILE_D4  el numero BCD de (DE) hacia atras, con los digitos en los tiles 0xD4..0xDD
+L 0x4A09 NUMERO_BCD_TILE_10  el mismo, con los digitos en los tiles 0x10..0x19
+L 0x4A0D NUMERO_BCD         B bytes BCD leidos de (DE) hacia atras y escritos en la VRAM desde HL hacia delante, dos digitos por byte y sin los ceros de la izquierda
+C 0x4A0D C es el interruptor de los ceros de delante: a 0 el `and c` convierte el digito en el tile 0 -o sea en blanco- y en cuanto sale un digito que no es cero se queda a 0xFF para el resto del numero
+C 0x4A0F el nibble ALTO primero: el numero se escribe de izquierda a derecha aunque los bytes se lean del reves
+C 0x4A1A si B vale 1 estamos en el ultimo byte, y ahi los ceros SI se escriben: un cero sale "0" y no en blanco
+C 0x4A1F el `dec b` de arriba era solo la comparacion; aqui se deshace
+C 0x4A21 D' es la base: el tile del digito 0. Va en el otro juego de registros para no gastar ninguno de los de aqui
+C 0x4A36 DE baja y HL sube: en la RAM el byte de mas peso esta el ultimo, y en pantalla va el primero
+L 0x4A0F NUMERO_BCD_BUCLE   un byte -dos digitos- por vuelta

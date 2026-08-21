@@ -2229,10 +2229,16 @@ DATA_tabla_recursos_sprites:
 	defb 008h,000h,0c5h,076h,020h,000h	; 75cb
 
 ; ----------------------------------------------------------------------
-; DATOS tiles_coche: 6 parejas de tiles (16 B) que TILES_COCHE (0x4701) copia
-;   a los patrones 0x2670/0x2680 segun (ix-3) = 1..6
+; DATOS tiles_objeto_pista: 6 dibujos de 8x16 pixeles (dos tiles apilados, 16
+;   B) que TILES_OBJETO_PISTA (p00 0x4701) copia a los patrones del tile 206 o
+;   del 208 segun (ix-3) = 1..6. NO son del coche: el coche va en sprites (p00
+;   0x46A8). Van por parejas en ESPEJO EXACTO -1 con 2, 3 con 4 y 5 con 6,
+;   comprobado bit a bit en las 48 filas-, o sea tres objetos con su version
+;   de un lado y del otro; la mitad de abajo es el mastil, recto en los cuatro
+;   primeros y en zigzag en los dos ultimos. Los pinta 0x5ECA, un tile encima
+;   del otro en el buffer de nombres
 ;   0x75d1..0x7631  (96 bytes)
-DATA_tiles_coche:
+DATA_tiles_objeto_pista:
 	defb 0efh,0cfh,081h,000h,080h,0cch,0ech,0fch,0fch,0fch,0fch,0fch,0fch,0fch,0fch,0fch	; 75d1  ................
 	defb 0f7h,0f3h,081h,000h,001h,033h,037h,03fh,03fh,03fh,03fh,03fh,03fh,03fh,03fh,03fh	; 75e1  .....37?????????
 	defb 0ffh,083h,087h,087h,083h,0b1h,0f8h,0fch,0fch,0fch,0fch,0fch,0fch,0fch,0fch,0fch	; 75f1  ................

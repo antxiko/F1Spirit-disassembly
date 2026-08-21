@@ -449,7 +449,7 @@ def recorre():
     for idx, ptr, n in COPIAS_FOTOGRAMAS:
         if n > 64:
             juegos.setdefault(ptr, set()).add("recurso_sprite[%d]" % idx)
-    B.anade(4, 0x75D1, 0x7631, "tiles_coche", 16, "6 parejas de tiles (16 B) que TILES_COCHE (0x4701) copia a los patrones 0x2670/0x2680 segun (ix-3) = 1..6", "p00 0x470D")
+    B.anade(4, 0x75D1, 0x7631, "tiles_objeto_pista", 16, "6 dibujos de 8x16 pixeles (dos tiles apilados, 16 B) que TILES_OBJETO_PISTA (p00 0x4701) copia a los patrones del tile 206 o del 208 segun (ix-3) = 1..6; van por parejas en espejo exacto", "p00 0x470D")
     return juegos
 
 

@@ -306,7 +306,7 @@ D 0x7502 0x7505 sprites_7502 lista del cargador de sprites (0x4F1A): 1 pares (re
 F 0x7502 2
 D 0x7505 0x75d1 tabla_recursos_sprites 34 recursos de sprites de 6 B (clase en EB40, tipo 0 = RLE / 2 = copia / 1 y FF = nada, origen, longitud) para CARGA_RECURSO_SPRITE (0x4F28)
 F 0x7505 6
-D 0x75d1 0x7631 tiles_coche 6 parejas de tiles (16 B) que TILES_COCHE (0x4701) copia a los patrones 0x2670/0x2680 segun (ix-3) = 1..6
+D 0x75d1 0x7631 tiles_objeto_pista 6 dibujos de 8x16 pixeles (dos tiles apilados, 16 B) que TILES_OBJETO_PISTA (p00 0x4701) copia a los patrones del tile 206 o del 208 segun (ix-3) = 1..6. NO son del coche: el coche va en sprites (p00 0x46A8). Van por parejas en ESPEJO EXACTO -1 con 2, 3 con 4 y 5 con 6, comprobado bit a bit en las 48 filas-, o sea tres objetos con su version de un lado y del otro; la mitad de abajo es el mastil, recto en los cuatro primeros y en zigzag en los dos ultimos. Los pinta 0x5ECA, un tile encima del otro en el buffer de nombres
 F 0x75d1 16
 D 0x7631 0x7634 rle_pat_7631 patrones RLE: 2 tiles desde el 208 (lista 0x6211)
 F 0x7631 16
