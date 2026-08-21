@@ -1877,7 +1877,7 @@ CHOQUE_AVANCE_D:		; D = A + 0x20
 	ld (ix+05dh),005h		;8dc8
 	ld (ix+038h),00ah		;8dcc
 	ret			;8dd0
-FRENA_VX_VY:		; vy -= vy/8 (p00 0x4A7E), vx -= vx/8; a cero si el byte alto se anula
+FRENA_VX_VY:		; vy -= vy/64 (p00 0x4A7E son SEIS `sra h / rr l`, no tres), vx -= vx/64; a cero si el byte alto se anula
 	ld h,(ix+00bh)		;8dd1
 	ld l,(ix+00ah)		;8dd4
 	ld d,h			;8dd7
@@ -3356,7 +3356,7 @@ EXCESO_PRODUCTO:		; HL = cuadrado * |volante|
 	ccf			;98c9
 	ret nc			;98ca
 	set 7,(ix+001h)		;98cb
-ARRASTRE:		; B = min(aceleracion, 0x10); vy -= (sin * B * 2 + vy)/8, vx idem con cos; v -= v/8 (p00 0x4A7E); C
+ARRASTRE:		; B = min(aceleracion, 0x10); vy -= (sin * B * 2 + vy)/64, vx idem con cos; v -= v/64 (p00 0x4A7E divide por 64, no por 8); C
 	ld a,(ix+012h)		;98cf
 	cp 080h		;98d2
 	jr c,ARRASTRE_TOPE		;98d4
@@ -3408,7 +3408,7 @@ ARRASTRE_VA:		; el calculo
 	ld e,l			;992f
 	call 04a7eh		;9930
 	ex de,hl			;9933
-	sbc hl,de		;9934
+	sbc hl,de		;9934   ; este `sbc hl,de` es el unico de los tres que NO lleva `or a` delante (los otros dos estan en 0x98FC y 0x991F), asi que se come el acarreo que deja el ultimo `rr l` de p00 0x4A96: a la velocidad se le resta un 1 de mas siempre que el bit que salio por abajo valiera uno
 	ld (ix+010h),l		;9936
 	ld (ix+011h),h		;9939
 	scf			;993c

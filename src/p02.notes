@@ -586,7 +586,7 @@ L 0x8D70 GUARDA_TIEMPO       (ix+4D..4F) = cronometro E210..E212; (ix+16) = x
 L 0x8D88 COCHE_ESTADO_4      choque: bit 6 de (ix-1) = bit 7; fotograma (0x9A01); frena vx/vy (0x8DD1); (ix+38)++ hasta 0xFF; avance por D = 0x80 - (ix+38)/... (0x8D23); posicion; marchas; a los 0x5A fotogramas: p00 0x54DF, avance 0, estado 5, (ix+38) = 10
 L 0x8DA3 CHOQUE_AVANCE       D = min(0x60, 0x60 - A) + 0x20
 L 0x8DAB CHOQUE_AVANCE_D     D = A + 0x20
-L 0x8DD1 FRENA_VX_VY         vy -= vy/8 (p00 0x4A7E), vx -= vx/8; a cero si el byte alto se anula
+L 0x8DD1 FRENA_VX_VY         vy -= vy/64 (p00 0x4A7E son SEIS `sra h / rr l`, no tres), vx -= vx/64; a cero si el byte alto se anula
 L 0x8DE7 FRENA_VX            la parte de vx
 L 0x8E04 FRENA_VX_GUARDA     (ix+7,8) = HL
 L 0x8E0B COCHE_ESTADO_5      (ix+38)-- a cero: estado 7 y combustible -= 0x18 (p01 0x7646)
@@ -747,7 +747,7 @@ D 0x988B 0x9893 tabla_exceso 8 topes de velocidad (byte alto) por desvio 0..7: F
 F 0x988B 8
 L 0x9893 EXCESO_ENTRA        RALLY: v alta < 15: umbral = 0x994E[v alta] * |volante| * 8 + (aceleracion & 0x70) >> 4; si pasa de 0x993E[terreno] -> bit 7 (derrape por exceso) y 0x98CF
 L 0x98AE EXCESO_PRODUCTO     HL = cuadrado * |volante|
-L 0x98CF ARRASTRE            B = min(aceleracion, 0x10); vy -= (sin * B * 2 + vy)/8, vx idem con cos; v -= v/8 (p00 0x4A7E); C
+L 0x98CF ARRASTRE            B = min(aceleracion, 0x10); vy -= (sin * B * 2 + vy)/64, vx idem con cos; v -= v/64 (p00 0x4A7E divide por 64, no por 8); C
 L 0x98D8 ARRASTRE_TOPE       B = min(A, 0x10)
 L 0x98DE ARRASTRE_VA         el calculo
 D 0x993E 0x994E tabla_exceso_terreno 16 umbrales por terreno (0x37, salvo 0x50 en el 10)
@@ -917,3 +917,4 @@ F 0x9F53 w1
 
 # --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
 # --- fin de la seccion pendiente ---
+C 0x9934 este `sbc hl,de` es el unico de los tres que NO lleva `or a` delante (los otros dos estan en 0x98FC y 0x991F), asi que se come el acarreo que deja el ultimo `rr l` de p00 0x4A96: a la velocidad se le resta un 1 de mas siempre que el bit que salio por abajo valiera uno

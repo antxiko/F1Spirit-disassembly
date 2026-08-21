@@ -894,3 +894,156 @@ C 0x4A1F el `dec b` de arriba era solo la comparacion; aqui se deshace
 C 0x4A21 D' es la base: el tile del digito 0. Va en el otro juego de registros para no gastar ninguno de los de aqui
 C 0x4A36 DE baja y HL sube: en la RAM el byte de mas peso esta el ultimo, y en pantalla va el primero
 L 0x4A0F NUMERO_BCD_BUCLE   un byte -dos digitos- por vuelta
+
+# =============================================================================
+# LA CAJA DE HERRAMIENTAS: INDICES, DIVISIONES, BCD Y RECTANGULOS (0x4A3B-0x4B8E)
+# =============================================================================
+B 0x4A3B Un cajon de rutinas cortas que llaman sobre todo las OTRAS paginas:
+B 0x4A3B indexar tablas de palabras, dividir con y sin signo, pasar a BCD,
+B 0x4A3B buscar en el buffer de nombres y mover rectangulos. Detras, en
+B 0x4A3B 0x4BB2, empieza el cargador de tiles.
+B 0x4A3B
+B 0x4A3B OCHO PUERTAS SIN LLAMADOR, medido byte a byte sobre la ROM: los dos
+B 0x4A3B bytes de 0x4A55, 0x4A76, 0x4A97, 0x4B48, 0x4BA3, 0x4C8C, 0x4C9A y
+B 0x4A3B 0x4CAF no aparecen NI UNA VEZ en los 128 KB del cartucho -ni como
+B 0x4A3B operando de un call ni dentro de una tabla de saltos-, y a ninguna
+B 0x4A3B se llega cayendo desde la instruccion de antes: todas van detras de
+B 0x4A3B un `ret`, un `jr` o un `jp`. Con 0x4B48 se cae ademas todo lo que
+B 0x4A3B cuelga de el (0x4B4B y COPIA_B_BYTES_ALTERNO en 0x4B5E, cuyo unico
+B 0x4A3B llamador es el `call` de 0x4B4D): el copiador de rectangulos entero
+B 0x4A3B es codigo muerto.
+C 0x4A3B A es el indice y DE la tabla; HL se usa de cuenta y sale machacado
+C 0x4A3E el indice por dos, que las entradas son palabras
+C 0x4A40 la palabra apuntada sale en DE, o sea encima de la tabla que entro. La llaman ocho sitios de p01 y p02
+C 0x4A44 la misma cuenta que 0x4A3B pero con la tabla en HL y sin tocar DE: por eso el indice se suma a mano al byte bajo
+C 0x4A47 y el acarreo se lleva a H, que la tabla puede cruzar un limite de 256
+C 0x4A4A el byte bajo se aparca en A: el `ld h,(hl)` de dos lineas mas abajo machaca H antes de que L este puesto
+L 0x4A4F COMPARA_HL_DE      Z si HL = DE, comparando byte a byte
+C 0x4A4F primero los altos: si no coinciden sale ya, y con Z apagado
+C 0x4A52 y si coincidian, deciden los bajos. Lo unico que vale a la vuelta es Z: el acarreo es el de una resta de UN byte, no el de HL - DE
+L 0x4A55 HL_ENTRE_256       HL / 256 sin signo: los tres corrimientos de aqui mas los cinco de 0x4A61. SIN LLAMADOR
+C 0x4A55 `srl h` mete un cero por arriba: division sin signo. Al acabar, L es la H de antes y H vale 0
+L 0x4A61 HL_ENTRE_32        HL / 32 sin signo: los cinco corrimientos que quedan hasta el `ret`
+C 0x4A61 la usa p01 0x7AF8, el marcador de velocidad
+L 0x4A76 HL_ENTRE_256_CON_SIGNO  la escalera con signo: ocho parejas `sra h / rr l` seguidas y un `ret`, y cada entrada divide por dos tantas veces como parejas le queden por delante. SIN LLAMADOR
+C 0x4A76 `sra h` repite el bit 7 en vez de meter un cero, asi que un valor negativo sigue siendolo. Ojo: redondea siempre hacia abajo, no hacia cero (-1 / 8 da -1)
+L 0x4A7E HL_ENTRE_64_CON_SIGNO  seis parejas de aqui al `ret`
+C 0x4A7E DIVIDE POR 64, no por 8: de 0x4A7E a 0x4A96 hay seis `sra h` (los bytes son CB 2C CB 1D repetidos). Las fichas de p02 0x8DD1 y 0x98CF decian "/8" y estaba mal
+L 0x4A86 HL_ENTRE_16_CON_SIGNO  cuatro parejas
+L 0x4A8A HL_ENTRE_8_CON_SIGNO   tres parejas; es la mas llamada de las cuatro (p02 0x8717, p02 0x9B12, p03 0xB52E)
+L 0x4A97 CASILLA_BUFFER_NOMBRES_IX  la casilla del objeto IX: D = (ix+6) y E = (ix+4), y cae en 0x4A9D. SIN LLAMADOR
+C 0x4A97 el mismo reparto que hace a mano p02 0x8E98: (ix+4) va a E -el eje de la camara, o sea la FILA- y (ix+6) a D, la columna
+C 0x4AA0 el eje que entra por E es el que las fichas de p01, p02 y p03 llaman "x" ((ix+3,4)); pese al nombre es el VERTICAL, y esta medido: es el byte que p01 0x703A escribe en la Y del atributo de sprite, y p03 0xA21C mete por el a los rivales lentos en 0 -arriba, por delante- y a los rapidos en 0xB7 -abajo, por detras-
+L 0x4ABD SALTA_A_PALABRA_A  despachador con la tabla pegada detras del `call`: salta a la palabra A de las que siguen a la llamada, y ya no vuelve aqui
+C 0x4ABD `ex (sp),hl` cambia HL por la direccion de vuelta, que es justo el principio de la tabla
+C 0x4ABF el indice por dos, que son palabras
+C 0x4AC7 el destino a HL...
+C 0x4AC9 ...y de vuelta a la pila: el `ret` de debajo es el salto, y HL y DE salen como entraron. La usa p03 0xA065, el despachador que en su dia se trazaba como codigo
+L 0x4ACB SALTA_A_PALABRA_A_ALTERNO  lo mismo con los registros alternos: no toca HL, DE ni BC, y ademas le cambia el AF al destino
+C 0x4ACB exx antes de tocar nada: la cuenta se hace con HL' y DE'
+C 0x4ACC la direccion de vuelta es el principio de la tabla
+C 0x4AD5 el destino se empuja como nueva direccion de vuelta, y el `ret` de abajo lo consume
+C 0x4AD7 el `ex af,af'` es parte del acuerdo: al destino le llega el A del otro juego. La llama p01 0x7C46
+L 0x4AD9 FILA_TABLA_EB00_IX  como 0x4ADC, con el desplazamiento sacado de (ix+4)
+L 0x4ADC FILA_TABLA_EB00    HL = EB00 + fila*2 (jugador 1) o EB80 + fila*2 (el 2): una palabra por cada una de las 32 filas del buffer circular
+C 0x4ADC la misma fila que calcula 0x4A9D -camara (iy+40) mas el desplazamiento E, entre ocho- pero aqui en palabras y sin columna
+C 0x4AE2 dos rotaciones y `and 0x3E`: eso es (fila mod 32) * 2
+C 0x4AE4 el bit 0 del numero de jugador reparte las dos tablas, igual que 0x4AB0 reparte los dos buffers
+L 0x4AF0 FILA_TABLA_EB00_IY  igual, pero el jugador sale de (iy+9) en vez de (ix+9)
+L 0x4B04 NIEGA_HL           HL = -HL, que el Z80 no tiene `neg` de 16 bits
+C 0x4B04 complementa los dos bytes...
+C 0x4B0A ...y suma uno: complemento a dos. Los tres llamadores estan en p03 (0xACA9, 0xAD74, 0xB25A) y los tres entran con `call c,`
+L 0x4B0C BUSCA_TILE_EN_VENTANA  acarreo si en la ventana de B columnas por C filas que empieza en HL hay algun tile entre D y D+E-1
+C 0x4B0C se guarda el principio de la fila para poder volver a el
+L 0x4B0E BUSCA_TILE_FILA    una casilla por vuelta
+C 0x4B0E el `sub d` y el `cp e` juntos preguntan "esta el tile en [D, D+E)" con una sola resta y sin ramas
+C 0x4B16 fila recorrida sin encontrarlo: a la de abajo, 32 casillas mas alla y sin salirse del kilobyte del buffer (el bit 2 de H)
+C 0x4B23 recorrida la ventana entera: el `or a` apaga el acarreo, que es la respuesta "no hay"
+L 0x4B25 BUSCA_TILE_ENCONTRADO  sale con el acarreo puesto
+C 0x4B25 el `pop hl` devuelve HL al principio de la FILA, asi que la casilla exacta se pierde: lo unico que se contesta es si hay o no hay. Al unico llamador, p02 0x8E98, le basta: mira 5 x 2 casillas bajo el coche para saber si esta en la calle de boxes
+L 0x4B28 HL_A_BCD           HL binario -> seis digitos BCD en C:D:E (E las unidades), doblando y ajustando
+C 0x4B28 B es el peldano entre HL y el BCD: los bits salen de HL por arriba, entran en B por abajo, y de B pasan a E
+C 0x4B2B 24 vueltas y no 16: los 16 bits de HL mas las 8 que tardan en cruzar B
+C 0x4B2E el resultado arranca a cero, los seis digitos
+L 0x4B32 HL_A_BCD_BUCLE     un bit por vuelta
+C 0x4B32 doblar el numero y meterle por abajo el bit que sale por arriba
+C 0x4B38 el `daa` detras del `adc a,a` es lo que hace que el doble sea en BCD: sin el saldria el mismo numero en hexadecimal
+C 0x4B42 la cuenta va en B' porque B esta ocupado haciendo de peldano
+L 0x4B48 COPIA_RECTANGULO_BUFFER  C filas de B bytes de (HL') a la casilla que da 0x4A9D. SIN LLAMADOR, y con el se caen 0x4B4B y COPIA_B_BYTES_ALTERNO
+L 0x4B4B COPIA_RECTANGULO_FILA  una fila por vuelta
+C 0x4B52 32 casillas mas abajo, con la vuelta dentro del kilobyte
+C 0x4B55 el truco de la vuelta: borrar el bit 2 de H es restar 0x400 y volver a ponerlo es sumarlo, asi que si el `add` se sale del kilobyte el acarreo cae justo en ese bit y se lo traga. E7E0 -> E3E0 -> E400: de la fila 31 a la 0
+L 0x4B67 RELLENA_RECTANGULO_BUFFER  el mismo rectangulo pero de un solo byte, el A que traiga quien llama
+C 0x4B67 el byte a escribir se aparta en A' porque 0x4A9D usa A para su cuenta; a la vuelta se recupera, y el `ex af,af'` de 0x4B6C lo vuelve a apartar
+L 0x4B6C RELLENA_RECTANGULO  con la casilla ya en HL y el byte en A. La llaman p01 0x69DB (22 x 15 de tile 0) y p02 0x8258 y 0x8378
+L 0x4B6D RELLENA_RECTANGULO_FILA  una fila por vuelta
+C 0x4B74 la misma bajada de fila con vuelta que 0x4B52
+L 0x4B80 RELLENA_B_BYTES    B veces el byte que espera en A'
+C 0x4B88 el destino va un byte por delante del origen: se siembra el primero a mano y el `ldir` lo arrastra, asi que se llenan BC+1 bytes
+L 0x4B8F PINTA_ROTULO       el rotulo comprimido (DE), expandido en EC02 y pintado donde diga su propio codigo de posicion
+C 0x4B8F 0x690A es de la pagina 1 -la que llama siempre-: expande el texto en EC02 y lo cierra con 0xFF
+C 0x4B96 y 0x483D lo recorre desde el codigo de posicion, poniendo de tile la letra menos 0x20
+L 0x4B99 BORRA_ROTULO       el mismo recorrido con el tile 0: borra lo que pinto 0x4B8F, y en el mismo sitio
+C 0x4B99 hay que volver a expandirlo porque el sitio lo manda el propio texto: el codigo de posicion va dentro
+C 0x4BA0 la unica diferencia con 0x4B8F es a donde salta: 0x4839 escribe el tile 0 en vez de la letra
+L 0x4BA3 CARGA_TILES_CIRCUITO_MITAD  la carrera (E25C) por la SEGUNDA mitad de la tabla p04 0x61A9. SIN LLAMADOR
+C 0x4BA9 0x61D3 es la entrada 21 de esa tabla: los 21 punteros que apuntan a la MITAD de las listas largas, para recargar solo lo que falta
+C 0x4BB2 los colores viven en la VRAM desde 0x0000 y los patrones desde 0x2000
+C 0x4BB5 0x698 bytes son 211 tiles de 8 filas: del 0 al 210, o sea todo lo que no es el panel
+C 0x4BB9 en el modo 2 cada tercio de pantalla tiene su propia tabla, 0x800 mas alla; borrar un tile es borrarlo tres veces
+
+# =============================================================================
+# EL CARGADOR DE TILES POR DELANTE: QUE LISTA Y EN QUE MODO (0x4BCE-0x4D18)
+# =============================================================================
+B 0x4BCE El cargador de verdad es 0x4CCD, y lo unico que hace es recorrer una
+B 0x4BCE lista de la pagina 4. Todo lo de aqui arriba es elegir QUE lista
+B 0x4BCE -la comun, la de la carrera (E25C), la del panel, la de la
+B 0x4BCE categoria (E25B)- y en QUE MODO, que es la variable E1D4:
+B 0x4BCE   0          el tile entero, patrones y colores
+B 0x4BCE   0x80 + f   solo la fila f de los patrones de cada tile
+B 0x4BCE   0xC0 + f   solo la fila f de los colores
+B 0x4BCE Cargando fila a fila con una espera en medio, el dibujo aparece de
+B 0x4BCE arriba abajo en vez de salir de golpe: eso es el efecto de entrada
+B 0x4BCE del panel.
+C 0x4BCE la lista comun primero: los cuatro tiles (206-209) que llevan todas las carreras
+C 0x4BD4 hay que volver a mapear 4/5/6 porque 0x4CCD deja puestas 1/2/3 al salir
+C 0x4BD7 E25C es la carrera, y la tabla p04 0x61A9 da su lista de tiles
+C 0x4BE0 `jp` y no `call`: la vuelta de 0x4CCD es ya la vuelta de aqui
+C 0x4BE3 la version de dos pasos: los tiles de la carrera ya estan, y de la lista larga se vuelven a pasar solo los COLORES, en dos mitades
+C 0x4BEC la lista comun si va entera, tiles y colores
+C 0x4BFE se guarda el puntero de la lista: hay que recorrerla dos veces, una por cada mitad
+C 0x4BFF DE es la espera entre filas; con 1 no hay efecto, se carga de golpe
+C 0x4C05 entre las dos mitades se cuelan p01 0x6EF8 y el volcado de sprites: eso es lo que justifica partir la carga en dos y no hacerla de una
+C 0x4C0F y la segunda mitad cierra la rutina
+C 0x4C15 bit 5 de E1C2: dos jugadores. Su panel es otro dibujo y cabe en una sola lista
+C 0x4C19 el panel de un jugador va en dos listas seguidas...
+C 0x4C25 ...mas una tercera, la parte que cambia con la categoria (E25B). Aqui el indice NO se recorta, y en la gemela de 0x4C70 si: si E25B pasara de 5, esto leeria una palabra fuera de la tabla de 0x4C37
+C 0x4C2E la tercera lista cierra
+C 0x4C43 0x698 es el primer byte de colores del tile 211: antes de pintar el panel se le borran los colores
+C 0x4C46 0x148 son 41 tiles de 8 filas: del 211 al 251
+C 0x4C4D y los cuatro ultimos (252-255) solo en el tercio de abajo, que es donde se ven: 0x17E0 = 0x1000 del tercio mas 252 * 8
+C 0x4C57 el mismo reparto de uno o dos jugadores que 0x4C12
+C 0x4C61 DE = 1: la espera es la minima, pero el recorrido sigue siendo fila a fila, y eso es lo que hace que el panel aparezca de arriba abajo
+C 0x4C76 aqui la categoria SI se recorta: de 5 en adelante se usa la ultima entrada de la tabla de 0x4C37
+C 0x4C84 el panel de dos jugadores, tambien por filas
+L 0x4C8C CARGA_LISTA_UNA_FILA  una sola vuelta: la fila de patron que diga A. SIN LLAMADOR
+C 0x4C8C `set 7,a` es el modo "solo una fila"; B = 1 (una vuelta) y C = 0 (no hay siguiente)
+C 0x4C93 E1D4 = 0x80 + fila: el bit 7 dice "de cada tile, solo una fila" y los tres de abajo dicen cual
+C 0x4C95 ocho vueltas y paso 1: las filas van de arriba abajo
+L 0x4C9A CARGA_LISTA_POR_FILAS_AL_REVES  las ocho filas de abajo arriba (empieza en 0x87 y el paso es 0xFF). SIN LLAMADOR
+C 0x4CA1 el bit 6 de E1D4 es el otro modo, "solo los colores": lo mira 0x4D32 para saltarse la parte de patrones
+C 0x4CA8 las cuatro de abajo, que es la mitad que carga 0x4C0F
+L 0x4CAF CARGA_COLORES_POR_FILAS  las ocho filas de colores de una tacada (0xC0 y paso 1). SIN LLAMADOR
+C 0x4CB6 el modo viaja por una variable y no por un registro porque entre medias se llama a media pagina 4
+C 0x4CB9 A += C: con C = 1 las filas bajan, con 0xFF suben y con 0 se repite la misma
+C 0x4CBA se guarda todo, que el cargador de tiles no respeta ningun registro
+C 0x4CBE un bucle vacio de DE vueltas: con DE = 1 la carga es de golpe, y cuanto mas grande sea DE mas despacio va apareciendo el dibujo
+C 0x4CCD el modo 0 es el normal: el tile entero, patrones y colores
+C 0x4CD1 IX es el puntero que recorre la lista
+C 0x4CDA el tile 0 acaba siempre en blanco, deje lo que deje la lista: es el que 0x465B usa para borrar la pantalla
+C 0x4CDD y se sale dejando 1/2/3 en el mapper, que es lo que espera quien llamo
+C 0x4CE0 un 0x00 cierra la lista
+C 0x4CEB un 0x1x en el byte de flags no es un registro: es una orden para el propio cargador (0x4E2D)
+C 0x4CF5 los bits 5, 6 y 7 dicen a que tercios va el registro -el 7 el de arriba, el 6 el de en medio y el 5 el de abajo-, y cada tercio se carga por separado
+C 0x4D13 seis bytes por registro: flags, tile, puntero a los patrones y puntero a los colores
+C 0x4A94 la escalera sale con el acarreo puesto a lo ultimo que salio por abajo, y hay quien se lo come sin querer: el `sbc hl,de` de p02 0x9934 no lleva `or a` delante y le resta un 1 de mas a la velocidad
