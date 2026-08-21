@@ -1,6 +1,13 @@
 # Anotaciones de F-1 Spirit (Konami, 1987, RC-752): pagina 3 de 16, que el
 # mapper pone en 0xA000-0xBFFF (es la tercera del grupo 1/2/3 con el que
-# arranca el juego). Lo unico trazado: el estado 0 del juego llama aqui.
+# arranca el juego). Trazada entera; comentada desde 0xA000 (2026-08-21).
+#
+# QUE HAY EN ESTA PAGINA: la pantalla del titulo y sus datos (0xBE14 en
+# adelante), las tablas de la eleccion de coche, y sobre todo LOS RIVALES Y
+# LOS OBJETOS DE PISTA, que es lo que ocupa 0xA000-0xB9xx y lo que se
+# comenta aqui. La pagina 2 lleva el coche del jugador y su fisica; esta
+# lleva los cinco huecos de rivales de cada jugador y todo lo que decide
+# cuando entra uno, con que velocidad y donde.
 #
 # Directivas: L, C, B, D, F como en el resto. Sin acentos a proposito.
 
@@ -100,21 +107,23 @@ D 0xbdc3 0xbdd5 ficha_textos_bdc3 9 punteros a texto de ficha, 6 en uso: el paso
 F 0xbdc3 w1
 # --- fin de los bloques de coches.py ---
 
-D 0xa94f 0xa955 tabla_curvas_A94F 3 punteros a las listas de abajo; los lee 0xA948, que devuelve en DE la palabra (ix+1B,1C) del coche
+D 0xa94f 0xa955 tabla_curvas_A94F 3 punteros a las listas de abajo, indexados por ((ix+32) & 3) - 1. Los lee 0xA8D9 (`ld hl,0xA94F / call HL_PALABRA_A`), NO 0xA948 como se publico: 0xA948 son tres instrucciones que devuelven (ix+1B,1C) en DE y lo unico que tienen que ver con la tabla es que estan justo delante
 F 0xa94f w1
-D 0xa955 0xa991 curvas_A955 3 listas de 10 palabras con signo, decrecientes y estabilizadas al final: -412..-435, -1032..-1088 y -2064..-2048 (esta ultima salta a -2048 en la octava). Por su forma son tablas de fisica de la carrera; que magnitud, por identificar
+D 0xa955 0xa991 curvas_A955 3 listas de 10 palabras con signo, decrecientes y estabilizadas al final: -412..-435, -1032..-1088 y -2064..-2048 (esta ultima salta a -2048 en la octava). YA IDENTIFICADAS (2026-08-21): lo que se le RESTA a la velocidad base de un rival (ix+1B,1C) para dar su velocidad objetivo (ix+19,1A) en 0xA8ED-0xA8FE. La lista la escoge ((ix+32) & 3) - 1, o sea los dos bits bajos del byte de pista que 0xBA9F leyo por delante del coche, y dentro de la lista la palabra es la del tipo de rival ((ix+0) & 0x0F) - 1. Son las tres frenadas de curva, de la mas suave a la mas dura
 F 0xa955 w1
 
 
 # --- Cerrado el 2026-08-20 buscando la instruccion que lee cada bloque.
-D 0xA068 0xA086 tabla_A065 15 palabras del despachador de 0xA065 (`call 0x4ABD`, la variante que cambia la direccion de retorno por la palabra A de la tabla que sigue al call); el indice es (ix+0) & 0x0F menos 1, acotado con `dec a / cp 0x0F / ret nc`. Estaba trazada como codigo por error hasta hoy
+D 0xA068 0xA086 tabla_A065 15 palabras del despachador de 0xA065 (`call 0x4ABD`, la variante que cambia la direccion de retorno por la palabra A de la tabla que sigue al call); el indice es (ix+0) & 0x0F menos 1, acotado con `dec a / cp 0x0F / ret nc`. Estaba trazada como codigo por error hasta el 2026-08-20. Las QUINCE palabras, leidas de la ROM: B986 B9B3 B9D8 BA02 BA2C BA53 BA96 B977 B977 B96F A086 A086 A086 A086 B598, o sea que los tipos 11, 12, 13 y 14 apuntan al `ret` suelto de 0xA086 y no hacen nada, y los tipos 7 y 8 comparten rutina. El tipo 0 ni llega: el `dec a` lo deja en 0xFF y el `ret nc` se lo come
 F 0xA068 w1
-D 0xA0BE 0xA0C3 tabla_A0BE cinco bytes (00 01 02 03 00) que 0xA092 mete en (ix+37) de las cinco estructuras de 0x38 bytes desde E800; el indice es 5-B (`ld a,5 / sub b / ld hl,0xA0BE / call HL_MAS_A / ld a,(hl)`)
+D 0xA0BE 0xA0C3 tabla_A0BE cinco bytes (00 01 02 03 00) que 0xA092 mete en (ix+37) de las cinco estructuras de 0x38 bytes desde E800; el indice es 5-B (`ld a,5 / sub b / ld hl,0xA0BE / call HL_MAS_A / ld a,(hl)`). (ix+37) es el TURNO del hueco: 0xA8A7 hace `ld a,(E1C3) / add a,(ix+37) / and 7 / ret nz`, o sea que cada hueco solo repasa su curva y su aceleracion uno de cada ocho fotogramas. Los cinco del jugador 1 usan los turnos 0, 1, 2, 3 y otra vez 0
 F 0xA0BE 5
-D 0xA0C3 0xA0C8 tabla_A0C3 los mismos cinco bytes (04 05 06 07 01) para las estructuras desde E928; los lee igual 0xA0AC
+D 0xA0C3 0xA0C8 tabla_A0C3 los mismos cinco bytes (04 05 06 07 01) para las estructuras desde E928; los lee igual 0xA0AC. Los turnos del jugador 2 son 4, 5, 6, 7 y otra vez 1: entre los diez huecos se reparten los ocho fotogramas del ciclo, y solo el turno 0 y el 1 llevan dos huecos
 F 0xA0C3 5
-D 0xA3A4 0xA3AB relleno_A3A4 siete bytes a cero entre dos rutinas; ningun lector (comprobado byte a byte)
-F 0xA3A4 7
+D 0xA3A4 0xA3AA velocidad_minima_categoria seis bytes, uno por categoria (E25B): la velocidad minima (byte alto de (iy+11)) que tiene que llevar el coche para que entre un rival. La lee 0xA17C (`ld a,(E25B) / ld hl,0xA3A4 / call HL_MAS_A / ld h,(hl) / ld a,(iy+11) / cp h`), y tambien p02 0x9DB2 al llamar a 0xA17C. En esta ROM los seis valen CERO, o sea que el filtro nunca corta. CORRIGE lo publicado el 2026-08-20, que los daba por relleno sin lector
+F 0xA3A4 6
+D 0xA3AA 0xA3AB relleno_A3AA el septimo byte, a cero: 0xA17C solo llega hasta el sexto (E25B va de 0 a 5) y ningun otro lo lee
+F 0xA3AA 1
 D 0xA65E 0xA673 tabla_A65E un byte por carrera (21, indice (E25C)); lo suma 0xA650 (`ld hl,0xA65E / call HL_MAS_A / ex af,af' / add a,(hl)`)
 F 0xA65E 21
 D 0xA7B9 0xA7E3 salida_por_carrera 21 palabras, una por carrera (E25C): la posicion de salida (E = byte bajo -> (ix+4), D = byte alto -> (ix+6)). La lee 0xA691 (`ld hl,0xA7B9 / call HL_PALABRA_A / ex de,hl`)
@@ -133,7 +142,7 @@ D 0xA99D 0xA9FD listas_A991 seis listas de 16 bytes (una por categoria); 0xA940 
 F 0xA99D 16
 D 0xA9FD 0xAA09 tabla_A9FD 6 punteros, uno por categoria (E25B), a las seis tablas de abajo; los lee 0xA0F7 (`ld hl,0xA9FD / call HL_PALABRA_A`)
 F 0xA9FD w1
-D 0xAA09 0xAAF9 tablas_A9FD seis tablas de 20 palabras (una por categoria). 0xA0FD indexa con (((ix+0) & 0x0F) - 1)*2 + (iy+56), por dos, y devuelve la palabra en DE, que 0xA0EA guarda en (ix+1B,1C)
+D 0xAA09 0xAAF9 tablas_A9FD seis tablas de 20 palabras (una por categoria): la VELOCIDAD BASE de cada tipo de rival, dos variantes por tipo. 0xA0FD indexa con (((ix+0) & 0x0F) - 1)*2 + (iy+56), por dos, y devuelve la palabra en DE, que 0xA0EA guarda en (ix+1B,1C). Que es una velocidad se ve en 0xA5A5 (0xA592 la copia a (ix+19,1A), la velocidad objetivo) y en 0xA02A (de ahi a (ix+10,11), la velocidad actual). 20 palabras = los 10 tipos de rival que p02 0x9D2A trata como coches, por las dos variantes que escoge (iy+56)
 F 0xAA09 w1
 D 0xAC22 0xAC32 tabla_AC22 16 bytes (00 03 04 05 06 07 01 02 08 09 0A 0B 0C 0D 0E 0F) que 0xAC16 usa como permutacion del nibble bajo de (iy+0) (`ld de,0xAC22 / add hl,de / or (hl)`)
 F 0xAC22 16
@@ -172,3 +181,299 @@ L 0xB996 PON_IX02_A_1  `ld (ix+02),1 / ret`
 # --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
 D 0xbde7 0xbe14 pendiente_de_trazar Sin trazar ni identificar todavia (45 bytes)
 # --- fin de la seccion pendiente ---
+
+# =============================================================================
+# LOS RIVALES Y LOS OBJETOS DE PISTA (0xA000-0xA3A3), comentado el 2026-08-21.
+#
+# Cada jugador tiene CINCO huecos de 0x38 bytes: los del jugador 1 en E800 y
+# los del 2 en E928. p00 0x59B4 los borra (BC = 0x117 = 5 x 0x38 - 1, dos
+# veces) y llama a 0xA089 para repartirles el turno. El paso de todos ellos lo
+# da p02 0x9D06 y, justo detras, p00 0x5C4B llama a 0xA110, que es la cabecera
+# de este tramo: saca rivales nuevos y, con dos jugadores, copia los de uno en
+# la lista del otro para que se vean en las dos pantallas.
+#
+# EL BLOQUE DE UN OBJETO, en lo que toca aqui (el resto esta en p02.notes):
+#   +00 tipo: bits 0-3 el numero de tipo (1..15, despachador 0xA065), bit 4
+#       hueco reservado con cuenta atras en +1D/+1E, bit 5 esperando a entrar
+#       (+20), bit 7 el rival es MAS RAPIDO que el coche del jugador
+#   +04 x (byte alto); p02 0x9E31 lo retira en cuanto llega a 0xB8
+#   +09 de que jugador es (1 o 2), copiado de (iy+09)
+#   +0F color, que 0xA05D saca de p02 0x9FBF por el tipo
+#   +10/+11 velocidad actual; +12 aceleracion (la calcula 0xA915)
+#   +17 el byte de pista con el que entro: (iy-0D) o (iy-0C)
+#   +19/+1A velocidad OBJETIVO; +1B/+1C velocidad base de su tipo
+#   +1D/+1E cuenta atras del hueco reservado (bit 4), que descuenta 0xA257
+#   +20 fotogramas que espera antes de entrar (bit 5), que descuenta p02 0x9DB2
+#   +23 vale 1 si es la COPIA espejo del objeto del otro jugador
+#   +24/+25 puntero a su pareja en la lista del otro jugador
+#   +32 el byte de pista guardado, con el que 0xA8C6 lo frena en curva
+#   +36 el tercer byte de la entrada de rival de p15 0xB9C3
+#   +37 en que fotograma de cada ocho le toca trabajar (0xA8A7)
+#
+# LAS CUENTAS: E91C cuantos objetos hay en total, E91D los del jugador 1 y
+# E91E los del 2. 0xA54F las sube al dar de alta y 0xA276/0xA284 las bajan.
+#
+# LA SEPARACION ENTRE LOS DOS COCHES: E918 (byte bajo), E919 y E91A la
+# escriben SOLO 0xA46D y 0xA491, a los que solo llega 0xA44E, y a 0xA44E solo
+# se llega desde 0xA11B y 0xA76B, las dos con dos jugadores. Con un jugador
+# los cuatro bytes (E918-E91B) se quedan a cero y todo lo que los mira sigue
+# de largo. E91B dice cual de los dos coches va delante (1 o 2).
+# =============================================================================
+
+B 0xA000 Cola de p02 0x9FF7, que cruza la frontera de pagina (los seis ultimos
+B 0xA000 bytes de la pagina 2 caen aqui). Entra con IX en un hueco libre, IY
+B 0xA000 en el coche que manda y B = el tipo. Escoge la velocidad objetivo con
+B 0xA000 el byte de pista que le toca -bit 7 del tipo puesto: (iy-0C); sin el:
+B 0xA000 (iy-0D)- y la EXIGE contra la del jugador: con bit 7 el rival tiene
+B 0xA000 que salir mas rapido, sin bit 7 mas lento. Si no cuadra, p02 0x9FE3
+B 0xA000 suelta el hueco y devuelve CY.
+L 0xA000 OBJETO_ARRANCA     cola de p02 0x9FF7: tipo, velocidad objetivo y el examen contra la del jugador
+C 0xA000 el tipo, que p02 0x9FF7 dejo en B con push af / pop bc
+C 0xA003 B hace falta luego, y 0xA8C6 -donde acaba 0xA592- lo pisa con `ld b,a`
+C 0xA004 bit 7 del tipo: este rival tiene que ir mas rapido que el jugador
+C 0xA006 (iy-0D): el byte de pista de la primera sonda de 0xBA9F (0xBAD9)
+C 0xA00B (iy-0C): el de la segunda sonda (0xBB09)
+C 0xA00E de este byte sale la velocidad objetivo
+C 0xA011 0xA592 deja en (ix+19,1A) la velocidad objetivo del rival
+C 0xA014 p02 0x9FE9 compara la del jugador (iy+10,11) con ella: CY = el jugador es mas lento
+C 0xA018 el jugador NO es mas lento: el rival no sirve, se suelta el hueco
+C 0xA01B sirve: a colocarlo
+C 0xA01D sin bit 7 la velocidad sale del byte de la primera sonda
+C 0xA027 el jugador es mas lento: tampoco sirve, se suelta el hueco
+C 0xA02A la velocidad objetivo...
+C 0xA030 ...pasa a ser tambien la de partida
+L 0xA036 OBJETO_ENTRA_EN_PISTA  dueno, x de entrada y los fotogramas que espera antes de aparecer
+C 0xA036 dueno, x de entrada y bit 2 de (ix+30), todo segun el bit 7 del tipo
+C 0xA039 E244 = 1 es "se ha pedido la repeticion" (p02 0x91F7)
+C 0xA03D en repeticion el objeto entra al fotograma siguiente
+C 0xA041 en carrera normal espera 0x19 = 25 fotogramas
+C 0xA043 (ix+20): lo que p02 0x9DB2 va descontando mientras el bit 5 este puesto
+B 0xA046 Da de alta el objeto: velocidad base, contadores, color y la rutina
+B 0xA046 de su tipo. OJO, tiene DOS entradas: por 0xA046 se llega desde arriba
+B 0xA046 y por 0xA049 entra p02 0x9FCC (el jr $+104 de 0x9FE1 -bytes 18 66-),
+B 0xA046 que se salta el 0xA0EA: lo que crea 0x9FCC no lleva velocidad y se
+B 0xA046 queda con la que le dejo 0xA3AB, cero (la explosion del coche, tipo
+B 0xA046 0x0F desde p02 0x8CA2, es uno de esos).
+L 0xA046 OBJETO_ALTA        velocidad base, cuentas, color y la rutina del tipo
+C 0xA046 (ix+1B,1C) = velocidad base del tipo en esta categoria
+C 0xA049 aqui entra p02 0x9FCC (jr $+104 en 0x9FE1); 0xA54F sube E91C y el contador del jugador
+C 0xA04C bit 5 de E1C2 = dos jugadores
+C 0xA053 con un solo jugador, bit 7 de (ix+31) en todos los objetos
+C 0xA057 el tipo, ya sin los bits de estado
+C 0xA05D p02 0x9FBF: (ix+0F) = el color que E1F3 + tipo le da a ese tipo
+C 0xA061 la tabla empieza en el tipo 1, asi que el indice es tipo - 1
+C 0xA064 el tipo 0 (0xFF tras el dec) y cualquiera por encima de 15 se van sin rutina
+C 0xA065 p00 0x4ABD: salta a la palabra A de la tabla que sigue al call
+C 0xA086 aqui apuntan las entradas 10 a 13 de la tabla: los tipos 11, 12, 13 y 14 no hacen nada
+C 0xA087 cuelgue (18 FE) detras del ret, como el de p01 0x7C3C; no lo alcanza nadie
+B 0xA089 Reparte los TURNOS entre los diez huecos: (ix+37) de cada uno con la
+B 0xA089 tabla de su jugador. 0xA8A7 suma ese byte al contador de fotogramas
+B 0xA089 E1C3 y solo trabaja cuando la suma es multiplo de 8, asi que el
+B 0xA089 repaso de los objetos se reparte en un ciclo de ocho fotogramas.
+B 0xA089 Lo llama p00 0x59C6, justo detras de borrar las dos listas.
+L 0xA089 TURNOS_DE_LOS_OBJETOS  (ix+37) de los diez huecos: el fotograma de cada ocho en que le toca a cada uno
+C 0xA089 los cinco huecos del jugador 1
+C 0xA08D cinco, y 0x38 bytes de uno al siguiente
+C 0xA092 el indice va de 0 a 4 (B baja de 5 a 1)
+C 0xA098 p00 0x40D0: HL += A
+C 0xA09C (ix+37) = el turno de este hueco
+C 0xA0A3 y ahora los cinco del jugador 2
+C 0xA0AF con su propia tabla, la de 0xA0C3
+L 0xA0C8 VELOCIDAD_BASE_A_LOS_10  (ix+1B,1C) de los diez huecos de golpe; sin llamador conocido
+C 0xA0C8 IX es del llamador
+C 0xA0CA los cinco del jugador 1
+C 0xA0D3 y los cinco del 2
+C 0xA0E2 0x38 bytes de un hueco al siguiente
+L 0xA0EA PON_VELOCIDAD_BASE  (ix+1B,1C) = la palabra de la tabla de la categoria
+C 0xA0EA la palabra que le corresponde por categoria, tipo y variante
+C 0xA0ED (ix+1B,1C) = velocidad base; 0xA8C6 y 0xA908 la convierten en la objetivo (ix+19,1A)
+L 0xA0F4 VELOCIDAD_DE_TABLA  DE = tablas_A9FD de la categoria, entrada (tipo-1)*2 + (iy+56)
+C 0xA0F4 la categoria elegida, 0 a 5
+C 0xA0F7 tabla_A9FD: un puntero por categoria
+C 0xA0FA p00 0x4A44: HL = la palabra A de la tabla HL
+C 0xA0FD el tipo del objeto
+C 0xA102 la tabla empieza en el tipo 1
+C 0xA103 dos palabras por tipo
+C 0xA104 (iy+56) escoge cual de las dos; lo pone p02 0x8149 desde la tabla de tramos de p15
+C 0xA107 y de palabras a bytes
+C 0xA10C DE = la velocidad base de ese tipo
+B 0xA110 EL PASO DE LOS RIVALES, una vez por fotograma desde p00 0x5C4B, justo
+B 0xA110 detras del paso de los objetos (p02 0x9D06). Con dos jugadores lo hace
+B 0xA110 dos veces, primero para el coche 2 y luego para el 1, y antes mide lo
+B 0xA110 que separa a los dos coches.
+L 0xA110 PASO_DE_LOS_RIVALES  desde p00 0x5C4B: mete rivales nuevos y, con dos jugadores, espeja los objetos
+C 0xA110 bit 5 de E1C2: dos jugadores
+C 0xA115 con uno solo no hay nada que medir ni que espejar
+C 0xA117 el coche 2
+C 0xA11B E918/E919/E91A = lo que separa a los dos coches; E91B, cual va delante
+C 0xA11E los cinco huecos del jugador 2
+C 0xA125 y ahora el coche 1...
+C 0xA129 ...con sus cinco huecos, cayendo en 0xA12D
+L 0xA12D PASO_RIVALES_DE_UN_COCHE  sonda de pista, espejo y, si toca, un rival nuevo
+C 0xA12D 0xBA9F sondea la pista por delante y deja los dos bytes en (iy-0D) y (iy-0C)
+C 0xA130 espejo de los objetos entre jugadores y cuentas atras de los huecos reservados
+C 0xA133 (iy+55): la carrera ha arrancado; lo pone a 1 p01 0x7EC2 en el GO de la salida
+C 0xA137 antes del GO no sale ningun rival
+C 0xA138 A = el tipo del rival que ha entrado; CY = no ha entrado ninguno
+C 0xA13C B = el tipo, que 0xA212 mira por el bit 7
+C 0xA13D p02 0x8193: pasa a la entrada siguiente de la tabla de rivales y recarga (iy+61)
+C 0xA140 y le da el alta
+C 0xA143 con un solo jugador siempre manda el coche 1
+C 0xA147 (iy+5A) = 0xE8: en esta vista no hay otro coche que pintar
+L 0xA150 TOCA_RIVAL_NUEVO   CY = no ha entrado ninguno; si entra, devuelve su tipo en A
+C 0xA150 p02 0x8059 lleva la cadencia de los rivales; devuelve CY cuando toca sacar uno
+C 0xA153 se le da la vuelta: de aqui en adelante CY = no hay nada que hacer
+C 0xA155 cabe otro?
+C 0xA159 monta el rival; si no ha podido, p02 0x9FE3 suelta el hueco y devuelve CY
+C 0xA160 se come la vuelta a 0xA159 para devolver CY directamente a quien llamo a 0xA150
+C 0xA161 cola comun de "no ha entrado ningun rival"
+L 0xA163 CABE_OTRO_RIVAL    NC si cabe: filtro de velocidad minima y, si los coches van lejos, tope de tres por jugador
+C 0xA163 el filtro de velocidad minima de la categoria
+C 0xA166 el coche no llega al minimo: no cabe
+C 0xA167 la parte alta de lo que separa a los dos coches; con un jugador vale 0
+C 0xA16C si van a menos de 256 (o hay un solo jugador), cabe sin mirar la cuenta
+C 0xA16D el contador del jugador: E91D el 1, E91E el 2
+C 0xA178 con tres o mas objetos suyos ya no cabe otro
+C 0xA17A se le da la vuelta: CY = no cabe
+B 0xA17C OJO: la tabla que lee esta rutina es la de 0xA3A4, que hasta el
+B 0xA17C 2026-08-20 figuraba en estas notas como "siete bytes de relleno sin
+B 0xA17C lector". Lector tiene, y es este ld hl,0xA3A4. Lo que pasa es que
+B 0xA17C los seis bytes valen cero, asi que la comparacion nunca corta.
+L 0xA17C VELOCIDAD_MINIMA_CATEGORIA  CY si (iy+11) no llega al minimo de la categoria; tambien la llama p02 0x9DB2
+C 0xA17C la categoria, 0 a 5
+C 0xA17F la tabla de 0xA3A4, la que se daba por relleno
+C 0xA185 H = el minimo de esa categoria; en esta ROM los seis son cero
+C 0xA186 la velocidad del coche, byte alto
+C 0xA189 CY si no llega; con el minimo a cero eso no pasa nunca
+B 0xA18B Mete un rival nuevo. Con un jugador basta con que haya hueco. Con
+B 0xA18B dos, y solo si los coches estan a menos de 512, ademas se EXIGE que
+B 0xA18B el rival salga del tipo que toca: 0x20 (mas lento que el jugador) o
+B 0xA18B 0xA0 (mas rapido), segun de que jugador sea el coche y cual de los
+B 0xA18B dos va delante (E91B). Si sale del otro, se abandona.
+L 0xA18B METE_RIVAL         busca hueco y monta el rival; CY si no ha podido
+C 0xA18B bit 5 de E1C2: dos jugadores
+C 0xA190 con dos hay que mirar tambien como quedaria en la otra vista
+C 0xA193 0xA412 busca hueco libre; NZ = no hay
+C 0xA197 sin hueco, se sale con CY por 0xA160
+C 0xA199 IX = el hueco
+C 0xA19C 0xA3AB pone a cero los 0x36 primeros bytes del hueco
+C 0xA19F el tipo, tal como lo trae la entrada de rival de p15 (en C)
+C 0xA1A2 (ix+36) = el tercer byte de esa entrada (en B)
+C 0xA1A5 (ix+1B,1C) = velocidad base del tipo
+C 0xA1A8 se prueba primero con el byte de la primera sonda, (iy-0D)
+C 0xA1AE 0xA592 deja la velocidad objetivo en (ix+19,1A)
+C 0xA1B1 y p02 0x9FE9 la compara con la del jugador
+C 0xA1B4 0x20 = solo el bit 5: entra esperando
+C 0xA1B6 el jugador va igual o mas rapido: vale, es un rival al que va a adelantar
+C 0xA1B8 no valia: segunda prueba, con el byte de la otra sonda, (iy-0C)
+C 0xA1C1 y se vuelve a comparar
+C 0xA1C4 si con esta el jugador tampoco es mas lento, se abandona con CY
+C 0xA1C6 0xA0 = bit 5 y bit 7: rival mas rapido que el jugador
+C 0xA1C8 el tipo con sus bits de estado
+C 0xA1CC la velocidad objetivo...
+C 0xA1D2 ...pasa a ser tambien la de partida
+C 0xA1D8 NC = rival montado, y A lleva su tipo
+C 0xA1DA a menos de 512 los dos coches comparten lo que pasa por delante
+C 0xA1E3 lejos: se monta sin exigirle nada al tipo
+C 0xA1E9 para el jugador 1: D = 0x20 (lento), E = 0xA0 (rapido)
+C 0xA1EE y al reves para el 2
+C 0xA1F1 con E91B = 1 se queda con E; con 2, con D
+C 0xA1F8 E = el tipo exigido; hay que guardarlo porque 0xA412 usa DE
+C 0xA1FF sin hueco, fuera con CY
+C 0xA204 se monta el rival como en el caso normal
+C 0xA20A el nibble alto del tipo que ha salido
+C 0xA20C tiene que ser el exigido
+C 0xA20D no lo es: CY, y 0xA15C suelta el hueco con p02 0x9FE3
+C 0xA210 NC = rival montado
+L 0xA212 PON_DUENO_Y_ENTRADA  (ix+09) = el jugador de IY, y la x de entrada segun el bit 7 del tipo
+C 0xA212 de que jugador es el coche que manda
+C 0xA215 el objeto queda a su nombre
+C 0xA218 bit 7 del tipo: el rival es mas rapido que el jugador
+C 0xA21C el lento entra por x = 0
+C 0xA220 y con el bit 2 de (ix+30) quitado
+C 0xA225 el rapido entra por x = 0xB7, justo debajo del 0xB8 con el que p02 0x9E31 los retira
+C 0xA229 y con el bit 2 de (ix+30) puesto
+B 0xA22E Lo que hay que hacer una vez por coche y fotograma: pasarle a cada
+B 0xA22E coche el (iy+4B) del otro, decidir donde cae el otro coche en esta
+B 0xA22E vista, y descontar las cuentas atras de los cinco huecos.
+L 0xA22E ESPEJO_ENTRE_JUGADORES  intercambia (+4B), coloca al otro coche en la vista y descuenta los cinco huecos
+C 0xA22E (E30B) es el (iy+4B) del coche 1...
+C 0xA231 ...y va al +5B del coche 2
+C 0xA234 (E3CB) es el (iy+4B) del coche 2...
+C 0xA237 ...y va al +5B del coche 1
+C 0xA23A de partida, el otro coche no se ve en esta vista
+C 0xA23E la parte alta de lo que separa a los dos coches
+C 0xA243 si caben en la misma vista (separacion menor de 256), se calcula donde
+C 0xA246 el bucle vive en los registros alternos porque 0xA257 usa BC y DE
+C 0xA24C los cinco huecos, uno por vuelta
+C 0xA251 0x38 bytes al siguiente
+L 0xA257 CUENTA_ATRAS_DEL_HUECO  huecos con el bit 4: descuenta (ix+1D,1E) y, al llegar a cero, saca el objeto de verdad
+C 0xA257 bit 4 = hueco reservado con cuenta atras; si no, no hay nada que hacer
+C 0xA25C la cuenta atras que le puso p02 0x9F08
+C 0xA262 un fotograma menos
+C 0xA26B todavia no toca
+C 0xA26C el tipo sin el bit 4
+C 0xA272 el hueco se suelta...
+C 0xA276 ...y las cuentas bajan: E91C el total
+C 0xA27A y E91D o E91E, segun de quien sea
+C 0xA286 0xA4C2 dice si el objeto puede entrar de verdad
+C 0xA289 no puede: se queda sin salir
+C 0xA28A bit 5: entrara esperando
+C 0xA28C el bucle de 0xA24C vive en los registros alternos
+C 0xA292 p02 0x9FF7 busca hueco y cae en 0xA000
+L 0xA29C ESPEJA_LOS_5_OBJETOS  coloca al otro coche en la vista y copia a la otra lista los cinco objetos
+C 0xA29C (iy+5A) = donde cae el otro coche en esta vista
+C 0xA29F lo que separa a los dos coches, byte bajo
+C 0xA2A2 de 0xB8 en adelante ya no comparten vista: no hay nada que espejar
+C 0xA2AB los cinco huecos
+L 0xA2BA ESPEJA_UN_OBJETO   copia el objeto a la lista del otro jugador con la x corregida por la separacion
+C 0xA2BA hueco libre: nada
+C 0xA2BF con los bits 4, 5 o 6 puestos todavia no esta en pista
+C 0xA2C2 (ix+23): esto ya es una copia, y una copia no se copia
+C 0xA2C7 el jugador 1 corrige la x con el signo contrario
+C 0xA2CE busca donde ponerlo en la lista del otro jugador
+C 0xA2D1 no hay sitio
+C 0xA2D2 (ix+24,25) = la pareja, en la lista del otro
+C 0xA2DC 0x36 y no 0x38: la copia no se lleva ni (ix+36) ni el turno (ix+37)
+C 0xA2E2 lo que separa a los dos coches
+C 0xA2E5 E91B dice cual va delante
+C 0xA2E9 la x del objeto, byte alto
+C 0xA2EE en la otra vista cae en x + la separacion...
+C 0xA2F1 ...o en x - la separacion
+C 0xA2F4 la misma copia para el jugador 1
+C 0xA30F la x del objeto, byte alto
+C 0xA314 aqui las dos ramas van al reves que en las del jugador 2
+C 0xA318 se ha salido del byte: no cabe en la otra vista
+C 0xA31A y de 0xB8 en adelante tampoco
+C 0xA31E no cabe: se deshace la pareja...
+C 0xA326 ...y se borran los 0x38 bytes del hueco que se habia cogido
+C 0xA334 HL = el objeto original
+C 0xA337 IX = la copia
+C 0xA33B su x, ya corregida por la separacion
+C 0xA33E (ix+23) = 1: es una copia, y p02 0x9D2A no le da paso propio
+C 0xA342 y apunta de vuelta al original
+C 0xA348 IX vuelve a ser el original
+L 0xA34C HUECO_PARA_EL_ESPEJO  (EA60) = donde va la copia; (EA64) = 1 si reaprovecha la pareja de antes, 0 si el hueco es nuevo
+C 0xA34C la pareja que ya tenia, si tenia
+C 0xA354 A = 1: se reaprovecha la de antes
+C 0xA356 ya tenia pareja: no hay que buscar
+C 0xA358 el jugador 1 escribe en la lista del 2 (E928) y al reves
+C 0xA364 0xA440 busca un hueco con el tipo a cero; NZ = no hay
+C 0xA36A A = 0: el hueco es nuevo
+C 0xA36B (EA60) = donde va la copia
+C 0xA36F (EA64) = si la pareja es nueva o no
+C 0xA372 se vuelve siempre con Z
+L 0xA374 POSICION_DEL_OTRO_COCHE  (iy+5A) = la x con la que el otro coche se pinta en esta vista
+C 0xA374 el jugador 1 suma donde el 2 resta
+C 0xA37A lo que separa a los dos coches, byte bajo
+C 0xA37D E91B: cual va delante
+C 0xA381 la x del coche, byte alto
+C 0xA386 uno suma...
+C 0xA389 ...y el otro resta
+C 0xA393 la x del coche, byte alto (rama del jugador 1)
+C 0xA39C se ha salido del byte: se queda con el 0xE8 que puso 0xA23A
+C 0xA39D y de 0xC8 en adelante tampoco se pinta
+C 0xA3A0 (iy+5A) = donde cae el otro coche en esta vista
+
+# --- Un hallazgo suelto, fuera del tramo comentado (2026-08-21) ---
+C 0xA779 ERRATA DEL CARTUCHO: los bytes son FD 21 28 E9 FD 21 80 E3, o sea ld iy,0E928h y en la instruccion siguiente ld iy,0E380h; la de aqui no hace nada. Por el patron de las dos de arriba (0xA76E ld ix,0E800h / 0xA772 ld iy,0E2C0h) el prefijo tendria que ser DD y no FD, y asi la segunda llamada a 0xA29C repite la lista del jugador 1 en vez de recorrer la del 2. Que la carga se pisa esta LEIDO; que se queria escribir DD es inferencia

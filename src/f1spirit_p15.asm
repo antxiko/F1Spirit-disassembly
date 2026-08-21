@@ -1611,7 +1611,9 @@ DATA_relleno_BC84:
 ; (COMPARA_PUNTOS) deja de comparar los puntos y da por buena cualquier
 ; categoria. Es exactamente el efecto de la contrasena MAXPOINT (p01
 ; 0x74AC). Ademas, con E1DE = 2 el truco UJM3EDC se queda sin efecto
-; (p01 0x74CC sale sin hacer nada).
+; (p01 0x74CC sale sin hacer nada). Y hay un tercer efecto: p00
+; 0x58A2 tambien mira si E1DE vale 2 y, si vale, se vuelve sin
+; hacer lo que hubiera detras.
 ; Las tres direcciones encajan con tres tamanos de cartucho: 0x4010 es
 ; la cabecera, 0x7FFA los ultimos seis bytes de uno de 16 KB y 0xBFFA
 ; los de uno de 32 KB (lectura de las direcciones, sin medir). De que

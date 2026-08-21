@@ -86,10 +86,12 @@
 # de DESPACHA que cambia la direccion de retorno por la palabra A de la tabla
 # que sigue al call, con A = (ix+0) & 0x0F - 1 acotado a 0..14. La tabla
 # (0xA068-0xA086) estaba TRAZADA COMO CODIGO; ahora va en p03.nocode. Sus 15
-# palabras son 0xB986 (x5), 0xB9B3, 0xB9D8, 0xBA02, 0xBA2C, 0xBA53, 0xBA96,
-# 0xB977 (x2), 0xB96F y 0xB598, y todas caen en ESTA pagina (la tabla se lee
-# desde codigo de esta pagina, que es la que esta en 0xA000 mientras corre).
-0xB986   # entrada 0/10/11/12/13 de la tabla de 0xA068
+# palabras, releidas de la ROM el 2026-08-21, son: B986 B9B3 B9D8 BA02 BA2C
+# BA53 BA96 B977 B977 B96F A086 A086 A086 A086 B598. Todas caen en ESTA
+# pagina (la tabla se lee desde codigo de esta pagina, que es la que esta en
+# 0xA000 mientras corre). CORRECCION: aqui ponia "0xB986 (x5)", y 0xB986
+# aparece UNA vez; las entradas 10 a 13 apuntan al `ret` suelto de 0xA086.
+0xB986   # entrada 0 de la tabla de 0xA068
 0xB9B3   # entrada 1 de la tabla de 0xA068
 0xB9D8   # entrada 2 de la tabla de 0xA068
 0xBA02   # entrada 3 de la tabla de 0xA068
