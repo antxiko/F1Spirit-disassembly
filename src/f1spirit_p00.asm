@@ -33,6 +33,22 @@ DATA_cabecera:
 ; sombra del mapper, mapea D/E/F para el sonido (0x6AA5 en la pagina
 ; 13), vuelve a poner D/E/F, vacia la cola de ordenes de sonido, y
 ; restaura los bancos guardados antes de la logica del juego.
+;
+; DOS CANDADOS Y UN FRENO, que es lo que hace que esto funcione. La
+; logica del juego (0x40AC) puede tardar MAS DE UN FOTOGRAMA, y se
+; llama desde dentro de la interrupcion; las rutinas de banco
+; (0x43FE y siguientes) acaban en `ei`, asi que la interrupcion
+; vuelve a entrar mientras la logica sigue corriendo. De ahi:
+; - bit 1 de E1C5: hay una interrupcion dentro de otra -> la de
+; fuera se va por 0x40B5 sin tocar nada.
+; - bit 0 de E1C5: la logica ya esta en curso -> la interrupcion
+; hace su parte de sonido y se va; asi el sonido nunca se para.
+; - F0FC: cuenta interrupciones. En los estados 2 (la demo) y 5
+; (la carrera) la logica no da un paso hasta que haya tres, y al
+; darlo pone la cuenta a cero. La carrera avanza a un paso de
+; cada tres interrupciones -unos 17 por segundo en PAL- pase lo
+; que pase con lo que tarde el codigo: es un reloj fijo, no una
+; velocidad que dependa de la maquina.
 ; ----------------------------------------------------------------------
 INTERRUPCION:		; gancho H.KEYI; candado en el bit 1 de E1C5
 	call 0013eh		;4018   ; BIOS RDVDP - Reads VDP status register | RDVDP: lee y limpia el estado del VDP
@@ -40,10 +56,10 @@ INTERRUPCION:		; gancho H.KEYI; candado en el bit 1 de E1C5
 	bit 1,(hl)		;401e   ; bit 1 de E1C5: ya hay una interrupcion dentro -> fuera
 	jp nz,L_40B5		;4020
 	ld a,(hl)			;4023
-	and 07fh		;4024
+	and 07fh		;4024   ; de paso baja el bit 7, el que p02 0x8666 levanta para quedarse esperando al fotograma siguiente
 	or 002h		;4026
 	ld (hl),a			;4028
-	di			;4029
+	di			;4029   ; de aqui a 0x4046 se toca el mapper: una interrupcion en medio dejaria los bancos cruzados
 	ld hl,0f0f1h		;402a   ; F0F1/F0F2/F0F3: la sombra del mapper; se guarda en D/E/A y se pone D/E/F
 	ld a,00dh		;402d
 	ld (07000h),a		;402f
@@ -57,7 +73,7 @@ INTERRUPCION:		; gancho H.KEYI; candado en el bit 1 de E1C5
 	inc hl			;403c
 	ld a,00fh		;403d
 	ld (0b000h),a		;403f
-	ld a,(hl)			;4042
+	ld a,(hl)			;4042   ; el hueco de 0xA000 se guarda en A porque no quedan registros libres, y entonces el `ld (hl),a` de 0x4043 devuelve a la sombra el valor VIEJO: F0F3 no se entera del 0x0F. Nadie lee la sombra en esta ventana, asi que no se nota; el mismo codigo copiado en 0x42DA hace lo mismo
 	ld (hl),a			;4043
 	push de			;4044
 	push af			;4045
@@ -68,13 +84,13 @@ INTERRUPCION:		; gancho H.KEYI; candado en el bit 1 de E1C5
 	ld (09000h),a		;404f
 	inc a			;4052
 	ld (0b000h),a		;4053
-	ld a,(0e1c5h)		;4056
+	ld a,(0e1c5h)		;4056   ; el bit 0 al acarreo: el repintado de 0x40BB solo cabe ENTRE pasos de logica, nunca dentro de uno
 	rrca			;4059
-	call nc,L_40BB		;405a
+	call nc,REPINTA_PENDIENTE		;405a
 	call VACIA_COLA_SONIDO		;405d   ; vacia la cola de ordenes de sonido (call 0x6000 de la pagina 13 por orden)
 	di			;4060
 	call 06422h		;4061   ; 0x6422 de la pagina 13 (D/E/F siguen mapeadas)
-	call CUENTA_ATRAS_F0F7		;4064
+	call CUENTA_ATRAS_F0F7		;4064   ; esta cuenta atras baja una vez por INTERRUPCION, no por paso de logica: es tiempo real (la carga p01 0x7DF3 y la mira p02 0x865C)
 	di			;4067
 	pop af			;4068
 	pop de			;4069
@@ -90,14 +106,14 @@ INTERRUPCION:		; gancho H.KEYI; candado en el bit 1 de E1C5
 	ld (07000h),a		;4079
 	ld (hl),a			;407c
 	ld hl,0e1c5h		;407d
-	res 1,(hl)		;4080
+	res 1,(hl)		;4080   ; el candado se suelta ANTES de la logica: las interrupciones que lleguen mientras dura entraran a alimentar el sonido
 	ld hl,0f0fch		;4082
-	inc (hl)			;4085
+	inc (hl)			;4085   ; F0FC cuenta todas las interrupciones, tambien las que se caen en 0x408B
 	ld hl,0e1c5h		;4086
 	bit 0,(hl)		;4089   ; bit 0 de E1C5: la logica del juego ya esta en curso (se salto un fotograma)
 	jr nz,L_40B5		;408b
 	set 0,(hl)		;408d
-	ld a,(0e1c0h)		;408f
+	ld a,(0e1c0h)		;408f   ; solo la demo (estado 2) y la carrera (estado 5) llevan freno de fotogramas
 	cp 005h		;4092
 	jr z,L_409A		;4094
 	cp 002h		;4096
@@ -105,55 +121,55 @@ INTERRUPCION:		; gancho H.KEYI; candado en el bit 1 de E1C5
 L_409A:
 	ld hl,0f0fch		;409a
 	ld a,(hl)			;409d
-	cp 003h		;409e
+	cp 003h		;409e   ; menos de tres interrupciones desde el ultimo paso: este fotograma no hay logica
 	jr c,L_40AF		;40a0
-	ld (hl),000h		;40a2
+	ld (hl),000h		;40a2   ; y al darlo la cuenta vuelve a cero. O sea que entre dos pasos pasan AL MENOS tres interrupciones: es un techo de velocidad, no un compas fijo. Si un paso tarda mas de tres, al acabar la cuenta ya esta por encima y el siguiente sale sin esperar
 L_40A4:
 	call LEE_ENTRADAS		;40a4   ; lee mandos y teclas
-	ld hl,0f0ffh		;40a7
+	ld hl,0f0ffh		;40a7   ; F0FF = 3, y ninguna de las 16 paginas lo vuelve a leer por direccion
 	ld (hl),003h		;40aa
 	call ESTADOS		;40ac   ; el despachador de estados del juego
 L_40AF:
-	di			;40af
+	di			;40af   ; aqui dentro han podido pasar varios fotogramas; el `di` protege el candado
 	ld hl,0e1c5h		;40b0
 	res 0,(hl)		;40b3
 L_40B5:
 	call 0013eh		;40b5   ; BIOS RDVDP - Reads VDP status register
 	or a			;40b8
-	ei			;40b9
+	ei			;40b9   ; `ei` y se devuelve el control a la BIOS: por eso la interrupcion es reentrante y hacen falta los candados
 	ret			;40ba
-L_40BB:		; si (E1D5) != 0: lo pone a cero y llama 0x477C, 0x450C y 0x4887 (que son, pendiente)
-	ld a,(0e1d5h)		;40bb
+REPINTA_PENDIENTE:		; si (E1D5) != 0 lo pone a cero y repinta: sprites (0x477C), la ventana de la pista (0x450C) y los rotulos del HUD (0x4887)
+	ld a,(0e1d5h)		;40bb   ; E1D5 = "hay pantalla que refrescar": lo levanta el paso de carrera (0x5BF0) y lo bajan los repintados gordos (p01 0x70D9) para que la interrupcion no les pise la VRAM
 	or a			;40be
 	ret z			;40bf
 	sub a			;40c0
-	ld (0e1d5h),a		;40c1
-	call L_477C		;40c4
-	call L_450C		;40c7
-	jp L_4887		;40ca
+	ld (0e1d5h),a		;40c1   ; un aviso, un repintado: solo el primer hueco libre despues de cada paso de logica
+	call L_477C		;40c4   ; los atributos de sprites de EA80 a la VRAM 0x3B00, alternando el orden en los fotogramas impares
+	call L_450C		;40c7   ; la ventana de la pista: 24 filas desde 0x3802 (fila 0, columna 2)
+	jp L_4887		;40ca   ; y los rotulos del HUD: PIT IN, RETIRE, EMPTY y GOAL
 VDP_REG:		; escribe el registro C del VDP con B (BIOS WRTVDP)
 	jp 00047h		;40cd   ; BIOS WRTVDP - Writes data in the VDP-register
 HL_MAS_A:		; hl += a (sin signo)
-	add a,l			;40d0
+	add a,l			;40d0   ; la suma de 8 sobre 16 bits de todo el cartucho: indices de tabla, filas y desplazamientos pasan por aqui
 	ld l,a			;40d1
 	ret nc			;40d2
 	inc h			;40d3
 	ret			;40d4
 DE_MAS_A:		; de += a (sin signo)
-	add a,e			;40d5
+	add a,e			;40d5   ; la misma con DE (0x4A3B recorre con ella las tablas de palabras)
 	ld e,a			;40d6
 	ret nc			;40d7
 	inc d			;40d8
 	ret			;40d9
 DESPACHA:		; el "call seguido de tabla" de Konami: salta a la palabra A de la tabla que sigue al call
-	pop hl			;40da
-	add a,a			;40db
+	pop hl			;40da   ; el retorno que acaba de dejar el `call` ES la tabla: se saca de la pila y sirve de base
+	add a,a			;40db   ; por dos, que las entradas son palabras
 	call HL_MAS_A		;40dc
 	ld e,(hl)			;40df
 	inc hl			;40e0
 	ld d,(hl)			;40e1
 	ex de,hl			;40e2
-	jp (hl)			;40e3
+	jp (hl)			;40e3   ; salto, no llamada: como el retorno del `call 0x40DA` ya se gasto, el `ret` del destino vuelve a quien llamo al despachador (o a lo que este empujara antes, como 0x427C)
 
 ; ----------------------------------------------------------------------
 ; INIT: la BIOS llega aqui por la cabecera. Habilita el cartucho en
@@ -185,7 +201,7 @@ INIT:		; punto de entrada del cartucho (cabecera)
 	ld h,080h		;4100
 	call 00024h		;4102   ; BIOS ENASLT - Switches to specified slot and page definitively | ENASLT con H=0x80: el cartucho tambien en 0x8000-0xBFFF
 	xor a			;4105
-	ld (0f3dbh),a		;4106
+	ld (0f3dbh),a		;4106   ; CLIKSW = 0: fuera el clic de tecla de la BIOS
 	ld a,0c3h		;4109   ; `jp 0x4018` en H.KEYI (FD9A)
 	ld (0fd9ah),a		;410b
 	ld hl,INTERRUPCION		;410e
@@ -197,11 +213,11 @@ INIT:		; punto de entrada del cartucho (cabecera)
 	ld (hl),000h		;4120
 	ldir		;4122
 	ld a,001h		;4124
-	ld (0e1c5h),a		;4126
+	ld (0e1c5h),a		;4126   ; bit 0 de E1C5 a 1 antes de abrir las interrupciones: el gancho ya esta puesto, y sin esto la maquina de estados arrancaria a media inicializacion
 	call ARRANCA_SONIDO		;4129   ; arranca el sonido (pagina 13) y pide el sonido 0x46
 	call 0013eh		;412c   ; BIOS RDVDP - Reads VDP status register
 	xor a			;412f
-	ld (0e1c5h),a		;4130
+	ld (0e1c5h),a		;4130   ; y aqui se suelta, con la RAM limpia y el sonido en marcha
 	di			;4133
 	call MAPEA_D_E_F		;4134
 	di			;4137   ; D/E/F y 0xBF50 de la pagina 15: busca otros cartuchos Konami en las ranuras
@@ -210,51 +226,51 @@ INIT:		; punto de entrada del cartucho (cabecera)
 BUCLE_FINAL:		; aqui se queda INIT; todo lo demas pasa en la interrupcion
 	jr BUCLE_FINAL		;413e
 VACIA_COLA_SONIDO:		; hasta 10 ordenes en E246..: cada una `call 0x6000` (pagina 13) con A
-	ld hl,0e245h		;4140
+	ld hl,0e245h		;4140   ; E245 es la cuenta y E246.. las ordenes; sin ordenes no hay nada que hacer
 	ld a,(hl)			;4143
 	or a			;4144
 	ret z			;4145
-	ld (hl),000h		;4146
+	ld (hl),000h		;4146   ; la cuenta se pone a cero ANTES de recorrer la cola
 	ld b,a			;4148
 L_4149:
 	inc l			;4149
 	ld a,(hl)			;414a
 	push hl			;414b
 	push bc			;414c
-	call 06000h		;414d
+	call 06000h		;414d   ; p13 0x6000 con el numero de sonido en A: D/E/F siguen mapeadas desde 0x4049
 	pop bc			;4150
 	pop hl			;4151
-	djnz L_4149		;4152
+	djnz L_4149		;4152   ; diez como mucho, que es lo que deja meter 0x417E
 	ret			;4154
 CUENTA_ATRAS_F0F7:		; decrementa el contador de 16 bits F0F7/F0F8; A=0xFF si seguia contando
-	ld a,(0f0f7h)		;4155
+	ld a,(0f0f7h)		;4155   ; no es un `dec hl`: los dos bytes se guardan y se leen sueltos
 	or a			;4158
 	jr nz,L_4160		;4159
-	ld a,(0f0f8h)		;415b
+	ld a,(0f0f8h)		;415b   ; con el byte bajo a cero todavia puede quedar cuenta en el alto
 	or a			;415e
 	ret z			;415f
 L_4160:
-	ld a,(0f0f7h)		;4160
+	ld a,(0f0f7h)		;4160   ; el que cuenta es el bajo...
 	sub 001h		;4163
 	ld (0f0f7h),a		;4165
 	jr nc,L_4171		;4168
-	ld a,(0f0f8h)		;416a
+	ld a,(0f0f8h)		;416a   ; ...y su acarreo baja el alto
 	dec a			;416d
 	ld (0f0f8h),a		;416e
 L_4171:
-	or 0ffh		;4171
+	or 0ffh		;4171   ; A = 0xFF avisa de que seguia contando; p02 0x865C prefiere mirar los dos bytes por su cuenta
 	ret			;4173
-ENCOLA_SONIDO:		; mete A en la cola de E245 (maximo 10); F0FA guarda el ultimo
-	di			;4174
+ENCOLA_SONIDO:		; mete A en la cola de E245 (maximo 10); F0FA es solo el sitio donde deja A mientras HL trabaja
+	di			;4174   ; `di`: la interrupcion vacia esta misma cola
 	push hl			;4175
-	ld (0f0fah),a		;4176
+	ld (0f0fah),a		;4176   ; F0FA no guarda nada que se lea despues: es un apano para soltar A
 	ld hl,0e245h		;4179
 	ld a,(hl)			;417c
 	inc a			;417d
-	cp 00bh		;417e
+	cp 00bh		;417e   ; once seria pasarse, y la orden se pierde sin avisar a nadie
 	jr nc,L_4189		;4180
 	ld (hl),a			;4182
-	add a,l			;4183
+	add a,l			;4183   ; la ranura libre es E245 + la cuenta nueva
 	ld l,a			;4184
 	ld a,(0f0fah)		;4185
 	ld (hl),a			;4188
@@ -264,11 +280,11 @@ L_4189:
 	ret			;418b
 ESTADOS:		; suma 1 a E1C3 y despacha por (E1C0); si < 3 deja 0x427C como retorno
 	ld hl,0e1c3h		;418c
-	inc (hl)			;418f
-	ld hl,0427ch		;4190
-	ld bc,(0e1c0h)		;4193
+	inc (hl)			;418f   ; E1C3 es el contador de fotogramas de LOGICA, no de interrupciones: de el cuelgan los parpadeos del HUD (p01 0x760D) y los turnos de los rivales (p03 0xA8A7)
+	ld hl,0427ch		;4190   ; el retorno que se va a empujar para los estados de la presentacion
+	ld bc,(0e1c0h)		;4193   ; de una tacada C = el estado (E1C0) y B = el subestado (E1C1): cada manejador recibe su subestado en B
 	ld a,c			;4197
-	cp 003h		;4198
+	cp 003h		;4198   ; estados 0, 1 y 2: al volver el manejador se cae en 0x427C, que mira el mando
 	jr nc,L_419D		;419a
 	push hl			;419c
 L_419D:
@@ -295,155 +311,155 @@ DATA_tabla_estados:
 
 
 ESTADO_0:		; estados 0, 6, 7 y 8: subestado en (E1C1) via djnz; 0xBE14/0xBE56 (pagina 3)
-	djnz L_41C0		;41b2
-	ld a,(0e1c3h)		;41b4
+	djnz L_41C0		;41b2   ; subestado 1 aqui, 2 en 0x41C2 y 0 en 0x41CE: el djnz baja B antes de mirarlo
+	ld a,(0e1c3h)		;41b4   ; subestado 1: solo trabaja en los fotogramas impares
 	rra			;41b7
 	ret nc			;41b8
-	call 0be56h		;41b9
+	call 0be56h		;41b9   ; p03 0xBE56 escribe una fila mas del titulo y devuelve NZ mientras le queden
 	ret nz			;41bc
 	xor a			;41bd
-	jr L_4219		;41be
+	jr L_4219		;41be   ; puestas las seis filas, E1C4 = 0 y subestado 2
 L_41C0:
 	djnz L_41CE		;41c0
-	ld hl,0e1c4h		;41c2
+	ld hl,0e1c4h		;41c2   ; subestado 2: E1C4 entro a cero, o sea que da la vuelta -> 256 fotogramas de titulo quieto
 	dec (hl)			;41c5
 	ret nz			;41c6
-	call L_5D16		;41c7
+	call L_5D16		;41c7   ; 0x5D16 rehace la pantalla del titulo y pone E1DD a cero
 	xor a			;41ca
-	jp L_426D		;41cb
+	jp L_426D		;41cb   ; y al estado 1 con E1C4 = 0
 L_41CE:
-	call VDP_REGISTROS		;41ce
-	ld hl,00000h		;41d1
+	call VDP_REGISTROS		;41ce   ; subestado 0: los ocho registros del VDP
+	ld hl,00000h		;41d1   ; los ocho colores del tile 0 a cero, en los tres tercios
 	ld bc,00008h		;41d4
 	xor a			;41d7
 	call LLENA_VRAM_3_TERCIOS_B		;41d8
-	call L_465B		;41db
-	call 0be14h		;41de
+	call L_465B		;41db   ; borra los sprites y la tabla de nombres entera
+	call 0be14h		;41de   ; p03 0xBE14 dibuja el titulo
 	jr L_421C		;41e1
-ESTADO_1:		; por el despachador de 0x419D
-	call L_5D19		;41e3
-	ret nc			;41e6
-	jp L_426B		;41e7
-ESTADO_2:		; por el despachador de 0x419D
+ESTADO_1:		; la ronda de pantallas de presentacion: un paso de 0x5D19 (el despachador de E1DD) por fotograma
+	call L_5D19		;41e3   ; un paso de la ronda por fotograma
+	ret nc			;41e6   ; mientras E1DD < 10 no hay acarreo y se sigue en el estado 1
+	jp L_426B		;41e7   ; gastada la ronda entera, al estado 2: la demo
+ESTADO_2:		; la demo: 0x5876 reproduce la partida grabada que toque (E1CD)
 	djnz L_41FB		;41ea
-	call L_5876		;41ec
-	ld a,(0e1f3h)		;41ef
+	call L_5876		;41ec   ; subestado 1: 0x5876 mueve un fotograma de la partida grabada
+	ld a,(0e1f3h)		;41ef   ; E1F3 lo baja el propio reproductor cuando la partida se acaba
 	or a			;41f2
 	ret nz			;41f3
-	call 08735h		;41f4
-	ld a,00ah		;41f7
+	call 08735h		;41f4   ; p02 0x8735: E190 = 0, callados los canales del motor
+	ld a,00ah		;41f7   ; diez fotogramas de cortesia y subestado 2
 	jr L_4219		;41f9
 L_41FB:
 	djnz L_4210		;41fb
-	ld hl,0e1c4h		;41fd
+	ld hl,0e1c4h		;41fd   ; subestado 2: los diez fotogramas
 	dec (hl)			;4200
 	ret nz			;4201
 L_4202:
-	call 0869ah		;4202
+	call 0869ah		;4202   ; p02 0x869A para la musica
 	xor a			;4205
-	ld (0e1c0h),a		;4206
+	ld (0e1c0h),a		;4206   ; y vuelta al estado 0, a pintar el titulo desde cero
 	ld a,020h		;4209
-	ld (0e1c4h),a		;420b
+	ld (0e1c4h),a		;420b   ; este 0x20 no llega a usarse: el subestado 1 del estado 0 pisa E1C4 con cero
 	jr L_4274		;420e
 L_4210:
-	call L_49C7		;4210
+	call L_49C7		;4210   ; subestado 0: 0x49C7 gasta E1C4 borrando una columna de pantalla por fotograma
 	ret p			;4213
-	call L_57D9		;4214
+	call L_57D9		;4214   ; acabado el borrado, 0x57D9 monta la escena siguiente (E1CD y la tabla de 0x584D)
 	ld a,020h		;4217
 L_4219:
-	ld (0e1c4h),a		;4219
+	ld (0e1c4h),a		;4219   ; la salida comun de "cambio de subestado": E1C4 = A...
 L_421C:
-	ld hl,0e1c1h		;421c
+	ld hl,0e1c1h		;421c   ; ...y un subestado mas
 	inc (hl)			;421f
 	ret			;4220
-ESTADO_3:		; por el despachador de 0x419D
-	djnz L_4234		;4221
+ESTADO_3:		; la partida ya esta empezando: borra "PUSH SPACE KEY" y hace parpadear "PLAY START" mientras cuenta 0x28 fotogramas
+	djnz L_4234		;4221   ; subestado 1: la cuenta atras del parpadeo
 	ld hl,0e1c4h		;4223
 	dec (hl)			;4226
-	jr z,L_421C		;4227
-	ld de,0b011h		;4229
-	bit 2,(hl)		;422c
-	jp z,L_4B8F		;422e
+	jr z,L_421C		;4227   ; llegada a cero, subestado 2
+	ld de,0b011h		;4229   ; p09 0xB011, que expandido es "  PLAY START   " en la fila 20
+	bit 2,(hl)		;422c   ; el bit 2 de la cuenta lo enciende y lo apaga cada cuatro fotogramas: cinco parpadeos en 0x28
+	jp z,L_4B8F		;422e   ; 0x4B8F lo pinta (tile = letra - 0x20) y 0x4B99 lo borra (tile 0) en los mismos huecos
 	jp L_4B99		;4231
 L_4234:
 	djnz L_423B		;4234
-	call L_497A		;4236
-	jr L_426B		;4239
+	call L_497A		;4236   ; subestado 2: 0x497A limpia la RAM de la partida y aplica el desbloqueo (E1DE = 2 -> E1DF = 1)
+	jr L_426B		;4239   ; y al estado 4
 L_423B:
-	ld a,(0e1ddh)		;423b
+	ld a,(0e1ddh)		;423b   ; subestado 0
 	cp 005h		;423e
-	call c,L_5DD5		;4240
-	ld de,0b000h		;4243
+	call c,L_5DD5		;4240   ; si la ronda de presentacion se corto pronto (E1DD < 5), 0x5DD5 pinta antes la linea de p09 0xAFF6 (el logotipo y "1987")
+	ld de,0b000h		;4243   ; borra "PUSH SPACE KEY" (p09 0xB000) del sitio donde va a parpadear el otro rotulo
 	call L_4B99		;4246
 	ld a,034h		;4249
-	call 0884ch		;424b
-	ld a,028h		;424e
+	call 0884ch		;424b   ; p02 0x884C: la musica 0x34
+	ld a,028h		;424e   ; 0x28 fotogramas de parpadeo y subestado 1
 	jr L_4219		;4250
-ESTADO_4:		; por el despachador de 0x419D
-	ld hl,0e250h		;4252
+ESTADO_4:		; numera los dos bloques de coche y pasa al 5; no tiene subestados
+	ld hl,0e250h		;4252   ; E250..E254 a cero: el subestado de la carrera y sus contadores
 	ld bc,00004h		;4255
 	call RELLENA_RAM_CERO		;4258
 	ld ix,0e2c0h		;425b
-	ld (ix+009h),001h		;425f
-	ld ix,0e380h		;4263
+	ld (ix+009h),001h		;425f   ; (ix+09) es el numero de jugador dentro del bloque de coche, y de el sale a que buffer de nombres pinta (E400 o EC00)
+	ld ix,0e380h		;4263   ; el segundo coche vive en E380
 	ld (ix+009h),002h		;4267
 L_426B:
-	ld a,020h		;426b
+	ld a,020h		;426b   ; la salida comun de "estado siguiente": E1C4 = 0x20...
 L_426D:
 	ld (0e1c4h),a		;426d
-	ld hl,0e1c0h		;4270
+	ld hl,0e1c0h		;4270   ; ...un estado mas...
 	inc (hl)			;4273
 L_4274:
-	xor a			;4274
+	xor a			;4274   ; ...y a empezar por el subestado 0
 	ld (0e1c1h),a		;4275
 	ret			;4278
-ESTADO_5:		; `jp 0x5A27`
-	jp L_5A27		;4279
+ESTADO_5:		; la carrera: 0x5A27 y su despachador de 32 entradas por (E250)
+	jp L_5A27		;4279   ; el estado 5 es la carrera entera, del semaforo al final
 TRAS_ESTADO_012:		; retorno empujado por 0x418C para los estados 0, 1 y 2: mira F006 y los mandos
-	ld a,(0f006h)		;427c
+	ld a,(0f006h)		;427c   ; F006 lo enciende el truco UJM3EDC de p01 0x74C4; con el puesto, la presentacion no atiende al mando (parece el modo de GRABAR demos: 0x58E2 y 0x5BCE escriben en el buffer que apunta F002, y el primero de la tabla de 0x5909 es 0xC000, o sea RAM) (?)
 	or a			;427f
 	ret nz			;4280
-	call LEE_MANDO_1		;4281
+	call LEE_MANDO_1		;4281   ; el mando 1 se lee aqui aparte: en la presentacion LEE_ENTRADAS no lo toca, porque el bit 6 de E1C2 esta apagado
 	ld hl,0e1e1h		;4284
-	call FLANCOS		;4287
+	call FLANCOS		;4287   ; E1E1 = lo que hay pulsado ahora, E1E0 = lo que acaba de pulsarse; A vuelve con lo segundo
 	or a			;428a
 	ret z			;428b
 	ld hl,0e1c0h		;428c
 	ld de,0e1e2h		;428f
-	ld b,(hl)			;4292
+	ld b,(hl)			;4292   ; B = el estado; el djnz deja pasar al 1 y manda los estados 0 y 2 a 0x42AC
 	djnz L_42AC		;4293
-	and 030h		;4295
+	and 030h		;4295   ; bits 4 y 5 = los dos botones, y la barra espaciadora entra por el bit 4 (0x4367)
 	jr z,L_42B4		;4297
-	ld a,(de)			;4299
+	ld a,(de)			;4299   ; E1E2 es el uno-o-dos-jugadores que se cambia con las direcciones en 0x42B4
 	or a			;429a
-	ld a,040h		;429b
+	ld a,040h		;429b   ; 0x40 = un jugador, 0x60 = dos: el bit 6 abre la lectura del mando 1 y el bit 5 la del 2 (0x4335)
 	jr z,L_42A1		;429d
 	ld a,060h		;429f
 L_42A1:
 	ld (0e1c2h),a		;42a1
-	ld (hl),003h		;42a4
+	ld (hl),003h		;42a4   ; al estado 3...
 	inc hl			;42a6
-	ld c,000h		;42a7
+	ld c,000h		;42a7   ; ...por su subestado 0
 	ld (hl),c			;42a9
-	dec c			;42aa
+	dec c			;42aa   ; el `dec c` no lo lee nadie: de aqui se vuelve a la interrupcion (0x40AF)
 	ret			;42ab
 L_42AC:
-	ld (hl),001h		;42ac
-	call 0869ah		;42ae
+	ld (hl),001h		;42ac   ; estados 0 y 2: cualquier tecla devuelve a la ronda de presentacion
+	call 0869ah		;42ae   ; p02 0x869A calla la musica y 0x5D16 rehace el titulo desde cero
 	jp L_5D16		;42b1
 L_42B4:
-	ld a,(de)			;42b4
+	ld a,(de)			;42b4   ; sin boton, las direcciones cambian entre uno y dos jugadores
 	xor 001h		;42b5
 	ld (de),a			;42b7
 	ret			;42b8
 ARRANCA_SONIDO:		; pone a 1 los 16 bits de E17E/E17F para que 0x6CE9 de la pagina 13 vuelque TODOS los registros del SCC, restaura los bancos, deja el PSG R7 en 0xBF, pide el sonido 0x46 y vuelve a 1/2/3
-	ld a,0ffh		;42b9
+	ld a,0ffh		;42b9   ; los 16 bits de E17E/E17F marcan "este registro del SCC ha cambiado": todos a 1 = volcado entero
 	ld hl,0e17eh		;42bb
 	ld (hl),a			;42be
 	inc hl			;42bf
 	ld (hl),a			;42c0
 	di			;42c1
-	ld hl,0f0f1h		;42c2
+	ld hl,0f0f1h		;42c2   ; el mismo baile de bancos de la interrupcion, copiado byte a byte: aqui no hay interrupcion que lo haga
 	ld a,00dh		;42c5
 	ld (07000h),a		;42c7
 	ld d,(hl)			;42ca
@@ -456,15 +472,15 @@ ARRANCA_SONIDO:		; pone a 1 los 16 bits de E17E/E17F para que 0x6CE9 de la pagin
 	inc hl			;42d4
 	ld a,00fh		;42d5
 	ld (0b000h),a		;42d7
-	ld a,(hl)			;42da
+	ld a,(hl)			;42da   ; la misma pega que en 0x4042: la sombra de 0xA000 se queda con el valor viejo
 	ld (hl),a			;42db
 	push de			;42dc
 	push af			;42dd
-	call 06ce9h		;42de
+	call 06ce9h		;42de   ; p13 0x6CE9 escribe de una vez los 16 registros del SCC
 	di			;42e1
 	pop af			;42e2
 	pop de			;42e3
-	ld hl,0f0f3h		;42e4
+	ld hl,0f0f3h		;42e4   ; y devuelve los tres bancos que habia
 	ld (0b000h),a		;42e7
 	ld (hl),a			;42ea
 	dec hl			;42eb
@@ -475,26 +491,26 @@ ARRANCA_SONIDO:		; pone a 1 los 16 bits de E17E/E17F para que 0x6CE9 de la pagin
 	ld a,d			;42f2
 	ld (07000h),a		;42f3
 	ld (hl),a			;42f6
-	ld a,0bfh		;42f7
-	ld (0e176h),a		;42f9
+	ld a,0bfh		;42f7   ; registro 7 del PSG = 0xBF: tono y ruido callados y el puerto A como salida, que hace falta para elegir fila de teclado y mando
+	ld (0e176h),a		;42f9   ; E176 es la copia en RAM de ese registro, y p13 0x6422 la reescribe en cada interrupcion
 	ld e,a			;42fc
 	ld a,007h		;42fd
 	call 00093h		;42ff   ; BIOS WRTPSG - Writes data to PSG-register
 	call MAPEA_D_E_F		;4302
-	ld a,046h		;4305
+	ld a,046h		;4305   ; el sonido 0x46 por p13 0x6000, con D/E/F puestas
 	call 06000h		;4307
-	jp MAPEA_1_2_3		;430a
+	jp MAPEA_1_2_3		;430a   ; y de vuelta al mapeo de siempre
 L_430D:
-	ld hl,00000h		;430d
+	ld hl,00000h		;430d   ; los 16 KB de VRAM a cero: ninguna de las 16 paginas llama aqui, siempre se entra por 0x4317
 	ld bc,04000h		;4310
 	xor a			;4313
 	call 00056h		;4314   ; BIOS FILVRM - Fills VRAM with value
 VDP_REGISTROS:		; escribe R0..R7 desde la tabla de 0x4328
-	ld hl,04328h		;4317
+	ld hl,04328h		;4317   ; ocho registros seguidos, R0..R7, desde la tabla
 	ld d,008h		;431a
 	ld c,000h		;431c
 L_431E:
-	ld b,(hl)			;431e
+	ld b,(hl)			;431e   ; B = el valor y C = el numero de registro, que es lo que pide WRTVDP
 	call 00047h		;431f   ; BIOS WRTVDP - Writes data in the VDP-register
 	inc hl			;4322
 	inc c			;4323
@@ -516,8 +532,8 @@ DATA_tabla_vdp:
 ; ======================================================================
 
 
-L_4330:
-	ld c,007h		;4330
+VDP_REG_7:		; solo el registro 7 (color de texto y borde) con el valor en B; 0x5CBE lo usa con 0xE0 para dejar el borde negro
+	ld c,007h		;4330   ; el unico registro que se retoca suelto
 	jp VDP_REG		;4332
 LEE_ENTRADAS:		; teclas F, mando 1 (E1D9/E1D8 ahora/flancos) y, si E1C2 lo pide, mando 2 (E1CC)
 	call LEE_TECLAS_F		;4335
@@ -727,7 +743,7 @@ MAPEA_A_EN_A000:		; A en A000 (la llaman las paginas 1 y 2)
 	ld (0b000h),a		;445b
 	ei			;445e
 	ret			;445f
-LIMPIA_EA80_Y_ATRIBUTOS:		; borra 0x7F bytes de RAM desde EA80 (con 0xE0) y los atributos de sprites (0x3B00, 0x80 bytes a 0xE0 = fuera de pantalla)
+LIMPIA_EA80_Y_ATRIBUTOS:		; borra 0x80 bytes de RAM desde EA80 (con 0xE0) y los atributos de sprites (0x3B00, 0x80 bytes a 0xE0 = fuera de pantalla). El BC de 0x7F no enganna: RELLENA_RAM siembra el primer byte con `ld (hl),a` y el `ldir` copia otros BC, o sea EA80..EAFF
 	ld hl,0ea80h		;4460
 	ld bc,0007fh		;4463
 	ld a,0e0h		;4466
@@ -4354,7 +4370,7 @@ L_5CB5:
 	ld (0e1d5h),a		;5cb6
 	ld (0e1ddh),a		;5cb9
 	ld b,0e0h		;5cbc
-	call L_4330		;5cbe
+	call VDP_REG_7		;5cbe
 	call L_465B		;5cc1
 	ld hl,0e400h		;5cc4
 	ld bc,002ffh		;5cc7
