@@ -1,6 +1,7 @@
 # Anotaciones de F-1 Spirit (Konami, 1987, RC-752): pagina 3 de 16, que el
 # mapper pone en 0xA000-0xBFFF (es la tercera del grupo 1/2/3 con el que
-# arranca el juego). Trazada entera; comentada desde 0xA000 (2026-08-21).
+# arranca el juego). Trazada entera; comentada de 0xA000 a 0xA65D
+# (2026-08-21). La puerta siguiente es 0xA673.
 #
 # QUE HAY EN ESTA PAGINA: la pantalla del titulo y sus datos (0xBE14 en
 # adelante), las tablas de la eleccion de coche, y sobre todo LOS RIVALES Y
@@ -124,7 +125,7 @@ D 0xA3A4 0xA3AA velocidad_minima_categoria seis bytes, uno por categoria (E25B):
 F 0xA3A4 6
 D 0xA3AA 0xA3AB relleno_A3AA el septimo byte, a cero: 0xA17C solo llega hasta el sexto (E25B va de 0 a 5) y ningun otro lo lee
 F 0xA3AA 1
-D 0xA65E 0xA673 tabla_A65E un byte por carrera (21, indice (E25C)); lo suma 0xA650 (`ld hl,0xA65E / call HL_MAS_A / ex af,af' / add a,(hl)`)
+D 0xA65E 0xA673 posicion_extra_por_carrera 21 bytes, uno por carrera (E25C): los coches que en esa carrera van por delante SIN VERSE. 0xA649 se lo suma a la plaza de la parrilla (3 el jugador 1, 4 el 2, las pone 0xA673) y de ahi sale la posicion de salida real, la que p01 0x6A50 pinta en el ranking: 3 + 20 = 23 en la primera carrera, 3 + 50 = 53 en la segunda. Los valores son 20, 50, 15, 40, 40, 23, seis veces 25 y nueve veces 30. Con E240 distinto de cero (dos jugadores alternos) no se suma nada
 F 0xA65E 21
 D 0xA7B9 0xA7E3 salida_por_carrera 21 palabras, una por carrera (E25C): la posicion de salida (E = byte bajo -> (ix+4), D = byte alto -> (ix+6)). La lee 0xA691 (`ld hl,0xA7B9 / call HL_PALABRA_A / ex de,hl`)
 F 0xA7B9 w1
@@ -167,10 +168,10 @@ F 0xBFEC 16
 # --- Bautizadas las once subrutinas que aparecieron al sembrar el codigo de
 # arriba (2026-08-20). Las descripciones salen de leer sus instrucciones.
 L 0xA0DF APLICA_A_LAS_5_ESTRUCTURAS  `call 0xA0EA / ld de,0x38 / add ix,de / djnz`: repite 0xA0EA en B estructuras de 0x38 bytes seguidas desde IX
-L 0xA3B4 BUSCA_CASILLA_ATRAS  desde la casilla que da p00 0x4A9D recorre hacia atras (dec l) hasta 32 posiciones buscando la primera cuyo byte, menos (E26C), sea menor que (E272)-(E26C); devuelve NC y D = la posicion por 8 (contada desde (EA7D)), o CY si no hay ninguna
-L 0xA3E3 BUSCA_CASILLA_ADELANTE  la gemela de 0xA3B4 recorriendo hacia delante (inc l)
-L 0xA561 AJUSTA_CON_CASILLA_ATRAS  si (iy+66) no es cero: E = (ix+4), BUSCA_CASILLA_ATRAS, (ix+6) = D y 0xB8FF; si es cero, (ix+15) = (ix+6) y (ix+0E) = 0xFF
-L 0xA574 AJUSTA_CON_CASILLA_ADELANTE  la gemela de 0xA561 con BUSCA_CASILLA_ADELANTE y 0xB90B
+L 0xA3B4 BUSCA_CASILLA_ATRAS  el BORDE DERECHO de la calzada en la fila que marca E: desde la columna 31 del buffer de nombres (p00 0x4A9D) baja con dec l las 32 columnas de la fila hasta dar con un tile de clase 9 a 14 -o sea con (tile - (E26C)) menor que (E272)-(E26C)-, se mete (EA7D) columnas hacia dentro y devuelve NC y D = esa columna por 8, en pixeles, lista para (ix+06). CY si la fila entera esta fuera de la calzada
+L 0xA3E3 BUSCA_CASILLA_ADELANTE  el BORDE IZQUIERDO, la gemela de 0xA3B4: empieza en la columna 0, sube con inc l y SUMA las (EA7D) columnas en vez de restarlas, o sea que tambien se mete hacia dentro de la pista
+L 0xA561 AJUSTA_CON_CASILLA_ATRAS  pega el rival al borde DERECHO de la calzada: si (iy+66) no es cero, E = (ix+4) -su fila-, BUSCA_CASILLA_ATRAS, (ix+6) = D y 0xB8FF; si es cero, (ix+15) = (ix+6) y (ix+0E) = 0xFF
+L 0xA574 AJUSTA_CON_CASILLA_ADELANTE  la gemela de 0xA561 por el borde IZQUIERDO, con BUSCA_CASILLA_ADELANTE y 0xB90B
 L 0xB52E RESTA_OCTAVA_PARTE_A_DOS_PALABRAS  resta a la palabra (ix+0A,0B) y a la (ix+07,08) su octava parte con signo (p00 0x4A8A = tres `sra h / rr l`)
 L 0xB8FF PON_IX15_CASILLA_ATRAS  0xB917, luego E = 0xC8, BUSCA_CASILLA_ATRAS y (ix+15) = D
 L 0xB90B PON_IX15_CASILLA_ADELANTE  la gemela de 0xB8FF con BUSCA_CASILLA_ADELANTE
@@ -196,7 +197,10 @@ D 0xbde7 0xbe14 pendiente_de_trazar Sin trazar ni identificar todavia (45 bytes)
 #   +00 tipo: bits 0-3 el numero de tipo (1..15, despachador 0xA065), bit 4
 #       hueco reservado con cuenta atras en +1D/+1E, bit 5 esperando a entrar
 #       (+20), bit 7 el rival es MAS RAPIDO que el coche del jugador
-#   +04 x (byte alto); p02 0x9E31 lo retira en cuanto llega a 0xB8
+#   +04 la coordenada VERTICAL en pantalla, byte alto (estas notas la venian
+#       llamando x): 0 arriba -lo mas adelantado-, 0xB8 el borde de abajo por
+#       el que p02 0x9E31 lo retira, y de 0xE0 en adelante es que se ha salido
+#       por arriba. La horizontal es el +06
 #   +09 de que jugador es (1 o 2), copiado de (iy+09)
 #   +0F color, que 0xA05D saca de p02 0x9FBF por el tipo
 #   +10/+11 velocidad actual; +12 aceleracion (la calcula 0xA915)
@@ -319,7 +323,7 @@ C 0xA13C B = el tipo, que 0xA212 mira por el bit 7
 C 0xA13D p02 0x8193: pasa a la entrada siguiente de la tabla de rivales y recarga (iy+61)
 C 0xA140 y le da el alta
 C 0xA143 con un solo jugador siempre manda el coche 1
-C 0xA147 (iy+5A) = 0xE8: en esta vista no hay otro coche que pintar
+C 0xA147 (iy+5A) = 0xE8: con un jugador este coche no se pinta en ninguna otra vista
 L 0xA150 TOCA_RIVAL_NUEVO   CY = no ha entrado ninguno; si entra, devuelve su tipo en A
 C 0xA150 p02 0x8059 lleva la cadencia de los rivales; devuelve CY cuando toca sacar uno
 C 0xA153 se le da la vuelta: de aqui en adelante CY = no hay nada que hacer
@@ -394,14 +398,14 @@ C 0xA220 y con el bit 2 de (ix+30) quitado
 C 0xA225 el rapido entra por x = 0xB7, justo debajo del 0xB8 con el que p02 0x9E31 los retira
 C 0xA229 y con el bit 2 de (ix+30) puesto
 B 0xA22E Lo que hay que hacer una vez por coche y fotograma: pasarle a cada
-B 0xA22E coche el (iy+4B) del otro, decidir donde cae el otro coche en esta
-B 0xA22E vista, y descontar las cuentas atras de los cinco huecos.
-L 0xA22E ESPEJO_ENTRE_JUGADORES  intercambia (+4B), coloca al otro coche en la vista y descuenta los cinco huecos
+B 0xA22E coche el (iy+4B) del otro, decidir donde cae ESTE coche en la vista
+B 0xA22E DEL OTRO, y descontar las cuentas atras de los cinco huecos.
+L 0xA22E ESPEJO_ENTRE_JUGADORES  intercambia (+4B), calcula donde cae este coche en la vista del otro y descuenta los cinco huecos
 C 0xA22E (E30B) es el (iy+4B) del coche 1...
 C 0xA231 ...y va al +5B del coche 2
 C 0xA234 (E3CB) es el (iy+4B) del coche 2...
 C 0xA237 ...y va al +5B del coche 1
-C 0xA23A de partida, el otro coche no se ve en esta vista
+C 0xA23A de partida, este coche no se ve en la vista del otro
 C 0xA23E la parte alta de lo que separa a los dos coches
 C 0xA243 si caben en la misma vista (separacion menor de 256), se calcula donde
 C 0xA246 el bucle vive en los registros alternos porque 0xA257 usa BC y DE
@@ -421,8 +425,8 @@ C 0xA289 no puede: se queda sin salir
 C 0xA28A bit 5: entrara esperando
 C 0xA28C el bucle de 0xA24C vive en los registros alternos
 C 0xA292 p02 0x9FF7 busca hueco y cae en 0xA000
-L 0xA29C ESPEJA_LOS_5_OBJETOS  coloca al otro coche en la vista y copia a la otra lista los cinco objetos
-C 0xA29C (iy+5A) = donde cae el otro coche en esta vista
+L 0xA29C ESPEJA_LOS_5_OBJETOS  calcula el (iy+5A) de este coche y copia a la otra lista los cinco objetos
+C 0xA29C (iy+5A) = donde cae ESTE coche en la vista del otro
 C 0xA29F lo que separa a los dos coches, byte bajo
 C 0xA2A2 de 0xB8 en adelante ya no comparten vista: no hay nada que espejar
 C 0xA2AB los cinco huecos
@@ -463,7 +467,7 @@ C 0xA36A A = 0: el hueco es nuevo
 C 0xA36B (EA60) = donde va la copia
 C 0xA36F (EA64) = si la pareja es nueva o no
 C 0xA372 se vuelve siempre con Z
-L 0xA374 POSICION_DEL_OTRO_COCHE  (iy+5A) = la x con la que el otro coche se pinta en esta vista
+L 0xA374 POSICION_EN_LA_OTRA_VISTA  CORRIGE lo publicado: (iy+5A) NO es donde cae el otro coche en esta vista, es la coordenada vertical con la que ESTE coche se pinta en la vista DEL OTRO. Lo dice p01 0x6F47: con IX = 0xE380 (coche 2) e IY = 0xE2C0 (coche 1, de quien sale el (iy+4B) de la camara) se pinta con E = (ix+5A), o sea el +5A del coche 2 en la mitad del jugador 1; y 0x6F65 hace lo simetrico. Cuadra con los signos: sumar (E918) al propio +04 es justo pasar de una vista a la otra
 C 0xA374 el jugador 1 suma donde el 2 resta
 C 0xA37A lo que separa a los dos coches, byte bajo
 C 0xA37D E91B: cual va delante
@@ -473,7 +477,330 @@ C 0xA389 ...y el otro resta
 C 0xA393 la x del coche, byte alto (rama del jugador 1)
 C 0xA39C se ha salido del byte: se queda con el 0xE8 que puso 0xA23A
 C 0xA39D y de 0xC8 en adelante tampoco se pinta
-C 0xA3A0 (iy+5A) = donde cae el otro coche en esta vista
+C 0xA3A0 (iy+5A) = la vertical con la que este coche se pinta en la vista del otro; lo lee p01 0x6F4B / 0x6F6D
 
 # --- Un hallazgo suelto, fuera del tramo comentado (2026-08-21) ---
 C 0xA779 ERRATA DEL CARTUCHO: los bytes son FD 21 28 E9 FD 21 80 E3, o sea ld iy,0E928h y en la instruccion siguiente ld iy,0E380h; la de aqui no hace nada. Por el patron de las dos de arriba (0xA76E ld ix,0E800h / 0xA772 ld iy,0E2C0h) el prefijo tendria que ser DD y no FD, y asi la segunda llamada a 0xA29C repite la lista del jugador 1 en vez de recorrer la del 2. Que la carga se pisa esta LEIDO; que se queria escribir DD es inferencia
+
+# =============================================================================
+# EL BORDE DE LA PISTA, LA SEPARACION ENTRE LOS DOS COCHES Y LA PARRILLA DE
+# SALIDA (0xA3AB-0xA65D), comentado el 2026-08-21 siguiendo justo donde acabo
+# la tanda anterior.
+#
+# DOS COSAS QUE HAY QUE SABER PARA LEER ESTE TRAMO:
+#
+# 1) EL +04 DE UN OBJETO ES LA COORDENADA VERTICAL, NO LA HORIZONTAL. Estas
+#    notas lo venian llamando "x". p00 0x4A9D coge E = (ix+04) para escoger la
+#    FILA del buffer de nombres y D = (ix+06) para la COLUMNA (asi lo llama
+#    p02 0x9550 TERRENO_BAJO_COCHE). Simulando sus rotaciones byte a byte sale
+#    HL = 0xE400 + fila*0x20 + (D >> 3), con fila = bits 3, 4, 5 y 7 de la suma
+#    de 9 bits (iy+40) + E -el bit 6 se pierde por el camino- mas el acarreo;
+#    el buffer del jugador 1 empieza en 0xE400 y el del 2 en 0xEC00, 32 filas
+#    de 32 tiles cada uno. O sea que la pista baja por la pantalla: +04 = 0 es
+#    lo mas ADELANTADO que se ve, 0xB8 es el borde de abajo por el que p02
+#    0x9E31 retira los objetos, y pasar de 0xE0 es haberse salido por ARRIBA.
+#    Cuadra con quien entra por donde (0xA212: el rival lento por +04 = 0 y el
+#    rapido por +04 = 0xB7) y con las cuentas de 0xA531.
+#
+# 2) LAS CLASES DE TILE. p02 0x9641 convierte un tile en una clase 0..15 con
+#    los quince umbrales E264..E272. p02 0x9510 dice para que sirven: clases
+#    0, 1 y 2 = fuera de la pista (rebote o choque), 3 a 8 = se puede pisar
+#    pero frena, 9 en adelante = CALZADA limpia, sin penalizacion. Todo lo que
+#    en este tramo compara contra (E26C) y (E272) esta buscando un tile de
+#    clase 9 a 14, o sea calzada.
+#
+# LO QUE HACE EL TRAMO, de arriba abajo: limpiar un hueco (0xA3AB), encontrar
+# el borde de la calzada en una fila (0xA3B4/0xA3E3) y colocar ahi al rival
+# (0xA561/0xA574), decidir si cabe otro objeto (0xA412), medir lo que separa a
+# los dos coches (0xA44E) y a quien deja entrar esa separacion (0xA4C2),
+# llevar la cuenta de cuantos rivales se ven por delante y por detras
+# (0xA509-0xA530, 0xA531) y montar la parrilla de salida (0xA5B9).
+# =============================================================================
+
+B 0xA3AB Borra un hueco recien cogido. OJO: el hueco lo trae HL, no IX; es el
+B 0xA3AB que acaban de devolver 0xA412 o 0xA433, y el llamador ya lo ha
+B 0xA3AB copiado a IX. Borra 0x36 bytes y no 0x38, igual que la copia espejo
+B 0xA3AB de 0xA2DC: (ix+36) y el turno (ix+37) se salvan. Lo llaman 0xA19C
+B 0xA3AB (rival nuevo), 0xA6E8 (parrilla) y p02 0x9FD9 (CREA_OBJETO_EN).
+L 0xA3AB LIMPIA_HUECO       (HL..HL+0x35) = 0, dejando (ix+36) y el turno (ix+37) como estaban
+C 0xA3AB BC lleva el tipo y el tercer byte de la entrada de rival: hay que devolverlo entero
+C 0xA3AC 0x36, no 0x38
+C 0xA3AF p00 0x4B87 RELLENA_RAM_CERO
+
+B 0xA3B4 EL BORDE DERECHO DE LA CALZADA en la fila que marque E. Arranca en la
+B 0xA3B4 COLUMNA 31 (por eso el ld d,0FFh: 0x4A9D se queda con D>>3) y va
+B 0xA3B4 restando columnas hasta encontrar la primera casilla de clase 9 a 14;
+B 0xA3B4 las 32 pruebas son exactamente el ancho de una fila, asi que nunca se
+B 0xA3B4 mete en la de al lado. Luego RETROCEDE (EA7D) columnas HACIA DENTRO de
+B 0xA3B4 la pista y devuelve el resultado en pixeles (x8) en D, listo para
+B 0xA3B4 (ix+06). (EA7D) lo pone la rutina del tipo de rival justo antes de
+B 0xA3B4 llamar: vale 1 en 0xB986, 4 en 0xB9B3 y 0xB9D8, 2 en 0xBA02, 5 en
+B 0xA3B4 0xBA2C y 1 en 0xBA53 y 0xBA96. O sea: pegate al borde y metete N
+B 0xA3B4 casillas. El nombre "ATRAS" es solo el sentido del dec l.
+C 0xA3B4 D = 0xFF -> 0x4A9D lo convierte en la columna 31, el borde derecho de la pantalla
+C 0xA3B6 HL = la casilla del buffer de nombres del jugador (0xE400 o 0xEC00 + fila*32 + columna)
+C 0xA3B9 (E26C), el umbral entre la clase 8 y la 9; se queda en D
+C 0xA3BD E = (E272) - (E26C): el ancho de la ventana de clases 9 a 14
+C 0xA3C2 16 vueltas y dos pruebas por vuelta = las 32 columnas de la fila
+C 0xA3C4 la casilla, y a la de la izquierda
+C 0xA3C6 resta-y-compara sin signo: si tile - (E26C) cae dentro de la ventana, es calzada
+C 0xA3CA la segunda prueba de la vuelta, identica
+C 0xA3D2 fila entera sin calzada: CY
+C 0xA3D4 (EA7D): cuantas columnas se mete hacia dentro desde el borde
+C 0xA3D8 L ya paso de largo, la casilla buena es L+1
+C 0xA3DA restar B veces es restar (EA7D) columnas, o sea meterse hacia la izquierda
+C 0xA3DD de columnas a pixeles: x8
+C 0xA3E0 D = la x que va a (ix+06); NC = encontrada
+
+B 0xA3E3 El BORDE IZQUIERDO, la gemela exacta de 0xA3B4: arranca en la columna
+B 0xA3E3 0 (ld d,0), avanza con inc l y, cuando encuentra la calzada, SUMA
+B 0xA3E3 las (EA7D) columnas en vez de restarlas. Las dos se meten hacia
+B 0xA3E3 dentro de la pista, cada una desde su lado.
+C 0xA3E3 D = 0 -> columna 0, el borde izquierdo
+C 0xA3E5 misma casilla de partida que la gemela, solo cambia por donde empieza
+C 0xA3F3 la casilla, y a la de la derecha
+C 0xA401 fila entera sin calzada: CY
+C 0xA403 aqui se SUMA (EA7D): hacia dentro es hacia la derecha
+C 0xA407 L ya paso de largo, la casilla buena es L-1
+C 0xA40F D = la x que va a (ix+06); NC = encontrada
+
+B 0xA412 CABE UN OBJETO MAS? Dos topes: uno global -2 objetos en RALLY
+B 0xA412 (categoria 0) y 4 en las otras cinco- y otro por coche, el (iy-13)
+B 0xA412 que p02 0x813D saca de la tabla de tramos de p15 y 0x80A7 retoca;
+B 0xA412 p02 0x8029 lo arranca a 5. Si cabe, 0xA433 devuelve el hueco.
+B 0xA412 La llaman 0xA193, 0xA1FA y p02 0x9FF8.
+L 0xA412 CABE_Y_HUECO_LIBRE  topes global y por coche, y si pasan, HL = un hueco libre (Z), o A = 0xFF (NZ)
+C 0xA412 la categoria elegida, 0 a 5
+C 0xA416 tope general de objetos en pista: 4...
+C 0xA41A ...salvo en RALLY, que son 2
+C 0xA41C E91C: cuantos objetos hay entre los dos jugadores
+C 0xA420 lleno: no cabe
+C 0xA422 E91D: los del jugador 1
+C 0xA425 (iy+09) es 1 o 2, asi que el bit 0 basta para distinguirlos
+C 0xA42B E91E: los del jugador 2
+C 0xA42E (iy-13) es el tope de ese coche en el tramo de pista que se este corriendo
+L 0xA433 HUECO_DE_ESTE_COCHE  HL = la lista del coche de IY y sigue en 0xA440; la llama p02 0x9FCE
+C 0xA433 de que jugador es el coche que manda
+C 0xA438 sus cinco huecos: E800 el jugador 1...
+C 0xA43D ...y E928 el 2
+L 0xA440 HUECO_LIBRE_EN_HL   recorre cinco estructuras de 0x38 desde HL y para en la primera con el tipo a cero
+C 0xA440 los cinco huecos
+C 0xA442 0x38 bytes de uno al siguiente
+C 0xA445 hueco libre es (hl) = 0
+C 0xA447 Z y HL = el hueco
+C 0xA44B ninguno libre: A = 0xFF y NZ
+
+B 0xA44E LO QUE SEPARA A LOS DOS COCHES. La medida de cada coche son tres
+B 0xA44E bytes: (+41,+42) cuenta cuantas veces se ha dado la vuelta la
+B 0xA44E fraccion (+3F,+40) -que p00 0x55CB va RESTANDO segun la velocidad-,
+B 0xA44E asi que el avance de verdad es (+41,+42)*256 MENOS (+40). Por eso
+B 0xA44E 0xA46D resta el byte bajo al reves que los altos: no es un error, es
+B 0xA44E que ese byte cuenta hacia atras. 0xA44E lo resta en un sentido y, si
+B 0xA44E sale negativo, en el otro, de modo que E918/E919/E91A queda siempre
+B 0xA44E positivo y E91B dice cual de los dos coches va delante. Solo la
+B 0xA44E llaman 0xA11B y 0xA76B, las dos con dos jugadores.
+L 0xA44E MIDE_SEPARACION    E918/E919/E91A = lo que separa a los dos coches (siempre positivo) y E91B = cual va delante
+C 0xA44E DE = (+41,+42) del coche 2
+C 0xA452 C = su (+40), el byte que cuenta hacia atras
+C 0xA456 HL = (+41,+42) del coche 1
+C 0xA459 B = su (+40)
+C 0xA45D coche 1 menos coche 2
+C 0xA460 sin acarreo: se queda con esa resta
+C 0xA464 salio negativa: se rehace al reves para que la separacion sea positiva
+C 0xA469 E91B = el numero del coche que va delante
+L 0xA46D RESTA_AVANCES_1_2  E918/E919/E91A = avance del coche 1 - avance del coche 2; CY si sale negativo
+C 0xA46D 0xA44E necesita los seis bytes intactos por si hay que repetir al reves
+C 0xA470 el byte bajo del coche 2
+C 0xA474 neg de cero NO pone acarreo: se compensa a mano el prestamo que falta
+C 0xA475 el byte bajo va con el signo cambiado porque cuenta hacia atras
+C 0xA478 lo mismo con el byte bajo del coche 1
+C 0xA47F -c1 - (-c2) = c2 - c1, que es lo que avanza el coche 1 sobre el 2
+C 0xA480 E918: la parte que cabe en una pantalla
+C 0xA484 y de aqui arriba, la resta normal coche 1 - coche 2
+C 0xA48A E91A: si E919/E91A no son cero, los coches no comparten vista
+L 0xA491 RESTA_AVANCES_2_1  la gemela de 0xA46D con los dos coches cambiados de sitio
+C 0xA491 misma cuenta, del coche 2 sobre el 1
+C 0xA498 la misma compensacion del neg de cero, ahora en el otro orden
+C 0xA4A3 -c2 - (-c1) = c1 - c2
+C 0xA4AE E91A del reves; 0xA44E llega aqui cuando 0xA46D le dio negativo
+
+B 0xA4B5 Sin llamador: los dos bytes de esta direccion no aparecen en ninguna
+B 0xA4B5 parte de los 128 KB de la ROM, y por eso esta declarada a mano en
+B 0xA4B5 p03.entries. Es un contador de dos escalones: sube (HL) y, cuando
+B 0xA4B5 llega a C, lo pone a cero y sube (HL+3).
+L 0xA4B5 CUENTA_Y_ACARREA   (HL)++ y, al llegar a C, (HL) = 0 y (HL+3)++; nadie la llama
+C 0xA4B5 un paso mas
+C 0xA4B7 C es el tope
+C 0xA4B8 sin llegar al tope no hay nada mas que hacer
+C 0xA4BF tres bytes mas alla vive el escalon de arriba
+
+B 0xA4C2 QUIEN PUEDE ENTRAR AHORA MISMO. Con un jugador, cualquiera. Con dos,
+B 0xA4C2 mientras los coches esten lejos (E919/E91A distintos de cero, o mas
+B 0xA4C2 de 0xB8 de separacion) tambien. Pero si comparten vista, el coche que
+B 0xA4C2 va DELANTE solo admite rivales mas rapidos (bit 7 del tipo puesto) y
+B 0xA4C2 el que va DETRAS solo mas lentos: si no, el rival apareceria dentro
+B 0xA4C2 de la pantalla del otro. Es la misma regla que 0xA1E9-0xA1F8 aplica
+B 0xA4C2 al crearlos; aqui se vuelve a mirar cuando el objeto ya estaba
+B 0xA4C2 esperando (0xA286, cuando vence la cuenta atras, y p02 0x9DC3,
+B 0xA4C2 cuando vence el (ix+20)).
+L 0xA4C2 PUEDE_ENTRAR_ESTE  CY si el tipo que trae A no encaja con quien va delante; A vuelve intacto
+C 0xA4C2 el tipo se guarda en B porque A hace falta para leer variables
+C 0xA4C3 bit 5 de E1C2: dos jugadores
+C 0xA4C9 con uno solo entra siempre
+C 0xA4CB la parte alta de la separacion
+C 0xA4D1 a mas de 255 no comparten vista: entra
+C 0xA4D2 y de 0xB8 en adelante tampoco caben los dos en la misma pantalla
+C 0xA4D9 de que jugador es el coche
+C 0xA4DF E91B = 2 quiere decir que el que va delante es este mismo coche, el 2...
+C 0xA4E6 ...y el de delante solo admite rivales mas rapidos
+C 0xA4EB NC = puede entrar
+C 0xA4ED el jugador 2 con el coche 1 delante: yendo detras, solo mas lentos
+C 0xA4F4 el jugador 1: E91B = 1 es "voy yo delante"
+C 0xA4FB con el 2 delante, solo mas lentos
+C 0xA502 yendo delante, solo mas rapidos
+
+B 0xA509 LAS DOS CUENTAS DEL COCHE: cuantos rivales se le ven por DELANTE y
+B 0xA509 cuantos por DETRAS. Viven en los bits 3, 4 y 5 de (coche+30) y de
+B 0xA509 (coche+5E) -los otros bits de esos dos bytes son banderas-, y por eso
+B 0xA509 se suma y se resta de 8 en 8. El tope de arriba lo pone el bit 6
+B 0xA509 (0x38 = siete rivales) y el de abajo el bit 7 (cero). Quien las lee
+B 0xA509 es 0xAE22 (ld a,(ix+5E) / rra rra rra / and 7) para decidir la
+B 0xA509 posicion, y 0xB1DC/0xB1E4 las borra con and 0C7h. HL entra siendo
+B 0xA509 el coche.
+L 0xA509 MAS_UNO_DELANTE    (HL+0x30) += 8 hasta 0x38: un rival mas por delante
+C 0xA509 +0x30 es la cuenta de los de delante
+C 0xA50B p00 0x40D0: HL += A
+L 0xA510 MENOS_UNO_DELANTE  (HL+0x30) -= 8 hasta 0
+C 0xA510 el mismo byte, para bajar la cuenta
+L 0xA517 MAS_UNO_DETRAS     (HL+0x5E) += 8 hasta 0x38: un rival mas por detras
+C 0xA517 +0x5E es la cuenta de los de detras
+L 0xA51C SUMA_8_CON_TOPE    (HL) += 8 y solo se guarda si no se pasa de 0x38
+C 0xA51C el byte de la cuenta, con sus banderas en los bits 0 a 2
+C 0xA51D un rival mas
+C 0xA51F 0x38 + 8 = 0x40 enciende el bit 6: se ha pasado, no se guarda
+L 0xA524 MENOS_UNO_DETRAS   (HL+0x5E) -= 8 hasta 0
+C 0xA524 la cuenta de los de detras, para bajarla
+L 0xA529 RESTA_8_CON_SUELO  (HL) -= 8 y solo se guarda si no baja de cero
+C 0xA529 la cuenta con sus banderas
+C 0xA52A un rival menos
+C 0xA52C por debajo de cero se enciende el bit 7: no se guarda
+
+B 0xA531 Cuando p02 0x9E35 QUITA_OBJETO retira un objeto, esta rutina baja la
+B 0xA531 cuenta que toque. Llega con A = (EA67), que vale 1 si el objeto se
+B 0xA531 habia salido por ARRIBA (su +04 pasaba de 0xE0) y 0 si se salio por
+B 0xA531 abajo, y con B = el tipo por dos (p02 0x9E55 hizo add a,a); el
+B 0xA531 rra de 0xA533 lo devuelve entero porque el acarreo trae el bit 7.
+B 0xA531 No cuentan ni el tipo 15 ni los tipos 8 y 9, y solo se toca la cuenta
+B 0xA531 si (ix+30) tiene el bit 7 puesto y el 6 quitado, que es la marca que
+B 0xA531 pone 0xA5F1 y que 0xAEC3 borra cuando el adelantamiento ya se ha
+B 0xA531 apuntado. IY es el coche.
+L 0xA531 BAJA_LA_CUENTA     al retirar un objeto, resta 8 a la cuenta de delante o a la de detras
+C 0xA531 C = (EA67): 1 si se salio por arriba, 0 si por abajo
+C 0xA532 B = el tipo por dos...
+C 0xA533 ...y el acarreo del add a,a de p02 0x9E55 devuelve el bit 7: A vuelve a ser el tipo
+C 0xA536 el tipo 15 (la explosion) no cuenta
+C 0xA539 los tipos 8 y 9 tampoco (son los que p02 0x9E40 manda a p01 0x7FFC)
+C 0xA53E bit 7 puesto y bit 6 quitado: este objeto todavia estaba contado
+C 0xA546 (EA67) otra vez
+C 0xA547 las dos rutinas de abajo esperan el coche en HL
+C 0xA54A se salio por abajo: baja la cuenta de los de detras
+C 0xA54D se salio por arriba: baja la de los de delante
+
+L 0xA54F SUBE_LAS_CUENTAS   E91C++ y E91D o E91E, segun de quien sea el objeto; desde OBJETO_ALTA
+C 0xA54F HL es del llamador
+C 0xA550 E91C: el total de objetos
+C 0xA554 de que jugador es
+C 0xA558 E91D el jugador 1...
+C 0xA55D ...y E91E el 2
+
+B 0xA561 Coloca al rival pegado a un borde de la calzada. (iy+66) es el
+B 0xA561 interruptor: a cero el rival no busca borde y se queda con la x que
+B 0xA561 ya tenia. Las llaman las rutinas de tipo de 0xB986 a 0xBA96, cada
+B 0xA561 una tras dejar en (EA7D) cuantas casillas quiere meterse.
+C 0xA561 (iy+66): si es cero, este rival no busca borde
+C 0xA567 E = la fila, que es la coordenada vertical del rival
+C 0xA56A el borde derecho de la calzada en esa fila
+C 0xA56D (ix+06) = la x que ha salido
+C 0xA570 y 0xB8FF vuelve a buscar, con E = 0xC8, para dejar (ix+15)
+C 0xA574 misma cuenta por el lado izquierdo
+C 0xA57D el borde izquierdo
+C 0xA583 y 0xB90B para el (ix+15)
+L 0xA587 SIN_BUSCAR_BORDE   cola de las dos: (ix+15) = (ix+06) y (ix+0E) = 0xFF
+C 0xA587 sin buscar borde, el objetivo es donde ya esta
+C 0xA58D 0xFF en (ix+0E) es "sin objetivo"
+
+B 0xA592 La velocidad OBJETIVO del rival sale del byte de pista con el que
+B 0xA592 entro, (ix+17): si es cero -recta- se coge tal cual la velocidad base
+B 0xA592 del tipo; si no es cero es una curva, se marca el bit 4 de (ix+01) y
+B 0xA592 0xA8C6 le aplica la frenada de la tabla 0xA955.
+L 0xA592 VELOCIDAD_OBJETIVO  (ix+19,1A) segun el byte de pista (ix+17): recta o frenada de curva
+C 0xA592 el byte de pista con el que entro el rival
+C 0xA596 a cero es recta
+C 0xA598 bit 4 de (ix+01): viene con curva por delante
+C 0xA59C (ix+32) = el byte de pista guardado, que es lo que mira 0xA8C6
+C 0xA59F 0xA8C6 resta la frenada de curva a la velocidad base
+C 0xA5A2 recta: (ix+32) = 0
+C 0xA5A5 la velocidad base del tipo en esta categoria
+C 0xA5A8 y esa misma es la objetivo
+
+L 0xA5AF RESTA_24_BITS      B:HL -= C:DE, con B y C los bytes bajos; solo la llama p00 0x52BB
+C 0xA5AF los bytes bajos
+C 0xA5B2 los medios, con el prestamo
+C 0xA5B5 y los altos
+
+B 0xA5B9 LA PARRILLA DE SALIDA, desde p00 0x5A13 (medido en el emulador).
+B 0xA5B9 0xA673 reparte las seis plazas -el jugador 1 sale tercero y el 2
+B 0xA5B9 cuarto- y crea de rival todo lo que no sea un coche de jugador.
+B 0xA5B9 Luego, para cada coche, se mira uno por uno a sus cinco rivales: el
+B 0xA5B9 que este por delante (su +04 mas arriba en la pantalla) se marca como
+B 0xA5B9 mas rapido y suma a la cuenta de delante, y el que este por detras
+B 0xA5B9 suma a la de detras. Al final 0xA649 convierte la plaza de la
+B 0xA5B9 parrilla en la posicion de verdad dentro del peloton.
+L 0xA5B9 MONTA_LA_PARRILLA  parrilla de salida, quien va delante de quien y la posicion de partida de cada coche
+C 0xA5B9 0xA673 coloca los seis coches de la parrilla
+C 0xA5BC bit 5 de E1C2: dos jugadores
+C 0xA5C1 con dos, apunta cual de los dos va delante del otro
+C 0xA5C4 el coche 1 y sus cinco huecos
+C 0xA5CF con un solo jugador ya esta
+C 0xA5D5 el coche 2 y los suyos, cayendo en 0xA5DD
+L 0xA5DD REPASA_LOS_5_DE_SALIDA  por cada rival de la parrilla: delante o detras, y las cuentas del coche
+C 0xA5DD los cinco huecos
+C 0xA5DF 0x38 bytes de uno al siguiente
+C 0xA5E2 hueco vacio: nada que mirar
+C 0xA5E8 la vertical del coche menos la del rival
+C 0xA5EE (iy+29) guarda esa diferencia; su bit 7 es "el otro va detras"
+C 0xA5F1 bit 7 de (iy+30) = este objeto cuenta para los adelantamientos...
+C 0xA5F5 ...y bit 6 quitado = todavia no se ha apuntado ninguno
+C 0xA5F9 con acarreo el rival esta mas abajo, o sea por detras
+C 0xA5FB por delante: se marca como mas rapido, que es el que se escapa
+C 0xA5FF bit 2 de (iy+30): va por delante
+C 0xA60A y suma a la cuenta de los de delante del coche
+C 0xA60F por detras: ni mas rapido...
+C 0xA613 ...ni bit 2
+C 0xA61E y suma a la cuenta de los de detras
+C 0xA621 al hueco siguiente
+C 0xA625 (ix+71) = la plaza de la parrilla, 3 o 4
+C 0xA628 0xA649 le suma el peloton que va por delante sin verse
+C 0xA62B y ya es la posicion de salida de verdad
+
+L 0xA62F QUIEN_VA_DELANTE   bit 7 de (E2E9) = el coche 2 va por DETRAS del 1, el mismo criterio que el (iy+29) de un rival; solo con dos jugadores
+C 0xA62F el coche 1...
+C 0xA633 ...y el coche 2
+C 0xA637 (ix+71) es la posicion: cuanto mas baja, mejor
+C 0xA63F el 1 no va delante: bit 7 quitado
+C 0xA644 el 1 va delante, o sea el 2 va detras. En la salida siempre se llega aqui: 0xA673 acaba de poner 3 y 4
+
+B 0xA649 De la plaza de la parrilla a la posicion de verdad. Los seis coches
+B 0xA649 que se ven salen en las plazas 1 a 6, pero la clasificacion de la
+B 0xA649 carrera es mucho mas larga: esta rutina suma el byte de la carrera de
+B 0xA649 la tabla 0xA65E, y saliendo tercero en la primera carrera (0x14 = 20)
+B 0xA649 se empieza el 23. En la modalidad de dos jugadores alternos (E240
+B 0xA649 distinto de cero) no se suma nada y la parrilla es la clasificacion.
+L 0xA649 POSICION_DE_SALIDA  A = plaza de la parrilla + el byte de la carrera de 0xA65E, salvo con E240
+C 0xA649 la plaza se guarda en el juego alterno de registros
+C 0xA64A E240 distinto de cero es la tercera opcion del menu, los dos jugadores alternos
+C 0xA650 la carrera, 0 a 20
+C 0xA656 p00 0x40D0: HL += A
+C 0xA65A la plaza mas los coches que van delante sin verse
+L 0xA65C SIN_SUMAR_POSICION  con E240 la plaza se queda como esta
+C 0xA65C se recupera la plaza sin tocarla y se devuelve tal cual

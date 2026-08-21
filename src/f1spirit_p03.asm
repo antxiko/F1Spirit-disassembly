@@ -32,14 +32,14 @@ OBJETO_ARRANCA:		; cola de p02 0x9FF7: tipo, velocidad objetivo y el examen cont
 	jr z,L_A01D		;a009
 	ld a,(iy-00ch)		;a00b   ; (iy-0C): el de la segunda sonda (0xBB09)
 	ld (ix+017h),a		;a00e   ; de este byte sale la velocidad objetivo
-	call L_A592		;a011   ; 0xA592 deja en (ix+19,1A) la velocidad objetivo del rival
+	call VELOCIDAD_OBJETIVO		;a011   ; 0xA592 deja en (ix+19,1A) la velocidad objetivo del rival
 	call 09fe9h		;a014   ; p02 0x9FE9 compara la del jugador (iy+10,11) con ella: CY = el jugador es mas lento
 	pop bc			;a017
 	jp nc,09fe3h		;a018   ; el jugador NO es mas lento: el rival no sirve, se suelta el hueco
 	jr L_A02A		;a01b   ; sirve: a colocarlo
 L_A01D:
 	ld (ix+017h),a		;a01d   ; sin bit 7 la velocidad sale del byte de la primera sonda
-	call L_A592		;a020
+	call VELOCIDAD_OBJETIVO		;a020
 	call 09fe9h		;a023
 	pop bc			;a026
 	jp c,09fe3h		;a027   ; el jugador es mas lento: tampoco sirve, se suelta el hueco
@@ -68,7 +68,7 @@ L_A043:
 ; ----------------------------------------------------------------------
 OBJETO_ALTA:		; velocidad base, cuentas, color y la rutina del tipo
 	call PON_VELOCIDAD_BASE		;a046   ; (ix+1B,1C) = velocidad base del tipo en esta categoria
-	call L_A54F		;a049   ; aqui entra p02 0x9FCC (jr $+104 en 0x9FE1); 0xA54F sube E91C y el contador del jugador
+	call SUBE_LAS_CUENTAS		;a049   ; aqui entra p02 0x9FCC (jr $+104 en 0x9FE1); 0xA54F sube E91C y el contador del jugador
 	ld a,(0e1c2h)		;a04c   ; bit 5 de E1C2 = dos jugadores
 	bit 5,a		;a04f
 	jr nz,L_A057		;a051
@@ -232,7 +232,7 @@ PASO_DE_LOS_RIVALES:		; desde p00 0x5C4B: mete rivales nuevos y, con dos jugador
 	bit 5,a		;a113
 	jr z,L_A143		;a115   ; con uno solo no hay nada que medir ni que espejar
 	ld iy,0e380h		;a117   ; el coche 2
-	call L_A44E		;a11b   ; E918/E919/E91A = lo que separa a los dos coches; E91B, cual va delante
+	call MIDE_SEPARACION		;a11b   ; E918/E919/E91A = lo que separa a los dos coches; E91B, cual va delante
 	ld ix,0e928h		;a11e   ; los cinco huecos del jugador 2
 	call PASO_RIVALES_DE_UN_COCHE		;a122
 	ld iy,0e2c0h		;a125   ; y ahora el coche 1...
@@ -251,7 +251,7 @@ L_A133:
 	jp OBJETO_ENTRA_EN_PISTA		;a140   ; y le da el alta
 L_A143:
 	ld iy,0e2c0h		;a143   ; con un solo jugador siempre manda el coche 1
-	ld (iy+05ah),0e8h		;a147   ; (iy+5A) = 0xE8: en esta vista no hay otro coche que pintar
+	ld (iy+05ah),0e8h		;a147   ; (iy+5A) = 0xE8: con un jugador este coche no se pinta en ninguna otra vista
 	call L_BA9F		;a14b
 	jr L_A133		;a14e
 TOCA_RIVAL_NUEVO:		; CY = no ha entrado ninguno; si entra, devuelve su tipo en A
@@ -314,25 +314,25 @@ METE_RIVAL:		; busca hueco y monta el rival; CY si no ha podido
 	jr nz,L_A1DA		;a190   ; con dos hay que mirar tambien como quedaria en la otra vista
 L_A192:
 	push bc			;a192
-	call L_A412		;a193   ; 0xA412 busca hueco libre; NZ = no hay
+	call CABE_Y_HUECO_LIBRE		;a193   ; 0xA412 busca hueco libre; NZ = no hay
 	pop bc			;a196
 	jr nz,L_A160		;a197   ; sin hueco, se sale con CY por 0xA160
 L_A199:
 	push hl			;a199   ; IX = el hueco
 	pop ix		;a19a
-	call L_A3AB		;a19c   ; 0xA3AB pone a cero los 0x36 primeros bytes del hueco
+	call LIMPIA_HUECO		;a19c   ; 0xA3AB pone a cero los 0x36 primeros bytes del hueco
 	ld (ix+000h),c		;a19f   ; el tipo, tal como lo trae la entrada de rival de p15 (en C)
 	ld (ix+036h),b		;a1a2   ; (ix+36) = el tercer byte de esa entrada (en B)
 	call PON_VELOCIDAD_BASE		;a1a5   ; (ix+1B,1C) = velocidad base del tipo
 	ld a,(iy-00dh)		;a1a8   ; se prueba primero con el byte de la primera sonda, (iy-0D)
 	ld (ix+017h),a		;a1ab
-	call L_A592		;a1ae   ; 0xA592 deja la velocidad objetivo en (ix+19,1A)
+	call VELOCIDAD_OBJETIVO		;a1ae   ; 0xA592 deja la velocidad objetivo en (ix+19,1A)
 	call 09fe9h		;a1b1   ; y p02 0x9FE9 la compara con la del jugador
 	ld a,020h		;a1b4   ; 0x20 = solo el bit 5: entra esperando
 	jr nc,L_A1C8		;a1b6   ; el jugador va igual o mas rapido: vale, es un rival al que va a adelantar
 	ld a,(iy-00ch)		;a1b8   ; no valia: segunda prueba, con el byte de la otra sonda, (iy-0C)
 	ld (ix+017h),a		;a1bb
-	call L_A592		;a1be
+	call VELOCIDAD_OBJETIVO		;a1be
 	call 09fe9h		;a1c1   ; y se vuelve a comparar
 	ccf			;a1c4   ; si con esta el jugador tampoco es mas lento, se abandona con CY
 	ret c			;a1c5
@@ -365,7 +365,7 @@ L_A1F1:
 L_A1F8:
 	push de			;a1f8   ; E = el tipo exigido; hay que guardarlo porque 0xA412 usa DE
 	push bc			;a1f9
-	call L_A412		;a1fa
+	call CABE_Y_HUECO_LIBRE		;a1fa
 	pop bc			;a1fd
 	pop de			;a1fe
 	jp nz,L_A160		;a1ff   ; sin hueco, fuera con CY
@@ -395,15 +395,15 @@ L_A225:
 
 ; ----------------------------------------------------------------------
 ; Lo que hay que hacer una vez por coche y fotograma: pasarle a cada
-; coche el (iy+4B) del otro, decidir donde cae el otro coche en esta
-; vista, y descontar las cuentas atras de los cinco huecos.
+; coche el (iy+4B) del otro, decidir donde cae ESTE coche en la vista
+; DEL OTRO, y descontar las cuentas atras de los cinco huecos.
 ; ----------------------------------------------------------------------
-ESPEJO_ENTRE_JUGADORES:		; intercambia (+4B), coloca al otro coche en la vista y descuenta los cinco huecos
+ESPEJO_ENTRE_JUGADORES:		; intercambia (+4B), calcula donde cae este coche en la vista del otro y descuenta los cinco huecos
 	ld a,(0e30bh)		;a22e   ; (E30B) es el (iy+4B) del coche 1...
 	ld (0e3dbh),a		;a231   ; ...y va al +5B del coche 2
 	ld a,(0e3cbh)		;a234   ; (E3CB) es el (iy+4B) del coche 2...
 	ld (0e31bh),a		;a237   ; ...y va al +5B del coche 1
-	ld (iy+05ah),0e8h		;a23a   ; de partida, el otro coche no se ve en esta vista
+	ld (iy+05ah),0e8h		;a23a   ; de partida, este coche no se ve en la vista del otro
 	ld hl,(0e919h)		;a23e   ; la parte alta de lo que separa a los dos coches
 	ld a,h			;a241
 	or l			;a242
@@ -444,7 +444,7 @@ CUENTA_ATRAS_DEL_HUECO:		; huecos con el bit 4: descuenta (ix+1D,1E) y, al llega
 L_A284:
 	dec (hl)			;a284
 	pop af			;a285
-	call L_A4C2		;a286   ; 0xA4C2 dice si el objeto puede entrar de verdad
+	call PUEDE_ENTRAR_ESTE		;a286   ; 0xA4C2 dice si el objeto puede entrar de verdad
 	ret c			;a289   ; no puede: se queda sin salir
 	set 5,a		;a28a   ; bit 5: entrara esperando
 	exx			;a28c   ; el bucle de 0xA24C vive en los registros alternos
@@ -459,8 +459,8 @@ L_A284:
 	pop bc			;a299
 	exx			;a29a
 	ret			;a29b
-ESPEJA_LOS_5_OBJETOS:		; coloca al otro coche en la vista y copia a la otra lista los cinco objetos
-	call POSICION_DEL_OTRO_COCHE		;a29c   ; (iy+5A) = donde cae el otro coche en esta vista
+ESPEJA_LOS_5_OBJETOS:		; calcula el (iy+5A) de este coche y copia a la otra lista los cinco objetos
+	call POSICION_EN_LA_OTRA_VISTA		;a29c   ; (iy+5A) = donde cae ESTE coche en la vista del otro
 	ld a,(0e918h)		;a29f   ; lo que separa a los dos coches, byte bajo
 	cp 0b8h		;a2a2   ; de 0xB8 en adelante ya no comparten vista: no hay nada que espejar
 	ret nc			;a2a4
@@ -568,7 +568,7 @@ HUECO_PARA_EL_ESPEJO:		; (EA60) = donde va la copia; (EA64) = 1 si reaprovecha l
 	jr nz,L_A364		;a35f
 	ld hl,0e928h		;a361
 L_A364:
-	call L_A440		;a364   ; 0xA440 busca un hueco con el tipo a cero; NZ = no hay
+	call HUECO_LIBRE_EN_HL		;a364   ; 0xA440 busca un hueco con el tipo a cero; NZ = no hay
 	ret nz			;a367
 	push hl			;a368
 	pop de			;a369
@@ -578,7 +578,7 @@ L_A36B:
 	ld (0ea64h),a		;a36f   ; (EA64) = si la pareja es nueva o no
 	xor a			;a372   ; se vuelve siempre con Z
 	ret			;a373
-POSICION_DEL_OTRO_COCHE:		; (iy+5A) = la x con la que el otro coche se pinta en esta vista
+POSICION_EN_LA_OTRA_VISTA:		; CORRIGE lo publicado: (iy+5A) NO es donde cae el otro coche en esta vista, es la coordenada vertical con la que ESTE coche se pinta en la vista DEL OTRO. Lo dice p01 0x6F47: con IX = 0xE380 (coche 2) e IY = 0xE2C0 (coche 1, de quien sale el (iy+4B) de la camara) se pinta con E = (ix+5A), o sea el +5A del coche 2 en la mitad del jugador 1; y 0x6F65 hace lo simetrico. Cuadra con los signos: sumar (E918) al propio +04 es justo pasar de una vista a la otra
 	ld a,(iy+009h)		;a374   ; el jugador 1 suma donde el 2 resta
 	dec a			;a377
 	jr z,L_A38C		;a378
@@ -606,7 +606,7 @@ L_A39C:
 	ret c			;a39c   ; se ha salido del byte: se queda con el 0xE8 que puso 0xA23A
 	cp 0c8h		;a39d   ; y de 0xC8 en adelante tampoco se pinta
 	ret nc			;a39f
-	ld (iy+05ah),a		;a3a0   ; (iy+5A) = donde cae el otro coche en esta vista
+	ld (iy+05ah),a		;a3a0   ; (iy+5A) = la vertical con la que este coche se pinta en la vista del otro; lo lee p01 0x6F4B / 0x6F6D
 	ret			;a3a3
 
 ; ----------------------------------------------------------------------
@@ -633,52 +633,80 @@ DATA_relleno_A3AA:
 ; ======================================================================
 
 
-L_A3AB:
-	push bc			;a3ab
-	ld bc,00036h		;a3ac
-	call 04b87h		;a3af
+
+; ----------------------------------------------------------------------
+; Borra un hueco recien cogido. OJO: el hueco lo trae HL, no IX; es el
+; que acaban de devolver 0xA412 o 0xA433, y el llamador ya lo ha
+; copiado a IX. Borra 0x36 bytes y no 0x38, igual que la copia espejo
+; de 0xA2DC: (ix+36) y el turno (ix+37) se salvan. Lo llaman 0xA19C
+; (rival nuevo), 0xA6E8 (parrilla) y p02 0x9FD9 (CREA_OBJETO_EN).
+; ----------------------------------------------------------------------
+LIMPIA_HUECO:		; (HL..HL+0x35) = 0, dejando (ix+36) y el turno (ix+37) como estaban
+	push bc			;a3ab   ; BC lleva el tipo y el tercer byte de la entrada de rival: hay que devolverlo entero
+	ld bc,00036h		;a3ac   ; 0x36, no 0x38
+	call 04b87h		;a3af   ; p00 0x4B87 RELLENA_RAM_CERO
 	pop bc			;a3b2
 	ret			;a3b3
-BUSCA_CASILLA_ATRAS:		; desde la casilla que da p00 0x4A9D recorre hacia atras (dec l) hasta 32 posiciones buscando la primera cuyo byte, menos (E26C), sea menor que (E272)-(E26C); devuelve NC y D = la posicion por 8 (contada desde (EA7D)), o CY si no hay ninguna
-	ld d,0ffh		;a3b4
-	call 04a9dh		;a3b6
-	ld a,(0e26ch)		;a3b9
+
+; ----------------------------------------------------------------------
+; EL BORDE DERECHO DE LA CALZADA en la fila que marque E. Arranca en la
+; COLUMNA 31 (por eso el ld d,0FFh: 0x4A9D se queda con D>>3) y va
+; restando columnas hasta encontrar la primera casilla de clase 9 a 14;
+; las 32 pruebas son exactamente el ancho de una fila, asi que nunca se
+; mete en la de al lado. Luego RETROCEDE (EA7D) columnas HACIA DENTRO de
+; la pista y devuelve el resultado en pixeles (x8) en D, listo para
+; (ix+06). (EA7D) lo pone la rutina del tipo de rival justo antes de
+; llamar: vale 1 en 0xB986, 4 en 0xB9B3 y 0xB9D8, 2 en 0xBA02, 5 en
+; 0xBA2C y 1 en 0xBA53 y 0xBA96. O sea: pegate al borde y metete N
+; casillas. El nombre "ATRAS" es solo el sentido del dec l.
+; ----------------------------------------------------------------------
+BUSCA_CASILLA_ATRAS:		; el BORDE DERECHO de la calzada en la fila que marca E: desde la columna 31 del buffer de nombres (p00 0x4A9D) baja con dec l las 32 columnas de la fila hasta dar con un tile de clase 9 a 14 -o sea con (tile - (E26C)) menor que (E272)-(E26C)-, se mete (EA7D) columnas hacia dentro y devuelve NC y D = esa columna por 8, en pixeles, lista para (ix+06). CY si la fila entera esta fuera de la calzada
+	ld d,0ffh		;a3b4   ; D = 0xFF -> 0x4A9D lo convierte en la columna 31, el borde derecho de la pantalla
+	call 04a9dh		;a3b6   ; HL = la casilla del buffer de nombres del jugador (0xE400 o 0xEC00 + fila*32 + columna)
+	ld a,(0e26ch)		;a3b9   ; (E26C), el umbral entre la clase 8 y la 9; se queda en D
 	ld d,a			;a3bc
-	ld a,(0e272h)		;a3bd
+	ld a,(0e272h)		;a3bd   ; E = (E272) - (E26C): el ancho de la ventana de clases 9 a 14
 	sub d			;a3c0
 	ld e,a			;a3c1
-	ld b,010h		;a3c2
+	ld b,010h		;a3c2   ; 16 vueltas y dos pruebas por vuelta = las 32 columnas de la fila
 L_A3C4:
-	ld a,(hl)			;a3c4
+	ld a,(hl)			;a3c4   ; la casilla, y a la de la izquierda
 	dec l			;a3c5
-	sub d			;a3c6
+	sub d			;a3c6   ; resta-y-compara sin signo: si tile - (E26C) cae dentro de la ventana, es calzada
 	cp e			;a3c7
 	jr c,L_A3D4		;a3c8
-	ld a,(hl)			;a3ca
+	ld a,(hl)			;a3ca   ; la segunda prueba de la vuelta, identica
 	dec l			;a3cb
 	sub d			;a3cc
 	cp e			;a3cd
 	jr c,L_A3D4		;a3ce
 	djnz L_A3C4		;a3d0
-	scf			;a3d2
+	scf			;a3d2   ; fila entera sin calzada: CY
 	ret			;a3d3
 L_A3D4:
-	ld a,(0ea7dh)		;a3d4
+	ld a,(0ea7dh)		;a3d4   ; (EA7D): cuantas columnas se mete hacia dentro desde el borde
 	ld b,a			;a3d7
-	ld a,l			;a3d8
+	ld a,l			;a3d8   ; L ya paso de largo, la casilla buena es L+1
 	inc a			;a3d9
 L_A3DA:
-	dec a			;a3da
+	dec a			;a3da   ; restar B veces es restar (EA7D) columnas, o sea meterse hacia la izquierda
 	djnz L_A3DA		;a3db
-	add a,a			;a3dd
+	add a,a			;a3dd   ; de columnas a pixeles: x8
 	add a,a			;a3de
 	add a,a			;a3df
-	ld d,a			;a3e0
+	ld d,a			;a3e0   ; D = la x que va a (ix+06); NC = encontrada
 	or a			;a3e1
 	ret			;a3e2
-BUSCA_CASILLA_ADELANTE:		; la gemela de 0xA3B4 recorriendo hacia delante (inc l)
-	ld d,000h		;a3e3
-	call 04a9dh		;a3e5
+
+; ----------------------------------------------------------------------
+; El BORDE IZQUIERDO, la gemela exacta de 0xA3B4: arranca en la columna
+; 0 (ld d,0), avanza con inc l y, cuando encuentra la calzada, SUMA
+; las (EA7D) columnas en vez de restarlas. Las dos se meten hacia
+; dentro de la pista, cada una desde su lado.
+; ----------------------------------------------------------------------
+BUSCA_CASILLA_ADELANTE:		; el BORDE IZQUIERDO, la gemela de 0xA3B4: empieza en la columna 0, sube con inc l y SUMA las (EA7D) columnas en vez de restarlas, o sea que tambien se mete hacia dentro de la pista
+	ld d,000h		;a3e3   ; D = 0 -> columna 0, el borde izquierdo
+	call 04a9dh		;a3e5   ; misma casilla de partida que la gemela, solo cambia por donde empieza
 	ld a,(0e26ch)		;a3e8
 	ld d,a			;a3eb
 	ld a,(0e272h)		;a3ec
@@ -686,7 +714,7 @@ BUSCA_CASILLA_ADELANTE:		; la gemela de 0xA3B4 recorriendo hacia delante (inc l)
 	ld e,a			;a3f0
 	ld b,010h		;a3f1
 L_A3F3:
-	ld a,(hl)			;a3f3
+	ld a,(hl)			;a3f3   ; la casilla, y a la de la derecha
 	inc l			;a3f4
 	sub d			;a3f5
 	cp e			;a3f6
@@ -697,12 +725,12 @@ L_A3F3:
 	cp e			;a3fc
 	jr c,L_A403		;a3fd
 	djnz L_A3F3		;a3ff
-	scf			;a401
+	scf			;a401   ; fila entera sin calzada: CY
 	ret			;a402
 L_A403:
-	ld a,(0ea7dh)		;a403
+	ld a,(0ea7dh)		;a403   ; aqui se SUMA (EA7D): hacia dentro es hacia la derecha
 	ld b,a			;a406
-	ld a,l			;a407
+	ld a,l			;a407   ; L ya paso de largo, la casilla buena es L-1
 	dec a			;a408
 L_A409:
 	inc a			;a409
@@ -710,96 +738,116 @@ L_A409:
 	add a,a			;a40c
 	add a,a			;a40d
 	add a,a			;a40e
-	ld d,a			;a40f
+	ld d,a			;a40f   ; D = la x que va a (ix+06); NC = encontrada
 	or a			;a410
 	ret			;a411
-L_A412:
-	ld a,(0e25bh)		;a412
+
+; ----------------------------------------------------------------------
+; CABE UN OBJETO MAS? Dos topes: uno global -2 objetos en RALLY
+; (categoria 0) y 4 en las otras cinco- y otro por coche, el (iy-13)
+; que p02 0x813D saca de la tabla de tramos de p15 y 0x80A7 retoca;
+; p02 0x8029 lo arranca a 5. Si cabe, 0xA433 devuelve el hueco.
+; La llaman 0xA193, 0xA1FA y p02 0x9FF8.
+; ----------------------------------------------------------------------
+CABE_Y_HUECO_LIBRE:		; topes global y por coche, y si pasan, HL = un hueco libre (Z), o A = 0xFF (NZ)
+	ld a,(0e25bh)		;a412   ; la categoria elegida, 0 a 5
 	and a			;a415
-	ld b,004h		;a416
+	ld b,004h		;a416   ; tope general de objetos en pista: 4...
 	jr nz,L_A41C		;a418
-	ld b,002h		;a41a
+	ld b,002h		;a41a   ; ...salvo en RALLY, que son 2
 L_A41C:
-	ld a,(0e91ch)		;a41c
+	ld a,(0e91ch)		;a41c   ; E91C: cuantos objetos hay entre los dos jugadores
 	cp b			;a41f
-	jr nc,L_A44B		;a420
-	ld a,(0e91dh)		;a422
-	bit 0,(iy+009h)		;a425
+	jr nc,L_A44B		;a420   ; lleno: no cabe
+	ld a,(0e91dh)		;a422   ; E91D: los del jugador 1
+	bit 0,(iy+009h)		;a425   ; (iy+09) es 1 o 2, asi que el bit 0 basta para distinguirlos
 	jr nz,L_A42E		;a429
-	ld a,(0e91eh)		;a42b
+	ld a,(0e91eh)		;a42b   ; E91E: los del jugador 2
 L_A42E:
-	cp (iy-013h)		;a42e
+	cp (iy-013h)		;a42e   ; (iy-13) es el tope de ese coche en el tramo de pista que se este corriendo
 	jr nc,L_A44B		;a431
-L_A433:
-	ld a,(iy+009h)		;a433
+HUECO_DE_ESTE_COCHE:		; HL = la lista del coche de IY y sigue en 0xA440; la llama p02 0x9FCE
+	ld a,(iy+009h)		;a433   ; de que jugador es el coche que manda
 	cp 001h		;a436
-	ld hl,0e800h		;a438
-	jr z,L_A440		;a43b
-	ld hl,0e928h		;a43d
-L_A440:
-	ld b,005h		;a440
-	ld de,00038h		;a442
-	xor a			;a445
+	ld hl,0e800h		;a438   ; sus cinco huecos: E800 el jugador 1...
+	jr z,HUECO_LIBRE_EN_HL		;a43b
+	ld hl,0e928h		;a43d   ; ...y E928 el 2
+HUECO_LIBRE_EN_HL:		; recorre cinco estructuras de 0x38 desde HL y para en la primera con el tipo a cero
+	ld b,005h		;a440   ; los cinco huecos
+	ld de,00038h		;a442   ; 0x38 bytes de uno al siguiente
+	xor a			;a445   ; hueco libre es (hl) = 0
 L_A446:
 	cp (hl)			;a446
-	ret z			;a447
+	ret z			;a447   ; Z y HL = el hueco
 	add hl,de			;a448
 	djnz L_A446		;a449
 L_A44B:
-	or 0ffh		;a44b
+	or 0ffh		;a44b   ; ninguno libre: A = 0xFF y NZ
 	ret			;a44d
-L_A44E:
-	ld de,(0e3c1h)		;a44e
-	ld a,(0e3c0h)		;a452
+
+; ----------------------------------------------------------------------
+; LO QUE SEPARA A LOS DOS COCHES. La medida de cada coche son tres
+; bytes: (+41,+42) cuenta cuantas veces se ha dado la vuelta la
+; fraccion (+3F,+40) -que p00 0x55CB va RESTANDO segun la velocidad-,
+; asi que el avance de verdad es (+41,+42)*256 MENOS (+40). Por eso
+; 0xA46D resta el byte bajo al reves que los altos: no es un error, es
+; que ese byte cuenta hacia atras. 0xA44E lo resta en un sentido y, si
+; sale negativo, en el otro, de modo que E918/E919/E91A queda siempre
+; positivo y E91B dice cual de los dos coches va delante. Solo la
+; llaman 0xA11B y 0xA76B, las dos con dos jugadores.
+; ----------------------------------------------------------------------
+MIDE_SEPARACION:		; E918/E919/E91A = lo que separa a los dos coches (siempre positivo) y E91B = cual va delante
+	ld de,(0e3c1h)		;a44e   ; DE = (+41,+42) del coche 2
+	ld a,(0e3c0h)		;a452   ; C = su (+40), el byte que cuenta hacia atras
 	ld c,a			;a455
-	ld hl,(0e301h)		;a456
-	ld a,(0e300h)		;a459
+	ld hl,(0e301h)		;a456   ; HL = (+41,+42) del coche 1
+	ld a,(0e300h)		;a459   ; B = su (+40)
 	ld b,a			;a45c
-	call L_A46D		;a45d
-	ld a,002h		;a460
+	call RESTA_AVANCES_1_2		;a45d   ; coche 1 menos coche 2
+	ld a,002h		;a460   ; sin acarreo: se queda con esa resta
 	jr nc,L_A469		;a462
-	call L_A491		;a464
+	call RESTA_AVANCES_2_1		;a464   ; salio negativa: se rehace al reves para que la separacion sea positiva
 	ld a,001h		;a467
 L_A469:
-	ld (0e91bh),a		;a469
+	ld (0e91bh),a		;a469   ; E91B = el numero del coche que va delante
 	ret			;a46c
-L_A46D:
-	push bc			;a46d
+RESTA_AVANCES_1_2:		; E918/E919/E91A = avance del coche 1 - avance del coche 2; CY si sale negativo
+	push bc			;a46d   ; 0xA44E necesita los seis bytes intactos por si hay que repetir al reves
 	push de			;a46e
 	push hl			;a46f
-	ld a,c			;a470
+	ld a,c			;a470   ; el byte bajo del coche 2
 	and a			;a471
 	jr nz,L_A475		;a472
-	inc e			;a474
+	inc e			;a474   ; neg de cero NO pone acarreo: se compensa a mano el prestamo que falta
 L_A475:
-	neg		;a475
+	neg		;a475   ; el byte bajo va con el signo cambiado porque cuenta hacia atras
 	ld c,a			;a477
-	ld a,b			;a478
+	ld a,b			;a478   ; lo mismo con el byte bajo del coche 1
 	and a			;a479
 	jr nz,L_A47D		;a47a
 	inc l			;a47c
 L_A47D:
 	neg		;a47d
-	sub c			;a47f
-	ld (0e918h),a		;a480
+	sub c			;a47f   ; -c1 - (-c2) = c2 - c1, que es lo que avanza el coche 1 sobre el 2
+	ld (0e918h),a		;a480   ; E918: la parte que cabe en una pantalla
 	ld a,l			;a483
-	sbc a,e			;a484
+	sbc a,e			;a484   ; y de aqui arriba, la resta normal coche 1 - coche 2
 	ld (0e919h),a		;a485
 	ld a,h			;a488
 	sbc a,d			;a489
-	ld (0e91ah),a		;a48a
+	ld (0e91ah),a		;a48a   ; E91A: si E919/E91A no son cero, los coches no comparten vista
 	pop hl			;a48d
 	pop de			;a48e
 	pop bc			;a48f
 	ret			;a490
-L_A491:
-	push bc			;a491
+RESTA_AVANCES_2_1:		; la gemela de 0xA46D con los dos coches cambiados de sitio
+	push bc			;a491   ; misma cuenta, del coche 2 sobre el 1
 	push de			;a492
 	push hl			;a493
 	ld a,b			;a494
 	and a			;a495
 	jr nz,L_A499		;a496
-	inc l			;a498
+	inc l			;a498   ; la misma compensacion del neg de cero, ahora en el otro orden
 L_A499:
 	neg		;a499
 	ld b,a			;a49b
@@ -809,264 +857,345 @@ L_A499:
 	inc e			;a4a0
 L_A4A1:
 	neg		;a4a1
-	sub b			;a4a3
+	sub b			;a4a3   ; -c2 - (-c1) = c1 - c2
 	ld (0e918h),a		;a4a4
 	ld a,e			;a4a7
 	sbc a,l			;a4a8
 	ld (0e919h),a		;a4a9
 	ld a,d			;a4ac
 	sbc a,h			;a4ad
-	ld (0e91ah),a		;a4ae
+	ld (0e91ah),a		;a4ae   ; E91A del reves; 0xA44E llega aqui cuando 0xA46D le dio negativo
 	pop hl			;a4b1
 	pop de			;a4b2
 	pop bc			;a4b3
 	ret			;a4b4
-L_A4B5:
-	inc (hl)			;a4b5
+
+; ----------------------------------------------------------------------
+; Sin llamador: los dos bytes de esta direccion no aparecen en ninguna
+; parte de los 128 KB de la ROM, y por eso esta declarada a mano en
+; p03.entries. Es un contador de dos escalones: sube (HL) y, cuando
+; llega a C, lo pone a cero y sube (HL+3).
+; ----------------------------------------------------------------------
+CUENTA_Y_ACARREA:		; (HL)++ y, al llegar a C, (HL) = 0 y (HL+3)++; nadie la llama
+	inc (hl)			;a4b5   ; un paso mas
 	ld a,(hl)			;a4b6
-	cp c			;a4b7
-	ret nz			;a4b8
+	cp c			;a4b7   ; C es el tope
+	ret nz			;a4b8   ; sin llegar al tope no hay nada mas que hacer
 	xor a			;a4b9
 	ld (hl),a			;a4ba
 	push hl			;a4bb
 	inc hl			;a4bc
 	inc hl			;a4bd
 	inc hl			;a4be
-	inc (hl)			;a4bf
+	inc (hl)			;a4bf   ; tres bytes mas alla vive el escalon de arriba
 	pop hl			;a4c0
 	ret			;a4c1
-L_A4C2:
-	ld b,a			;a4c2
-	ld a,(0e1c2h)		;a4c3
+
+; ----------------------------------------------------------------------
+; QUIEN PUEDE ENTRAR AHORA MISMO. Con un jugador, cualquiera. Con dos,
+; mientras los coches esten lejos (E919/E91A distintos de cero, o mas
+; de 0xB8 de separacion) tambien. Pero si comparten vista, el coche que
+; va DELANTE solo admite rivales mas rapidos (bit 7 del tipo puesto) y
+; el que va DETRAS solo mas lentos: si no, el rival apareceria dentro
+; de la pantalla del otro. Es la misma regla que 0xA1E9-0xA1F8 aplica
+; al crearlos; aqui se vuelve a mirar cuando el objeto ya estaba
+; esperando (0xA286, cuando vence la cuenta atras, y p02 0x9DC3,
+; cuando vence el (ix+20)).
+; ----------------------------------------------------------------------
+PUEDE_ENTRAR_ESTE:		; CY si el tipo que trae A no encaja con quien va delante; A vuelve intacto
+	ld b,a			;a4c2   ; el tipo se guarda en B porque A hace falta para leer variables
+	ld a,(0e1c2h)		;a4c3   ; bit 5 de E1C2: dos jugadores
 	bit 5,a		;a4c6
 	ld a,b			;a4c8
-	jr z,L_A4EB		;a4c9
-	ld hl,(0e919h)		;a4cb
+	jr z,L_A4EB		;a4c9   ; con uno solo entra siempre
+	ld hl,(0e919h)		;a4cb   ; la parte alta de la separacion
 	ld a,h			;a4ce
 	or l			;a4cf
 	ld a,b			;a4d0
-	ret nz			;a4d1
-	ld a,(0e918h)		;a4d2
+	ret nz			;a4d1   ; a mas de 255 no comparten vista: entra
+	ld a,(0e918h)		;a4d2   ; y de 0xB8 en adelante tampoco caben los dos en la misma pantalla
 	cp 0b8h		;a4d5
 	ld a,b			;a4d7
 	ret nc			;a4d8
-	ld a,(iy+009h)		;a4d9
+	ld a,(iy+009h)		;a4d9   ; de que jugador es el coche
 	dec a			;a4dc
 	jr z,L_A4F4		;a4dd
-	ld a,(0e91bh)		;a4df
+	ld a,(0e91bh)		;a4df   ; E91B = 2 quiere decir que el que va delante es este mismo coche, el 2...
 	dec a			;a4e2
 	ld a,b			;a4e3
 	jr z,L_A4ED		;a4e4
-	bit 7,b		;a4e6
+	bit 7,b		;a4e6   ; ...y el de delante solo admite rivales mas rapidos
 	jp z,L_A161		;a4e8
 L_A4EB:
-	or a			;a4eb
+	or a			;a4eb   ; NC = puede entrar
 	ret			;a4ec
 L_A4ED:
-	bit 7,b		;a4ed
+	bit 7,b		;a4ed   ; el jugador 2 con el coche 1 delante: yendo detras, solo mas lentos
 	jp nz,L_A161		;a4ef
 	or a			;a4f2
 	ret			;a4f3
 L_A4F4:
-	ld a,(0e91bh)		;a4f4
+	ld a,(0e91bh)		;a4f4   ; el jugador 1: E91B = 1 es "voy yo delante"
 	dec a			;a4f7
 	ld a,b			;a4f8
 	jr z,L_A502		;a4f9
-	bit 7,b		;a4fb
+	bit 7,b		;a4fb   ; con el 2 delante, solo mas lentos
 	jp nz,L_A161		;a4fd
 	or a			;a500
 	ret			;a501
 L_A502:
-	bit 7,b		;a502
+	bit 7,b		;a502   ; yendo delante, solo mas rapidos
 	jp z,L_A161		;a504
 	or a			;a507
 	ret			;a508
-L_A509:
-	ld a,030h		;a509
-	call 040d0h		;a50b
-	jr L_A51C		;a50e
-L_A510:
-	ld a,030h		;a510
+
+; ----------------------------------------------------------------------
+; LAS DOS CUENTAS DEL COCHE: cuantos rivales se le ven por DELANTE y
+; cuantos por DETRAS. Viven en los bits 3, 4 y 5 de (coche+30) y de
+; (coche+5E) -los otros bits de esos dos bytes son banderas-, y por eso
+; se suma y se resta de 8 en 8. El tope de arriba lo pone el bit 6
+; (0x38 = siete rivales) y el de abajo el bit 7 (cero). Quien las lee
+; es 0xAE22 (ld a,(ix+5E) / rra rra rra / and 7) para decidir la
+; posicion, y 0xB1DC/0xB1E4 las borra con and 0C7h. HL entra siendo
+; el coche.
+; ----------------------------------------------------------------------
+MAS_UNO_DELANTE:		; (HL+0x30) += 8 hasta 0x38: un rival mas por delante
+	ld a,030h		;a509   ; +0x30 es la cuenta de los de delante
+	call 040d0h		;a50b   ; p00 0x40D0: HL += A
+	jr SUMA_8_CON_TOPE		;a50e
+MENOS_UNO_DELANTE:		; (HL+0x30) -= 8 hasta 0
+	ld a,030h		;a510   ; el mismo byte, para bajar la cuenta
 	call 040d0h		;a512
-	jr L_A529		;a515
-L_A517:
-	ld a,05eh		;a517
+	jr RESTA_8_CON_SUELO		;a515
+MAS_UNO_DETRAS:		; (HL+0x5E) += 8 hasta 0x38: un rival mas por detras
+	ld a,05eh		;a517   ; +0x5E es la cuenta de los de detras
 	call 040d0h		;a519
-L_A51C:
-	ld a,(hl)			;a51c
-	add a,008h		;a51d
-	bit 6,a		;a51f
+SUMA_8_CON_TOPE:		; (HL) += 8 y solo se guarda si no se pasa de 0x38
+	ld a,(hl)			;a51c   ; el byte de la cuenta, con sus banderas en los bits 0 a 2
+	add a,008h		;a51d   ; un rival mas
+	bit 6,a		;a51f   ; 0x38 + 8 = 0x40 enciende el bit 6: se ha pasado, no se guarda
 	ret nz			;a521
 	ld (hl),a			;a522
 	ret			;a523
-L_A524:
-	ld a,05eh		;a524
+MENOS_UNO_DETRAS:		; (HL+0x5E) -= 8 hasta 0
+	ld a,05eh		;a524   ; la cuenta de los de detras, para bajarla
 	call 040d0h		;a526
-L_A529:
-	ld a,(hl)			;a529
-	sub 008h		;a52a
-	bit 7,a		;a52c
+RESTA_8_CON_SUELO:		; (HL) -= 8 y solo se guarda si no baja de cero
+	ld a,(hl)			;a529   ; la cuenta con sus banderas
+	sub 008h		;a52a   ; un rival menos
+	bit 7,a		;a52c   ; por debajo de cero se enciende el bit 7: no se guarda
 	ret nz			;a52e
 	ld (hl),a			;a52f
 	ret			;a530
-L_A531:
-	ld c,a			;a531
-	ld a,b			;a532
-	rra			;a533
+
+; ----------------------------------------------------------------------
+; Cuando p02 0x9E35 QUITA_OBJETO retira un objeto, esta rutina baja la
+; cuenta que toque. Llega con A = (EA67), que vale 1 si el objeto se
+; habia salido por ARRIBA (su +04 pasaba de 0xE0) y 0 si se salio por
+; abajo, y con B = el tipo por dos (p02 0x9E55 hizo add a,a); el
+; rra de 0xA533 lo devuelve entero porque el acarreo trae el bit 7.
+; No cuentan ni el tipo 15 ni los tipos 8 y 9, y solo se toca la cuenta
+; si (ix+30) tiene el bit 7 puesto y el 6 quitado, que es la marca que
+; pone 0xA5F1 y que 0xAEC3 borra cuando el adelantamiento ya se ha
+; apuntado. IY es el coche.
+; ----------------------------------------------------------------------
+BAJA_LA_CUENTA:		; al retirar un objeto, resta 8 a la cuenta de delante o a la de detras
+	ld c,a			;a531   ; C = (EA67): 1 si se salio por arriba, 0 si por abajo
+	ld a,b			;a532   ; B = el tipo por dos...
+	rra			;a533   ; ...y el acarreo del add a,a de p02 0x9E55 devuelve el bit 7: A vuelve a ser el tipo
 	and 00fh		;a534
-	cp 00fh		;a536
+	cp 00fh		;a536   ; el tipo 15 (la explosion) no cuenta
 	ret z			;a538
-	sub 008h		;a539
+	sub 008h		;a539   ; los tipos 8 y 9 tampoco (son los que p02 0x9E40 manda a p01 0x7FFC)
 	cp 002h		;a53b
 	ret c			;a53d
-	ld a,(ix+030h)		;a53e
+	ld a,(ix+030h)		;a53e   ; bit 7 puesto y bit 6 quitado: este objeto todavia estaba contado
 	and 0c0h		;a541
 	cp 080h		;a543
 	ret nz			;a545
-	ld a,c			;a546
-	push iy		;a547
+	ld a,c			;a546   ; (EA67) otra vez
+	push iy		;a547   ; las dos rutinas de abajo esperan el coche en HL
 	pop hl			;a549
-	dec a			;a54a
-	jr nz,L_A524		;a54b
-	jr L_A510		;a54d
-L_A54F:
-	push hl			;a54f
-	ld hl,0e91ch		;a550
+	dec a			;a54a   ; se salio por abajo: baja la cuenta de los de detras
+	jr nz,MENOS_UNO_DETRAS		;a54b
+	jr MENOS_UNO_DELANTE		;a54d   ; se salio por arriba: baja la de los de delante
+SUBE_LAS_CUENTAS:		; E91C++ y E91D o E91E, segun de quien sea el objeto; desde OBJETO_ALTA
+	push hl			;a54f   ; HL es del llamador
+	ld hl,0e91ch		;a550   ; E91C: el total de objetos
 	inc (hl)			;a553
-	ld a,(iy+009h)		;a554
+	ld a,(iy+009h)		;a554   ; de que jugador es
 	dec a			;a557
-	ld hl,0e91dh		;a558
+	ld hl,0e91dh		;a558   ; E91D el jugador 1...
 	jr z,L_A55E		;a55b
-	inc l			;a55d
+	inc l			;a55d   ; ...y E91E el 2
 L_A55E:
 	inc (hl)			;a55e
 	pop hl			;a55f
 	ret			;a560
-AJUSTA_CON_CASILLA_ATRAS:		; si (iy+66) no es cero: E = (ix+4), BUSCA_CASILLA_ATRAS, (ix+6) = D y 0xB8FF; si es cero, (ix+15) = (ix+6) y (ix+0E) = 0xFF
-	ld a,(iy+066h)		;a561
+
+; ----------------------------------------------------------------------
+; Coloca al rival pegado a un borde de la calzada. (iy+66) es el
+; interruptor: a cero el rival no busca borde y se queda con la x que
+; ya tenia. Las llaman las rutinas de tipo de 0xB986 a 0xBA96, cada
+; una tras dejar en (EA7D) cuantas casillas quiere meterse.
+; ----------------------------------------------------------------------
+AJUSTA_CON_CASILLA_ATRAS:		; pega el rival al borde DERECHO de la calzada: si (iy+66) no es cero, E = (ix+4) -su fila-, BUSCA_CASILLA_ATRAS, (ix+6) = D y 0xB8FF; si es cero, (ix+15) = (ix+6) y (ix+0E) = 0xFF
+	ld a,(iy+066h)		;a561   ; (iy+66): si es cero, este rival no busca borde
 	and a			;a564
-	jr z,L_A587		;a565
-	ld e,(ix+004h)		;a567
-	call BUSCA_CASILLA_ATRAS		;a56a
-	ld (ix+006h),d		;a56d
-	call PON_IX15_CASILLA_ATRAS		;a570
+	jr z,SIN_BUSCAR_BORDE		;a565
+	ld e,(ix+004h)		;a567   ; E = la fila, que es la coordenada vertical del rival
+	call BUSCA_CASILLA_ATRAS		;a56a   ; el borde derecho de la calzada en esa fila
+	ld (ix+006h),d		;a56d   ; (ix+06) = la x que ha salido
+	call PON_IX15_CASILLA_ATRAS		;a570   ; y 0xB8FF vuelve a buscar, con E = 0xC8, para dejar (ix+15)
 	ret			;a573
-AJUSTA_CON_CASILLA_ADELANTE:		; la gemela de 0xA561 con BUSCA_CASILLA_ADELANTE y 0xB90B
-	ld a,(iy+066h)		;a574
+AJUSTA_CON_CASILLA_ADELANTE:		; la gemela de 0xA561 por el borde IZQUIERDO, con BUSCA_CASILLA_ADELANTE y 0xB90B
+	ld a,(iy+066h)		;a574   ; misma cuenta por el lado izquierdo
 	and a			;a577
-	jr z,L_A587		;a578
+	jr z,SIN_BUSCAR_BORDE		;a578
 	ld e,(ix+004h)		;a57a
-	call BUSCA_CASILLA_ADELANTE		;a57d
+	call BUSCA_CASILLA_ADELANTE		;a57d   ; el borde izquierdo
 	ld (ix+006h),d		;a580
-	call PON_IX15_CASILLA_ADELANTE		;a583
+	call PON_IX15_CASILLA_ADELANTE		;a583   ; y 0xB90B para el (ix+15)
 	ret			;a586
-L_A587:
-	ld a,(ix+006h)		;a587
+SIN_BUSCAR_BORDE:		; cola de las dos: (ix+15) = (ix+06) y (ix+0E) = 0xFF
+	ld a,(ix+006h)		;a587   ; sin buscar borde, el objetivo es donde ya esta
 	ld (ix+015h),a		;a58a
-	ld (ix+00eh),0ffh		;a58d
+	ld (ix+00eh),0ffh		;a58d   ; 0xFF en (ix+0E) es "sin objetivo"
 	ret			;a591
-L_A592:
-	ld a,(ix+017h)		;a592
+
+; ----------------------------------------------------------------------
+; La velocidad OBJETIVO del rival sale del byte de pista con el que
+; entro, (ix+17): si es cero -recta- se coge tal cual la velocidad base
+; del tipo; si no es cero es una curva, se marca el bit 4 de (ix+01) y
+; 0xA8C6 le aplica la frenada de la tabla 0xA955.
+; ----------------------------------------------------------------------
+VELOCIDAD_OBJETIVO:		; (ix+19,1A) segun el byte de pista (ix+17): recta o frenada de curva
+	ld a,(ix+017h)		;a592   ; el byte de pista con el que entro el rival
 	and a			;a595
-	jr z,L_A5A2		;a596
-	set 4,(ix+001h)		;a598
-	ld (ix+032h),a		;a59c
-	jp L_A8C6		;a59f
+	jr z,L_A5A2		;a596   ; a cero es recta
+	set 4,(ix+001h)		;a598   ; bit 4 de (ix+01): viene con curva por delante
+	ld (ix+032h),a		;a59c   ; (ix+32) = el byte de pista guardado, que es lo que mira 0xA8C6
+	jp L_A8C6		;a59f   ; 0xA8C6 resta la frenada de curva a la velocidad base
 L_A5A2:
-	ld (ix+032h),a		;a5a2
-	call VELOCIDAD_DE_TABLA		;a5a5
-	ld (ix+019h),e		;a5a8
+	ld (ix+032h),a		;a5a2   ; recta: (ix+32) = 0
+	call VELOCIDAD_DE_TABLA		;a5a5   ; la velocidad base del tipo en esta categoria
+	ld (ix+019h),e		;a5a8   ; y esa misma es la objetivo
 	ld (ix+01ah),d		;a5ab
 	ret			;a5ae
-L_A5AF:
-	ld a,b			;a5af
+RESTA_24_BITS:		; B:HL -= C:DE, con B y C los bytes bajos; solo la llama p00 0x52BB
+	ld a,b			;a5af   ; los bytes bajos
 	sub c			;a5b0
 	ld b,a			;a5b1
-	ld a,l			;a5b2
+	ld a,l			;a5b2   ; los medios, con el prestamo
 	sbc a,e			;a5b3
 	ld l,a			;a5b4
-	ld a,h			;a5b5
+	ld a,h			;a5b5   ; y los altos
 	sbc a,d			;a5b6
 	ld h,a			;a5b7
 	ret			;a5b8
-L_A5B9:
-	call L_A673		;a5b9
-	ld a,(0e1c2h)		;a5bc
+
+; ----------------------------------------------------------------------
+; LA PARRILLA DE SALIDA, desde p00 0x5A13 (medido en el emulador).
+; 0xA673 reparte las seis plazas -el jugador 1 sale tercero y el 2
+; cuarto- y crea de rival todo lo que no sea un coche de jugador.
+; Luego, para cada coche, se mira uno por uno a sus cinco rivales: el
+; que este por delante (su +04 mas arriba en la pantalla) se marca como
+; mas rapido y suma a la cuenta de delante, y el que este por detras
+; suma a la de detras. Al final 0xA649 convierte la plaza de la
+; parrilla en la posicion de verdad dentro del peloton.
+; ----------------------------------------------------------------------
+MONTA_LA_PARRILLA:		; parrilla de salida, quien va delante de quien y la posicion de partida de cada coche
+	call L_A673		;a5b9   ; 0xA673 coloca los seis coches de la parrilla
+	ld a,(0e1c2h)		;a5bc   ; bit 5 de E1C2: dos jugadores
 	bit 5,a		;a5bf
-	call nz,L_A62F		;a5c1
-	ld ix,0e2c0h		;a5c4
+	call nz,QUIEN_VA_DELANTE		;a5c1   ; con dos, apunta cual de los dos va delante del otro
+	ld ix,0e2c0h		;a5c4   ; el coche 1 y sus cinco huecos
 	ld iy,0e800h		;a5c8
-	call L_A5DD		;a5cc
-	ld a,(0e1c2h)		;a5cf
+	call REPASA_LOS_5_DE_SALIDA		;a5cc
+	ld a,(0e1c2h)		;a5cf   ; con un solo jugador ya esta
 	bit 5,a		;a5d2
 	ret z			;a5d4
-	ld ix,0e380h		;a5d5
+	ld ix,0e380h		;a5d5   ; el coche 2 y los suyos, cayendo en 0xA5DD
 	ld iy,0e928h		;a5d9
-L_A5DD:
-	ld b,005h		;a5dd
-	ld de,00038h		;a5df
+REPASA_LOS_5_DE_SALIDA:		; por cada rival de la parrilla: delante o detras, y las cuentas del coche
+	ld b,005h		;a5dd   ; los cinco huecos
+	ld de,00038h		;a5df   ; 0x38 bytes de uno al siguiente
 L_A5E2:
-	ld a,(iy+000h)		;a5e2
+	ld a,(iy+000h)		;a5e2   ; hueco vacio: nada que mirar
 	and a			;a5e5
 	jr z,L_A621		;a5e6
-	ld a,(ix+004h)		;a5e8
+	ld a,(ix+004h)		;a5e8   ; la vertical del coche menos la del rival
 	sub (iy+004h)		;a5eb
-	ld (iy+029h),a		;a5ee
-	set 7,(iy+030h)		;a5f1
-	res 6,(iy+030h)		;a5f5
-	jr c,L_A60F		;a5f9
-	set 7,(iy+000h)		;a5fb
-	set 2,(iy+030h)		;a5ff
+	ld (iy+029h),a		;a5ee   ; (iy+29) guarda esa diferencia; su bit 7 es "el otro va detras"
+	set 7,(iy+030h)		;a5f1   ; bit 7 de (iy+30) = este objeto cuenta para los adelantamientos...
+	res 6,(iy+030h)		;a5f5   ; ...y bit 6 quitado = todavia no se ha apuntado ninguno
+	jr c,L_A60F		;a5f9   ; con acarreo el rival esta mas abajo, o sea por detras
+	set 7,(iy+000h)		;a5fb   ; por delante: se marca como mas rapido, que es el que se escapa
+	set 2,(iy+030h)		;a5ff   ; bit 2 de (iy+30): va por delante
 	res 3,(iy+030h)		;a603
 	push ix		;a607
 	pop hl			;a609
-	call L_A509		;a60a
+	call MAS_UNO_DELANTE		;a60a   ; y suma a la cuenta de los de delante del coche
 	jr L_A621		;a60d
 L_A60F:
-	res 7,(iy+000h)		;a60f
-	res 2,(iy+030h)		;a613
+	res 7,(iy+000h)		;a60f   ; por detras: ni mas rapido...
+	res 2,(iy+030h)		;a613   ; ...ni bit 2
 	res 3,(iy+030h)		;a617
 	push ix		;a61b
 	pop hl			;a61d
-	call L_A517		;a61e
+	call MAS_UNO_DETRAS		;a61e   ; y suma a la cuenta de los de detras
 L_A621:
-	add iy,de		;a621
+	add iy,de		;a621   ; al hueco siguiente
 	djnz L_A5E2		;a623
-	ld a,(ix+071h)		;a625
-	call L_A649		;a628
-	ld (ix+071h),a		;a62b
+	ld a,(ix+071h)		;a625   ; (ix+71) = la plaza de la parrilla, 3 o 4
+	call POSICION_DE_SALIDA		;a628   ; 0xA649 le suma el peloton que va por delante sin verse
+	ld (ix+071h),a		;a62b   ; y ya es la posicion de salida de verdad
 	ret			;a62e
-L_A62F:
-	ld ix,0e2c0h		;a62f
-	ld iy,0e380h		;a633
-	ld a,(ix+071h)		;a637
+QUIEN_VA_DELANTE:		; bit 7 de (E2E9) = el coche 2 va por DETRAS del 1, el mismo criterio que el (iy+29) de un rival; solo con dos jugadores
+	ld ix,0e2c0h		;a62f   ; el coche 1...
+	ld iy,0e380h		;a633   ; ...y el coche 2
+	ld a,(ix+071h)		;a637   ; (ix+71) es la posicion: cuanto mas baja, mejor
 	cp (iy+071h)		;a63a
 	jr c,L_A644		;a63d
-	res 7,(ix+029h)		;a63f
+	res 7,(ix+029h)		;a63f   ; el 1 no va delante: bit 7 quitado
 	ret			;a643
 L_A644:
-	set 7,(ix+029h)		;a644
+	set 7,(ix+029h)		;a644   ; el 1 va delante, o sea el 2 va detras. En la salida siempre se llega aqui: 0xA673 acaba de poner 3 y 4
 	ret			;a648
-L_A649:
-	ex af,af'			;a649
-	ld a,(0e240h)		;a64a
+
+; ----------------------------------------------------------------------
+; De la plaza de la parrilla a la posicion de verdad. Los seis coches
+; que se ven salen en las plazas 1 a 6, pero la clasificacion de la
+; carrera es mucho mas larga: esta rutina suma el byte de la carrera de
+; la tabla 0xA65E, y saliendo tercero en la primera carrera (0x14 = 20)
+; se empieza el 23. En la modalidad de dos jugadores alternos (E240
+; distinto de cero) no se suma nada y la parrilla es la clasificacion.
+; ----------------------------------------------------------------------
+POSICION_DE_SALIDA:		; A = plaza de la parrilla + el byte de la carrera de 0xA65E, salvo con E240
+	ex af,af'			;a649   ; la plaza se guarda en el juego alterno de registros
+	ld a,(0e240h)		;a64a   ; E240 distinto de cero es la tercera opcion del menu, los dos jugadores alternos
 	or a			;a64d
-	jr nz,L_A65C		;a64e
-	ld a,(0e25ch)		;a650
+	jr nz,SIN_SUMAR_POSICION		;a64e
+	ld a,(0e25ch)		;a650   ; la carrera, 0 a 20
 	ld hl,0a65eh		;a653
-	call 040d0h		;a656
+	call 040d0h		;a656   ; p00 0x40D0: HL += A
 	ex af,af'			;a659
-	add a,(hl)			;a65a
+	add a,(hl)			;a65a   ; la plaza mas los coches que van delante sin verse
 	ret			;a65b
-L_A65C:
-	ex af,af'			;a65c
+SIN_SUMAR_POSICION:		; con E240 la plaza se queda como esta
+	ex af,af'			;a65c   ; se recupera la plaza sin tocarla y se devuelve tal cual
 	ret			;a65d
 
 ; ----------------------------------------------------------------------
-; DATOS tabla_A65E: un byte por carrera (21, indice (E25C)); lo suma 0xA650
-;   (`ld hl,0xA65E / call HL_MAS_A / ex af,af' / add a,(hl)`)
+; DATOS posicion_extra_por_carrera: 21 bytes, uno por carrera (E25C): los
+;   coches que en esa carrera van por delante SIN VERSE. 0xA649 se lo suma a
+;   la plaza de la parrilla (3 el jugador 1, 4 el 2, las pone 0xA673) y de ahi
+;   sale la posicion de salida real, la que p01 0x6A50 pinta en el ranking: 3
+;   + 20 = 23 en la primera carrera, 3 + 50 = 53 en la segunda. Los valores
+;   son 20, 50, 15, 40, 40, 23, seis veces 25 y nueve veces 30. Con E240
+;   distinto de cero (dos jugadores alternos) no se suma nada
 ;   0xa65e..0xa673  (21 bytes)
-DATA_tabla_A65E:
+DATA_posicion_extra_por_carrera:
 	defb 014h,032h,00fh,028h,028h,017h,019h,019h,019h,019h,019h,019h,01eh,01eh,01eh,01eh,01eh,01eh,01eh,01eh,01eh	; a65e  .2.((................
 
 ; ======================================================================
@@ -1121,10 +1250,10 @@ L_A6C9:
 	jr z,L_A6E2		;a6dc
 	ld iy,0e380h		;a6de
 L_A6E2:
-	call L_A433		;a6e2
+	call HUECO_DE_ESTE_COCHE		;a6e2
 	push hl			;a6e5
 	pop ix		;a6e6
-	call L_A3AB		;a6e8
+	call LIMPIA_HUECO		;a6e8
 	exx			;a6eb
 	push hl			;a6ec
 	ld hl,0ea7fh		;a6ed
@@ -1188,7 +1317,7 @@ L_A761:
 	ld a,(0e1c2h)		;a765
 	bit 5,a		;a768
 	ret z			;a76a
-	call L_A44E		;a76b
+	call MIDE_SEPARACION		;a76b
 	ld ix,0e800h		;a76e
 	ld iy,0e2c0h		;a772
 	call ESPEJA_LOS_5_OBJETOS		;a776
@@ -2203,19 +2332,19 @@ L_AEC3:
 L_AEC8:
 	push ix		;aec8
 	pop hl			;aeca
-	call L_A524		;aecb
+	call MENOS_UNO_DETRAS		;aecb
 L_AECE:
 	push ix		;aece
 	pop hl			;aed0
-	jp L_A509		;aed1
+	jp MAS_UNO_DELANTE		;aed1
 L_AED4:
 	push ix		;aed4
 	pop hl			;aed6
-	call L_A510		;aed7
+	call MENOS_UNO_DELANTE		;aed7
 L_AEDA:
 	push ix		;aeda
 	pop hl			;aedc
-	jp L_A517		;aedd
+	jp MAS_UNO_DETRAS		;aedd
 L_AEE0:
 	ld a,(ix+000h)		;aee0
 	jr L_AEE8		;aee3
@@ -2660,7 +2789,7 @@ L_B1F2:
 L_B225:
 	push iy		;b225
 	pop hl			;b227
-	call L_A517		;b228
+	call MAS_UNO_DETRAS		;b228
 	jr L_B23F		;b22b
 L_B22D:
 	bit 7,(ix+030h)		;b22d
@@ -2670,7 +2799,7 @@ L_B22D:
 L_B239:
 	push iy		;b239
 	pop hl			;b23b
-	call L_A509		;b23c
+	call MAS_UNO_DELANTE		;b23c
 L_B23F:
 	res 3,(ix+030h)		;b23f
 	add ix,de		;b243
