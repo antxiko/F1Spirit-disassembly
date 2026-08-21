@@ -997,3 +997,404 @@ C 0x6BE1 la fila de F1 no es un byte: es la suma de los dieciseis GP
 C 0x6BF3 el total del campeonato son 16 bits
 C 0x6C00 -0x40 es donde empieza la tabla de las 21 carreras
 C 0x6C0B se suman los 21 bytes: la mejor puntuacion de cada carrera
+
+C 0x6C16 y el total se guarda en el bloque del coche, dos bytes
+C 0x6C1D nueve textos fijos, y uno mas -"POINT"- solo si el coche llego a meta
+C 0x6C34 "TIME" tampoco se pinta si no hay tiempo que ensenar
+C 0x6C46 y "RESULT" se calla con E240 = 1
+C 0x6C5C cada texto trae su sitio en el buffer (una palabra), cuantos tiles son y los tiles
+C 0x6C65 el sitio es relativo al buffer que toque, que puede ser el de E400 o el de EC00
+C 0x6C6E los tiles se copian tal cual: ya son numeros de tile, no letras
+C 0x6C7B el `jp nz` de aqui es lo que deja pintar un texto solo a veces sin duplicar el bucle
+C 0x6C83 0x4E es la fila 2, columna 14
+C 0x6C8A el tile 0x10 es el 0, asi que sumarle el numero de jugador da su digito
+C 0x6C99 0x83 es la fila 4, columna 3
+C 0x6CA2 solo las carreras 5 en adelante tienen nombre de GP que pintar
+C 0x6CB0 un solo texto, y por el mismo camino que los demas
+C 0x6CBD con dos jugadores cada ficha ocupa 16 columnas y con uno 17
+C 0x6CD8 la del segundo jugador va pegada a la izquierda
+C 0x6CDE 0x300 bytes son las 24 filas de un buffer
+C 0x6CF0 dos digitos: solo la pareja de E
+C 0x6CF4 C es el interruptor de los ceros de delante, igual que en el escritor de p00: mientras siga a cero, el `and c` deja el tile 0
+C 0x6D01 a cada digito se le suma B, que es la fuente
+C 0x6D10 la decena solo se pinta si hay algo antes o si ella misma no es cero
+C 0x6D1F la unidad se pinta siempre, aunque sea un cero suelto
+C 0x6D2B los tiles 16 a 58 con 0x10: el fondo del ranking
+C 0x6D31 basta con que uno de los dos coches haya llegado
+
+C 0x6D46 -0x40 otra vez: la tabla de las 21 carreras del bloque del coche
+C 0x6D4A y de esa tabla, el byte de la carrera que se acaba de correr
+C 0x6D53 cada jugador apunta sus puntos en su sitio, EA74 o EA76
+C 0x6D6B sin llegar a meta no hay puntos...
+C 0x6D71 ...ni con E240 encendido...
+C 0x6D7A ...ni por debajo del puesto 11
+C 0x6D82 y solo se guarda si mejora lo que ya habia en esa carrera
+C 0x6D88 en cualquier otro caso, cero
+C 0x6D8B el byte alto siempre a cero: los puntos de una carrera caben en uno
+C 0x6EF8 E216 cuenta los sprites gastados en este fotograma
+C 0x6EFF con un jugador la cuenta es otra y mas corta
+C 0x6F0B DE' es la vista y BC' el recorte: cada coche se pinta dentro de su mitad de pantalla
+C 0x6F29 la vista del jugador 1 empieza en otro sitio (0x8810)
+C 0x6F43 el `rrca` deja el bit 0 en el acarreo, que es lo que mira el pintor
+C 0x6F56 y solo se pinta si el parpadeo lo deja
+
+C 0x6F87 los cinco objetos de cada jugador, cada uno en la vista de su dueno
+C 0x6F9D lo que no se ha usado se aparca: la Y a 0xE0 deja el sprite por debajo de la pantalla
+C 0x6FA0 se recorre hasta EAF8, que son 30 atributos: los dos ultimos no se tocan
+C 0x6FAC las luces de salida se montan aparte, que no son de ningun coche
+C 0x6FBB con un jugador la vista es (0x10, 0xF8) y mide 0x76 x 0xC0
+C 0x6FD9 el bit 6 de E1C2 -hay jugador 1- decide en que mitad de la tabla se escriben los atributos
+C 0x6FE3 cinco objetos por jugador, de 0x38 bytes cada uno
+C 0x6FE8 el tipo 0 es "ficha libre"...
+C 0x6FEB ...y los bits 4 y 5 encendidos son estados en los que el objeto no se pinta
+C 0x7004 (iy+4B) es la camara: al eje que cuenta el desplazamiento hay que restarsela
+C 0x700E B' y C' son el alto y el ancho de la vista: lo que se salga no se pinta
+C 0x7011 y D'E' es donde empieza la vista en la pantalla
+C 0x7020 el bit 0 de (ix+31) queda encendido: este objeto se ha pintado
+C 0x7027 y el bit 7 dice que el objeto esta parpadeando: este fotograma no le toca
+C 0x7037 el color sale de (ix+0F)
+C 0x703A el atributo va en el orden del VDP: Y, X, patron y color
+C 0x7046 el segundo sprite del par lleva el patron cuatro mas alla y el color 1: es la sombra de dos tintas
+C 0x7054 y no se pintan mas de cuatro sprites extra por fotograma
+C 0x705D el sprite extra se consume: solo dura un fotograma
+C 0x7071 por tres: las entradas de la tabla son (dx, dy, patron)
+
+C 0x7088 los cuatro bytes del atributo, en el orden del VDP
+C 0x70B2 este sprite extra solo sale en el fotograma 2 de la animacion
+C 0x70C2 el bit 0 del contador de fotogramas: el dibujo cambia en cada uno, y eso es el parpadeo
+C 0x70CC el bit 0 se apaga: el objeto no se ha pintado
+C 0x70DA E1D5 a cero antes de tocar el buffer: es la marca de "no vuelques todavia"
+C 0x70EE la lista de E928 son entradas de tres bytes: destino, destino y variante
+C 0x70F3 un destino a cero cierra la lista
+C 0x70FB la escalera de `add` multiplica la variante por 21 (4c + 16c + c): de una variante a la siguiente, los tiles van 21 mas alla
+C 0x7106 siete filas de alto
+C 0x710C el tile 0 de la plantilla es transparente: ahi no se escribe y se ve el fondo
+C 0x710E de 0x82 en adelante el tile va tal cual; por debajo se le suma el desplazamiento de la variante
+C 0x711D 0x1C es lo que falta hasta la fila de abajo, y el bit 2 de H es la vuelta dentro del kilobyte
+C 0x712A 0x1F es lo que ocupa una entrada entera: tres bytes de cabecera mas los 28 del fondo guardado
+C 0x7134 al borrar se devuelve el fondo que estaba guardado detras de la entrada
+C 0x7138 el destino se apaga sobre la marcha: la entrada queda libre
+C 0x714C cuatro `ldi` por fila, las mismas cuatro casillas que se pintaron
+C 0x7162 la pantalla de la clave: se limpia y se pinta entera de una vez
+
+C 0x7175 0x2F bytes desde EA50: el sitio donde se monta la clave
+C 0x7184 0x3A00 es la fila 16: se borran las ocho de abajo, que es donde va el menu
+C 0x718D el menu es un flujo de tiles con sus posiciones dentro: no hace falta pintarlo a mano
+C 0x71D0 el bit 6 de E1C2 -hay jugador 1- decide si ademas se vuelcan los sprites
+C 0x71DE siete opciones y ni una mas
+C 0x71F5 el cursor de esta pantalla se mueve en dos ejes y vive en EA72/EA73
+C 0x71F9 la fila por ocho mas 0x88: cada opcion esta ocho pixeles por debajo de la anterior
+C 0x720D el bit 4 es el boton y el 5 el espacio: aqui valen los dos
+C 0x7213 en la demo no suena
+C 0x721A el paso es la opcion elegida mas uno, que el 0 es el propio cursor
+C 0x7224 EXCHANGE cambia los datos de los dos jugadores de sitio, 0xC0 bytes cada uno
+C 0x7232 y les deja marcado quien es quien: 1 y 2
+C 0x7239 E25B a 0xFF: hay que volver a elegir categoria
+C 0x7244 los topes: cuatro filas y una sola columna
+C 0x724F los cuatro flancos, uno por bit, en el orden arriba, abajo, izquierda, derecha
+C 0x7260 un 0xFF es que se ha pasado por abajo: se queda en 0
+C 0x7266 y por arriba el tope es B
+C 0x7275 C se enciende si alguno de los dos ejes ha cambiado, y solo entonces suena
+C 0x728E los cuatro bytes del atributo, con el patron en B y el color en C
+C 0x7297 el `inc b` es para que el `djnz` de abajo cuente bien cuando B viene a cero
+C 0x7298 se cambian con A y A': dos bytes en el aire y ninguno perdido
+
+B 0x72A8 LA CONTRASENA. El juego guarda la partida en un codigo de letras:
+B 0x72A8 21 valores (los bytes de E280 a E294, o sea lo conseguido en cada
+B 0x72A8 carrera) recortados a un nibble cada uno, mas dos de control -uno
+B 0x72A8 la XOR de todos y otro la suma-, y delante un nibble al azar
+B 0x72A8 sacado del registro R. Los 24 simbolos se cifran con una tirada de
+B 0x72A8 nibbles que sale de la PROPIA ROM (0x5000 en adelante, la pagina 0,
+B 0x72A8 que esta siempre mapeada), empezando por el nibble al azar, y solo
+B 0x72A8 entonces se pasan a letras sumandoles 0x41.
+C 0x72AB E252 = 0 es "todavia no se ha generado"
+C 0x72B7 primero se genera en claro y luego se cifra encima
+C 0x72C6 0x3A43 es la fila 18, columna 3
+C 0x72D5 el boton o el espacio sacan de aqui
+C 0x72E6 sumar 0x41 convierte el valor en una letra a partir de la A
+C 0x72F4 el primer simbolo no es un dato: es la clave, y dice por que byte de la ROM empieza la tirada
+C 0x72F6 0x5000 es codigo de la propia pagina 0: la tirada de cifrado son los bytes del cartucho
+C 0x7301 y el resultado se recorta a cinco bits, que es lo que cabe en una letra
+C 0x7308 ningun valor pasa de 15: lo que no quepa en un nibble se pierde
+C 0x7311 los dos controles se llevan a la vez: D la XOR y E la suma
+C 0x7327 el nibble al azar sale del registro R, el contador de refresco: es lo mas parecido a un dado que hay a mano
+C 0x7334 los 21 valores son las 21 carreras
+C 0x7341 y detras van los dos controles, un nibble cada uno
+C 0x734D el 0xFF cierra la contrasena
+C 0x7351 escribir la contrasena tiene tres pasos: montar la pantalla, leer teclas y comprobar
+C 0x7369 el hueco se rellena de 0xFF, que es lo que el pintador lee como final
+C 0x7371 EA70 es por donde va escribiendo el jugador
+C 0x7383 la pantalla se repinta en cada vuelta: asi se ve lo que se escribe
+C 0x7386 con acarreo no hay tecla nueva
+C 0x738A el 8 es el borrado y el 0x0D el intro
+C 0x7393 solo valen los digitos y las letras: se descartan los codigos de en medio
+C 0x73A9 y no se pasa de EA6A: veinticuatro letras y ni una mas
+C 0x73BB si no se ha escrito nada no hay nada que borrar
+C 0x73C0 al borrar se deja un interrogante, que es lo que hace de hueco
+C 0x73D1 antes de nada se prueba si es una de las contrasenas especiales
+C 0x73E5 y si no, se descifra y se comprueban los dos controles
+C 0x73F3 0x3C fotogramas para leer el mensaje
+C 0x73FF y con la contrasena mala, el mismo tiempo pero con otro rotulo
+C 0x740C este trozo no lo llama nadie: es el mismo par de instrucciones que ya hay en 0x7405
+C 0x7416 cuando se agota el aviso se vuelve al menu
+
+B 0x7467 LAS SEIS CONTRASENAS ESPECIALES. Antes de descifrar nada se prueba
+B 0x7467 lo escrito contra seis palabras sueltas, y cada una lleva su codigo
+B 0x7467 pegado detras del 0xFF que la cierra:
+B 0x7467   MAXPOINT         E1DF = 1: los umbrales de puntos dejan de mirarse
+B 0x7467                    y quedan abiertas todas las categorias y GP
+B 0x7467   " UJM3EDC"       (empieza por un espacio, y las letras son dos
+B 0x7467                    columnas del teclado) enciende F006 y se va a
+B 0x7467                    p00 0x58A0: la grabacion de la demo
+B 0x7467   MITAIYOENDDEMO   bit 7 de F0FE y estado 0x10: la secuencia final
+B 0x7467   HYPEROFF         E1D6 = 1
+B 0x7467   ESCON / ESCOFF   encienden y apagan E1FD, el permiso para cortar
+B 0x7467                    la repeticion con el mando
+C 0x7467 seis contrasenas, probadas de la ultima a la primera
+C 0x746E la primera que cuadre corta la prueba
+C 0x7471 y si no cuadra ninguna, NZ: sigue el camino normal
+C 0x7479 la tabla da el texto de la contrasena que toca probar
+C 0x747F los dos punteros arrancan uno por detras, que el bucle empieza subiendolos
+C 0x7484 se compara letra a letra...
+C 0x7486 ...y el 0xFF final es lo que dice que la palabra entera cuadro
+C 0x748B el codigo del truco esta pegado detras del texto, y se llega a el con un `jp (hl)` dejando el retorno puesto a mano
+C 0x7490 todos los trucos vuelven por aqui, con Z puesto
+C 0x7492 estos cuatro bytes no los ejecuta nadie: son la cola del `jr` de 0x7487 vista desde otro sitio
+C 0x74AC MAXPOINT no da puntos: apaga la comprobacion, que es mas barato
+C 0x74B2 esto no es de las contrasenas: lo llama p00 0x57F4 y pone los puntos de los dos jugadores a 200
+C 0x74C4 UJM3EDC solo funciona si F0FE trae algo y no se esta reproduciendo
+C 0x74D6 y de paso deja el menu sin categoria elegida
+C 0x74F4 el bit 7 de F0FE es la marca de "ensename el final"
+C 0x7504 HYPEROFF enciende E1D6, que es lo que en boxes hace que los mecanicos se pongan a trabajar
+C 0x7510 ESCON y ESCOFF son un interruptor: la misma variable a 1 y a 0
+C 0x7522 restar 0x41 deshace lo que hizo 0x72E6
+
+C 0x7532 primero se mira que ningun valor pase de 9: los descifrados tienen que ser digitos
+C 0x753C se rehacen los dos controles sobre lo escrito...
+C 0x754A ...y luego se le quita el ultimo, que es el propio control y no cuenta
+C 0x7550 la suma se resta DOS veces: una para deshacer el ultimo y otra para comparar con el
+C 0x7552 y solo se miran los cuatro bits de abajo, que es lo que cabe en un simbolo
+C 0x7558 quince valores desde el cuarto: los tres primeros son la clave y los controles
+C 0x755F el `ccf` da la vuelta al acarreo: se sale con carry en cuanto uno pasa de 9
+C 0x7565 los 21 bytes son la mejor puntuacion de cada una de las 21 carreras
+C 0x7571 y al aceptar la contrasena se copian de vuelta y se rehace el total
+C 0x7589 los cuatro indicadores empiezan a cero: la aguja sube desde abajo
+C 0x759B el dibujo del panel esta en la pagina 9
+C 0x75AB el buffer entero a cero, el kilobyte
+C 0x75B4 con dos jugadores hay dos paneles, uno arriba y otro abajo
+C 0x75C6 el segundo va 0xA8 pixeles mas abajo
+C 0x75D7 con un jugador el panel es mas estrecho -catorce columnas- y va a la derecha
+C 0x7605 once columnas de ancho tiene el nombre
+C 0x760D el HUD no se repinta entero cada fotograma: se reparte en ocho tareas
+C 0x7613 los tres bits de abajo del contador de fotogramas dicen que tarea toca
+C 0x762B cuatro de las ocho tareas son el mismo indicador: se repinta el doble de a menudo que los demas
+C 0x763A la tarea 5 hace dos cosas: los neumaticos y el marcador de posicion
+C 0x7646 el frenazo de p02 se lleva 0x18 de golpe, y no baja de cero
+C 0x7655 el `and 0xff` no recorta nada: lo unico que hace es poner Z si el contador vale cero, o sea una vez cada 256 fotogramas
+C 0x7669 el coche parado o fuera de carrera no gasta
+C 0x7672 con el acelerador negativo -frenando- solo se gasta lo basico
+C 0x767D y acelerando se gasta ademas por revoluciones, cinco bits de ellas
+C 0x7691 por debajo de 0x11 salta el aviso de que queda poco
+
+C 0x7699 en boxes -o mientras el cronometro no pase de 0x80- el gasto es plano, 0x30
+C 0x769F fuera de boxes el gasto base lo dice el motor elegido, (ix+74)
+C 0x76F2 E1FC son las vueltas de la carrera, que las cuenta p02
+C 0x76FF con dos jugadores hay que darle su paso a cada coche
+C 0x770A el paso del marcador del mapa cambia con el circuito: los hay largos y cortos
+C 0x772E este trozo no lo llama nadie, pero es la pareja de 0x77A7: pone el marcador en su sitio de salida y le da el camino
+C 0x7739 por cuatro: cada entrada son dos palabras
+C 0x7747 E2BA es donde esta el marcador y E241 por donde va del camino
+C 0x77A7 al cerrar una vuelta el marcador vuelve a la salida
+C 0x77AE con dos jugadores el marcador no se recoloca: cada uno lleva el suyo
+C 0x77BA la tabla de 0x77C2 tiene la posicion de salida de los 21 circuitos
+C 0x77EC el marcador del mapa avanza por su cuenta, con su propio contador
+C 0x7804 el bit 0 de (ix+6F) es "la pieza acaba de cambiar": solo entonces avanza
+C 0x780A el paso por dos, sumado a un contador de 16 bits: la parte alta es por que punto del camino va
+C 0x781E el camino son deltas empaquetadas: cada byte lleva dos, una por nibble
+C 0x7822 el camino vive en la pagina 5
+C 0x7827 (ix+6C) es el indice dentro del camino
+
+C 0x7843 el indice sube por cada paso dado...
+C 0x7848 ...y al salir se deshace el ultimo, que se dio de mas
+C 0x784E las cuatro rotaciones no son una division: cambian los nibbles de sitio, y los `sra` de despues son los que extienden el signo
+C 0x785D el nibble bajo se saca sin rotar antes: los mismos cuatro `sra` valen para los dos
+C 0x7867 el resto de la division se guarda: los pasos que sobran se llevan al fotograma siguiente
+C 0x787E y con velocidad de sobra pueden caber varios pasos en un solo fotograma
+C 0x7886 0xA0 es lo que dura la parada si no se corta
+C 0x7892 el bit 0 de (ix+9) dice de que mando es este coche
+C 0x789B el boton saca de boxes en cualquier momento
+C 0x789F y abajo es lo que reposta: sin tocar nada, la parada no avanza
+C 0x78A5 mientras quede tiempo de parada se va gastando...
+C 0x78AF ...y al agotarse se cambian los neumaticos
+C 0x78B5 el `add a,001h` deja acarreo justo al llegar a 0x100: el deposito lleno
+C 0x78BE con el deposito lleno se sale, salvo que aun quede parada por delante o neumaticos por cambiar
+C 0x78CB el cambio de neumaticos se hace con las interrupciones apagadas: toca el sonido y la RAM de p02
+C 0x78D4 los cuatro neumaticos quedan sanos
+C 0x78E1 y el indicador se borra con cinco tiles a cero
+C 0x78FE con dos jugadores el indicador es mas pequeno y se pinta de otra forma
+C 0x790E el bit 4 del contador de fotogramas hace el parpadeo: 16 fotogramas con dibujo y 16 sin el
+C 0x791E los cuatro bits son los cuatro neumaticos, y el orden en pantalla no es el de los bits: 0, 3, 2, 1
+C 0x7950 con dos jugadores se ensena un neumatico por vuelta, rotando
+C 0x7957 cuatro entradas, una por neumatico
+C 0x7960 y solo se pinta si ese esta roto
+C 0x7968 cada jugador tiene su hueco en la pantalla
+C 0x7976 (ix+4A) es la cuenta atras del aviso, y se pone a 6 cuando revienta un neumatico
+C 0x7980 chocando no suena: ya hay bastante ruido
+
+C 0x79B6 el bit 5 de E1C2 vuelve a repartir: con dos jugadores el HUD es otro
+C 0x79C0 EAFC y EAF8 son los dos ultimos sprites: los marcadores del mapa
+C 0x79EB las vueltas se pintan al reves: lo que se ensena es lo que FALTA
+C 0x79F1 y solo se repinta si el numero ha cambiado, que escribir en la VRAM cuesta
+C 0x7A06 con un jugador las vueltas van en otro sitio y con otro tamano
+C 0x7A17 E331 es el puesto, el mismo que suben los rivales que te adelantan en boxes
+C 0x7A26 y el marcador del mapa es un sprite, no un tile
+C 0x7A2F la mitad del valor restada de 0x40: el marcador sube segun avanza el coche
+C 0x7A37 el patron 0xD4 con el color 0x0F: el punto del mapa
+C 0x7A48 los dos jugadores tienen su indicador de combustible, uno en cada mitad
+C 0x7A78 cinco rotaciones y tres bits: el deposito se ensena en ocho escalones
+C 0x7A9D lo mismo para un jugador, con otra tabla y otro sitio
+C 0x7AA2 (ix+69) es la marcha, y se ensena sumandole uno: por dentro va de 0 a 3 y en pantalla de 1 a 4
+C 0x7AC4 con un jugador la marcha no es un digito: es uno de los cuatro tiles 0xF6 en adelante
+C 0x7ACB DE se pasa por EA50 porque el escritor de digitos lee de memoria, no de registros
+C 0x7ADC la velocidad tambien cambia de sitio con el numero de jugadores
+C 0x7AF8 la velocidad interna entre 32 y por tres: eso es lo que sale en el marcador
+C 0x7B0F este indicador se repinta cuatro veces de cada ocho: es el que mas se mueve
+C 0x7B29 E19A y E19F son las revoluciones filtradas de cada coche
+
+C 0x7B5C por cuatro y luego por ocho: el valor por 32, para que el nivel salga en el byte alto
+C 0x7B6E el bit 4 del contador de fotogramas hace parpadear los tres tiles del aviso
+C 0x7B7C tres rotaciones y cinco bits, y lo que pase de 7 se queda en 7: el indicador solo tiene ocho escalones
+C 0x7BE5 por ocho, tres veces doblado
+C 0x7BEC este trozo usa 0x4A6D, que es entrar por la mitad de la escalera de corrimientos de p00
+C 0x7BF6 y si la cuenta se sale, se planta en 0xFF
+C 0x7BF9 con dos jugadores los digitos salen de los tiles 0xD4 y con uno de los 0xF5: no se pisan con los rotulos
+C 0x7C08 el indicador no salta al valor nuevo: se le acerca UN escalon por llamada, y de ahi que la aguja se mueva suave
+C 0x7C11 bajando se borra la celda que se deja...
+C 0x7C16 ...y subiendo se pinta la que se ocupa
+C 0x7C24 el tile de borrado es el byte que va JUSTO ANTES de la tabla de cada indicador
+C 0x7C2E la celda se escribe directa al puerto del VDP, sin pasar por el BIOS
+C 0x7C3C un `jr $` de verdad: si EA52 trajera 3 o mas la maquina se queda aqui colgada, y por eso 0x7C42 lo comprueba antes
+C 0x7C3F EA52 dice de que tipo es la tabla del indicador
+C 0x7C4F el tipo 1 es el sencillo: un tile por nivel y la celda es el propio nivel
+C 0x7C56 y el tipo 0 lleva tres bytes por nivel: el tile y la celda entera
+C 0x7C64 duplicar un tile a 16x16 se hace bit a bit: cada bit del original se escribe dos veces y cada fila tambien
+C 0x7C72 los dos `srl d / rr e` son el hueco que se abre para meter el bit doblado
+
+C 0x7C88 cada fila del original se escribe dos veces: al doblar de alto tambien
+C 0x7C8D seis casillas mas alla esta el tile de la derecha, que lleva la otra mitad de la fila
+C 0x7C99 a mitad de camino -la fila 4- se salta a los dos tiles de abajo
+C 0x7CA6 las vueltas grandes no son un tile normal: se lee el patron del digito pequeno, se dobla a 16x16 y se escribe encima de cuatro tiles
+C 0x7CB5 los ocho bytes del patron se leen de la VRAM uno a uno
+C 0x7CC9 0x20 bytes son los cuatro tiles doblados
+C 0x7CD0 la escena de meta: la bandera a cuadros bajando por la pantalla
+C 0x7CE5 las dos bandas de cuadros se pintan una vez, y luego solo se desplazan
+C 0x7CF6 E27E es por donde va el desplazamiento dentro del buffer
+C 0x7D03 cada fotograma la banda baja una fila
+C 0x7D22 en 0xEF28 se acaba el paseo y empieza la cuenta atras
+C 0x7D3C al llegar a 1 se avisa a p02, y al llegar a 0 se cambia de estado
+C 0x7D4B 0xFFC0 es -0x40, o sea dos filas de buffer
+C 0x7D57 por debajo de EC00 se vuelve por arriba: el buffer es circular
+C 0x7D60 y al pasar por 0xED68 se descomprime otro trozo de dibujo
+C 0x7D6F el dibujo esta en la pagina 8
+C 0x7D7A la banda que se desplaza es de 18 columnas: la mitad derecha de la pantalla
+C 0x7D8A veintitres filas de abajo arriba, para no pisarse
+C 0x7D90 0xFFE0 es -0x20: una fila hacia arriba
+C 0x7DA3 0x12 bytes son las 18 columnas de la banda
+C 0x7DAE los dos tiles del cuadro, 0x8B y 0x8C, alternando
+C 0x7DBE el `xor 7` cambia 0x8B por 0x8C y al reves: es lo que hace el damero
+C 0x7DC2 0x32 casillas hasta la fila siguiente, que se salta una: las bandas van cada dos filas
+C 0x7DCA la salida tiene diez fases, con E221 de indice
+
+C 0x7DE7 la salida empieza borrando quince bytes de estado
+C 0x7DF6 el sonido 0x81 abre la secuencia
+C 0x7E07 el panel se pinta por filas -de arriba abajo- y luego la pista
+C 0x7E0D aqui se espera de verdad, en un bucle: la salida no sigue hasta que p02 diga
+C 0x7E1C E1D7 = 1 enciende la primera luz del semaforo
+C 0x7E2E el bit 1 del contador de fotogramas: los coches parpadean cada dos
+C 0x7E40 los dos volumenes de motor a tope mientras dura la cuenta
+C 0x7E48 las tres primeras luces suenan igual (0x29) y la cuarta distinto (0x2A)
+C 0x7E56 la misma faena que la fase 1, pero sin mirar si hay uno o dos jugadores
+C 0x7E6F cada luz dura 0x14 fotogramas
+C 0x7E7B y E1D7 sube: una luz mas encendida
+C 0x7E80 0xFF en los dos volumenes: el motor a fondo
+C 0x7E8E con E240 encendido no se da la salida: es la tercera opcion de jugadores
+C 0x7E96 E1D7 a cero apaga el semaforo entero
+C 0x7EA6 el cronometro se pone a cero justo al arrancar
+C 0x7EB7 diez fotogramas mas y a la fase siguiente
+C 0x7EC2 (ix+55) = 1 en los dos coches: es la orden de salir
+C 0x7ED9 en cualquier fase, si los coches ya estan en el estado 6 -parados- se salta a la 9
+C 0x7EF2 E221 = 0xFF es "la salida se acabo"; p00 0x5AC0 lo mira para cambiar de estado
+C 0x7EFB los cuatro sprites del semaforo son fijos...
+C 0x7F09 ...y detras va el de la luz encendida, que cambia con E1D7
+C 0x7F3C E33E y E3FE arrancan a 0x40: el ritmo de cada coche
+C 0x7F4C una vez cada 256 fotogramas
+
+C 0x7F51 solo si vas entre los tres primeros: al que va detras no hace falta apretarle
+C 0x7F5C E208 = 4 es la orden de apretar el ritmo
+C 0x7F68 con un jugador ademas se mira el puesto cada 256 fotogramas
+C 0x7F85 por tres: la tabla de p03 trae un byte y una palabra por categoria
+C 0x7F98 el ritmo del coche por el byte de la categoria, con la multiplicacion con signo de p02
+C 0x7FA5 y el resultado por E20F, que es lo que aprieta o afloja a los rivales
+C 0x7FB5 la posicion en la pista dividida por cuatro, los 24 bits corridos dos veces
+C 0x7FC2 si el coche va por delante de lo previsto, el ritmo baja...
+C 0x7FCF ...y si va por detras, sube, con tope en 99
+C 0x7FDB el `xor 1` cambia el 0 por el 1 y el 1 por el 0, y el `add 3` los lleva a 3 y 4: es un interruptor de dos posiciones
+C 0x7FE9 este trozo no tiene llamador conocido: contesta con acarreo si E208 vale 0 o 4
+C 0x7FFC LA UNICA INSTRUCCION DEL CARTUCHO QUE CRUZA UNA FRONTERA DE PAGINA: el `sub` de 0x7FFF es de la pagina 1 y su operando (0xD4) es el primer byte de la 2, asi que la rutina sigue en p02 0x8001
+
+C 0x66EA 0x1D bytes por fila: 29 casillas corridas de golpe
+C 0x66F8 la fila por 32, que es lo que mide una fila del buffer
+C 0x6701 el bloque de E800 es donde se monto la ficha nueva
+C 0x6710 y de una fila a la siguiente hay que saltar dos casillas mas
+C 0x671E la misma faena hacia el otro lado
+C 0x671F 0x1D bytes con `lddr`: de derecha a izquierda para no pisarse
+C 0x6726 la fila por 32 otra vez
+C 0x6738 la columna que entra es la que diga lo que queda de deslizamiento
+C 0x61CD dos GP por cada umbral, y todos los umbrales van encadenados: el primero que no se pase corta
+C 0x61D3 los ocho umbrales estan escritos como ocho llamadas, una por valor
+C 0x61E5 no hay tabla: es la escalera escrita a mano
+C 0x6BB9 se guarda dos veces porque el destino hace falta al pintar y al bajar de fila
+C 0x6BC4 cuatro digitos por categoria
+C 0x79BD E32C es lo que lleva recorrido el coche, y de ahi sale la altura del marcador
+C 0x79D1 y las vueltas que faltan, en la misma tarea
+C 0x6C2A nueve o diez textos de golpe, y los que dependen de algo se pintan aparte
+C 0x6C36 el texto "TIME" solo sale si hay tiempo
+C 0x7D06 primero se mueve la banda y luego se pintan los objetos encima
+C 0x7D19 y se vuelca el buffer entero
+C 0x7A4C EA52 = 1: el indicador es del tipo de un tile por nivel
+C 0x7A5C E310 es el combustible del coche 1 y E3D0 el del 2
+C 0x7137 la entrada se lee y se apaga a la vez
+C 0x7145 siete filas de fondo guardado
+C 0x7A86 con un jugador el indicador es el mismo tipo pero en otro sitio
+C 0x714E cuatro casillas por fila, las mismas cuatro que se pintaron
+C 0x7C5A por tres, que las entradas de este tipo son (tile, celda baja, celda alta)
+C 0x7F65 con dos jugadores no hay ritmo que apretar: ya se aprietan ellos
+C 0x63AF y en cada byte hay que mirar si toca cambiar de fila
+C 0x63C8 el contador de columna se lleva en el juego alterno para no gastar registros
+C 0x63DD lo mismo, con el valor bajando
+C 0x6FBE 0x76 x 0xC0 es el recorte de la vista de un jugador
+C 0x729C el segundo byte se escribe con el que estaba esperando en A'
+C 0x7AFD por dos y una suma mas: eso es por tres
+C 0x7D8D una fila copiada, y luego los dos punteros suben
+C 0x6968 el `or a` es lo que pone Z cuando ya no quedan niveles
+C 0x6BE4 un byte por vuelta, dieciseis GP
+C 0x6C72 el tile va tal cual al buffer
+C 0x72FD la tirada de cifrado avanza a la vez que el texto
+C 0x7541 la XOR y la suma se llevan en D y E a la vez
+C 0x7D39 el `push af` guarda el Z del `dec` para despues del aviso
+C 0x7E31 y el bit 1 hace el parpadeo de los coches en la parrilla
+C 0x66DC ocho tiles horizontales entre las esquinas
+C 0x7A3D los cuatro bytes del atributo, uno detras de otro
+C 0x6B87 32 tiles por fila
+C 0x727D primero la columna...
+C 0x7285 ...y luego la fila, un byte por detras
+C 0x745A la musica 0x33 vuelve a sonar y se rehace la presentacion
+C 0x7685 el gasto base mas el de revoluciones
+C 0x7C6A un byte de origen por vuelta: cada uno da dos filas de destino
+C 0x7ECE 0x14 fotogramas para la ultima fase
+C 0x7EE9 el estado 6 del coche es "parado": si los dos lo estan, la salida ya no pinta nada
+C 0x673F un solo `ldd`: el byte que entra por la derecha
+C 0x7920 la primera celda es la del neumatico delantero izquierdo
+C 0x7926 y el orden de los bits no es el de la pantalla: 0, 3, 2, 1
+C 0x6CC2 diecisiete columnas con un jugador
+C 0x6729 se guarda el destino: la columna nueva se busca aparte
