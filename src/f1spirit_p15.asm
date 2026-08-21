@@ -14,6 +14,13 @@
 ;   empieza la pista siguiente: el final exacto lo dira el lector de la
 ;   partitura, por escribir
 ;   0xa000..0xa002  (2 bytes)
+
+; ----------------------------------------------------------------------
+; Los dos primeros bytes de la pagina no son una pista: son el operando
+; del salto FD E5 9F cuyo 0xFD es el ULTIMO byte de la pagina 14. La
+; pista que empieza en 0x9FD3 (pagina 14) vuelve a 0x9FE5 y suena en
+; bucle; el interprete cruza la frontera de banco sin enterarse.
+; ----------------------------------------------------------------------
 DATA_pista_9FD3:
 	defb 0e5h,09fh	; a000
 
@@ -268,6 +275,12 @@ DATA_pista_A5AB:
 ;   pista siguiente: el final exacto lo dira el lector de la partitura, por
 ;   escribir
 ;   0xa5de..0xa5df  (1 bytes)
+
+; ----------------------------------------------------------------------
+; La pista de los ocho canales del sonido 70 es este unico 0xFF: el
+; canal que la lee se suelta en el acto (0x64DB -> 0x681A). O sea que
+; el sonido 70 no suena nada: sirve para callar los canales que gane.
+; ----------------------------------------------------------------------
 DATA_pista_A5DE:
 	defb 0ffh	; a5de
 
@@ -276,57 +289,65 @@ DATA_pista_A5DE:
 ; ======================================================================
 
 
-L_A5DF:
-	ld a,(0e190h)		;a5df
-	and 004h		;a5e2
-	jp nz,L_A698		;a5e4
-	ld a,(0e19dh)		;a5e7
+
+; ----------------------------------------------------------------------
+; EL MOTOR DEL COCHE 1. Lo llama p13 0x6470 con IX = E084 (el canal 3,
+; el primero del SCC) cuando ese canal no lo ocupa ningun sonido de
+; partitura y el bit 3 de E190 esta puesto. No lee ningun flujo: cada
+; fotograma calcula el periodo desde las vueltas, el volumen desde
+; E197 y la forma de onda desde el terreno.
+; ----------------------------------------------------------------------
+MOTOR_COCHE_1:		; IX = E084 (canal 3, SCC); desde p13 0x6470
+	ld a,(0e190h)		;a5df   ; E190 lleva los bits de sonido de los dos coches, un nibble cada uno
+	and 004h		;a5e2   ; bit 2 del nibble bajo: el coche 1 esta parado con la salida ya dada (p02 0x86D0)
+	jp nz,AVISO_PARADO_1		;a5e4   ; parado: el canal deja de hacer de motor y pita (0xA698)
+	ld a,(0e19dh)		;a5e7   ; E19D es el byte alto de E19C: tope de vueltas menos vueltas, con signo
 	or a			;a5ea
-	jp p,L_A60E		;a5eb
-	ld hl,00000h		;a5ee
+	jp p,MOTOR_1_MAS_GRAVE		;a5eb   ; positivo = todavia por debajo del tope, y el periodo se alarga
+	ld hl,00000h		;a5ee   ; negativo = pasado del tope: hace falta el valor absoluto
 	ld de,(0e19ch)		;a5f1
 	or a			;a5f5
-	sbc hl,de		;a5f6
+	sbc hl,de		;a5f6   ; HL = 0 - E19C, o sea cuanto se pasa de vueltas
 	ld a,h			;a5f8
-	and 00fh		;a5f9
+	and 00fh		;a5f9   ; se mira el nibble bajo de H: a cero, el exceso cabe entero en L
 	cp 000h		;a5fb
-	jr z,L_A604		;a5fd
-	ld de,000ffh		;a5ff
-	jr L_A606		;a602
+	jr z,L_A604		;a5fd   ; cabe: se usa tal cual
+	ld de,000ffh		;a5ff   ; no cabe: se topa en 0xFF, que es todo lo que se deja subir el tono
+	jr MOTOR_1_MAS_AGUDO		;a602
 L_A604:
-	ld h,a			;a604
+	ld h,a			;a604   ; DE = el exceso, ya en un byte
 	ex de,hl			;a605
-L_A606:
-	ld hl,00300h		;a606
+MOTOR_1_MAS_AGUDO:		; periodo = 0x300 - el exceso de vueltas
+	ld hl,00300h		;a606   ; 0x300 es el periodo del motor del coche 1 justo en el tope de vueltas
 	or a			;a609
-	sbc hl,de		;a60a
-	jr L_A61E		;a60c
-L_A60E:
-	ld hl,00300h		;a60e
+	sbc hl,de		;a60a   ; menos periodo es mas agudo: pasarse de vueltas sube el tono
+	jr MOTOR_1_ESCRIBE		;a60c
+MOTOR_1_MAS_GRAVE:		; periodo = 0x300 + lo que falta para el tope
+	ld hl,00300h		;a60e   ; por debajo del tope el periodo se alarga y el motor suena mas grave
 	ld de,(0e19ch)		;a611
 	add hl,de			;a615
 	ld a,h			;a616
-	and 0f0h		;a617
-	jr z,L_A61E		;a619
-	ld hl,00fffh		;a61b
-L_A61E:
-	ld (ix+00dh),002h		;a61e
-	ld (ix+00ah),l		;a622
+	and 0f0h		;a617   ; el periodo del SCC son 12 bits: lo que se sale hay que toparlo
+	jr z,MOTOR_1_ESCRIBE		;a619
+	ld hl,00fffh		;a61b   ; el periodo mas largo que admite el chip: el ralenti mas grave
+MOTOR_1_ESCRIBE:		; +0D, +0A/+0B y la forma de onda segun el terreno
+	ld (ix+00dh),002h		;a61e   ; +0D = 2 (tono, sin ruido); es un canal del SCC, la mezcla del PSG no le toca
+	ld (ix+00ah),l		;a622   ; +0A/+0B = el periodo que el volcado de p13 0x6B8B le pasara al chip
 	ld (ix+00bh),h		;a625
-	ld a,(0e19bh)		;a628
+	ld a,(0e19bh)		;a628   ; E19B = 1 si el terreno bajo el coche es menor de 10 (p02 0x8A0C)
 	or a			;a62b
-	jr nz,L_A635		;a62c
-	ld a,042h		;a62e
-	call 06a20h		;a630
-	jr L_A640		;a633
-L_A635:
-	ld a,044h		;a635
+	jr nz,MOTOR_1_FUERA		;a62c
+	ld a,042h		;a62e   ; sobre asfalto: forma de onda 0x42 de la tabla p13 0x6F04
+	call 06a20h		;a630   ; la misma rutina que ejecuta la orden 0xF8 de las partituras
+	jr MOTOR_1_VOLUMEN		;a633
+MOTOR_1_FUERA:		; fuera del asfalto: onda 0x44 y volumen fijo
+	ld a,044h		;a635   ; fuera del asfalto suena la otra onda, la 0x44 (la ultima de la tabla)
 	call 06a20h		;a637
-	ld (ix+00ch),00fh		;a63a
-	jr L_A697		;a63e
-L_A640:
-	ld a,(0e197h)		;a640
-	cp 0f0h		;a643
+	ld (ix+00ch),00fh		;a63a   ; y ahi el volumen no se negocia: el maximo, sin mirar E197
+	jr MOTOR_1_FIN		;a63e
+MOTOR_1_VOLUMEN:		; E197 -> (ix+0C), ocho tramos de 0x20
+	ld a,(0e197h)		;a640   ; E197 = volumen del motor del coche 1, que calcula p02 0x877D
+	cp 0f0h		;a643   ; ocho comparaciones de 0x20 en 0x20 reparten nueve volumenes, del 7 (E197 por debajo de 0x10) al 15 (de 0xF0 arriba)
 	jr nc,L_A693		;a645
 	cp 0d0h		;a647
 	jr nc,L_A68D		;a649
@@ -342,133 +363,149 @@ L_A640:
 	jr nc,L_A66F		;a65d
 	cp 010h		;a65f
 	jr nc,L_A669		;a661
-	ld (ix+00ch),007h		;a663
-	jr L_A697		;a667
+	ld (ix+00ch),007h		;a663   ; por debajo de 0x10, el volumen mas bajo del motor: 7
+	jr MOTOR_1_FIN		;a667
 L_A669:
 	ld (ix+00ch),008h		;a669
-	jr L_A697		;a66d
+	jr MOTOR_1_FIN		;a66d
 L_A66F:
 	ld (ix+00ch),009h		;a66f
-	jr L_A697		;a673
+	jr MOTOR_1_FIN		;a673
 L_A675:
 	ld (ix+00ch),00ah		;a675
-	jr L_A697		;a679
+	jr MOTOR_1_FIN		;a679
 L_A67B:
 	ld (ix+00ch),00bh		;a67b
-	jr L_A697		;a67f
+	jr MOTOR_1_FIN		;a67f
 L_A681:
 	ld (ix+00ch),00ch		;a681
-	jr L_A697		;a685
+	jr MOTOR_1_FIN		;a685
 L_A687:
 	ld (ix+00ch),00dh		;a687
-	jr L_A697		;a68b
+	jr MOTOR_1_FIN		;a68b
 L_A68D:
 	ld (ix+00ch),00eh		;a68d
-	jr L_A697		;a691
+	jr MOTOR_1_FIN		;a691
 L_A693:
-	ld (ix+00ch),00fh		;a693
-L_A697:
+	ld (ix+00ch),00fh		;a693   ; de 0xF0 arriba, 15: el motor a fondo
+MOTOR_1_FIN:		; el ret al que van a parar todas las ramas
 	ret			;a697
-L_A698:
-	ld a,(0e195h)		;a698
-	cp 005h		;a69b
-	jr z,L_A6DB		;a69d
+
+; ----------------------------------------------------------------------
+; EL PITIDO DEL COCHE 1 PARADO. p02 0x86D0 pone el bit 2 de E190
+; cuando el coche no se mueve ((iy+10,11) = 0) y la salida ya esta dada
+; (E221 >= 7). Entonces el canal del motor toca esto: tres pitidos cada
+; vez mas agudos (periodos 0x400, 0x380 y 0x340) separados por
+; silencios, un paso por fotograma, ciclo de seis fotogramas.
+; ----------------------------------------------------------------------
+AVISO_PARADO_1:		; el pitido del coche 1 parado; el paso va en E195
+	ld a,(0e195h)		;a698   ; E195 es el paso del ciclo, 0 a 5, y solo lo escribe esta pagina
+	cp 005h		;a69b   ; la escalera prueba del 5 al 1; lo que no encaja es el paso 0
+	jr z,AVISO_1_PASO_5		;a69d
 	cp 004h		;a69f
-	jr z,L_A6D1		;a6a1
+	jr z,AVISO_1_PASO_4		;a6a1
 	cp 003h		;a6a3
-	jr z,L_A6CA		;a6a5
+	jr z,AVISO_1_PASO_3		;a6a5
 	cp 002h		;a6a7
-	jr z,L_A6C0		;a6a9
+	jr z,AVISO_1_PASO_2		;a6a9
 	cp 001h		;a6ab
-	jr z,L_A6B9		;a6ad
-	ld hl,00400h		;a6af
+	jr z,AVISO_1_PASO_1		;a6ad
+	ld hl,00400h		;a6af   ; paso 0: primer pitido, periodo 0x400, el mas grave de los tres
 	ld a,001h		;a6b2
-	ld (0e195h),a		;a6b4
-	jr L_A6E9		;a6b7
-L_A6B9:
-	ld a,002h		;a6b9
+	ld (0e195h),a		;a6b4   ; y deja anotado el paso 1 para el fotograma siguiente
+	jr AVISO_1_PITA		;a6b7
+AVISO_1_PASO_1:		; silencio entre el primer pitido y el segundo
+	ld a,002h		;a6b9   ; los pasos impares son los silencios: solo mueven E195
 	ld (0e195h),a		;a6bb
-	jr L_A6DF		;a6be
-L_A6C0:
-	ld hl,00380h		;a6c0
+	jr AVISO_1_CALLA		;a6be
+AVISO_1_PASO_2:		; segundo pitido, 0x380
+	ld hl,00380h		;a6c0   ; paso 2: segundo pitido, 0x380, un poco mas agudo que el primero
 	ld a,003h		;a6c3
 	ld (0e195h),a		;a6c5
-	jr L_A6E9		;a6c8
-L_A6CA:
-	ld a,004h		;a6ca
+	jr AVISO_1_PITA		;a6c8
+AVISO_1_PASO_3:		; el segundo silencio
+	ld a,004h		;a6ca   ; paso 3: el otro silencio
 	ld (0e195h),a		;a6cc
-	jr L_A6DF		;a6cf
-L_A6D1:
-	ld hl,00340h		;a6d1
+	jr AVISO_1_CALLA		;a6cf
+AVISO_1_PASO_4:		; tercer pitido, 0x340
+	ld hl,00340h		;a6d1   ; paso 4: tercer pitido, 0x340, el mas agudo de los tres
 	ld a,005h		;a6d4
 	ld (0e195h),a		;a6d6
-	jr L_A6E9		;a6d9
-L_A6DB:
-	xor a			;a6db
+	jr AVISO_1_PITA		;a6d9
+AVISO_1_PASO_5:		; se calla y vuelve al paso 0
+	xor a			;a6db   ; paso 5: E195 a cero; el ciclo entero son seis fotogramas
 	ld (0e195h),a		;a6dc
-L_A6DF:
-	ld (ix+00dh),002h		;a6df
-	ld (ix+00ch),000h		;a6e3
-	jr L_A697		;a6e7
-L_A6E9:
-	ld (ix+00dh),002h		;a6e9
-	ld (ix+00ah),l		;a6ed
+AVISO_1_CALLA:		; mezcla en tono pero volumen 0
+	ld (ix+00dh),002h		;a6df   ; los silencios dejan la mezcla puesta...
+	ld (ix+00ch),000h		;a6e3   ; ...y callan con el volumen a cero, sin tocar el periodo
+	jr MOTOR_1_FIN		;a6e7
+AVISO_1_PITA:		; mezcla, periodo, onda 4 y volumen 15
+	ld (ix+00dh),002h		;a6e9   ; el pitido: mezcla en tono...
+	ld (ix+00ah),l		;a6ed   ; ...el periodo que traiga el paso...
 	ld (ix+00bh),h		;a6f0
-	ld a,004h		;a6f3
+	ld a,004h		;a6f3   ; ...la onda 4, que no es ninguna de las dos del motor...
 	call 06a20h		;a6f5
-	ld (ix+00ch),00fh		;a6f8
-	jr L_A697		;a6fc
-L_A6FE:
-	ld a,(0e190h)		;a6fe
-	and 040h		;a701
-	jp nz,L_A7B7		;a703
-	ld a,(0e1a2h)		;a706
+	ld (ix+00ch),00fh		;a6f8   ; ...y el volumen al maximo
+	jr MOTOR_1_FIN		;a6fc
+
+; ----------------------------------------------------------------------
+; EL MOTOR DEL COCHE 2. Lo llama p13 0x6494 con IX = E0B0 (el canal 4,
+; el segundo del SCC) y el bit 7 de E190. Es el mismo codigo de 0xA5DF
+; byte a byte con el otro juego de variables (E1A1/E1A2, E1A0, E198,
+; E196 y el bit 6 en vez del 2); la unica diferencia de datos es el
+; periodo de partida, 0x310 en vez de 0x300.
+; ----------------------------------------------------------------------
+MOTOR_COCHE_2:		; IX = E0B0 (canal 4, SCC); desde p13 0x6494
+	ld a,(0e190h)		;a6fe   ; el mismo arranque que 0xA5DF pero mirando el nibble alto de E190
+	and 040h		;a701   ; bit 6: el coche 2 esta parado con la salida ya dada
+	jp nz,AVISO_PARADO_2		;a703   ; parado: el pitido de 0xA7B7
+	ld a,(0e1a2h)		;a706   ; E1A1/E1A2 es para el coche 2 lo que E19C/E19D para el 1
 	or a			;a709
-	jp p,L_A72D		;a70a
+	jp p,MOTOR_2_MAS_GRAVE		;a70a   ; positivo: por debajo del tope de vueltas
 	ld hl,00000h		;a70d
 	ld de,(0e1a1h)		;a710
 	or a			;a714
-	sbc hl,de		;a715
+	sbc hl,de		;a715   ; HL = 0 - E1A1: el exceso de vueltas
 	ld a,h			;a717
-	and 00fh		;a718
+	and 00fh		;a718   ; el mismo nibble bajo de H: a cero, el exceso cabe entero en L
 	cp 000h		;a71a
 	jr z,L_A723		;a71c
-	ld de,000ffh		;a71e
-	jr L_A725		;a721
+	ld de,000ffh		;a71e   ; topado en 0xFF
+	jr MOTOR_2_MAS_AGUDO		;a721
 L_A723:
 	ld h,a			;a723
 	ex de,hl			;a724
-L_A725:
-	ld hl,00310h		;a725
+MOTOR_2_MAS_AGUDO:		; periodo = 0x310 - el exceso de vueltas
+	ld hl,00310h		;a725   ; 0x310, y no 0x300: es el unico dato en que los dos motores se separan
 	or a			;a728
-	sbc hl,de		;a729
-	jr L_A73D		;a72b
-L_A72D:
-	ld hl,00310h		;a72d
+	sbc hl,de		;a729   ; pasarse de vueltas acorta el periodo y sube el tono
+	jr MOTOR_2_ESCRIBE		;a72b
+MOTOR_2_MAS_GRAVE:		; periodo = 0x310 + lo que falta para el tope
+	ld hl,00310h		;a72d   ; por debajo del tope, el periodo crece desde 0x310
 	ld de,(0e1a1h)		;a730
 	add hl,de			;a734
 	ld a,h			;a735
-	and 0f0h		;a736
-	jr z,L_A73D		;a738
-	ld hl,00fffh		;a73a
-L_A73D:
-	ld (ix+00dh),002h		;a73d
-	ld (ix+00ah),l		;a741
+	and 0f0h		;a736   ; los mismos 12 bits del SCC
+	jr z,MOTOR_2_ESCRIBE		;a738
+	ld hl,00fffh		;a73a   ; el tope grave
+MOTOR_2_ESCRIBE:		; +0D, +0A/+0B y la forma de onda segun el terreno
+	ld (ix+00dh),002h		;a73d   ; mezcla en tono para el canal 4
+	ld (ix+00ah),l		;a741   ; el periodo calculado
 	ld (ix+00bh),h		;a744
-	ld a,(0e1a0h)		;a747
+	ld a,(0e1a0h)		;a747   ; E1A0 = 1 si el terreno bajo el coche 2 es menor de 10 (p02 0x8A3E)
 	or a			;a74a
-	jr nz,L_A754		;a74b
-	ld a,042h		;a74d
+	jr nz,MOTOR_2_FUERA		;a74b
+	ld a,042h		;a74d   ; sobre asfalto, onda 0x42
 	call 06a20h		;a74f
-	jr L_A75F		;a752
-L_A754:
-	ld a,044h		;a754
+	jr MOTOR_2_VOLUMEN		;a752
+MOTOR_2_FUERA:		; fuera del asfalto: onda 0x44 y volumen fijo
+	ld a,044h		;a754   ; fuera del asfalto, onda 0x44
 	call 06a20h		;a756
-	ld (ix+00ch),00fh		;a759
-	jr L_A7B6		;a75d
-L_A75F:
-	ld a,(0e198h)		;a75f
-	cp 0f0h		;a762
+	ld (ix+00ch),00fh		;a759   ; y el volumen al maximo
+	jr MOTOR_2_FIN		;a75d
+MOTOR_2_VOLUMEN:		; E198 -> (ix+0C), ocho tramos de 0x20
+	ld a,(0e198h)		;a75f   ; E198 = volumen del motor del coche 2 (p02 0x8792)
+	cp 0f0h		;a762   ; la misma escalera de ocho comparaciones y nueve volumenes que en el coche 1
 	jr nc,L_A7B2		;a764
 	cp 0d0h		;a766
 	jr nc,L_A7AC		;a768
@@ -484,82 +521,86 @@ L_A75F:
 	jr nc,L_A78E		;a77c
 	cp 010h		;a77e
 	jr nc,L_A788		;a780
-	ld (ix+00ch),007h		;a782
-	jr L_A7B6		;a786
+	ld (ix+00ch),007h		;a782   ; el minimo, 7
+	jr MOTOR_2_FIN		;a786
 L_A788:
 	ld (ix+00ch),008h		;a788
-	jr L_A7B6		;a78c
+	jr MOTOR_2_FIN		;a78c
 L_A78E:
 	ld (ix+00ch),009h		;a78e
-	jr L_A7B6		;a792
+	jr MOTOR_2_FIN		;a792
 L_A794:
 	ld (ix+00ch),00ah		;a794
-	jr L_A7B6		;a798
+	jr MOTOR_2_FIN		;a798
 L_A79A:
 	ld (ix+00ch),00bh		;a79a
-	jr L_A7B6		;a79e
+	jr MOTOR_2_FIN		;a79e
 L_A7A0:
 	ld (ix+00ch),00ch		;a7a0
-	jr L_A7B6		;a7a4
+	jr MOTOR_2_FIN		;a7a4
 L_A7A6:
 	ld (ix+00ch),00dh		;a7a6
-	jr L_A7B6		;a7aa
+	jr MOTOR_2_FIN		;a7aa
 L_A7AC:
 	ld (ix+00ch),00eh		;a7ac
-	jr L_A7B6		;a7b0
+	jr MOTOR_2_FIN		;a7b0
 L_A7B2:
-	ld (ix+00ch),00fh		;a7b2
-L_A7B6:
+	ld (ix+00ch),00fh		;a7b2   ; el maximo, 15
+MOTOR_2_FIN:		; el ret comun
 	ret			;a7b6
-L_A7B7:
-	ld a,(0e196h)		;a7b7
+
+; ----------------------------------------------------------------------
+; EL PITIDO DEL COCHE 2 PARADO, calcado de 0xA698 con E196 de contador.
+; ----------------------------------------------------------------------
+AVISO_PARADO_2:		; el pitido del coche 2 parado; el paso va en E196
+	ld a,(0e196h)		;a7b7   ; E196 es el paso del ciclo del coche 2
 	cp 005h		;a7ba
-	jr z,L_A7FA		;a7bc
+	jr z,AVISO_2_PASO_5		;a7bc
 	cp 004h		;a7be
-	jr z,L_A7F0		;a7c0
+	jr z,AVISO_2_PASO_4		;a7c0
 	cp 003h		;a7c2
-	jr z,L_A7E9		;a7c4
+	jr z,AVISO_2_PASO_3		;a7c4
 	cp 002h		;a7c6
-	jr z,L_A7DF		;a7c8
+	jr z,AVISO_2_PASO_2		;a7c8
 	cp 001h		;a7ca
-	jr z,L_A7D8		;a7cc
-	ld hl,00400h		;a7ce
+	jr z,AVISO_2_PASO_1		;a7cc
+	ld hl,00400h		;a7ce   ; paso 0: primer pitido, 0x400
 	ld a,001h		;a7d1
 	ld (0e196h),a		;a7d3
-	jr L_A808		;a7d6
-L_A7D8:
-	ld a,002h		;a7d8
+	jr AVISO_2_PITA		;a7d6
+AVISO_2_PASO_1:		; primer silencio
+	ld a,002h		;a7d8   ; paso 1: silencio
 	ld (0e196h),a		;a7da
-	jr L_A7FE		;a7dd
-L_A7DF:
-	ld hl,00380h		;a7df
+	jr AVISO_2_CALLA		;a7dd
+AVISO_2_PASO_2:		; segundo pitido, 0x380
+	ld hl,00380h		;a7df   ; paso 2: 0x380
 	ld a,003h		;a7e2
 	ld (0e196h),a		;a7e4
-	jr L_A808		;a7e7
-L_A7E9:
-	ld a,004h		;a7e9
+	jr AVISO_2_PITA		;a7e7
+AVISO_2_PASO_3:		; segundo silencio
+	ld a,004h		;a7e9   ; paso 3: silencio
 	ld (0e196h),a		;a7eb
-	jr L_A7FE		;a7ee
-L_A7F0:
-	ld hl,00340h		;a7f0
+	jr AVISO_2_CALLA		;a7ee
+AVISO_2_PASO_4:		; tercer pitido, 0x340
+	ld hl,00340h		;a7f0   ; paso 4: 0x340
 	ld a,005h		;a7f3
 	ld (0e196h),a		;a7f5
-	jr L_A808		;a7f8
-L_A7FA:
-	xor a			;a7fa
+	jr AVISO_2_PITA		;a7f8
+AVISO_2_PASO_5:		; se calla y vuelve al paso 0
+	xor a			;a7fa   ; paso 5: E196 a cero y vuelta a empezar
 	ld (0e196h),a		;a7fb
-L_A7FE:
-	ld (ix+00dh),002h		;a7fe
-	ld (ix+00ch),000h		;a802
-	jr L_A7B6		;a806
-L_A808:
-	ld (ix+00dh),002h		;a808
+AVISO_2_CALLA:		; mezcla en tono pero volumen 0
+	ld (ix+00dh),002h		;a7fe   ; la mezcla se queda puesta...
+	ld (ix+00ch),000h		;a802   ; ...y el volumen a cero
+	jr MOTOR_2_FIN		;a806
+AVISO_2_PITA:		; mezcla, periodo, onda 4 y volumen 15
+	ld (ix+00dh),002h		;a808   ; el pitido del coche 2, con la onda 4 y el volumen al maximo
 	ld (ix+00ah),l		;a80c
 	ld (ix+00bh),h		;a80f
-	ld a,004h		;a812
+	ld a,004h		;a812   ; la onda 4, la misma que el aviso del coche 1
 	call 06a20h		;a814
 	ld (ix+00ch),00fh		;a817
-	jr L_A7B6		;a81b
+	jr MOTOR_2_FIN		;a81b
 
 ; ----------------------------------------------------------------------
 ; DATOS rle_pat_A81D: patrones RLE: 81 tiles desde el 1 (lista 0x6d6b)
@@ -1557,109 +1598,124 @@ DATA_relleno_BC84:
 
 
 ; ----------------------------------------------------------------------
-; Busca en las ranuras (y subranuras) otro cartucho Konami comparando
-; con RDSLT tres firmas: 5 bytes en 0x4010, 6 en 0xBFFA y 6 en
-; 0x7FFA. Deja en E1DE el identificador de la ranura encontrada (0 si
-; no hay). Que desbloquea: pendiente (pregunta abierta).
+; Busca en las cuatro ranuras (y en las subranuras de las expandidas)
+; otro cartucho Konami: lee con RDSLT y compara tres firmas, 5 bytes en
+; 0x4010, 6 en 0xBFFA y 6 en 0x7FFA. En E1DE deja 2 si alguna encaja y
+; 0 si no. OJO: los unicos valores que escribe son 2 y 0, asi que E1DE
+; no es "el identificador de la ranura" -como decia esta nota antes-
+; sino una bandera; y la comparacion de p01 0x702A contra el valor 1
+; no se puede dar, porque este es el unico sitio del listado que
+; escribe E1DE.
+; QUE DESBLOQUEA (era la pregunta abierta): p00 0x49A3 lee E1DE y, si
+; vale 2, pone E1DF = 1; y con E1DF distinto de cero p01 0x6227
+; (COMPARA_PUNTOS) deja de comparar los puntos y da por buena cualquier
+; categoria. Es exactamente el efecto de la contrasena MAXPOINT (p01
+; 0x74AC). Ademas, con E1DE = 2 el truco UJM3EDC se queda sin efecto
+; (p01 0x74CC sale sin hacer nada).
+; Las tres direcciones encajan con tres tamanos de cartucho: 0x4010 es
+; la cabecera, 0x7FFA los ultimos seis bytes de uno de 16 KB y 0xBFFA
+; los de uno de 32 KB (lectura de las direcciones, sin medir). De que
+; juegos son esas firmas, sin cerrar.
 ; ----------------------------------------------------------------------
 BUSCA_CARTUCHOS:		; desde INIT (0x4138) con D/E/F mapeadas
-	ld bc,00400h		;bf50
-	ld hl,0fcc1h		;bf53
+	ld bc,00400h		;bf50   ; B = las cuatro ranuras, C = el numero de la primera
+	ld hl,0fcc1h		;bf53   ; FCC1 es EXPTBL: un byte por ranura, con el bit 7 puesto si esta expandida
 L_BF56:
 	push bc			;bf56
 	push hl			;bf57
-	ld a,(hl)			;bf58
-	bit 7,a		;bf59
+	ld a,(hl)			;bf58   ; el byte de EXPTBL de esta ranura
+	bit 7,a		;bf59   ; Z = ranura sin expandir, y con eso entra en 0xBF6D
 	call BUSCA_EN_RANURA		;bf5b
 	pop hl			;bf5e
 	pop bc			;bf5f
-	jr c,L_BF69		;bf60
+	jr c,L_BF69		;bf60   ; carry = encontrado, y A ya trae el 2
 	inc hl			;bf62
-	inc c			;bf63
+	inc c			;bf63   ; la ranura siguiente
 	djnz L_BF56		;bf64
-	xor a			;bf66
-	jr L_BF69		;bf67
+	xor a			;bf66   ; ninguna de las cuatro: A = 0
+	jr L_BF69		;bf67   ; un salto a la instruccion de al lado: dos bytes que no hacen nada
 L_BF69:
-	ld (0e1deh),a		;bf69
+	ld (0e1deh),a		;bf69   ; E1DE = 2 si hay otro cartucho, 0 si no
 	ret			;bf6c
 BUSCA_EN_RANURA:		; C = ranura; si esta expandida prueba sus 4 subranuras
-	jr z,COMPARA_FIRMAS		;bf6d
-	and 080h		;bf6f
+	jr z,COMPARA_FIRMAS		;bf6d   ; sin expandir: se prueba la ranura tal cual
+	and 080h		;bf6f   ; expandida: el identificador se monta con el bit 7 y el numero de ranura
 	or c			;bf71
 	ld c,a			;bf72
-	ld b,004h		;bf73
-L_BF75:
+	ld b,004h		;bf73   ; y hay que recorrer sus cuatro subranuras
+SUBRANURA_SIGUIENTE:		; las cuatro subranuras de una ranura expandida
 	push bc			;bf75
 	call COMPARA_FIRMAS		;bf76
 	pop bc			;bf79
-	ret c			;bf7a
+	ret c			;bf7a   ; encontrado en esta subranura: se sale con el carry
 	ld a,c			;bf7b
-	add a,004h		;bf7c
+	add a,004h		;bf7c   ; la subranura va en los bits 2 y 3: sumar 4 es pasar a la siguiente
 	ld c,a			;bf7e
-	djnz L_BF75		;bf7f
-	xor a			;bf81
+	djnz SUBRANURA_SIGUIENTE		;bf7f
+	xor a			;bf81   ; ninguna de las cuatro: A = 0 y sin carry
 	ret			;bf82
 COMPARA_FIRMAS:		; carry si alguna de las tres firmas coincide
-	call FIRMA_4010		;bf83
-	ld a,002h		;bf86
+	call FIRMA_4010		;bf83   ; primera firma: la cabecera del otro cartucho
+	ld a,002h		;bf86   ; el 2 se carga antes del ret: es la bandera que acaba en E1DE
 	ret c			;bf88
-	call FIRMA_BFFA		;bf89
+	call FIRMA_BFFA		;bf89   ; segunda firma: el final de un cartucho de 32 KB
 	ld a,002h		;bf8c
 	ret c			;bf8e
-	call FIRMA_7FFA		;bf8f
+	call FIRMA_7FFA		;bf8f   ; tercera firma: el final de uno de 16 KB
 	ld a,002h		;bf92
-	ret			;bf94
+	ret			;bf94   ; el carry lo deja la comparacion; el A = 2 sirve para las tres
 FIRMA_4010:		; 5 bytes en 0x4010 contra 0xBFD2
-	ld de,0bfd2h		;bf95
-	ld hl,04010h		;bf98
+	ld de,0bfd2h		;bf95   ; la firma esperada, en esta misma pagina
+	ld hl,04010h		;bf98   ; 0x4010 es lo que sigue a la cabecera AB del cartucho
 	ld b,005h		;bf9b
 	jr COMPARA_B_BYTES		;bf9d
 FIRMA_BFFA:		; 6 bytes en 0xBFFA contra 0xBFCC
-	ld de,0bfcch		;bf9f
-	ld hl,0bffah		;bfa2
+	ld de,0bfcch		;bf9f   ; la segunda firma
+	ld hl,0bffah		;bfa2   ; 0xBFFA: los seis ultimos bytes de un cartucho de 32 KB
 	ld b,006h		;bfa5
 	jr COMPARA_B_BYTES		;bfa7
 FIRMA_7FFA:		; 6 bytes en 0x7FFA contra 0xBFC6
-	ld de,0bfc6h		;bfa9
-	ld hl,07ffah		;bfac
+	ld de,0bfc6h		;bfa9   ; la tercera firma
+	ld hl,07ffah		;bfac   ; 0x7FFA: los seis ultimos de uno de 16 KB
 	ld b,006h		;bfaf
 COMPARA_B_BYTES:		; B bytes leidos con RDSLT (ranura C) contra (DE)
-	push bc			;bfb1
+	push bc			;bfb1   ; RDSLT se lleva BC y DE por delante: se guardan en cada vuelta
 	push de			;bfb2
-	ld a,c			;bfb3
-	call 0000ch		;bfb4   ; BIOS RDSLT - Reads the value of an address in another slot
+	ld a,c			;bfb3   ; A = el identificador de ranura: el contador C de 0xBF63, con el bit 7 y la subranura si estaba expandida (0xBF6F)
+	call 0000ch		;bfb4   ; BIOS RDSLT - Reads the value of an address in another slot | lee UN byte de otra ranura; no hay manera de leer un bloque
 	pop de			;bfb7
 	pop bc			;bfb8
-	ex de,hl			;bfb9
+	ex de,hl			;bfb9   ; el byte leido (A) contra el de la firma, que va en DE
 	cp (hl)			;bfba
 	ex de,hl			;bfbb
-	jr nz,L_BFC4		;bfbc
+	jr nz,FIRMA_NO_COINCIDE		;bfbc   ; a la primera diferencia se abandona esta ranura
 	inc hl			;bfbe
 	inc de			;bfbf
 	djnz COMPARA_B_BYTES		;bfc0
-	scf			;bfc2
+	scf			;bfc2   ; los B bytes iguales: carry, encontrado
 	ret			;bfc3
-L_BFC4:
-	and a			;bfc4
+FIRMA_NO_COINCIDE:		; sin carry: esta firma no es
+	and a			;bfc4   ; sin carry para que el llamador siga probando
 	ret			;bfc5
 
 ; ----------------------------------------------------------------------
-; DATOS firma_7FFA: 00 30 31 13 35 AA: lo que tiene que haber en 0x7FFA del
-;   otro cartucho
+; DATOS firma_7FFA: 00 30 31 13 35 AA: los seis bytes que tiene que haber en
+;   0x7FFA del otro cartucho (los lee 0xBFA9)
 ;   0xbfc6..0xbfcc  (6 bytes)
 DATA_firma_7FFA:
 	defb 000h,030h,031h,013h,035h,0aah	; bfc6
 
 ; ----------------------------------------------------------------------
-; DATOS firma_BFFA: BA B2 86 07 46 AA: lo que tiene que haber en 0xBFFA del
-;   otro cartucho
+; DATOS firma_BFFA: BA B2 86 07 46 AA: los seis bytes que tiene que haber en
+;   0xBFFA del otro cartucho (los lee 0xBF9F)
 ;   0xbfcc..0xbfd2  (6 bytes)
 DATA_firma_BFFA:
 	defb 0bah,0b2h,086h,007h,046h,0aah	; bfcc
 
 ; ----------------------------------------------------------------------
-; DATOS firma_4010: "CD" 07 "E" FF: lo que tiene que haber en 0x4010 del otro
-;   cartucho (este lleva "CD" 07 "R" FF)
+; DATOS firma_4010: "CD" 07 "E" FF: los cinco bytes que tiene que haber en
+;   0x4010 del otro cartucho (los lee 0xBF95). Este cartucho lleva ahi "CD" 07
+;   "R" FF, o sea que F-1 Spirit NO se encuentra a si mismo: la letra cambia
 ;   0xbfd2..0xbfd7  (5 bytes)
 DATA_firma_4010:
 	defb 043h,044h,007h,045h,0ffh	; bfd2

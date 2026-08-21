@@ -1,25 +1,299 @@
 # Anotaciones de F-1 Spirit (Konami, 1987, RC-752): pagina 15 de 16, que el
 # mapper pone en 0xA000-0xBFFF (la ultima del grupo D/E/F, el del sonido).
-# Lo unico trazado: la busqueda de otros cartuchos que hace INIT.
+# Solo tiene 305 instrucciones y todo lo demas son datos. El codigo son dos
+# cosas y ninguna es un reproductor:
+#   0xA5DF y 0xA6FE  el RUIDO DEL MOTOR de cada coche, que la interrupcion
+#                    genera a mano cada fotograma (no hay partitura del motor)
+#   0xBF50           la busqueda de otro cartucho Konami en las ranuras
+# Los datos son la COLA de las partituras (los sonidos 62, 63, 64 y 70), los
+# graficos RLE, dos pantallas comprimidas, las tablas que lee la pagina 2 con
+# esta mapeada en 0xA000, los mandos grabados de 0xBAB9 y el relleno.
 #
 # Directivas: L, C, B, D, F como en el resto. Sin acentos a proposito.
 
-B 0xBF50 Busca en las ranuras (y subranuras) otro cartucho Konami comparando
-B 0xBF50 con RDSLT tres firmas: 5 bytes en 0x4010, 6 en 0xBFFA y 6 en
-B 0xBF50 0x7FFA. Deja en E1DE el identificador de la ranura encontrada (0 si
-B 0xBF50 no hay). Que desbloquea: pendiente (pregunta abierta).
-L 0xBF50 BUSCA_CARTUCHOS    desde INIT (0x4138) con D/E/F mapeadas
-L 0xBF6D BUSCA_EN_RANURA    C = ranura; si esta expandida prueba sus 4 subranuras
-L 0xBF83 COMPARA_FIRMAS     carry si alguna de las tres firmas coincide
-L 0xBF95 FIRMA_4010         5 bytes en 0x4010 contra 0xBFD2
-L 0xBF9F FIRMA_BFFA         6 bytes en 0xBFFA contra 0xBFCC
-L 0xBFA9 FIRMA_7FFA         6 bytes en 0x7FFA contra 0xBFC6
-L 0xBFB1 COMPARA_B_BYTES    B bytes leidos con RDSLT (ranura C) contra (DE)
-D 0xBFC6 0xBFCC firma_7FFA 00 30 31 13 35 AA: lo que tiene que haber en 0x7FFA del otro cartucho
+# =============================================================================
+# EL FORMATO DE LA PARTITURA, leido del interprete de la pagina 13 (0x64D8
+# PARTITURA_LEE y la tabla de ordenes de 0x6868). Aqui esta escrito porque es
+# lo que hace falta para saber DONDE ACABA cada pista de esta pagina, que era
+# la pregunta abierta que dejaron las D de tools/sonido.py.
+#
+# El flujo se lee byte a byte y cada byte se clasifica por su valor:
+#   0x00..0xCF  NOTA. Que se hace con ella lo decide (ix+09), que fija la
+#               orden 0xFE: nibble alto altura y nibble bajo duracion (0x64FF),
+#               periodo en crudo (0x6564) o envolvente (0x65DD).
+#   0xD0..0xDF  octava y volumen, sin pasar por la tabla (0x6853 compara con
+#               0xE0 y se va a 0x6A90): nibble 0..5 = cuantas octavas se baja
+#               (ix+16); nibble 6..15 = volumen base (ix+15) = nibble - 5.
+#   0xE0..0xFE  ORDEN por la tabla de 0x6868, indice (byte AND 0x1F). Las que
+#               salen en las pistas de esta pagina:
+#                 0xE9 t      tempo: (ix+14) = t            (0x6948)
+#                 0xEA v      volumen base: (ix+15) = v     (0x694F)
+#                 0xEB ad sr  el ADSR entero en cuatro nibbles: ataque, caida,
+#                             descenso y extincion (0x6956, +21..+24)
+#                 0xF8 n      forma de onda del SCC numero n (0x6A1D, 0x6A20)
+#                 0xF9 lo hi  llamada a subpartitura (0x6A37; la vuelta se
+#                             guarda en +07/+08)
+#                 0xFA        vuelta de la subpartitura (0x6A42)
+#                 0xFB n lo hi  repetir n veces hasta esa direccion (0x6A4A)
+#                 0xFD lo hi  salto incondicional (0x6A79 -> 0x6A56)
+#                 0xFE m      que interprete atiende la nota: (ix+09) = m
+#   0xFF        FIN DE LA PISTA: 0x64DB suelta el canal (0x681A).
+#
+# COMPROBADO sobre la ROM: recorriendo las 21 pistas declaradas entre 0xA002 y
+# 0xA5DE con este formato -siguiendo los saltos 0xFD, entrando en las llamadas
+# 0xF9 y en las repeticiones 0xFB- cada pista cubre EXACTAMENTE los bytes que
+# dice su D, sin un hueco y sin pasarse. Es la prueba de que el formato esta
+# bien leido, y de paso cierra la pregunta que dejaban las D de
+# tools/sonido.py ("el final exacto lo dira el lector de la partitura").
+# El reparto: 18 pistas acaban en un salto FD que las hace sonar en bucle, 3
+# en 0xFF, y 6 llevan ademas una subpartitura que cierra con 0xFA. El unico
+# byte que sobra en toda la zona es el 0xFF de 0xA5DD, que queda detras de un
+# FD y no lo lee nadie.
+# Y las subpartituras se COMPARTEN entre pistas: la de 0xA503 llama con
+# `F9 C6 A4` a 0xA4C6, que cae dentro de la pista de 0xA493. Por eso el
+# tamano de una pista no se puede deducir mirandola sola.
+#
+# Y una comprobacion que ata las paginas 14 y 15: los dos ultimos bytes de la
+# pagina 14 son 47 FD en 0x9FFE-0x9FFF y la pagina 15 empieza en 0xA000 con
+# E5 9F. Es un solo salto FD E5 9F (a 0x9FE5) partido por la frontera de los
+# bancos: el interprete lee de corrido de una pagina a la otra porque el grupo
+# D/E/F las tiene mapeadas a la vez.
+# =============================================================================
+
+B 0xa000 Los dos primeros bytes de la pagina no son una pista: son el operando
+B 0xa000 del salto FD E5 9F cuyo 0xFD es el ULTIMO byte de la pagina 14. La
+B 0xa000 pista que empieza en 0x9FD3 (pagina 14) vuelve a 0x9FE5 y suena en
+B 0xa000 bucle; el interprete cruza la frontera de banco sin enterarse.
+
+B 0xa5de La pista de los ocho canales del sonido 70 es este unico 0xFF: el
+B 0xa5de canal que la lee se suelta en el acto (0x64DB -> 0x681A). O sea que
+B 0xa5de el sonido 70 no suena nada: sirve para callar los canales que gane.
+
+# =============================================================================
+# EL RUIDO DEL MOTOR (0xA5DF el coche 1, 0xA6FE el coche 2)
+#
+# Los dos generadores son el MISMO codigo byte a byte -287 bytes cada uno- con
+# el otro juego de variables. Comparados en el binario, lo unico que cambia
+# son las direcciones de RAM, la mascara de E190 (0x04 contra 0x40), los
+# destinos de los saltos y UN byte de datos: el periodo de partida, 0x300 en
+# el coche 1 y 0x310 en el coche 2. Con las mismas vueltas, el coche 2 suena
+# un pelo mas grave.
+#
+# La RAM que leen, toda escrita por la pagina 2 en el fotograma anterior:
+#   E190      bits de sonido de los dos coches; el nibble bajo es el jugador 1
+#             y el alto el 2. Se pone a 0x0B (un jugador) o 0xBB (dos) en p02
+#             0x8704. De cada nibble solo se consultan dos bits: el 3 (motor
+#             en marcha, lo mira p13 0x6466) y el 2 (coche parado, lo mira
+#             0xA5E2). Los bits 0 y 1 de cada nibble se escriben pero no los
+#             consulta ninguna de las 16 paginas. COMPROBADO tambien por los
+#             dos accesos indirectos, que eran el agujero de esa cuenta: p02
+#             0x863D salva el byte ENTERO en E1DB y lo repone, y p02 0x8759
+#             le pasa una mascara (`and (hl)`) al byte entero. Ninguno de los
+#             dos mira un bit suelto, asi que la afirmacion se sostiene.
+#   E19C/E19D  (E1A1/E1A2) tope de vueltas por 256 menos las vueltas
+#             filtradas, con signo (p02 0x8A03-0x8A09)
+#   E19B      (E1A0) 1 si el terreno bajo el coche es menor de 10 (p02 0x8A0C)
+#   E197      (E198) volumen del motor, 0x00-0xFF (p02 0x877D)
+#   E195      (E196) el paso del pitido del coche parado. No lo escribe nadie
+#             mas: es de esta pagina.
+# Y lo que escriben es el bloque del canal (los +NN de p13): +0A/+0B periodo,
+# +0C volumen, +0D mezcla, y la forma de onda por p13 0x6A20.
+# =============================================================================
+
+B 0xa5df EL MOTOR DEL COCHE 1. Lo llama p13 0x6470 con IX = E084 (el canal 3,
+B 0xa5df el primero del SCC) cuando ese canal no lo ocupa ningun sonido de
+B 0xa5df partitura y el bit 3 de E190 esta puesto. No lee ningun flujo: cada
+B 0xa5df fotograma calcula el periodo desde las vueltas, el volumen desde
+B 0xa5df E197 y la forma de onda desde el terreno.
+L 0xa5df MOTOR_COCHE_1       IX = E084 (canal 3, SCC); desde p13 0x6470
+C 0xa5df E190 lleva los bits de sonido de los dos coches, un nibble cada uno
+C 0xa5e2 bit 2 del nibble bajo: el coche 1 esta parado con la salida ya dada (p02 0x86D0)
+C 0xa5e4 parado: el canal deja de hacer de motor y pita (0xA698)
+C 0xa5e7 E19D es el byte alto de E19C: tope de vueltas menos vueltas, con signo
+C 0xa5eb positivo = todavia por debajo del tope, y el periodo se alarga
+C 0xa5ee negativo = pasado del tope: hace falta el valor absoluto
+C 0xa5f6 HL = 0 - E19C, o sea cuanto se pasa de vueltas
+C 0xa5f9 se mira el nibble bajo de H: a cero, el exceso cabe entero en L
+C 0xa5fd cabe: se usa tal cual
+C 0xa5ff no cabe: se topa en 0xFF, que es todo lo que se deja subir el tono
+C 0xa604 DE = el exceso, ya en un byte
+L 0xa606 MOTOR_1_MAS_AGUDO   periodo = 0x300 - el exceso de vueltas
+C 0xa606 0x300 es el periodo del motor del coche 1 justo en el tope de vueltas
+C 0xa60a menos periodo es mas agudo: pasarse de vueltas sube el tono
+L 0xa60e MOTOR_1_MAS_GRAVE   periodo = 0x300 + lo que falta para el tope
+C 0xa60e por debajo del tope el periodo se alarga y el motor suena mas grave
+C 0xa617 el periodo del SCC son 12 bits: lo que se sale hay que toparlo
+C 0xa61b el periodo mas largo que admite el chip: el ralenti mas grave
+L 0xa61e MOTOR_1_ESCRIBE     +0D, +0A/+0B y la forma de onda segun el terreno
+C 0xa61e +0D = 2 (tono, sin ruido); es un canal del SCC, la mezcla del PSG no le toca
+C 0xa622 +0A/+0B = el periodo que el volcado de p13 0x6B8B le pasara al chip
+C 0xa628 E19B = 1 si el terreno bajo el coche es menor de 10 (p02 0x8A0C)
+C 0xa62e sobre asfalto: forma de onda 0x42 de la tabla p13 0x6F04
+C 0xa630 la misma rutina que ejecuta la orden 0xF8 de las partituras
+L 0xa635 MOTOR_1_FUERA       fuera del asfalto: onda 0x44 y volumen fijo
+C 0xa635 fuera del asfalto suena la otra onda, la 0x44 (la ultima de la tabla)
+C 0xa63a y ahi el volumen no se negocia: el maximo, sin mirar E197
+L 0xa640 MOTOR_1_VOLUMEN     E197 -> (ix+0C), ocho tramos de 0x20
+C 0xa640 E197 = volumen del motor del coche 1, que calcula p02 0x877D
+C 0xa643 ocho comparaciones de 0x20 en 0x20 reparten nueve volumenes, del 7 (E197 por debajo de 0x10) al 15 (de 0xF0 arriba)
+C 0xa663 por debajo de 0x10, el volumen mas bajo del motor: 7
+C 0xa693 de 0xF0 arriba, 15: el motor a fondo
+L 0xa697 MOTOR_1_FIN         el ret al que van a parar todas las ramas
+
+B 0xa698 EL PITIDO DEL COCHE 1 PARADO. p02 0x86D0 pone el bit 2 de E190
+B 0xa698 cuando el coche no se mueve ((iy+10,11) = 0) y la salida ya esta dada
+B 0xa698 (E221 >= 7). Entonces el canal del motor toca esto: tres pitidos cada
+B 0xa698 vez mas agudos (periodos 0x400, 0x380 y 0x340) separados por
+B 0xa698 silencios, un paso por fotograma, ciclo de seis fotogramas.
+L 0xa698 AVISO_PARADO_1      el pitido del coche 1 parado; el paso va en E195
+C 0xa698 E195 es el paso del ciclo, 0 a 5, y solo lo escribe esta pagina
+C 0xa69b la escalera prueba del 5 al 1; lo que no encaja es el paso 0
+C 0xa6af paso 0: primer pitido, periodo 0x400, el mas grave de los tres
+C 0xa6b4 y deja anotado el paso 1 para el fotograma siguiente
+L 0xa6b9 AVISO_1_PASO_1      silencio entre el primer pitido y el segundo
+C 0xa6b9 los pasos impares son los silencios: solo mueven E195
+L 0xa6c0 AVISO_1_PASO_2      segundo pitido, 0x380
+C 0xa6c0 paso 2: segundo pitido, 0x380, un poco mas agudo que el primero
+L 0xa6ca AVISO_1_PASO_3      el segundo silencio
+C 0xa6ca paso 3: el otro silencio
+L 0xa6d1 AVISO_1_PASO_4      tercer pitido, 0x340
+C 0xa6d1 paso 4: tercer pitido, 0x340, el mas agudo de los tres
+L 0xa6db AVISO_1_PASO_5      se calla y vuelve al paso 0
+C 0xa6db paso 5: E195 a cero; el ciclo entero son seis fotogramas
+L 0xa6df AVISO_1_CALLA       mezcla en tono pero volumen 0
+C 0xa6df los silencios dejan la mezcla puesta...
+C 0xa6e3 ...y callan con el volumen a cero, sin tocar el periodo
+L 0xa6e9 AVISO_1_PITA        mezcla, periodo, onda 4 y volumen 15
+C 0xa6e9 el pitido: mezcla en tono...
+C 0xa6ed ...el periodo que traiga el paso...
+C 0xa6f3 ...la onda 4, que no es ninguna de las dos del motor...
+C 0xa6f8 ...y el volumen al maximo
+
+B 0xa6fe EL MOTOR DEL COCHE 2. Lo llama p13 0x6494 con IX = E0B0 (el canal 4,
+B 0xa6fe el segundo del SCC) y el bit 7 de E190. Es el mismo codigo de 0xA5DF
+B 0xa6fe byte a byte con el otro juego de variables (E1A1/E1A2, E1A0, E198,
+B 0xa6fe E196 y el bit 6 en vez del 2); la unica diferencia de datos es el
+B 0xa6fe periodo de partida, 0x310 en vez de 0x300.
+L 0xa6fe MOTOR_COCHE_2       IX = E0B0 (canal 4, SCC); desde p13 0x6494
+C 0xa6fe el mismo arranque que 0xA5DF pero mirando el nibble alto de E190
+C 0xa701 bit 6: el coche 2 esta parado con la salida ya dada
+C 0xa703 parado: el pitido de 0xA7B7
+C 0xa706 E1A1/E1A2 es para el coche 2 lo que E19C/E19D para el 1
+C 0xa70a positivo: por debajo del tope de vueltas
+C 0xa715 HL = 0 - E1A1: el exceso de vueltas
+C 0xa718 el mismo nibble bajo de H: a cero, el exceso cabe entero en L
+C 0xa71e topado en 0xFF
+L 0xa725 MOTOR_2_MAS_AGUDO   periodo = 0x310 - el exceso de vueltas
+C 0xa725 0x310, y no 0x300: es el unico dato en que los dos motores se separan
+C 0xa729 pasarse de vueltas acorta el periodo y sube el tono
+L 0xa72d MOTOR_2_MAS_GRAVE   periodo = 0x310 + lo que falta para el tope
+C 0xa72d por debajo del tope, el periodo crece desde 0x310
+C 0xa736 los mismos 12 bits del SCC
+C 0xa73a el tope grave
+L 0xa73d MOTOR_2_ESCRIBE     +0D, +0A/+0B y la forma de onda segun el terreno
+C 0xa73d mezcla en tono para el canal 4
+C 0xa741 el periodo calculado
+C 0xa747 E1A0 = 1 si el terreno bajo el coche 2 es menor de 10 (p02 0x8A3E)
+C 0xa74d sobre asfalto, onda 0x42
+L 0xa754 MOTOR_2_FUERA       fuera del asfalto: onda 0x44 y volumen fijo
+C 0xa754 fuera del asfalto, onda 0x44
+C 0xa759 y el volumen al maximo
+L 0xa75f MOTOR_2_VOLUMEN     E198 -> (ix+0C), ocho tramos de 0x20
+C 0xa75f E198 = volumen del motor del coche 2 (p02 0x8792)
+C 0xa762 la misma escalera de ocho comparaciones y nueve volumenes que en el coche 1
+C 0xa782 el minimo, 7
+C 0xa7b2 el maximo, 15
+L 0xa7b6 MOTOR_2_FIN         el ret comun
+
+B 0xa7b7 EL PITIDO DEL COCHE 2 PARADO, calcado de 0xA698 con E196 de contador.
+L 0xa7b7 AVISO_PARADO_2      el pitido del coche 2 parado; el paso va en E196
+C 0xa7b7 E196 es el paso del ciclo del coche 2
+C 0xa7ce paso 0: primer pitido, 0x400
+L 0xa7d8 AVISO_2_PASO_1      primer silencio
+C 0xa7d8 paso 1: silencio
+L 0xa7df AVISO_2_PASO_2      segundo pitido, 0x380
+C 0xa7df paso 2: 0x380
+L 0xa7e9 AVISO_2_PASO_3      segundo silencio
+C 0xa7e9 paso 3: silencio
+L 0xa7f0 AVISO_2_PASO_4      tercer pitido, 0x340
+C 0xa7f0 paso 4: 0x340
+L 0xa7fa AVISO_2_PASO_5      se calla y vuelve al paso 0
+C 0xa7fa paso 5: E196 a cero y vuelta a empezar
+L 0xa7fe AVISO_2_CALLA       mezcla en tono pero volumen 0
+C 0xa7fe la mezcla se queda puesta...
+C 0xa802 ...y el volumen a cero
+L 0xa808 AVISO_2_PITA        mezcla, periodo, onda 4 y volumen 15
+C 0xa808 el pitido del coche 2, con la onda 4 y el volumen al maximo
+C 0xa812 la onda 4, la misma que el aviso del coche 1
+
+B 0xbf50 Busca en las cuatro ranuras (y en las subranuras de las expandidas)
+B 0xbf50 otro cartucho Konami: lee con RDSLT y compara tres firmas, 5 bytes en
+B 0xbf50 0x4010, 6 en 0xBFFA y 6 en 0x7FFA. En E1DE deja 2 si alguna encaja y
+B 0xbf50 0 si no. OJO: los unicos valores que escribe son 2 y 0, asi que E1DE
+B 0xbf50 no es "el identificador de la ranura" -como decia esta nota antes-
+B 0xbf50 sino una bandera; y la comparacion de p01 0x702A contra el valor 1
+B 0xbf50 no se puede dar, porque este es el unico sitio del listado que
+B 0xbf50 escribe E1DE.
+B 0xbf50 QUE DESBLOQUEA (era la pregunta abierta): p00 0x49A3 lee E1DE y, si
+B 0xbf50 vale 2, pone E1DF = 1; y con E1DF distinto de cero p01 0x6227
+B 0xbf50 (COMPARA_PUNTOS) deja de comparar los puntos y da por buena cualquier
+B 0xbf50 categoria. Es exactamente el efecto de la contrasena MAXPOINT (p01
+B 0xbf50 0x74AC). Ademas, con E1DE = 2 el truco UJM3EDC se queda sin efecto
+B 0xbf50 (p01 0x74CC sale sin hacer nada). Y hay un tercer efecto: p00
+B 0xbf50 0x58A2 tambien mira si E1DE vale 2 y, si vale, se vuelve sin
+B 0xbf50 hacer lo que hubiera detras.
+B 0xbf50 Las tres direcciones encajan con tres tamanos de cartucho: 0x4010 es
+B 0xbf50 la cabecera, 0x7FFA los ultimos seis bytes de uno de 16 KB y 0xBFFA
+B 0xbf50 los de uno de 32 KB (lectura de las direcciones, sin medir). De que
+B 0xbf50 juegos son esas firmas, sin cerrar.
+L 0xbf50 BUSCA_CARTUCHOS    desde INIT (0x4138) con D/E/F mapeadas
+C 0xbf50 B = las cuatro ranuras, C = el numero de la primera
+C 0xbf53 FCC1 es EXPTBL: un byte por ranura, con el bit 7 puesto si esta expandida
+C 0xbf58 el byte de EXPTBL de esta ranura
+C 0xbf59 Z = ranura sin expandir, y con eso entra en 0xBF6D
+C 0xbf60 carry = encontrado, y A ya trae el 2
+C 0xbf63 la ranura siguiente
+C 0xbf66 ninguna de las cuatro: A = 0
+C 0xbf67 un salto a la instruccion de al lado: dos bytes que no hacen nada
+C 0xbf69 E1DE = 2 si hay otro cartucho, 0 si no
+L 0xbf6d BUSCA_EN_RANURA    C = ranura; si esta expandida prueba sus 4 subranuras
+C 0xbf6d sin expandir: se prueba la ranura tal cual
+C 0xbf6f expandida: el identificador se monta con el bit 7 y el numero de ranura
+C 0xbf73 y hay que recorrer sus cuatro subranuras
+L 0xbf75 SUBRANURA_SIGUIENTE  las cuatro subranuras de una ranura expandida
+C 0xbf7a encontrado en esta subranura: se sale con el carry
+C 0xbf7c la subranura va en los bits 2 y 3: sumar 4 es pasar a la siguiente
+C 0xbf81 ninguna de las cuatro: A = 0 y sin carry
+L 0xbf83 COMPARA_FIRMAS     carry si alguna de las tres firmas coincide
+C 0xbf83 primera firma: la cabecera del otro cartucho
+C 0xbf86 el 2 se carga antes del ret: es la bandera que acaba en E1DE
+C 0xbf89 segunda firma: el final de un cartucho de 32 KB
+C 0xbf8f tercera firma: el final de uno de 16 KB
+C 0xbf94 el carry lo deja la comparacion; el A = 2 sirve para las tres
+L 0xbf95 FIRMA_4010         5 bytes en 0x4010 contra 0xBFD2
+C 0xbf95 la firma esperada, en esta misma pagina
+C 0xbf98 0x4010 es lo que sigue a la cabecera AB del cartucho
+L 0xbf9f FIRMA_BFFA         6 bytes en 0xBFFA contra 0xBFCC
+C 0xbf9f la segunda firma
+C 0xbfa2 0xBFFA: los seis ultimos bytes de un cartucho de 32 KB
+L 0xbfa9 FIRMA_7FFA         6 bytes en 0x7FFA contra 0xBFC6
+C 0xbfa9 la tercera firma
+C 0xbfac 0x7FFA: los seis ultimos de uno de 16 KB
+L 0xbfb1 COMPARA_B_BYTES    B bytes leidos con RDSLT (ranura C) contra (DE)
+C 0xbfb1 RDSLT se lleva BC y DE por delante: se guardan en cada vuelta
+C 0xbfb3 A = el identificador de ranura: el contador C de 0xBF63, con el bit 7 y la subranura si estaba expandida (0xBF6F)
+C 0xbfb4 lee UN byte de otra ranura; no hay manera de leer un bloque
+C 0xbfb9 el byte leido (A) contra el de la firma, que va en DE
+C 0xbfbc a la primera diferencia se abandona esta ranura
+C 0xbfc2 los B bytes iguales: carry, encontrado
+L 0xbfc4 FIRMA_NO_COINCIDE  sin carry: esta firma no es
+C 0xbfc4 sin carry para que el llamador siga probando
+
+D 0xBFC6 0xBFCC firma_7FFA 00 30 31 13 35 AA: los seis bytes que tiene que haber en 0x7FFA del otro cartucho (los lee 0xBFA9)
 F 0xBFC6 6
-D 0xBFCC 0xBFD2 firma_BFFA BA B2 86 07 46 AA: lo que tiene que haber en 0xBFFA del otro cartucho
+D 0xBFCC 0xBFD2 firma_BFFA BA B2 86 07 46 AA: los seis bytes que tiene que haber en 0xBFFA del otro cartucho (los lee 0xBF9F)
 F 0xBFCC 6
-D 0xBFD2 0xBFD7 firma_4010 "CD" 07 "E" FF: lo que tiene que haber en 0x4010 del otro cartucho (este lleva "CD" 07 "R" FF)
+D 0xBFD2 0xBFD7 firma_4010 "CD" 07 "E" FF: los cinco bytes que tiene que haber en 0x4010 del otro cartucho (los lee 0xBF95). Este cartucho lleva ahi "CD" 07 "R" FF, o sea que F-1 Spirit NO se encuentra a si mismo: la letra cambia
 F 0xBFD2 5
 D 0xBFD7 0xC000 relleno_FF 41 bytes a 0xFF hasta el final de la ROM
 
