@@ -142,8 +142,8 @@ DATA_pista_A29F:
 	defb 0feh,001h,0f8h,013h,0e9h,006h,0eah,00dh,0ebh,038h,012h,0d2h,0f9h,0b1h,0a2h,0fdh	; a29f  .........8......
 	defb 0a1h,0a2h,0f2h,00ah,0f1h,041h,04bh,040h,070h,091h,0b3h,093h,073h,023h,040h,0c1h	; a2af  .....AK@p...s#@.
 	defb 01ch,0f8h,00ch,040h,0c1h,01ch,0f8h,013h,04bh,040h,090h,0b0h,0d1h,010h,023h,013h	; a2bf  ...@....K@....#.
-	defb 023h,043h,020h,0c1h,01ch,0f8h,00ch,020h,0c1h,01ch,0f8h,013h,023h,020h,020h,020h	; a2cf  #C .... ....#   
-	defb 0c0h,020h,0c0h,020h,020h,0c0h,020h,0c1h,023h,020h,020h,020h,0c0h,020h,0c0h,020h	; a2df  . .  . .#   . . 
+	defb 023h,043h,020h,0c1h,01ch,0f8h,00ch,020h,0c1h,01ch,0f8h,013h,023h,020h,020h,020h	; a2cf  #C .... ....#
+	defb 0c0h,020h,0c0h,020h,020h,0c0h,020h,0c1h,023h,020h,020h,020h,0c0h,020h,0c0h,020h	; a2df  . .  . .#   . .
 	defb 000h,0c0h,0d2h,0b2h,0d1h,020h,0c1h,04ch,0f8h,00ch,020h,0c1h,04ch,0fbh,002h,0d9h	; a2ef  ..... .L.. .L...
 	defb 0a2h,0fah	; a2ff
 
@@ -185,11 +185,11 @@ DATA_pista_A36E:
 DATA_pista_A37D:
 	defb 0feh,001h,0e9h,00ch,0eah,00bh,0ebh,021h,014h,0d2h,070h,070h,040h,040h,0b0h,0eah	; a37d  .......!..pp@@..
 	defb 00ah,0b0h,0eah,009h,0b0h,0eah,008h,0b0h,0b0h,0b0h,0eah,00bh,040h,040h,070h,070h	; a38d  ............@@pp
-	defb 0b0h,0b0h,0a0h,0a0h,050h,050h,020h,0eah,00ah,020h,0eah,009h,020h,0eah,008h,020h	; a39d  ....PP .. .. .. 
+	defb 0b0h,0b0h,0a0h,0a0h,050h,050h,020h,0eah,00ah,020h,0eah,009h,020h,0eah,008h,020h	; a39d  ....PP .. .. ..
 	defb 020h,020h,0eah,00bh,020h,020h,050h,050h,0a0h,0a0h,090h,090h,050h,050h,000h,0eah	; a3ad    ..  PP....PP..
 	defb 00ah,000h,0eah,009h,000h,0eah,008h,000h,000h,000h,0eah,00bh,000h,000h,050h,050h	; a3bd  ..............PP
 	defb 090h,090h,080h,080h,050h,050h,000h,0eah,00ah,000h,0eah,009h,000h,0eah,008h,000h	; a3cd  ....PP..........
-	defb 000h,000h,000h,000h,0eah,00bh,020h,0eah,00ah,020h,0eah,009h,020h,0eah,008h,020h	; a3dd  ...... .. .. .. 
+	defb 000h,000h,000h,000h,0eah,00bh,020h,0eah,00ah,020h,0eah,009h,020h,0eah,008h,020h	; a3dd  ...... .. .. ..
 	defb 0fdh,07fh,0a3h	; a3ed
 
 ; ----------------------------------------------------------------------
@@ -628,11 +628,11 @@ DATA_rle_pat_A81D:
 	defb 007h,000h,08dh,0ffh,042h,042h,041h,020h,020h,010h,008h,0f6h,072h,002h,004h,0f8h	; a94d  ....BBA  ...r...
 	defb 003h,000h,081h,003h,003h,010h,08dh,020h,03fh,040h,080h,001h,0ffh,001h,001h,000h	; a95d  ....... ?@......
 	defb 00fh,010h,03fh,020h,003h,001h,082h,03eh,0c0h,003h,001h,089h,0ffh,001h,001h,000h	; a96d  ..? ...>........
-	defb 0ffh,000h,0ffh,000h,0fch,007h,001h,081h,0ffh,003h,001h,084h,080h,040h,0e0h,020h	; a97d  .............@. 
+	defb 0ffh,000h,0ffh,000h,0fch,007h,001h,081h,0ffh,003h,001h,084h,080h,040h,0e0h,020h	; a97d  .............@.
 	defb 008h,001h,081h,0ffh,003h,001h,086h,01fh,020h,07fh,040h,0fch,000h,006h,001h,081h	; a98d  ........ .@.....
 	defb 0ffh,003h,001h,08dh,0ffh,000h,0ffh,000h,0ffh,000h,003h,00ch,010h,023h,02ch,03fh	; a99d  .............#,?
 	defb 0ffh,003h,001h,085h,0c0h,020h,0f0h,010h,0ffh,004h,001h,084h,018h,064h,082h,0ffh	; a9ad  ..... .......d..
-	defb 005h,001h,085h,000h,001h,0ffh,000h,007h,005h,004h,089h,0ffh,001h,080h,040h,020h	; a9bd  ..............@ 
+	defb 005h,001h,085h,000h,001h,0ffh,000h,007h,005h,004h,089h,0ffh,001h,080h,040h,020h	; a9bd  ..............@
 	defb 01fh,000h,000h,0ffh,003h,001h,085h,000h,0f0h,00fh,000h,0ffh,004h,001h,084h,000h	; a9cd  ................
 	defb 0e0h,01fh,0ffh,005h,001h,08bh,000h,0c0h,0ffh,001h,001h,000h,000h,001h,006h,008h	; a9dd  ................
 	defb 0ffh,004h,000h,084h,0ffh,003h,000h,0ffh,003h,001h,002h,000h,08ch,003h,00ch,001h	; a9ed  ................
@@ -685,12 +685,12 @@ DATA_rle_pat_AAB3:
 ; DATOS rle_pat_ABA5: patrones RLE: 27 tiles desde el 65 (lista 0x6d6b)
 ;   0xaba5..0xac54  (175 bytes)
 DATA_rle_pat_ABA5:
-	defb 081h,07fh,007h,001h,006h,020h,082h,03fh,010h,006h,000h,082h,0ffh,000h,006h,020h	; aba5  ..... .?....... 
-	defb 083h,0e0h,040h,00fh,005h,000h,08bh,001h,002h,0ffh,0f8h,038h,024h,062h,0a1h,020h	; abb5  ..@........8$b. 
+	defb 081h,07fh,007h,001h,006h,020h,082h,03fh,010h,006h,000h,082h,0ffh,000h,006h,020h	; aba5  ..... .?.......
+	defb 083h,0e0h,040h,00fh,005h,000h,08bh,001h,002h,0ffh,0f8h,038h,024h,062h,0a1h,020h	; abb5  ..@........8$b.
 	defb 020h,080h,005h,000h,083h,080h,040h,0ffh,007h,000h,0a0h,0c0h,020h,010h,008h,004h	; abc5   .....@..... ...
 	defb 002h,001h,000h,040h,040h,07fh,020h,01fh,003h,006h,0cch,000h,000h,0ffh,000h,0ffh	; abd5  ...@@. .........
 	defb 0c0h,060h,030h,010h,010h,0f0h,020h,0c0h,000h,0ffh,082h,006h,010h,082h,011h,01eh	; abe5  .`0... .........
-	defb 005h,001h,08bh,00fh,0f0h,000h,004h,008h,010h,020h,03fh,0c0h,000h,000h,003h,020h	; abf5  ......... ?.... 
+	defb 005h,001h,08bh,00fh,0f0h,000h,004h,008h,010h,020h,03fh,0c0h,000h,000h,003h,020h	; abf5  ......... ?....
 	defb 082h,0ffh,080h,003h,000h,088h,020h,010h,008h,0ffh,000h,000h,001h,006h,003h,001h	; ac05  ...... .........
 	defb 084h,0ffh,000h,000h,0ffh,006h,000h,083h,003h,0fch,004h,005h,000h,08eh,0ffh,000h	; ac15  ................
 	defb 000h,030h,00ch,003h,002h,004h,0f8h,000h,000h,018h,00eh,0ffh,005h,000h,093h,0ffh	; ac25  .0..............
@@ -1031,7 +1031,7 @@ DATA_rle_col_B6F9:
 ;   0xb6fc..0xb737  (59 bytes)
 DATA_pantalla_B6FC:
 	defb 004h,01ch,011h,016h,015h,084h,001h,003h,005h,012h,017h,0f3h,003h,01ah,001h,001h	; b6fc  ................
-	defb 006h,013h,01ah,004h,01eh,01bh,001h,001h,008h,014h,018h,019h,02ch,01dh,01fh,020h	; b70c  ............,.. 
+	defb 006h,013h,01ah,004h,01eh,01bh,001h,001h,008h,014h,018h,019h,02ch,01dh,01fh,020h	; b70c  ............,..
 	defb 00eh,00ch,00fh,009h,00ah,02fh,02bh,007h,0e3h,021h,008h,010h,00dh,02dh,02eh,00bh	; b71c  ...../+..!...-..
 	defb 02ah,02ah,029h,0e5h,024h,086h,02ah,002h,029h,02ah,000h	; b72c  **).$.*.)*.
 
@@ -1657,27 +1657,27 @@ SUBRANURA_SIGUIENTE:		; las cuatro subranuras de una ranura expandida
 	xor a			;bf81   ; ninguna de las cuatro: A = 0 y sin carry
 	ret			;bf82
 COMPARA_FIRMAS:		; carry si alguna de las tres firmas coincide
-	call FIRMA_4010		;bf83   ; primera firma: la cabecera del otro cartucho
-	ld a,002h		;bf86   ; el 2 se carga antes del ret: es la bandera que acaba en E1DE
+	call FIRMA_4010		;bf83	; Comprueba firma RC745 = King Kong 2
+	ld a,002h		;bf86	; el 2 se carga antes del ret: es la bandera que acaba en E1DE
 	ret c			;bf88
-	call FIRMA_BFFA		;bf89   ; segunda firma: el final de un cartucho de 32 KB
+	call FIRMA_BFFA		;bf89	; Comprueba firma RC746 = QBERT
 	ld a,002h		;bf8c
 	ret c			;bf8e
-	call FIRMA_7FFA		;bf8f   ; tercera firma: el final de uno de 16 KB
+	call FIRMA_7FFA		;bf8f	; Comprueba firma RC735 = Game Master
 	ld a,002h		;bf92
 	ret			;bf94   ; el carry lo deja la comparacion; el A = 2 sirve para las tres
 FIRMA_4010:		; 5 bytes en 0x4010 contra 0xBFD2
-	ld de,0bfd2h		;bf95   ; la firma esperada, en esta misma pagina
+	ld de,0bfd2h		;bf95   ; la firma esperada (RC745 = King Kong 2), en esta misma pagina
 	ld hl,04010h		;bf98   ; 0x4010 es lo que sigue a la cabecera AB del cartucho
 	ld b,005h		;bf9b
 	jr COMPARA_B_BYTES		;bf9d
 FIRMA_BFFA:		; 6 bytes en 0xBFFA contra 0xBFCC
-	ld de,0bfcch		;bf9f   ; la segunda firma
+	ld de,0bfcch		;bf9f   ; la segunda firma (RC746 = QBERT)
 	ld hl,0bffah		;bfa2   ; 0xBFFA: los seis ultimos bytes de un cartucho de 32 KB
 	ld b,006h		;bfa5
 	jr COMPARA_B_BYTES		;bfa7
 FIRMA_7FFA:		; 6 bytes en 0x7FFA contra 0xBFC6
-	ld de,0bfc6h		;bfa9   ; la tercera firma
+	ld de,0bfc6h		;bfa9   ; la tercera firma (RC735 = Game Master)
 	ld hl,07ffah		;bfac   ; 0x7FFA: los seis ultimos de uno de 16 KB
 	ld b,006h		;bfaf
 COMPARA_B_BYTES:		; B bytes leidos con RDSLT (ranura C) contra (DE)
@@ -1703,6 +1703,8 @@ FIRMA_NO_COINCIDE:		; sin carry: esta firma no es
 ; ----------------------------------------------------------------------
 ; DATOS firma_7FFA: 00 30 31 13 35 AA: los seis bytes que tiene que haber en
 ;   0x7FFA del otro cartucho (los lee 0xBFA9)
+; Corresponde a AA = firma, 35 = RC735 = Game Master,
+; 13 = Longitud título "Game Master", 31 30 00 = 3 primeros kanas título "Game Master"
 ;   0xbfc6..0xbfcc  (6 bytes)
 DATA_firma_7FFA:
 	defb 000h,030h,031h,013h,035h,0aah	; bfc6
@@ -1710,6 +1712,8 @@ DATA_firma_7FFA:
 ; ----------------------------------------------------------------------
 ; DATOS firma_BFFA: BA B2 86 07 46 AA: los seis bytes que tiene que haber en
 ;   0xBFFA del otro cartucho (los lee 0xBF9F)
+; Corresponde a AA = firma, 46 = RC746 = QBERT,
+; 07 = Longitud título "QBERT", 86 B2 BA = 3 primeros kanas título "QBERT"
 ;   0xbfcc..0xbfd2  (6 bytes)
 DATA_firma_BFFA:
 	defb 0bah,0b2h,086h,007h,046h,0aah	; bfcc
@@ -1718,6 +1722,7 @@ DATA_firma_BFFA:
 ; DATOS firma_4010: "CD" 07 "E" FF: los cinco bytes que tiene que haber en
 ;   0x4010 del otro cartucho (los lee 0xBF95). Este cartucho lleva ahi "CD" 07
 ;   "R" FF, o sea que F-1 Spirit NO se encuentra a si mismo: la letra cambia
+; Corresponde a "CD" = firma , 0745 (BCD) = RC745 = King Kong 2
 ;   0xbfd2..0xbfd7  (5 bytes)
 DATA_firma_4010:
 	defb 043h,044h,007h,045h,0ffh	; bfd2
