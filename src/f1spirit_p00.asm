@@ -2557,21 +2557,48 @@ RECURSO_SPRITE_COPIA:		; tipo 2: copia [4..5] bytes tal cual
 	push ix		;4f68
 	pop hl			;4f6a
 	jp COPIA_A_VRAM		;4f6b
-L_4F6E:
-	ld hl,00000h		;4f6e
+
+; ----------------------------------------------------------------------
+; Aqui vive la parada en boxes de un jugador. Se entra porque p02
+; 0x8C04 -el estado 1 del coche, "entra en boxes"- pone E250 = 0x0C,
+; y el despachador de 0x5A3D manda el 12 a 0x5B02 (montar la escena)
+; y el 13 a 0x5B10 (un fotograma). Con dos jugadores no se pasa por
+; aqui: el coche se queda en su estado 2.
+;
+; La escena tiene su propio subestado en E251 (0, 1, 2 y 3) y su
+; cuenta atras en E25D. Los DOS MECANICOS son dos fichas de 6 bytes
+; en E9B1 y E9B9, separadas 8, copiadas de la plantilla de 0x4FB2:
+; +0  vivo
+; +1  Y (empieza en 0xBE, abajo del todo, y sube de dos en dos)
+; +2  X (0x40)
+; +3  fotograma (0 a 7)
+; +4  contador de la animacion
+; +5  espera antes de arrancar (0 el primero, 0x12 el segundo)
+; Cada mecanico son CUATRO sprites: dos arriba y dos 16 pixeles mas
+; abajo, y cada pareja es el mismo dibujo en dos colores (1 y 9), que
+; es como se pinta una figura de dos tintas con sprites del TMS9918.
+;
+; Y LO QUE DE VERDAD DUELE: mientras estas parado, los rivales te
+; adelantan. Son las tres fichas de 8 bytes de E3D8; cada una baja
+; de 8 en 8 desde 0x94, y al pasar de 0x80 le suma UNO a E331, que
+; es tu puesto en la carrera (el que pinta p01 0x7A06), hasta el
+; tope de 99. El hueco entre coche y coche lo sortea 0x51F2.
+; ----------------------------------------------------------------------
+BOXES_ENTRA:		; monta la escena: contadores a cero, los sprites de los mecanicos y las dos fichas de E9B1
+	ld hl,00000h		;4f6e   ; E9C3 y E251 a cero: el subestado de la parada empieza en 0
 	ld (0e9c3h),hl		;4f71
 	xor a			;4f74
 	ld (0e251h),a		;4f75
 	ld (0e3b0h),a		;4f78
-	ld a,012h		;4f7b
+	ld a,012h		;4f7b   ; 0x12 fotogramas antes del primer paso
 	ld (0e25dh),a		;4f7d
-	ld a,(0e244h)		;4f80
+	ld a,(0e244h)		;4f80   ; E244 es la repeticion (0 normal, 1 pedida, 2 reproduciendose); si no se esta reproduciendo hay que apartarla antes de usar la pista para otra cosa
 	cp 002h		;4f83
-	call c,L_4FBE		;4f85
+	call c,BOXES_GUARDA_REPETICION		;4f85
 	call LIMPIA_EA80_Y_ATRIBUTOS		;4f88
-	ld hl,074ech		;4f8b
+	ld hl,074ech		;4f8b   ; la lista de sprites p04 0x74EC: un solo recurso, el de los mecanicos
 	call CARGA_LISTA_SPRITES		;4f8e
-	ld hl,04fb2h		;4f91
+	ld hl,04fb2h		;4f91   ; la plantilla de 0x4FB2 a E9B1 y E9B9: seis bytes copiados y dos saltados, que la ficha ocupa ocho
 	ld de,0e9b1h		;4f94
 	ld c,002h		;4f97
 L_4F99:
@@ -2586,10 +2613,10 @@ L_4F9B:
 	inc de			;4fa2
 	dec c			;4fa3
 	jr nz,L_4F99		;4fa4
-	call L_5298		;4fa6
-	call L_52C8		;4fa9
-	call L_51F2		;4fac
-	jp L_5BA2		;4faf
+	call TIEMPO_A_E30D		;4fa6   ; el tiempo, el reloj de pantalla y el hueco hasta el primer rival
+	call RELOJ_GUARDA_Y_PINTA		;4fa9
+	call RIVAL_HUECO_TIEMPO		;4fac
+	jp L_5BA2		;4faf   ; y 0x5BA2 sube E250: de montar la escena (12) se pasa a correrla (13)
 
 ; ----------------------------------------------------------------------
 ; DATOS inicial_E9B1: dos filas de 6 bytes que 0x4F91 copia a E9B1 y E9B9 (`ld
@@ -2604,66 +2631,66 @@ DATA_inicial_E9B1:
 ; ======================================================================
 
 
-L_4FBE:
+BOXES_GUARDA_REPETICION:		; aparta la repeticion mientras dura la parada: E244 += 3
 	xor a			;4fbe
 	ld (0e1d5h),a		;4fbf
 	call 09263h		;4fc2
 	ld a,(0e244h)		;4fc5
-	add a,003h		;4fc8
+	add a,003h		;4fc8   ; sumarle 3 es la marca de "estoy en boxes": el 0 pasa a 3 y el 1 a 4, y 0x50A6 se los resta al salir, asi que la repeticion sale de la parada como entro
 	ld (0e244h),a		;4fca
 	call 0b44ch		;4fcd
 	call 070dfh		;4fd0
 	jp 0923ah		;4fd3
-L_4FD6:
+BOXES_PASO:		; un fotograma de la parada
 	ld iy,0e2c0h		;4fd6
-	call 0788fh		;4fda
-	call c,L_50CD		;4fdd
-	call L_5207		;4fe0
+	call 0788fh		;4fda   ; p01 0x788F es el mando dentro de boxes: con el boton devuelve acarreo -el jugador corta la parada- y con abajo reposta
+	call c,BOXES_CORTA		;4fdd
+	call BOXES_PINTA		;4fe0   ; lo de siempre: sprites, ventana, HUD y los objetos de tiles
 	call 0760dh		;4fe3
-	call L_518A		;4fe6
-	call L_51BA		;4fe9
-	ld a,(0e251h)		;4fec
+	call RIVALES_MUEVE		;4fe6   ; los rivales que pasan y el sorteo del siguiente
+	call RIVAL_NUEVO		;4fe9
+	ld a,(0e251h)		;4fec   ; el subestado 3 es la salida, y por ahi no se anima nada
 	cp 003h		;4fef
-	jp z,L_5076		;4ff1
-	call L_5000		;4ff4
-	call L_50F8		;4ff7
-	call L_52AA		;4ffa
-	jp L_52CB		;4ffd
-L_5000:
-	call L_50F3		;5000
+	jp z,BOXES_SALE		;4ff1
+	call BOXES_MECANICOS		;4ff4
+	call SPRITES_MECANICOS		;4ff7
+	call TIEMPO_DIFERENCIA		;4ffa
+	jp RELOJ_PINTA		;4ffd
+BOXES_MECANICOS:		; los dos mecanicos: primero decide si estan trabajando y luego los mueve
+	call HAY_TRABAJO		;5000   ; E1D6 y el bit 1 de E1C8: dos maneras de que los mecanicos se pongan a trabajar
 	jr nz,L_500A		;5003
 	ld a,(0e1c8h)		;5005
 	and 002h		;5008
 L_500A:
-	call nz,L_505C		;500a
-	xor a			;500d
+	call nz,BOXES_TRABAJANDO		;500a
+	xor a			;500d   ; EA50 es la marca de "trabajando", y aqui empieza apagada
 	ld (0ea50h),a		;500e
-L_5011:
+BOXES_POR_SUBESTADO:		; reparte por E251: 1 es la espera de abajo, 2 en adelante la salida, 0 la subida
 	ld a,(0e251h)		;5011
-	dec a			;5014
-	jr z,L_5063		;5015
-	jp p,L_5073		;5017
-	ld ix,0e9b1h		;501a
+	dec a			;5014   ; el `dec a` y el `jp p` juntos: 1 va a 0x5063, 2 y mas a 0x5073, y el 0 sigue aqui
+	jr z,BOXES_SUBESTADO_1		;5015
+	jp p,BOXES_A_LA_SALIDA		;5017
+	ld ix,0e9b1h		;501a   ; las dos fichas, de ocho en ocho
 	ld b,002h		;501e
 	ld de,00008h		;5020
-L_5023:
-	ld a,(ix+005h)		;5023
+MECANICO_SUBE_O_ESPERA:		; mientras (ix+5) no llegue a cero el mecanico ni sube ni se anima
+	ld a,(ix+005h)		;5023   ; (ix+5) es la espera: el segundo mecanico sale 0x12 fotogramas despues que el primero
 	and a			;5026
-	jr z,L_502E		;5027
+	jr z,MECANICO_SUBE		;5027
 	dec a			;5029
 	ld (ix+005h),a		;502a
 	ret			;502d
-L_502E:
-	ld a,(ix+001h)		;502e
+MECANICO_SUBE:		; Y -= 2 y un paso de animacion
+	ld a,(ix+001h)		;502e   ; dos pixeles por fotograma hacia arriba
 	sub 002h		;5031
 	ld (ix+001h),a		;5033
-	call L_5271		;5036
+	call MECANICO_ANIMA_LENTO		;5036
 	add ix,de		;5039
-	djnz L_5023		;503b
-	ld hl,0e25dh		;503d
+	djnz MECANICO_SUBE_O_ESPERA		;503b
+	ld hl,0e25dh		;503d   ; cuando los dos han subido, E25D cuenta la parada...
 	dec (hl)			;5040
 	ret nz			;5041
-	ld a,060h		;5042
+	ld a,060h		;5042   ; ...y al agotarse: 0x60 fotogramas mas, los dos mecanicos a sus poses de trabajo (2 y 4) y al subestado siguiente
 	ld (0e25dh),a		;5044
 	ld a,002h		;5047
 	ld (0e9b5h),a		;5049
@@ -2671,109 +2698,109 @@ L_502E:
 	ld a,004h		;504f
 	ld (0e9bdh),a		;5051
 	ld (0e9bch),a		;5054
-L_5057:
+BOXES_SUBESTADO_MAS_UNO:		; E251++
 	ld hl,0e251h		;5057
 	inc (hl)			;505a
 	ret			;505b
-L_505C:
+BOXES_TRABAJANDO:		; enciende la marca de EA50 y sigue por 0x5011
 	ld a,001h		;505c
 	ld (0ea50h),a		;505e
-	jr L_5011		;5061
-L_5063:
-	call L_5260		;5063
+	jr BOXES_POR_SUBESTADO		;5061
+BOXES_SUBESTADO_1:		; la parada en si: anima a los dos y cuenta hasta 0x20
+	call MECANICOS_ANIMA		;5063
 	ld hl,0e25dh		;5066
 	dec (hl)			;5069
 	ret nz			;506a
-	ld a,020h		;506b
+	ld a,020h		;506b   ; 0x20 fotogramas para la ultima pose antes de la salida
 	ld (hl),a			;506d
-	call L_50AE		;506e
-	jr L_5057		;5071
-L_5073:
-	jp L_524F		;5073
-L_5076:
-	call L_51DD		;5076
+	call MECANICO_1_POSE		;506e
+	jr BOXES_SUBESTADO_MAS_UNO		;5071
+BOXES_A_LA_SALIDA:		; el subestado 2 y los siguientes se van por 0x524F
+	jp MECANICO_QUE_TOCA		;5073
+BOXES_SALE:		; cuando no queda ningun rival por pasar y se agota E25D: se recarga la carrera y se vuelve a ella
+	call RIVAL_HUECO		;5076   ; no se sale con un rival a medio cruzar la pantalla
 	ret nz			;5079
 	ld hl,0e25dh		;507a
 	dec (hl)			;507d
 	ret nz			;507e
-	call LIMPIA_EA80_Y_ATRIBUTOS		;507f
+	call LIMPIA_EA80_Y_ATRIBUTOS		;507f   ; la escena se desmonta entera: atributos, sprites de la carrera y el panel
 	call SPRITES_A_VRAM		;5082
 	call CARGA_SPRITES_CARRERA		;5085
 	call L_595B		;5088
-	call L_531D		;508b
-	ld a,(0e244h)		;508e
+	call RELOJ_DEVUELVE_FONDO		;508b
+	ld a,(0e244h)		;508e   ; si la repeticion venia apartada (E244 >= 3) hay que devolverla antes de correr
 	cp 003h		;5091
-	call nc,L_50A6		;5093
+	call nc,BOXES_DEVUELVE_REPETICION		;5093
 	ld a,00bh		;5096
-	call 06049h		;5098
-	ld a,046h		;509b
+	call 06049h		;5098   ; p01 0x6049 con 0x0B: el estado 11, que es la vuelta a la carrera
+	ld a,046h		;509b   ; el sonido 0x46 es el del coche saliendo de boxes
 	call ENCOLA_SONIDO		;509d
-	call 08666h		;50a0
+	call 08666h		;50a0   ; p02 0x8666 espera al fotograma siguiente y 0x881D arranca el motor
 	jp 0881dh		;50a3
-L_50A6:
+BOXES_DEVUELVE_REPETICION:		; E244 -= 3 y p02 0x91EC
 	sub 003h		;50a6
 	ld (0e244h),a		;50a8
 	jp 091ech		;50ab
-L_50AE:
-	call L_5513		;50ae
+MECANICO_1_POSE:		; a cara o cruz: la pose 6 para el primer mecanico o la 7 para el segundo
+	call AZAR		;50ae   ; 0x5513 es el azar del juego, y aqui solo se mira su bit de abajo
 	and 001h		;50b1
 	ld a,006h		;50b3
 	jr nz,L_50C2		;50b5
 	ld (0e9b4h),a		;50b7
 	ret			;50ba
-L_50BB:
+MECANICO_2_POSE:		; si el primero ya esta en la 6, el segundo pasa a la 7; si no, el primero a la 6
 	ld a,(0e9b4h)		;50bb
 	cp 006h		;50be
-	jr nz,L_50C7		;50c0
+	jr nz,MECANICO_1_POSE_6		;50c0
 L_50C2:
 	inc a			;50c2
 	ld (0e9bch),a		;50c3
 	ret			;50c6
-L_50C7:
+MECANICO_1_POSE_6:		; el primero a la pose 6
 	ld a,006h		;50c7
 	ld (0e9b4h),a		;50c9
 	ret			;50cc
-L_50CD:
+BOXES_CORTA:		; el boton del jugador: 0x12 fotogramas y al subestado 3, la salida
 	ld a,(0e251h)		;50cd
-	cp 003h		;50d0
+	cp 003h		;50d0   ; si ya se estaba saliendo no hay nada que cortar
 	ret z			;50d2
-	call L_50AE		;50d3
-	call L_50BB		;50d6
-	call L_50F8		;50d9
+	call MECANICO_1_POSE		;50d3
+	call MECANICO_2_POSE		;50d6
+	call SPRITES_MECANICOS		;50d9
 	ld a,012h		;50dc
 	ld (0e25dh),a		;50de
 	ld a,003h		;50e1
 	ld (0e251h),a		;50e3
 	ret			;50e6
-L_50E7:
+SONIDO_HERRAMIENTA:		; el sonido 0x23 mientras la parada no haya llegado al subestado 3
 	ld a,(0e251h)		;50e7
 	dec a			;50ea
 	cp 002h		;50eb
 	ld a,023h		;50ed
 	call c,ENCOLA_SONIDO		;50ef
 	ret			;50f2
-L_50F3:
+HAY_TRABAJO:		; Z si E1D6 vale cero
 	ld a,(0e1d6h)		;50f3
 	and a			;50f6
 	ret			;50f7
-L_50F8:
+SPRITES_MECANICOS:		; los cuatro sprites de cada mecanico a los atributos de EA88
 	ld ix,0e9b1h		;50f8
-	ld de,0ea88h		;50fc
+	ld de,0ea88h		;50fc   ; EA88 es la segunda mitad de la tabla de atributos, la que deja libre el coche
 	ld c,002h		;50ff
 L_5101:
-	ld b,004h		;5101
+	ld b,004h		;5101   ; cuatro sprites por mecanico: la figura es de 16 x 32 y los sprites del MSX solo dan 16 x 16
 L_5103:
-	ld a,b			;5103
+	ld a,b			;5103   ; los dos primeros van a la altura de la ficha y los dos ultimos 16 pixeles mas abajo
 	cp 003h		;5104
 	ld l,000h		;5106
 	jr nc,L_510C		;5108
 	ld l,010h		;510a
 L_510C:
-	ld a,(ix+001h)		;510c
+	ld a,(ix+001h)		;510c   ; el byte 0 del atributo es la Y
 	add a,l			;510f
 	ld (de),a			;5110
 	inc de			;5111
-	ld a,(ix+003h)		;5112
+	ld a,(ix+003h)		;5112   ; en las poses 6 y 7 -las de trabajar- la figura se corre tres pixeles a la derecha
 	cp 006h		;5115
 	ld l,000h		;5117
 	jr c,L_511D		;5119
@@ -2783,7 +2810,7 @@ L_511D:
 	add a,l			;5120
 	ld (de),a			;5121
 	inc de			;5122
-	ld a,(ix+003h)		;5123
+	ld a,(ix+003h)		;5123   ; el patron sale de la tabla de 0x514A: ocho poses de cuatro sprites
 	add a,a			;5126
 	add a,a			;5127
 	add a,b			;5128
@@ -2793,7 +2820,7 @@ L_511D:
 	ld a,(hl)			;5130
 	ld (de),a			;5131
 	inc de			;5132
-	bit 0,b		;5133
+	bit 0,b		;5133   ; y el color va alternando: la pareja de abajo del par lleva el 1 y la de arriba el 9, que es como se pinta una figura de dos tintas
 	ld a,001h		;5135
 	jr z,L_513B		;5137
 	ld a,009h		;5139
@@ -2802,7 +2829,7 @@ L_513B:
 	inc de			;513c
 	djnz L_5103		;513d
 	ex de,hl			;513f
-	ld de,00008h		;5140
+	ld de,00008h		;5140   ; ocho bytes de una ficha a la siguiente
 	add ix,de		;5143
 	ex de,hl			;5145
 	dec c			;5146
@@ -2828,40 +2855,40 @@ DATA_tabla_514A:
 ; ======================================================================
 
 
-L_516A:
-	ld a,(iy+003h)		;516a
+RIVAL_ADELANTA:		; el rival que cruza suma un puesto a E331, hasta 99, y solo una vez
+	ld a,(iy+003h)		;516a   ; (iy+3) es la marca de "a este ya lo he contado"
 	or a			;516d
 	ret nz			;516e
 	ld hl,0e331h		;516f
 	ld a,(hl)			;5172
-	cp 063h		;5173
+	cp 063h		;5173   ; el marcador se planta en 99: mas puestos no caben en dos digitos
 	ret z			;5175
 	inc (hl)			;5176
 	ld (iy+003h),001h		;5177
 	ret			;517b
-L_517C:
-	call L_5513		;517c
+SONIDO_RIVAL:		; el motor del que pasa: el sonido 0x0A o el 0x0B, a cara o cruz
+	call AZAR		;517c
 	and 001h		;517f
 	ld a,00ah		;5181
 	jr z,L_5187		;5183
 	ld a,00bh		;5185
 L_5187:
 	jp ENCOLA_SONIDO		;5187
-L_518A:
+RIVALES_MUEVE:		; las tres fichas de E3D8: bajan de 8 en 8 y mueren al pasar de 0x40
 	ld iy,0e3d8h		;518a
 	ld de,00008h		;518e
 	ld b,003h		;5191
 L_5193:
-	ld a,(iy+000h)		;5193
+	ld a,(iy+000h)		;5193   ; la ficha apagada no se mueve
 	or a			;5196
 	jr z,L_51B5		;5197
 	ld a,(iy+001h)		;5199
-	sub 008h		;519c
+	sub 008h		;519c   ; ocho pixeles por fotograma: el rival pasa deprisa, que tu estas parado
 	ld (iy+001h),a		;519e
-	cp 080h		;51a1
-	call c,L_516A		;51a3
+	cp 080h		;51a1   ; al cruzar la mitad de la pantalla es cuando cuenta el adelantamiento
+	call c,RIVAL_ADELANTA		;51a3
 	ld a,(iy+001h)		;51a6
-	cp 040h		;51a9
+	cp 040h		;51a9   ; y por debajo de 0x40 se apaga la ficha: ya ha salido por arriba
 	jr nc,L_51B5		;51ab
 	ld (iy+000h),000h		;51ad
 	ld (iy+003h),000h		;51b1
@@ -2869,23 +2896,23 @@ L_51B5:
 	add iy,de		;51b5
 	djnz L_5193		;51b7
 	ret			;51b9
-L_51BA:
+RIVAL_NUEVO:		; cuando E3DC llega a cero saca otro rival, si queda hueco
 	ld a,(0e251h)		;51ba
-	cp 003h		;51bd
+	cp 003h		;51bd   ; en la salida ya no salen mas rivales
 	ret z			;51bf
 	ld hl,0e3dch		;51c0
 	dec (hl)			;51c3
 	ret nz			;51c4
-	call L_51F2		;51c5
-	call L_51DD		;51c8
+	call RIVAL_HUECO_TIEMPO		;51c5
+	call RIVAL_HUECO		;51c8
 	ret nz			;51cb
 	ld (iy+000h),b		;51cc
-	call L_5513		;51cf
+	call AZAR		;51cf   ; la X del rival se sortea: 0x0F posibles carriles
 	and 00fh		;51d2
 	ld (iy+002h),a		;51d4
-	ld (iy+001h),094h		;51d7
-	jr L_517C		;51db
-L_51DD:
+	ld (iy+001h),094h		;51d7   ; todos entran por 0x94, abajo
+	jr SONIDO_RIVAL		;51db
+RIVAL_HUECO:		; Z y IY en el primer hueco de las tres fichas; NZ si estan las tres ocupadas
 	ld iy,0e3d8h		;51dd
 	ld de,00008h		;51e1
 	ld b,003h		;51e4
@@ -2897,29 +2924,29 @@ L_51E6:
 	djnz L_51E6		;51ed
 	or 0ffh		;51ef
 	ret			;51f1
-L_51F2:
+RIVAL_HUECO_TIEMPO:		; sortea los fotogramas hasta el siguiente rival: (azar & 0x0F) * 2 mas 5, o mas 30 en la categoria 0
 	ld b,005h		;51f2
-	ld a,(0e25bh)		;51f4
+	ld a,(0e25bh)		;51f4   ; en la categoria 0 -la de abajo- los rivales van mucho mas sueltos: el sumando es 30 en vez de 5
 	and a			;51f7
 	jr nz,L_51FC		;51f8
 	ld b,01eh		;51fa
 L_51FC:
-	call L_5513		;51fc
+	call AZAR		;51fc
 	and 00fh		;51ff
 	add a,a			;5201
 	add a,b			;5202
 	ld (0e3dch),a		;5203
 	ret			;5206
-L_5207:
+BOXES_PINTA:		; el repintado de cada fotograma de la parada
 	call SPRITES_A_VRAM		;5207
 	call VENTANA_JUGADOR_2		;520a
 	call 07134h		;520d
 	call 0b44ch		;5210
-	call L_521C		;5213
-	call c,0b463h		;5216
+	call CARRERA_EN_GRUPO		;5213
+	call c,0b463h		;5216   ; solo en las carreras 0, 1, 2, 9, 10 y 11 se llama a p03 0xB463, que es quien pinta los rivales de boxes como objetos de tiles
 	jp 070d9h		;5219
-L_521C:
-	ld a,(0e25ch)		;521c
+CARRERA_EN_GRUPO:		; acarreo si la carrera (E25C) esta en 0-2 o en 9-11; sin acarreo en 3-8 y 12-21
+	ld a,(0e25ch)		;521c   ; cuatro restas encadenadas y dos `ccf`: es una tabla de rangos escrita como cuentas, sin tabla
 	sub 003h		;521f
 	ret c			;5221
 	sub 006h		;5222
@@ -2930,8 +2957,8 @@ L_521C:
 	sub 00ah		;5229
 	ccf			;522b
 	ret			;522c
-L_522D:
-	ld c,018h		;522d
+COPIA_RECTANGULO_VRAM:		; 24 filas de B' bytes de (DE) a la VRAM (HL), fila a fila
+	ld c,018h		;522d   ; 24 filas: la pantalla entera de arriba abajo
 L_522F:
 	exx			;522f
 	ld a,b			;5230
@@ -2943,7 +2970,7 @@ L_5233:
 	inc de			;5237
 	inc hl			;5238
 	djnz L_5233		;5239
-	ld a,020h		;523b
+	ld a,020h		;523b   ; lo que falta hasta 32 es lo que hay que saltar en los dos punteros para caer en la fila de abajo
 	exx			;523d
 	sub b			;523e
 	exx			;523f
@@ -2956,50 +2983,50 @@ L_5233:
 	dec c			;524b
 	jr nz,L_522F		;524c
 	ret			;524e
-L_524F:
+MECANICO_QUE_TOCA:		; el que no esta en la pose 6
 	ld ix,0e9b1h		;524f
 	ld a,(ix+003h)		;5253
 	cp 006h		;5256
-	jr nz,L_527B		;5258
+	jr nz,MECANICO_ANIMA		;5258
 	ld ix,0e9b9h		;525a
-	jr L_527B		;525e
-L_5260:
+	jr MECANICO_ANIMA		;525e
+MECANICOS_ANIMA:		; un paso de animacion a los dos
 	ld b,002h		;5260
 	ld ix,0e9b1h		;5262
 	ld de,00008h		;5266
 L_5269:
-	call L_527B		;5269
+	call MECANICO_ANIMA		;5269
 	add ix,de		;526c
 	djnz L_5269		;526e
 	ret			;5270
-L_5271:
+MECANICO_ANIMA_LENTO:		; un paso cada cuatro fotogramas
 	dec (ix+004h)		;5271
 	ret nz			;5274
 	ld (ix+004h),004h		;5275
 	jr L_528A		;5279
-L_527B:
-	ld a,(0ea50h)		;527b
+MECANICO_ANIMA:		; cambia el bit 0 del fotograma; trabajando va a cada fotograma y parado uno de cada trece
+	ld a,(0ea50h)		;527b   ; EA50 encendido es "estan trabajando": entonces el cambio de pose es inmediato
 	or a			;527e
 	jr nz,L_528A		;527f
 	inc (ix+004h)		;5281
 	ld a,(ix+004h)		;5284
-	and 00dh		;5287
+	and 00dh		;5287   ; el `and 0x0d` deja pasar una de cada trece vueltas, mas o menos: no es un contador limpio, es una mascara
 	ret nz			;5289
 L_528A:
 	ld a,(ix+003h)		;528a
-	xor 001h		;528d
+	xor 001h		;528d   ; el fotograma solo cambia de bit 0: las poses van por parejas, y la animacion es ir y venir entre las dos
 	ld (ix+003h),a		;528f
 	bit 0,a		;5292
-	call nz,L_50E7		;5294
+	call nz,SONIDO_HERRAMIENTA		;5294   ; y en una de las dos suena la herramienta
 	ret			;5297
-L_5298:
+TIEMPO_A_E30D:		; el cronometro (E210..E212) copiado a E30D..E30F
 	ld a,(0e210h)		;5298
 	ld (0e30dh),a		;529b
 	ld a,(0e211h)		;529e
 	ld (0e30eh),a		;52a1
 	ld a,(0e212h)		;52a4
 	ld (0e30fh),a		;52a7
-L_52AA:
+TIEMPO_DIFERENCIA:		; la resta de los dos tiempos a EA57..EA59, por p02 0xA5AF
 	ld hl,0e30dh		;52aa
 	ld c,(hl)			;52ad
 	inc hl			;52ae
@@ -3014,7 +3041,7 @@ L_52AA:
 	ld h,(hl)			;52b9
 	ld l,a			;52ba
 L_52BB:
-	call 0a5afh		;52bb
+	call 0a5afh		;52bb   ; la resta de 24 bits vive en la pagina 3
 	ex de,hl			;52be
 	ld hl,0ea57h		;52bf
 	ld (hl),b			;52c2
@@ -3023,19 +3050,19 @@ L_52BB:
 	inc hl			;52c5
 	ld (hl),d			;52c6
 	ret			;52c7
-L_52C8:
-	call L_5311		;52c8
-L_52CB:
-	call L_5339		;52cb
-	call L_532A		;52ce
+RELOJ_GUARDA_Y_PINTA:		; guarda el fondo y pinta el reloj
+	call RELOJ_GUARDA_FONDO		;52c8
+RELOJ_PINTA:		; el tiempo de EA51..EA56 en el buffer, con los digitos del tile 0xF5 y el 0xFF de separador
+	call TIEMPO_A_DIGITOS		;52cb
+	call CASILLA_DEL_RELOJ		;52ce
 	ld c,0f5h		;52d1
 	jr L_52D7		;52d3
-L_52D5:
+RELOJ_PINTA_TILES_10:		; el mismo reloj con los digitos del tile 0x10 y el 0x1E de separador
 	ld c,010h		;52d5
 L_52D7:
-	ld de,0ea51h		;52d7
+	ld de,0ea51h		;52d7   ; se escribe de derecha a izquierda -de las centesimas a los minutos- porque asi el puntero solo tiene que bajar
 	ld a,008h		;52da
-	call HL_MAS_A		;52dc
+	call HL_MAS_A		;52dc   ; el hueco del reloj son nueve casillas: MM : SS : cc
 	ld b,002h		;52df
 L_52E1:
 	ld a,(de)			;52e1
@@ -3045,7 +3072,7 @@ L_52E1:
 	dec hl			;52e5
 	djnz L_52E1		;52e6
 	ld a,c			;52e8
-	cp 0f5h		;52e9
+	cp 0f5h		;52e9   ; el separador cambia con la fuente: 0xFF con los digitos de 0xF5 y 0x1E con los de 0x10
 	ld a,0ffh		;52eb
 	jr z,L_52F1		;52ed
 	ld a,01eh		;52ef
@@ -3077,52 +3104,52 @@ L_5309:
 	dec hl			;530d
 	djnz L_5309		;530e
 	ret			;5310
-L_5311:
-	call L_532A		;5311
+RELOJ_GUARDA_FONDO:		; se guarda en E9A7 lo que habia en las diez casillas del reloj
+	call CASILLA_DEL_RELOJ		;5311
 	ld de,0e9a7h		;5314
 	ld bc,0000ah		;5317
 	ldir		;531a
 	ret			;531c
-L_531D:
-	call L_532A		;531d
+RELOJ_DEVUELVE_FONDO:		; y aqui se devuelve
+	call CASILLA_DEL_RELOJ		;531d
 	ex de,hl			;5320
 	ld hl,0e9a7h		;5321
 	ld bc,0000ah		;5324
 	ldir		;5327
 	ret			;5329
-L_532A:
-	ld de,03040h		;532a
+CASILLA_DEL_RELOJ:		; la casilla del reloj: columna 6 (0x30 / 8) y la fila que salga de 0x40, sobre el bloque de sombra E380
+	ld de,03040h		;532a   ; el bloque E380 lo rellena p03 0xB425 con la posicion del coche 1, y trae (iy+9) = 2, asi que el reloj se pinta en el buffer de EC00
 	ld iy,0e380h		;532d
 	call CASILLA_BUFFER_NOMBRES		;5331
 	ld iy,0e2c0h		;5334
 	ret			;5338
-L_5339:
-	ld hl,0ea57h		;5339
+TIEMPO_A_DIGITOS:		; los 24 bits de EA57 pasados a minutos, segundos y milesimas, y de ahi a los siete digitos de EA50..EA56
+	ld hl,0ea57h		;5339   ; el cronometro cuenta VEINTEAVOS de segundo: por eso el primer reparto es entre 20
 	ld e,(hl)			;533c
 	inc hl			;533d
 	ld d,(hl)			;533e
 	inc hl			;533f
 	ld l,(hl)			;5340
 	ld a,014h		;5341
-	call L_53D2		;5343
+	call DIVIDE_24		;5343   ; EA60..EA62 se queda con los segundos y en HL:DE queda el resto
 	push de			;5346
-	ld hl,0ea60h		;5347
+	ld hl,0ea60h		;5347   ; los segundos se apartan en EA67, que EA60 hace falta otra vez
 	ld de,0ea67h		;534a
 	ld bc,00003h		;534d
 	ldir		;5350
 	pop de			;5352
-	ld h,064h		;5353
+	ld h,064h		;5353   ; el resto (0 a 19) por 100 y entre 2 son milesimas: cada veinteavo son 50 milesimas, asi que el digito de las unidades siempre sale 0 o 5
 	call 09b4fh		;5355
 	ex de,hl			;5358
 	ld l,000h		;5359
 	ld a,002h		;535b
-	call L_53D2		;535d
+	call DIVIDE_24		;535d
 	ld hl,0ea60h		;5360
 	ld a,(hl)			;5363
 	inc hl			;5364
 	ld h,(hl)			;5365
 	ld l,a			;5366
-	call HL_A_BCD		;5367
+	call HL_A_BCD		;5367   ; las milesimas a BCD y de ahi a tres digitos: unidades, decenas y centenas
 	ld hl,0ea50h		;536a
 	ld a,e			;536d
 	and 00fh		;536e
@@ -3147,10 +3174,10 @@ L_5339:
 	ld d,(hl)			;5386
 	inc hl			;5387
 	ld l,(hl)			;5388
-	ld a,03ch		;5389
-	call L_53D2		;538b
+	ld a,03ch		;5389   ; y los segundos, entre 60, dan los minutos en EA60 y los segundos en el resto
+	call DIVIDE_24		;538b
 	ex de,hl			;538e
-	call HL_A_BCD		;538f
+	call HL_A_BCD		;538f   ; dos digitos de segundos...
 	pop hl			;5392
 	ld a,e			;5393
 	and 00fh		;5394
@@ -3166,7 +3193,7 @@ L_5339:
 	inc hl			;53a0
 	push hl			;53a1
 	ld hl,(0ea60h)		;53a2
-	call HL_A_BCD		;53a5
+	call HL_A_BCD		;53a5   ; ...y dos de minutos, que son los que se pintan a la izquierda
 	pop hl			;53a8
 	ld a,e			;53a9
 	and 00fh		;53aa
@@ -3180,7 +3207,7 @@ L_5339:
 	and 00fh		;53b3
 	ld (hl),a			;53b5
 	ret			;53b6
-L_53B7:
+DIVIDE_8_VUELTAS:		; la misma division, con el divisor ya montado y solo ocho vueltas
 	ld h,000h		;53b7
 	exx			;53b9
 	push hl			;53ba
@@ -3196,28 +3223,28 @@ L_53B7:
 	ld l,d			;53cc
 	ld d,e			;53cd
 	ld e,000h		;53ce
-	jr L_53E8		;53d0
-L_53D2:
-	ld h,000h		;53d2
+	jr DIVIDE_BUCLE		;53d0
+DIVIDE_24:		; divide los 24 bits que traen L, D y E entre A: cociente en EA60..EA62 y resto en H:L:D:E
+	ld h,000h		;53d2   ; el cociente empieza a cero, tres bytes
 	push af			;53d4
 	exx			;53d5
 	ld hl,0ea60h		;53d6
 	ld bc,00003h		;53d9
 	call RELLENA_RAM_CERO		;53dc
 	pop af			;53df
-	ld h,a			;53e0
+	ld h,a			;53e0   ; el divisor se monta arriba del todo del juego alterno -H' = A, y el resto a cero- y va bajando una posicion por vuelta: es la division a mano, la de restar y correr
 	ld l,000h		;53e1
 	ld de,00000h		;53e3
-	ld b,018h		;53e6
-L_53E8:
-	call L_5407		;53e8
-	call L_5410		;53eb
+	ld b,018h		;53e6   ; 24 vueltas, una por bit del cociente
+DIVIDE_BUCLE:		; un bit por vuelta
+	call DIVISOR_BAJA_UN_BIT		;53e8   ; primero baja el divisor un lugar...
+	call RESTA_32		;53eb   ; ...luego se resta a ver si cabe, y el resultado se deja en EA63..EA66 sin tocar el dividendo
 	push af			;53ee
-	ccf			;53ef
-	call L_542D		;53f0
+	ccf			;53ef   ; el `ccf` da la vuelta al acarreo: el prestamo es "no cabe", y el bit del cociente es justo lo contrario
+	call CORRE_COCIENTE		;53f0
 	pop af			;53f3
 	jr c,L_5403		;53f4
-	exx			;53f6
+	exx			;53f6   ; si cabia, la resta pasa a ser el nuevo dividendo
 	ld hl,0ea63h		;53f7
 	ld e,(hl)			;53fa
 	inc hl			;53fb
@@ -3229,16 +3256,16 @@ L_53E8:
 	ld l,a			;5401
 	exx			;5402
 L_5403:
-	djnz L_53E8		;5403
+	djnz DIVIDE_BUCLE		;5403
 	exx			;5405
 	ret			;5406
-L_5407:
+DIVISOR_BAJA_UN_BIT:		; H:L:D:E entre dos
 	srl h		;5407
 	rr l		;5409
 	rr d		;540b
 	rr e		;540d
 	ret			;540f
-L_5410:
+RESTA_32:		; EA63..EA66 = dividendo - divisor, byte a byte y cruzando los dos juegos de registros
 	exx			;5410
 	ld a,e			;5411
 	exx			;5412
@@ -3260,7 +3287,7 @@ L_5410:
 	sbc a,h			;5428
 	ld (0ea66h),a		;5429
 	ret			;542c
-L_542D:
+CORRE_COCIENTE:		; mete el acarreo por abajo en los tres bytes de EA60
 	push hl			;542d
 	ld hl,0ea60h		;542e
 	rl (hl)		;5431
@@ -3387,7 +3414,7 @@ L_54D4:
 L_54DF:
 	ld (ix+04ah),006h		;54df
 	ld (ix+064h),000h		;54e3
-	call L_5513		;54e7
+	call AZAR		;54e7
 	and 007h		;54ea
 	call DESPACHA		;54ec
 
@@ -3422,14 +3449,14 @@ L_5509:
 L_550E:
 	set 3,(ix+068h)		;550e
 	ret			;5512
-L_5513:
+AZAR:		; el numero al azar del juego: mezcla el contador de fotogramas (E1C3) con (E2C6) y con la semilla (E21F), suma 0xCD, rota y guarda
 	push hl			;5513
-	ld a,(0e1c3h)		;5514
+	ld a,(0e1c3h)		;5514   ; el contador de fotogramas de logica es lo que hace que el resultado dependa de cuando se pida
 	ld hl,0e2c6h		;5517
 	xor (hl)			;551a
 	ld hl,0e21fh		;551b
 	xor (hl)			;551e
-	add a,0cdh		;551f
+	add a,0cdh		;551f   ; la suma y la rotacion son todo el revoltijo: ni multiplica ni tiene tabla, y aun asi da de sobra para sortear un carril o una pose
 	rrca			;5521
 	ld (hl),a			;5522
 	pop hl			;5523
@@ -4253,13 +4280,13 @@ L_5AF1:
 L_5B02:
 	call L_5CAA		;5b02
 	call L_543B		;5b05
-	call L_4F6E		;5b08
+	call BOXES_ENTRA		;5b08
 	ld a,03ch		;5b0b
 	jp 0884ch		;5b0d
 L_5B10:
 	call L_5CAA		;5b10
 	call L_543B		;5b13
-	jp L_4FD6		;5b16
+	jp BOXES_PASO		;5b16
 L_5B19:
 	ld a,(0e1c2h)		;5b19
 	bit 5,a		;5b1c

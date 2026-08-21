@@ -1129,3 +1129,157 @@ C 0x4F3E el patron por ocho es su sitio en la tabla de patrones de sprites, que 
 C 0x4F4C y el segundo byte es el tipo: 0xFF y 1 no cargan nada, 0 viene comprimido y 2 se copia tal cual
 C 0x4F58 el tipo 0 pasa el origen por el descompresor
 C 0x4F61 el tipo 2 trae ademas su longitud, en los bytes 4 y 5
+
+# =============================================================================
+# LA PARADA EN BOXES (estados 12 y 13, 0x4F6E-0x5310)
+# =============================================================================
+B 0x4F6E Aqui vive la parada en boxes de un jugador. Se entra porque p02
+B 0x4F6E 0x8C04 -el estado 1 del coche, "entra en boxes"- pone E250 = 0x0C,
+B 0x4F6E y el despachador de 0x5A3D manda el 12 a 0x5B02 (montar la escena)
+B 0x4F6E y el 13 a 0x5B10 (un fotograma). Con dos jugadores no se pasa por
+B 0x4F6E aqui: el coche se queda en su estado 2.
+B 0x4F6E
+B 0x4F6E La escena tiene su propio subestado en E251 (0, 1, 2 y 3) y su
+B 0x4F6E cuenta atras en E25D. Los DOS MECANICOS son dos fichas de 6 bytes
+B 0x4F6E en E9B1 y E9B9, separadas 8, copiadas de la plantilla de 0x4FB2:
+B 0x4F6E   +0  vivo
+B 0x4F6E   +1  Y (empieza en 0xBE, abajo del todo, y sube de dos en dos)
+B 0x4F6E   +2  X (0x40)
+B 0x4F6E   +3  fotograma (0 a 7)
+B 0x4F6E   +4  contador de la animacion
+B 0x4F6E   +5  espera antes de arrancar (0 el primero, 0x12 el segundo)
+B 0x4F6E Cada mecanico son CUATRO sprites: dos arriba y dos 16 pixeles mas
+B 0x4F6E abajo, y cada pareja es el mismo dibujo en dos colores (1 y 9), que
+B 0x4F6E es como se pinta una figura de dos tintas con sprites del TMS9918.
+B 0x4F6E
+B 0x4F6E Y LO QUE DE VERDAD DUELE: mientras estas parado, los rivales te
+B 0x4F6E adelantan. Son las tres fichas de 8 bytes de E3D8; cada una baja
+B 0x4F6E de 8 en 8 desde 0x94, y al pasar de 0x80 le suma UNO a E331, que
+B 0x4F6E es tu puesto en la carrera (el que pinta p01 0x7A06), hasta el
+B 0x4F6E tope de 99. El hueco entre coche y coche lo sortea 0x51F2.
+L 0x4F6E BOXES_ENTRA        monta la escena: contadores a cero, los sprites de los mecanicos y las dos fichas de E9B1
+C 0x4F6E E9C3 y E251 a cero: el subestado de la parada empieza en 0
+C 0x4F7B 0x12 fotogramas antes del primer paso
+C 0x4F80 E244 es la repeticion (0 normal, 1 pedida, 2 reproduciendose); si no se esta reproduciendo hay que apartarla antes de usar la pista para otra cosa
+C 0x4F8B la lista de sprites p04 0x74EC: un solo recurso, el de los mecanicos
+C 0x4F91 la plantilla de 0x4FB2 a E9B1 y E9B9: seis bytes copiados y dos saltados, que la ficha ocupa ocho
+C 0x4FA6 el tiempo, el reloj de pantalla y el hueco hasta el primer rival
+C 0x4FAF y 0x5BA2 sube E250: de montar la escena (12) se pasa a correrla (13)
+L 0x4FBE BOXES_GUARDA_REPETICION  aparta la repeticion mientras dura la parada: E244 += 3
+C 0x4FC8 sumarle 3 es la marca de "estoy en boxes": el 0 pasa a 3 y el 1 a 4, y 0x50A6 se los resta al salir, asi que la repeticion sale de la parada como entro
+L 0x4FD6 BOXES_PASO         un fotograma de la parada
+C 0x4FDA p01 0x788F es el mando dentro de boxes: con el boton devuelve acarreo -el jugador corta la parada- y con abajo reposta
+C 0x4FE0 lo de siempre: sprites, ventana, HUD y los objetos de tiles
+C 0x4FE6 los rivales que pasan y el sorteo del siguiente
+C 0x4FEC el subestado 3 es la salida, y por ahi no se anima nada
+L 0x5000 BOXES_MECANICOS    los dos mecanicos: primero decide si estan trabajando y luego los mueve
+C 0x5000 E1D6 y el bit 1 de E1C8: dos maneras de que los mecanicos se pongan a trabajar
+C 0x500D EA50 es la marca de "trabajando", y aqui empieza apagada
+L 0x5011 BOXES_POR_SUBESTADO  reparte por E251: 1 es la espera de abajo, 2 en adelante la salida, 0 la subida
+C 0x5014 el `dec a` y el `jp p` juntos: 1 va a 0x5063, 2 y mas a 0x5073, y el 0 sigue aqui
+C 0x501A las dos fichas, de ocho en ocho
+L 0x5023 MECANICO_SUBE_O_ESPERA  mientras (ix+5) no llegue a cero el mecanico ni sube ni se anima
+C 0x5023 (ix+5) es la espera: el segundo mecanico sale 0x12 fotogramas despues que el primero
+L 0x502E MECANICO_SUBE      Y -= 2 y un paso de animacion
+C 0x502E dos pixeles por fotograma hacia arriba
+C 0x503D cuando los dos han subido, E25D cuenta la parada...
+C 0x5042 ...y al agotarse: 0x60 fotogramas mas, los dos mecanicos a sus poses de trabajo (2 y 4) y al subestado siguiente
+L 0x5057 BOXES_SUBESTADO_MAS_UNO  E251++
+L 0x505C BOXES_TRABAJANDO   enciende la marca de EA50 y sigue por 0x5011
+L 0x5063 BOXES_SUBESTADO_1  la parada en si: anima a los dos y cuenta hasta 0x20
+C 0x506B 0x20 fotogramas para la ultima pose antes de la salida
+L 0x5073 BOXES_A_LA_SALIDA  el subestado 2 y los siguientes se van por 0x524F
+L 0x5076 BOXES_SALE         cuando no queda ningun rival por pasar y se agota E25D: se recarga la carrera y se vuelve a ella
+C 0x5076 no se sale con un rival a medio cruzar la pantalla
+C 0x507F la escena se desmonta entera: atributos, sprites de la carrera y el panel
+C 0x508E si la repeticion venia apartada (E244 >= 3) hay que devolverla antes de correr
+C 0x5098 p01 0x6049 con 0x0B: el estado 11, que es la vuelta a la carrera
+C 0x509B el sonido 0x46 es el del coche saliendo de boxes
+C 0x50A0 p02 0x8666 espera al fotograma siguiente y 0x881D arranca el motor
+L 0x50A6 BOXES_DEVUELVE_REPETICION  E244 -= 3 y p02 0x91EC
+L 0x50AE MECANICO_1_POSE    a cara o cruz: la pose 6 para el primer mecanico o la 7 para el segundo
+C 0x50AE 0x5513 es el azar del juego, y aqui solo se mira su bit de abajo
+L 0x50BB MECANICO_2_POSE    si el primero ya esta en la 6, el segundo pasa a la 7; si no, el primero a la 6
+L 0x50C7 MECANICO_1_POSE_6  el primero a la pose 6
+L 0x50CD BOXES_CORTA        el boton del jugador: 0x12 fotogramas y al subestado 3, la salida
+C 0x50D0 si ya se estaba saliendo no hay nada que cortar
+L 0x50E7 SONIDO_HERRAMIENTA  el sonido 0x23 mientras la parada no haya llegado al subestado 3
+L 0x50F3 HAY_TRABAJO        Z si E1D6 vale cero
+L 0x50F8 SPRITES_MECANICOS  los cuatro sprites de cada mecanico a los atributos de EA88
+C 0x50FC EA88 es la segunda mitad de la tabla de atributos, la que deja libre el coche
+C 0x5101 cuatro sprites por mecanico: la figura es de 16 x 32 y los sprites del MSX solo dan 16 x 16
+C 0x5103 los dos primeros van a la altura de la ficha y los dos ultimos 16 pixeles mas abajo
+C 0x510C el byte 0 del atributo es la Y
+C 0x5112 en las poses 6 y 7 -las de trabajar- la figura se corre tres pixeles a la derecha
+C 0x5123 el patron sale de la tabla de 0x514A: ocho poses de cuatro sprites
+C 0x5133 y el color va alternando: la pareja de abajo del par lleva el 1 y la de arriba el 9, que es como se pinta una figura de dos tintas
+C 0x5140 ocho bytes de una ficha a la siguiente
+L 0x516A RIVAL_ADELANTA     el rival que cruza suma un puesto a E331, hasta 99, y solo una vez
+C 0x516A (iy+3) es la marca de "a este ya lo he contado"
+C 0x5173 el marcador se planta en 99: mas puestos no caben en dos digitos
+L 0x517C SONIDO_RIVAL       el motor del que pasa: el sonido 0x0A o el 0x0B, a cara o cruz
+L 0x518A RIVALES_MUEVE      las tres fichas de E3D8: bajan de 8 en 8 y mueren al pasar de 0x40
+C 0x5193 la ficha apagada no se mueve
+C 0x519C ocho pixeles por fotograma: el rival pasa deprisa, que tu estas parado
+C 0x51A1 al cruzar la mitad de la pantalla es cuando cuenta el adelantamiento
+C 0x51A9 y por debajo de 0x40 se apaga la ficha: ya ha salido por arriba
+L 0x51BA RIVAL_NUEVO        cuando E3DC llega a cero saca otro rival, si queda hueco
+C 0x51BD en la salida ya no salen mas rivales
+C 0x51CF la X del rival se sortea: 0x0F posibles carriles
+C 0x51D7 todos entran por 0x94, abajo
+L 0x51DD RIVAL_HUECO        Z y IY en el primer hueco de las tres fichas; NZ si estan las tres ocupadas
+L 0x51F2 RIVAL_HUECO_TIEMPO  sortea los fotogramas hasta el siguiente rival: (azar & 0x0F) * 2 mas 5, o mas 30 en la categoria 0
+C 0x51F4 en la categoria 0 -la de abajo- los rivales van mucho mas sueltos: el sumando es 30 en vez de 5
+L 0x5207 BOXES_PINTA        el repintado de cada fotograma de la parada
+C 0x5216 solo en las carreras 0, 1, 2, 9, 10 y 11 se llama a p03 0xB463, que es quien pinta los rivales de boxes como objetos de tiles
+L 0x521C CARRERA_EN_GRUPO   acarreo si la carrera (E25C) esta en 0-2 o en 9-11; sin acarreo en 3-8 y 12-21
+C 0x521C cuatro restas encadenadas y dos `ccf`: es una tabla de rangos escrita como cuentas, sin tabla
+L 0x522D COPIA_RECTANGULO_VRAM  24 filas de B' bytes de (DE) a la VRAM (HL), fila a fila
+C 0x522D 24 filas: la pantalla entera de arriba abajo
+C 0x523B lo que falta hasta 32 es lo que hay que saltar en los dos punteros para caer en la fila de abajo
+L 0x524F MECANICO_QUE_TOCA  el que no esta en la pose 6
+L 0x5260 MECANICOS_ANIMA    un paso de animacion a los dos
+L 0x5271 MECANICO_ANIMA_LENTO  un paso cada cuatro fotogramas
+L 0x527B MECANICO_ANIMA     cambia el bit 0 del fotograma; trabajando va a cada fotograma y parado uno de cada trece
+C 0x527B EA50 encendido es "estan trabajando": entonces el cambio de pose es inmediato
+C 0x5287 el `and 0x0d` deja pasar una de cada trece vueltas, mas o menos: no es un contador limpio, es una mascara
+C 0x528D el fotograma solo cambia de bit 0: las poses van por parejas, y la animacion es ir y venir entre las dos
+C 0x5294 y en una de las dos suena la herramienta
+L 0x5298 TIEMPO_A_E30D      el cronometro (E210..E212) copiado a E30D..E30F
+L 0x52AA TIEMPO_DIFERENCIA  la resta de los dos tiempos a EA57..EA59, por p02 0xA5AF
+C 0x52BB la resta de 24 bits vive en la pagina 3
+L 0x52C8 RELOJ_GUARDA_Y_PINTA  guarda el fondo y pinta el reloj
+L 0x52CB RELOJ_PINTA        el tiempo de EA51..EA56 en el buffer, con los digitos del tile 0xF5 y el 0xFF de separador
+L 0x52D5 RELOJ_PINTA_TILES_10  el mismo reloj con los digitos del tile 0x10 y el 0x1E de separador
+C 0x52D7 se escribe de derecha a izquierda -de las centesimas a los minutos- porque asi el puntero solo tiene que bajar
+C 0x52DC el hueco del reloj son nueve casillas: MM : SS : cc
+C 0x52E9 el separador cambia con la fuente: 0xFF con los digitos de 0xF5 y 0x1E con los de 0x10
+L 0x5311 RELOJ_GUARDA_FONDO  se guarda en E9A7 lo que habia en las diez casillas del reloj
+L 0x531D RELOJ_DEVUELVE_FONDO  y aqui se devuelve
+L 0x532A CASILLA_DEL_RELOJ  la casilla del reloj: columna 6 (0x30 / 8) y la fila que salga de 0x40, sobre el bloque de sombra E380
+C 0x532A el bloque E380 lo rellena p03 0xB425 con la posicion del coche 1, y trae (iy+9) = 2, asi que el reloj se pinta en el buffer de EC00
+L 0x5339 TIEMPO_A_DIGITOS   los 24 bits de EA57 pasados a minutos, segundos y milesimas, y de ahi a los siete digitos de EA50..EA56
+C 0x5339 el cronometro cuenta VEINTEAVOS de segundo: por eso el primer reparto es entre 20
+C 0x5343 EA60..EA62 se queda con los segundos y en HL:DE queda el resto
+C 0x5347 los segundos se apartan en EA67, que EA60 hace falta otra vez
+C 0x5353 el resto (0 a 19) por 100 y entre 2 son milesimas: cada veinteavo son 50 milesimas, asi que el digito de las unidades siempre sale 0 o 5
+C 0x5367 las milesimas a BCD y de ahi a tres digitos: unidades, decenas y centenas
+C 0x5389 y los segundos, entre 60, dan los minutos en EA60 y los segundos en el resto
+C 0x538F dos digitos de segundos...
+C 0x53A5 ...y dos de minutos, que son los que se pintan a la izquierda
+L 0x53B7 DIVIDE_8_VUELTAS   la misma division, con el divisor ya montado y solo ocho vueltas
+L 0x53D2 DIVIDE_24          divide los 24 bits que traen L, D y E entre A: cociente en EA60..EA62 y resto en H:L:D:E
+C 0x53D2 el cociente empieza a cero, tres bytes
+C 0x53E0 el divisor se monta arriba del todo del juego alterno -H' = A, y el resto a cero- y va bajando una posicion por vuelta: es la division a mano, la de restar y correr
+C 0x53E6 24 vueltas, una por bit del cociente
+L 0x53E8 DIVIDE_BUCLE       un bit por vuelta
+C 0x53E8 primero baja el divisor un lugar...
+C 0x53EB ...luego se resta a ver si cabe, y el resultado se deja en EA63..EA66 sin tocar el dividendo
+C 0x53EF el `ccf` da la vuelta al acarreo: el prestamo es "no cabe", y el bit del cociente es justo lo contrario
+C 0x53F6 si cabia, la resta pasa a ser el nuevo dividendo
+L 0x5407 DIVISOR_BAJA_UN_BIT  H:L:D:E entre dos
+L 0x5410 RESTA_32           EA63..EA66 = dividendo - divisor, byte a byte y cruzando los dos juegos de registros
+L 0x542D CORRE_COCIENTE     mete el acarreo por abajo en los tres bytes de EA60
+L 0x5513 AZAR               el numero al azar del juego: mezcla el contador de fotogramas (E1C3) con (E2C6) y con la semilla (E21F), suma 0xCD, rota y guarda
+C 0x5514 el contador de fotogramas de logica es lo que hace que el resultado dependa de cuando se pida
+C 0x551F la suma y la rotacion son todo el revoltijo: ni multiplica ni tiene tabla, y aun asi da de sobra para sortear un carril o una pose
