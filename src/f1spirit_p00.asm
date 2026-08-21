@@ -324,7 +324,7 @@ L_41C0:
 	ld hl,0e1c4h		;41c2   ; subestado 2: E1C4 entro a cero, o sea que da la vuelta -> 256 fotogramas de titulo quieto
 	dec (hl)			;41c5
 	ret nz			;41c6
-	call L_5D16		;41c7   ; 0x5D16 rehace la pantalla del titulo y pone E1DD a cero
+	call PRESENTACION_MONTA_Y_PASO		;41c7   ; 0x5D16 rehace la pantalla del titulo y pone E1DD a cero
 	xor a			;41ca
 	jp L_426D		;41cb   ; y al estado 1 con E1C4 = 0
 L_41CE:
@@ -337,12 +337,12 @@ L_41CE:
 	call 0be14h		;41de   ; p03 0xBE14 dibuja el titulo
 	jr L_421C		;41e1
 ESTADO_1:		; la ronda de pantallas de presentacion: un paso de 0x5D19 (el despachador de E1DD) por fotograma
-	call L_5D19		;41e3   ; un paso de la ronda por fotograma
+	call PRESENTACION_PASO		;41e3   ; un paso de la ronda por fotograma
 	ret nc			;41e6   ; mientras E1DD < 10 no hay acarreo y se sigue en el estado 1
 	jp L_426B		;41e7   ; gastada la ronda entera, al estado 2: la demo
 ESTADO_2:		; la demo: 0x5876 reproduce la partida grabada que toque (E1CD)
 	djnz L_41FB		;41ea
-	call L_5876		;41ec   ; subestado 1: 0x5876 mueve un fotograma de la partida grabada
+	call DEMO_PASO		;41ec   ; subestado 1: 0x5876 mueve un fotograma de la partida grabada
 	ld a,(0e1f3h)		;41ef   ; E1F3 lo baja el propio reproductor cuando la partida se acaba
 	or a			;41f2
 	ret nz			;41f3
@@ -364,7 +364,7 @@ L_4202:
 L_4210:
 	call CORTINILLA_COLUMNA		;4210   ; subestado 0: 0x49C7 gasta E1C4 borrando una columna de pantalla por fotograma
 	ret p			;4213
-	call L_57D9		;4214   ; acabado el borrado, 0x57D9 monta la escena siguiente (E1CD y la tabla de 0x584D)
+	call DEMO_SIGUIENTE		;4214   ; acabado el borrado, 0x57D9 monta la escena siguiente (E1CD y la tabla de 0x584D)
 	ld a,020h		;4217
 L_4219:
 	ld (0e1c4h),a		;4219   ; la salida comun de "cambio de subestado": E1C4 = A...
@@ -388,7 +388,7 @@ L_4234:
 L_423B:
 	ld a,(0e1ddh)		;423b   ; subestado 0
 	cp 005h		;423e
-	call c,L_5DD5		;4240   ; si la ronda de presentacion se corto pronto (E1DD < 5), 0x5DD5 pinta antes la linea de p09 0xAFF6 (el logotipo y "1987")
+	call c,PINTA_LOGOTIPO		;4240   ; si la ronda de presentacion se corto pronto (E1DD < 5), 0x5DD5 pinta antes la linea de p09 0xAFF6 (el logotipo y "1987")
 	ld de,0b000h		;4243   ; borra "PUSH SPACE KEY" (p09 0xB000) del sitio donde va a parpadear el otro rotulo
 	call BORRA_ROTULO		;4246
 	ld a,034h		;4249
@@ -414,7 +414,7 @@ L_4274:
 	ld (0e1c1h),a		;4275
 	ret			;4278
 ESTADO_5:		; la carrera: 0x5A27 y su despachador de 32 entradas por (E250)
-	jp L_5A27		;4279   ; el estado 5 es la carrera entera, del semaforo al final
+	jp PASO_DE_LA_CARRERA		;4279   ; el estado 5 es la carrera entera, del semaforo al final
 TRAS_ESTADO_012:		; retorno empujado por 0x418C para los estados 0, 1 y 2: mira F006 y los mandos
 	ld a,(0f006h)		;427c   ; F006 lo enciende el truco UJM3EDC de p01 0x74C4; con el puesto, la presentacion no atiende al mando (parece el modo de GRABAR demos: 0x58E2 y 0x5BCE escriben en el buffer que apunta F002, y el primero de la tabla de 0x5909 es 0xC000, o sea RAM) (?)
 	or a			;427f
@@ -446,7 +446,7 @@ L_42A1:
 L_42AC:
 	ld (hl),001h		;42ac   ; estados 0 y 2: cualquier tecla devuelve a la ronda de presentacion
 	call 0869ah		;42ae   ; p02 0x869A calla la musica y 0x5D16 rehace el titulo desde cero
-	jp L_5D16		;42b1
+	jp PRESENTACION_MONTA_Y_PASO		;42b1
 L_42B4:
 	ld a,(de)			;42b4   ; sin boton, las direcciones cambian entre uno y dos jugadores
 	xor 001h		;42b5
@@ -2616,7 +2616,7 @@ L_4F9B:
 	call TIEMPO_A_E30D		;4fa6   ; el tiempo, el reloj de pantalla y el hueco hasta el primer rival
 	call RELOJ_GUARDA_Y_PINTA		;4fa9
 	call RIVAL_HUECO_TIEMPO		;4fac
-	jp L_5BA2		;4faf   ; y 0x5BA2 sube E250: de montar la escena (12) se pasa a correrla (13)
+	jp ESTADO_MAS_UNO		;4faf   ; y 0x5BA2 sube E250: de montar la escena (12) se pasa a correrla (13)
 
 ; ----------------------------------------------------------------------
 ; DATOS inicial_E9B1: dos filas de 6 bytes que 0x4F91 copia a E9B1 y E9B9 (`ld
@@ -2726,7 +2726,7 @@ BOXES_SALE:		; cuando no queda ningun rival por pasar y se agota E25D: se recarg
 	call LIMPIA_EA80_Y_ATRIBUTOS		;507f   ; la escena se desmonta entera: atributos, sprites de la carrera y el panel
 	call SPRITES_A_VRAM		;5082
 	call CARGA_SPRITES_CARRERA		;5085
-	call L_595B		;5088
+	call SPRITES_DEMO		;5088
 	call RELOJ_DEVUELVE_FONDO		;508b
 	ld a,(0e244h)		;508e   ; si la repeticion venia apartada (E244 >= 3) hay que devolverla antes de correr
 	cp 003h		;5091
@@ -3299,12 +3299,12 @@ CORRE_COCIENTE:		; mete el acarreo por abajo en los tres bytes de EA60
 	ret			;543a
 L_543B:
 	ret			;543b
-L_543C:
-	ld hl,05452h		;543c
+SPRITES_FINAL_INICIA:		; los tres sprites de EA90 a su sitio de salida y los contadores de E800 a cero
+	ld hl,05452h		;543c   ; EA90 no es RAM cualquiera: es el sprite 4 de la copia de atributos que empieza en EA80, asi que cada fila de cuatro bytes es un sprite entero (Y, X, patron, color)
 	ld de,0ea90h		;543f
 	ld bc,0000ch		;5442
 	ldir		;5445
-	ld b,003h		;5447
+	ld b,003h		;5447   ; E800, E801 y E802 son los contadores de la escena; los llaman los pasos 3 y 12 del final (p02 0x8288 y 0x830D)
 	ld hl,0e800h		;5449
 L_544C:
 	xor a			;544c
@@ -3328,8 +3328,8 @@ DATA_inicial_EA90:
 ; ======================================================================
 
 
-L_545E:
-	ld a,(0e801h)		;545e
+SPRITES_FINAL_PASO:		; los tres a la derecha, y el primero ademas subiendo
+	ld a,(0e801h)		;545e   ; hasta que E801 no arranca, el paso 4 del final no mueve nada: lo enciende el bit 1 de E803
 	and a			;5461
 	jr nz,L_546A		;5462
 	ld a,(0e803h)		;5464
@@ -3341,9 +3341,9 @@ L_546A:
 	inc hl			;546e
 	inc (hl)			;546f
 	ld a,(hl)			;5470
-	cp 00ch		;5471
-	jr nc,L_54C4		;5473
-	ld c,001h		;5475
+	cp 00ch		;5471   ; a las doce vueltas se reinicia y vuelta a empezar: la escena es un bucle
+	jr nc,SPRITES_FINAL_REINICIA		;5473
+	ld c,001h		;5475   ; C sale de la vuelta en que se este: 3 en la 1, 2 en la 5, 6 y 8 a 11, 1 en la 7 y 0 en el resto
 	cp 007h		;5477
 	jr z,L_5489		;5479
 	ld c,002h		;547b
@@ -3358,7 +3358,7 @@ L_5489:
 	ld hl,0ea90h		;548b
 	ld de,00004h		;548e
 L_5491:
-	srl c		;5491
+	srl c		;5491   ; el `srl c` va antes de restar y no se rehace: al primer sprite le toca C/2, al segundo C/4 y al tercero C/8, o sea que **solo sube el primero**, y de un pixel en pixel
 	ld a,(hl)			;5493
 	sub c			;5494
 	ld (hl),a			;5495
@@ -3367,14 +3367,14 @@ L_5491:
 	ld b,003h		;5499
 	ld ix,0ea90h		;549b
 L_549F:
-	ld a,(ix+001h)		;549f
+	ld a,(ix+001h)		;549f   ; la X sube uno en los tres: los tres se van a la derecha a la vez
 	add a,001h		;54a2
 	ld (ix+001h),a		;54a4
 	ld de,00004h		;54a7
 	add ix,de		;54aa
 	djnz L_549F		;54ac
 	ld ix,0ea90h		;54ae
-	ld hl,054d1h		;54b2
+	ld hl,054d1h		;54b2   ; y los colores se vuelven a poner cada vuelta (7, 10, 7), que la escena los cambia
 	ld de,00004h		;54b5
 	ld b,003h		;54b8
 L_54BA:
@@ -3384,12 +3384,12 @@ L_54BA:
 	add ix,de		;54bf
 	djnz L_54BA		;54c1
 	ret			;54c3
-L_54C4:
+SPRITES_FINAL_REINICIA:		; contadores a cero y otra vez al principio
 	xor a			;54c4
 	ld (0e802h),a		;54c5
 	ld (0e803h),a		;54c8
 	ld (0e801h),a		;54cb
-	jp L_543C		;54ce
+	jp SPRITES_FINAL_INICIA		;54ce
 
 ; ----------------------------------------------------------------------
 ; DATOS byte3_EA90: un byte por cada una de las tres estructuras de EA90:
@@ -3403,18 +3403,18 @@ DATA_byte3_EA90:
 ; ======================================================================
 
 
-L_54D4:
-	ld a,(ix-021h)		;54d4
+NEUMATICO_POR_DESGASTE:		; cuando el desgaste (ix+64) llega a cuatro veces el byte de la carroceria, revienta un neumatico
+	ld a,(ix-021h)		;54d4   ; (ix-0x21) es el byte que p02 0x89AA saca de la tabla 0x88E9 con la carroceria (ix+18): una carroceria mejor aguanta mas
 	add a,a			;54d7
 	add a,a			;54d8
 	ld d,a			;54d9
-	ld a,(ix+064h)		;54da
+	ld a,(ix+064h)		;54da   ; el desgaste contra ese limite; mientras no llegue no pasa nada
 	sub d			;54dd
 	ret c			;54de
-L_54DF:
-	ld (ix+04ah),006h		;54df
-	ld (ix+064h),000h		;54e3
-	call AZAR		;54e7
+REVIENTA_NEUMATICO:		; (ix+4A) = 6, el desgaste a cero y uno de los cuatro neumaticos al azar
+	ld (ix+04ah),006h		;54df   ; tambien lo llama p02 0x8DBD: a los 0x5A fotogramas de un choque revienta igual
+	ld (ix+064h),000h		;54e3   ; el desgaste vuelve a cero: lo que se ha roto ya no cuenta
+	call AZAR		;54e7   ; ocho entradas para cuatro neumaticos, cada uno dos veces: la tabla es simetrica y los cuatro salen igual de probables
 	and 007h		;54ea
 	call DESPACHA		;54ec
 
@@ -3423,30 +3423,30 @@ L_54DF:
 ;   simetrica: 550E 54FF 5504 5509 550E 5509 5504 54FF)
 ;   0x54ef..0x54ff  (16 bytes)
 DATA_tabla_54EC:
-	defw 0550eh	; 54ef  -> L_550E
-	defw 054ffh	; 54f1  -> L_54FF
-	defw 05504h	; 54f3  -> L_5504
-	defw 05509h	; 54f5  -> L_5509
-	defw 0550eh	; 54f7  -> L_550E
-	defw 05509h	; 54f9  -> L_5509
-	defw 05504h	; 54fb  -> L_5504
-	defw 054ffh	; 54fd  -> L_54FF
+	defw 0550eh	; 54ef  -> NEUMATICO_4
+	defw 054ffh	; 54f1  -> NEUMATICO_1
+	defw 05504h	; 54f3  -> NEUMATICO_2
+	defw 05509h	; 54f5  -> NEUMATICO_3
+	defw 0550eh	; 54f7  -> NEUMATICO_4
+	defw 05509h	; 54f9  -> NEUMATICO_3
+	defw 05504h	; 54fb  -> NEUMATICO_2
+	defw 054ffh	; 54fd  -> NEUMATICO_1
 
 ; ======================================================================
 ; CODIGO 0x54ff..0x574f  (592 bytes)
 ; ======================================================================
 
 
-L_54FF:
+NEUMATICO_1:		; bit 0 de (ix+68)
 	set 0,(ix+068h)		;54ff
 	ret			;5503
-L_5504:
+NEUMATICO_2:		; bit 1
 	set 1,(ix+068h)		;5504
 	ret			;5508
-L_5509:
+NEUMATICO_3:		; bit 2
 	set 2,(ix+068h)		;5509
 	ret			;550d
-L_550E:
+NEUMATICO_4:		; bit 3
 	set 3,(ix+068h)		;550e
 	ret			;5512
 AZAR:		; el numero al azar del juego: mezcla el contador de fotogramas (E1C3) con (E2C6) y con la semilla (E21F), suma 0xCD, rota y guarda
@@ -3461,8 +3461,8 @@ AZAR:		; el numero al azar del juego: mezcla el contador de fotogramas (E1C3) co
 	ld (hl),a			;5522
 	pop hl			;5523
 	ret			;5524
-L_5525:
-	ld a,(0e303h)		;5525
+REVUELVE_AZAR:		; mete (E303) rotado dos veces en la semilla E21F
+	ld a,(0e303h)		;5525   ; se llama al empezar cada carrera (0x5A32): dos partidas distintas no reparten igual
 	rrca			;5528
 	rrca			;5529
 	ld hl,0e21fh		;552a
@@ -3470,14 +3470,14 @@ L_5525:
 	ld (hl),a			;552e
 	ret			;552f
 PREPARA_CIRCUITO:		; E1FE = 0x3C; (E257), (E259) y (E253) de las tres tablas por la carrera (E25C); 0x5F5D; posicion a cero (0x556B); 1/2/3
-	ld a,03ch		;5530
+	ld a,03ch		;5530   ; E1FE = 0x3C: los 60 de la cuenta atras
 	ld (0e1feh),a		;5532
-	call MAPEA_7_8_9		;5535
+	call MAPEA_7_8_9		;5535   ; la secuencia de piezas de la carrera vive en el grupo 7/8/9...
 	ld hl,06000h		;5538
 	ld a,(0e25ch)		;553b
 	call HL_PALABRA_A		;553e
 	ld (0e257h),hl		;5541
-	call MAPEA_A_B_C		;5544
+	call MAPEA_A_B_C		;5544   ; ...y las piezas y los metatiles en el A/B/C: tres tablas, las tres indexadas por la carrera (E25C)
 	ld hl,0afa2h		;5547
 	ld a,(0e25ch)		;554a
 	call HL_PALABRA_A		;554d
@@ -3487,11 +3487,11 @@ PREPARA_CIRCUITO:		; E1FE = 0x3C; (E257), (E259) y (E253) de las tres tablas por
 	call HL_PALABRA_A		;5559
 	ld (0e253h),hl		;555c
 	call MAPEA_7_8_9		;555f
-	call L_5F5D		;5562
+	call L_5F5D		;5562   ; y se acaba con el coche en la casilla cero de la pista
 	call POSICION_PISTA_A_CERO		;5565
 	jp MAPEA_1_2_3		;5568
 POSICION_PISTA_A_CERO:		; vueltas (ix-2), fila (ix+45), pieza (ix+46,47), posicion (ix+3F..42) y (ix+57) a cero
-	xor a			;556b
+	xor a			;556b   ; (ix+3F..42) es la posicion en la pista, 32 bits; (ix+45) la fila dentro de la pieza y (ix+46,47) la pieza
 	ld (ix-002h),a		;556c
 	ld (ix+045h),a		;556f
 	ld (ix+046h),a		;5572
@@ -3503,11 +3503,11 @@ POSICION_PISTA_A_CERO:		; vueltas (ix-2), fila (ix+45), pieza (ix+46,47), posici
 	ld (ix+057h),a		;5584
 	ret			;5587
 PINTA_PISTA_32_FILAS:		; A/B/C; 32 veces: avanza 0x800 (una fila de 8 px) y pinta la fila: la pantalla entera de pista
-	ld b,020h		;5588
+	ld b,020h		;5588   ; 32 filas es la pantalla entera: se pinta de golpe antes de empezar
 	call MAPEA_A_B_C		;558a
 PINTA_PISTA_BUCLE:		; una fila por vuelta
 	push bc			;558d
-	ld de,00800h		;558e
+	ld de,00800h		;558e   ; 0x800 es una fila de ocho pixeles en las unidades de la posicion
 	call AVANZA_POSICION		;5591
 	call PINTA_FILA_PISTA		;5594
 	pop bc			;5597
@@ -3524,17 +3524,17 @@ SIN_AVANCE:		; (ix+4C) = 0: esta vuelta no hay fila nueva
 	ret			;55b0
 AVANZA_PISTA:		; 7/8/9; DE = (ix+43,44): >= 0x1000 -> dos filas y pico (0x560F), >= 0x800 -> una y pico (0x5632), si no lo que toque (0x55CB)
 	call MAPEA_7_8_9		;55b1
-	ld (ix+04ch),000h		;55b4
+	ld (ix+04ch),000h		;55b4   ; (ix+4C) es cuantas filas nuevas se han pintado en este fotograma, y lo lee quien mueve el buffer
 	ld (ix+06fh),000h		;55b8
-	ld e,(ix+043h)		;55bc
+	ld e,(ix+043h)		;55bc   ; (ix+43,44) es lo que avanza la pista en este fotograma, el equivalente a la velocidad
 	ld d,(ix+044h)		;55bf
 	ld a,d			;55c2
-	cp 010h		;55c3
+	cp 010h		;55c3   ; mas de 0x1000 son dos filas de golpe; mas de 0x800, una; el resto es solo mover la posicion
 	jr nc,AVANZA_DOS_FILAS		;55c5
 	cp 008h		;55c7
 	jr nc,AVANZA_UNA_FILA		;55c9
 AVANZA_POSICION:		; (ix+3F,40) -= DE (con acarreo a ix+41,42); si cruza filas de 8 px: (ix+4C) = 1 y (ix+45) += filas; a las 12 filas pasa a la pieza siguiente (ix+46,47) y (ix+6F) = 3
-	ld l,(ix+03fh)		;55cb
+	ld l,(ix+03fh)		;55cb   ; la posicion BAJA: la pista viene hacia ti
 	ld h,(ix+040h)		;55ce
 	ld a,h			;55d1
 	or a			;55d2
@@ -3542,34 +3542,34 @@ AVANZA_POSICION:		; (ix+3F,40) -= DE (con acarreo a ix+41,42); si cruza filas de
 	ld (ix+03fh),l		;55d5
 	ld (ix+040h),h		;55d8
 	jr nc,L_55E5		;55db
-	inc (ix+041h)		;55dd
+	inc (ix+041h)		;55dd   ; los dos bytes de arriba llevan la cuenta larga, la de toda la carrera
 	jr nz,L_55E5		;55e0
 	inc (ix+042h)		;55e2
 L_55E5:
-	and 0f8h		;55e5
+	and 0f8h		;55e5   ; lo que se compara son los bits de las filas -los tres de abajo se tiran- antes y despues de restar: si cambian, hay fila nueva
 	ld b,a			;55e7
 	ld a,h			;55e8
 	and 0f8h		;55e9
 	sub b			;55eb
-	neg		;55ec
+	neg		;55ec   ; el `neg` y las tres rotaciones convierten la diferencia en numero de filas
 	rrca			;55ee
 	rrca			;55ef
 	rrca			;55f0
 	or a			;55f1
 	ret z			;55f2
-	ld (ix+04ch),001h		;55f3
+	ld (ix+04ch),001h		;55f3   ; aqui si hay fila nueva...
 	add a,(ix+045h)		;55f7
 	ld (ix+045h),a		;55fa
-	sub 00ch		;55fd
+	sub 00ch		;55fd   ; ...y a las doce filas se agota la pieza y se pasa a la siguiente
 	ret c			;55ff
 	ld (ix+045h),a		;5600
 	inc (ix+046h)		;5603
-	ld (ix+06fh),003h		;5606
+	ld (ix+06fh),003h		;5606   ; (ix+6F) = 3 avisa de que ha cambiado la pieza: el bit 1 lo consume 0x5674 y el otro alguien mas
 	ret nz			;560a
 	inc (ix+047h)		;560b
 	ret			;560e
 AVANZA_DOS_FILAS:		; dos filas enteras pintadas y el resto
-	push de			;560f
+	push de			;560f   ; las dos filas se pintan enteras y el sobrante se aplica a la posicion sin pintar nada
 	ld de,00800h		;5610
 	call AVANZA_POSICION		;5613
 	call PINTA_FILA_PISTA		;5616
@@ -3582,7 +3582,7 @@ AVANZA_DOS_FILAS:		; dos filas enteras pintadas y el resto
 	sbc hl,de		;5627
 	ex de,hl			;5629
 	call AVANZA_POSICION		;562a
-	ld (ix+04ch),003h		;562d
+	ld (ix+04ch),003h		;562d   ; 3 en (ix+4C): dos filas nuevas y pico
 	ret			;5631
 AVANZA_UNA_FILA:		; una fila entera pintada y el resto
 	push de			;5632
@@ -3595,10 +3595,10 @@ AVANZA_UNA_FILA:		; una fila entera pintada y el resto
 	sbc hl,de		;5641
 	ex de,hl			;5643
 	call AVANZA_POSICION		;5644
-	ld (ix+04ch),002h		;5647
+	ld (ix+04ch),002h		;5647   ; y aqui 2: una fila nueva y pico
 	ret			;564b
 PINTA_FILA_PISTA:		; 7/8/9; fila del buffer de nombres (E400 o EC00, por ix+9) que toca por (ix+40); la pieza (ix+46,47) de la secuencia (E257): 0xFF = fin de vuelta (0x56D7); flags bit 6 -> columna (ix-19) += flags&0x3F (mod 8); E255 = fila de metatile; pinta los 8 metatiles (0x5705); 0x5E6C; 1/2/3
-	call MAPEA_7_8_9		;564c
+	call MAPEA_7_8_9		;564c   ; la fila de pista se pinta en el buffer del jugador que sea
 	ld a,(ix+009h)		;564f
 	dec a			;5652
 	ld de,0e400h		;5653
@@ -3608,33 +3608,33 @@ L_565B:
 	call FILA_BUFFER_NOMBRES		;565b
 	ex de,hl			;565e
 	exx			;565f
-	ld l,(ix+046h)		;5660
+	ld l,(ix+046h)		;5660   ; la pieza que toca (ix+46,47) por dos: la secuencia son parejas de bytes
 	ld h,(ix+047h)		;5663
 	ld de,(0e257h)		;5666
 	add hl,hl			;566a
 	add hl,de			;566b
 	ld b,(hl)			;566c
 	ld a,b			;566d
-	cp 0ffh		;566e
+	cp 0ffh		;566e   ; el 0xFF cierra la secuencia: se ha completado una vuelta
 	jp z,FIN_DE_VUELTA		;5670
 	inc hl			;5673
-	bit 1,(ix+06fh)		;5674
+	bit 1,(ix+06fh)		;5674   ; el bit 1 de (ix+6F) dice que la pieza acaba de cambiar, y solo entonces se mira si trae desplazamiento
 	jr z,FILA_PISTA_SIGUE		;5678
 	res 1,(ix+06fh)		;567a
 	ld a,(hl)			;567e
-	bit 6,a		;567f
+	bit 6,a		;567f   ; el bit 6 del segundo byte de la pieza es "esta pieza mueve la pista de lado"...
 	jr z,FILA_PISTA_SIGUE		;5681
-	and 03fh		;5683
+	and 03fh		;5683   ; ...y los seis de abajo, cuanto: se acumulan en (ix-0x19) modulo 8, que es la columna por la que empieza a leerse la fila de metatiles
 	add a,(ix-019h)		;5685
 	and 007h		;5688
 	ld (ix-019h),a		;568a
 FILA_PISTA_SIGUE:		; (ix-1).7 = 1 solo si en esta fila se aplico un desplazamiento de columna (el `jr c` mira el acarreo que dejan los `and`, no el bit 7 de C); HL = pieza*24 + fila*8 + columna + (E259); E255 = (E253) + (3 - fila&3)*4
 	res 7,(ix-001h)		;568d
-	bit 7,c		;5691
+	bit 7,c		;5691   ; el `jr c` mira el acarreo que dejaron los `and`, no el bit 7 de C: en la practica el bit 7 de (ix-1) se pone en las filas donde no hubo desplazamiento
 	jr c,L_5699		;5693
 	set 7,(ix-001h)		;5695
 L_5699:
-	ld l,b			;5699
+	ld l,b			;5699   ; la pieza por 24: son 3 filas de 8 metatiles
 	ld h,000h		;569a
 	add hl,hl			;569c
 	add hl,hl			;569d
@@ -3643,7 +3643,7 @@ L_5699:
 	ld e,l			;56a0
 	add hl,hl			;56a1
 	add hl,de			;56a2
-	ld a,(ix+045h)		;56a3
+	ld a,(ix+045h)		;56a3   ; de las doce filas de la pieza, la de metatiles es la de los bits 3 y 2...
 	and 00ch		;56a6
 	add a,a			;56a8
 	add a,(ix-019h)		;56a9
@@ -3653,7 +3653,7 @@ L_5699:
 	ld de,(0e259h)		;56b0
 	add hl,de			;56b4
 	push hl			;56b5
-	ld a,(ix+045h)		;56b6
+	ld a,(ix+045h)		;56b6   ; ...y los dos de abajo dicen que fila del metatile toca, contada AL REVES (3 - fila), que la pista viene hacia el jugador
 	and 003h		;56b9
 	xor 003h		;56bb
 	add a,a			;56bd
@@ -3664,23 +3664,23 @@ L_5699:
 	add hl,de			;56c6
 	ld (0e255h),hl		;56c7
 	pop hl			;56ca
-	call PINTA_8_METATILES		;56cb
+	call PINTA_8_METATILES		;56cb   ; los ocho metatiles de la fila, y detras 0x5E6C, que es quien pone encima los objetos de la pista
 	call MAPEA_7_8_9		;56ce
 	call L_5E6C		;56d1
 	jp MAPEA_1_2_3		;56d4
 FIN_DE_VUELTA:		; 1/2/3; fila y pieza a cero, (ix+57) = 0, (ix-2)++ (vueltas); p01 0x77A7; y pinta la fila ya desde el principio
-	push ix		;56d7
+	push ix		;56d7   ; fin de vuelta: fila y pieza a cero y una vuelta mas en (ix-2)
 	call MAPEA_1_2_3_B		;56d9
 	ld (ix+045h),000h		;56dc
 	ld (ix+046h),000h		;56e0
 	ld (ix+047h),000h		;56e4
 	ld (ix+057h),000h		;56e8
 	inc (ix-002h)		;56ec
-	call 077a7h		;56ef
+	call 077a7h		;56ef   ; p01 0x77A7 se entera de la vuelta nueva (el marcador y el cronometro)
 	pop ix		;56f2
-	jp PINTA_FILA_PISTA		;56f4
+	jp PINTA_FILA_PISTA		;56f4   ; y la fila que iba a pintarse se pinta ya con la secuencia desde el principio: no se pierde ninguna
 FILA_BUFFER_NOMBRES:		; HL = DE + (((ix+40) - 0x40) & 0xF8) * 4: la fila de 32 bytes del buffer
-	ld a,(ix+040h)		;56f7
+	ld a,(ix+040h)		;56f7   ; (ix+40) es el byte de la posicion que cuenta filas; el -0x40 lo coloca en el buffer y el *4 lo pasa a casillas (32 por fila)
 	sub 040h		;56fa
 	and 0f8h		;56fc
 	ld l,a			;56fe
@@ -3690,20 +3690,20 @@ FILA_BUFFER_NOMBRES:		; HL = DE + (((ix+40) - 0x40) & 0xF8) * 4: la fila de 32 b
 	add hl,de			;5703
 	ret			;5704
 PINTA_8_METATILES:		; A/B/C; los 8 indices de la fila HL de la pieza (rotando desde la columna l&7): por cada uno, 4 tiles de (E255) + indice*16 al buffer (HL') con ldi
-	ld b,008h		;5705
+	ld b,008h		;5705   ; ocho metatiles: 8 x 4 = las 32 casillas de la fila
 	call MAPEA_A_B_C		;5707
-	ld a,l			;570a
+	ld a,l			;570a   ; la columna de partida son los tres bits de abajo de HL; los otros cinco se guardan en D para no salirse de la fila
 	and 0f8h		;570b
 	ld d,a			;570d
 	jr PINTA_METATILE		;570e
 PINTA_METATILE_SIGUIENTE:		; siguiente columna (mod 8 dentro de la fila)
-	ld a,l			;5710
+	ld a,l			;5710   ; la columna avanza modulo 8: la fila de metatiles es circular, y eso es lo que deja que la pista se desplace de lado
 	inc a			;5711
 	and 007h		;5712
 	or d			;5714
 	ld l,a			;5715
 PINTA_METATILE:		; los 4 tiles de una fila del metatile
-	ld a,(hl)			;5716
+	ld a,(hl)			;5716   ; el indice del metatile por 16 -cuatro filas de cuatro tiles- mas la fila que dijo E255
 	exx			;5717
 	ld h,000h		;5718
 	ld l,a			;571a
@@ -3713,7 +3713,7 @@ PINTA_METATILE:		; los 4 tiles de una fila del metatile
 	add hl,hl			;571e
 	ld bc,(0e255h)		;571f
 	add hl,bc			;5723
-	ldi		;5724
+	ldi		;5724   ; cuatro `ldi` y no un `ldir`: son cuatro tiles justos y asi no hay que montar BC
 	ldi		;5726
 	ldi		;5728
 	ldi		;572a
@@ -3721,7 +3721,7 @@ PINTA_METATILE:		; los 4 tiles de una fila del metatile
 	djnz PINTA_METATILE_SIGUIENTE		;572d
 	ret			;572f
 PINTA_ESCENA_FIJA:		; guarda (E257), (E259), (E253); pinta una escena de 3 piezas con las piezas HL y los metatiles DE (0x5755); y los restaura
-	ld bc,(0e257h)		;5730
+	ld bc,(0e257h)		;5730   ; la escena fija se pinta con las mismas rutinas que la carrera, asi que hay que guardar y devolver las tres tablas
 	push bc			;5734
 	ld bc,(0e259h)		;5735
 	push bc			;5739
@@ -3756,7 +3756,7 @@ PINTA_ESCENA:		; IX = IY = E380 (el bloque del segundo coche): posicion a cero, 
 	push hl			;5756
 	ld iy,0e380h		;5757
 	ld ix,0e380h		;575b
-	call POSICION_PISTA_A_CERO		;575f
+	call POSICION_PISTA_A_CERO		;575f   ; la escena siempre se pinta desde la casilla cero
 	pop hl			;5762
 	pop de			;5763
 	ld (0e253h),de		;5764
@@ -3783,14 +3783,24 @@ PINTA_ESCENA_7DD0:		; la escena de piezas p10 0x7DD0 y metatiles p10 0x7E18 (2 m
 	pop iy		;5797
 	pop ix		;5799
 	ret			;579b
-L_579C:
+
+; ----------------------------------------------------------------------
+; La demo no es una peliculita: es el JUEGO corriendo con el mando
+; enchufado a una grabacion. 0x58A2 graba -parejas de (mascara,
+; cuadros) segun cambia el mando- y 0x5913 reproduce, metiendo la
+; mascara en F004 (jugador 1) y F005 (jugador 2) como si viniera del
+; puerto. Las cinco grabaciones estan en 0x5909 y solo la primera,
+; 0xC000, esta en RAM: por eso el grabador se planta si el puntero
+; sale de 0xC000-0xDEFF.
+; ----------------------------------------------------------------------
+CAMARA_PASO:		; mueve la camara del coche IX, salvo que este en los estados altos o que lo prohiba el bit 6 de (ix-1)
 	bit 6,(ix-001h)		;579c
-	jr nz,L_57AA		;57a0
-	ld a,(ix+05dh)		;57a2
+	jr nz,CAMARA_COPIA		;57a0
+	ld a,(ix+05dh)		;57a2   ; con el coche en estado 3 o mas (meta, choque, parado) la camara se queda quieta
 	cp 003h		;57a5
-	call c,L_57BD		;57a7
-L_57AA:
-	ld a,(ix+044h)		;57aa
+	call c,CAMARA_AL_COCHE		;57a7
+CAMARA_COPIA:		; (ix+54) = camara, pero solo si la pista ha avanzado en este fotograma
+	ld a,(ix+044h)		;57aa   ; con la velocidad alta a cero se copia siempre; si no, hace falta que (ix+4C) diga que hubo fila nueva
 	cp 001h		;57ad
 	jr c,L_57B6		;57af
 	ld a,(ix+04ch)		;57b1
@@ -3800,17 +3810,17 @@ L_57B6:
 	ld a,(ix+04bh)		;57b6
 	ld (ix+054h),a		;57b9
 	ret			;57bc
-L_57BD:
+CAMARA_AL_COCHE:		; la camara salta a (ix+6) - E1FE si la diferencia cabe en un byte con signo
 	ld a,(ix+006h)		;57bd
 	sub (ix+04bh)		;57c0
-	ld hl,0e1feh		;57c3
+	ld hl,0e1feh		;57c3   ; E1FE vale 0x3C: la camara se queda 60 pixeles por detras del coche
 	sub (hl)			;57c6
 	ld d,a			;57c7
-	add a,040h		;57c8
+	add a,040h		;57c8   ; la prueba es "esta la diferencia entre -0x40 y 0x3F"
 	cp 080h		;57ca
 	ld a,d			;57cc
 	jr c,L_57D1		;57cd
-	neg		;57cf
+	neg		;57cf   ; si no cabe se suma la diferencia CAMBIADA DE SIGNO, con lo que la camara se va al lado contrario; medido, no visto en el emulador
 L_57D1:
 	add a,(ix+04bh)		;57d1
 	ld (ix+04bh),a		;57d4
@@ -3827,14 +3837,14 @@ DATA_57D8:
 ; ======================================================================
 
 
-L_57D9:
+DEMO_SIGUIENTE:		; monta la siguiente escena de la demo y la echa a andar
 	xor a			;57d9
 	ld (0e1fdh),a		;57da
 	call LIMPIA_EA80_Y_ATRIBUTOS		;57dd
-	ld a,(0e1cdh)		;57e0
+	ld a,(0e1cdh)		;57e0   ; E1CD es que escena de la demo toca; da la vuelta sola en la fila 5 de la tabla de 0x584D
 	inc a			;57e3
 	ld (0e1cdh),a		;57e4
-	ld a,(0e1ceh)		;57e7
+	ld a,(0e1ceh)		;57e7   ; y E1CE la fuerza a la primera
 	or a			;57ea
 	jr z,L_57F1		;57eb
 	xor a			;57ed
@@ -3842,35 +3852,35 @@ L_57D9:
 L_57F1:
 	call L_497A		;57f1
 	call 074b2h		;57f4
-	call L_581D		;57f7
-	call L_58F2		;57fa
-	ld hl,0f006h		;57fd
+	call DEMO_MONTA_ESCENA		;57f7
+	call DEMO_CARGA_GRABACION		;57fa
+	ld hl,0f006h		;57fd   ; este `bit 2` no lo mira nadie: las dos instrucciones siguientes machacan HL y no tocan las banderas
 	bit 2,(hl)		;5800
 	ld hl,0e1f3h		;5802
 	ld (hl),001h		;5805
-	call L_595B		;5807
+	call SPRITES_DEMO		;5807
 	ld hl,0e1c2h		;580a
-	res 6,(hl)		;580d
+	res 6,(hl)		;580d   ; bit 6 de E1C2 apagado: en la demo no hay jugador 1, y de ahi cuelga que se pinte el cartel de 0x5967
 	xor a			;580f
 	ld (0e1d7h),a		;5810
-	ld a,035h		;5813
+	ld a,035h		;5813   ; el sonido 0x35 es la musica de la demo
 	jp ENCOLA_SONIDO		;5815
-L_5818:
+DEMO_PRIMERA_ESCENA:		; E1CD = 1 y a repetir
 	ld a,001h		;5818
 	ld (0e1cdh),a		;581a
-L_581D:
+DEMO_MONTA_ESCENA:		; copia la fila de 0x584D a E25B, E250, E1C2 y F0F6
 	ld de,0584dh		;581d
-	ld a,(0e1cdh)		;5820
+	ld a,(0e1cdh)		;5820   ; cuatro bytes por fila, de ahi el indice por cuatro
 	ld h,000h		;5823
 	ld l,a			;5825
 	add hl,hl			;5826
 	add hl,hl			;5827
 	add hl,de			;5828
 	ld a,(hl)			;5829
-	cp 0feh		;582a
-	jr z,L_5818		;582c
+	cp 0feh		;582a   ; el 0xFE de la ultima fila no es una escena: es la marca de "vuelve a la primera"
+	jr z,DEMO_PRIMERA_ESCENA		;582c
 	ld a,(hl)			;582e
-	ld de,0e25bh		;582f
+	ld de,0e25bh		;582f   ; los cuatro `ldi` van a cuatro sitios distintos, y por eso no hay un `ldir`: categoria, subestado, banderas y grupo de paginas
 	ldi		;5832
 	ld de,0e250h		;5834
 	ldi		;5837
@@ -3909,20 +3919,20 @@ DATA_5865:
 ; ======================================================================
 
 
-L_5876:
+DEMO_PASO:		; un fotograma de la demo: sprites, mando grabado y el paso normal de la carrera
 	call DOS_SPRITES_A_VRAM		;5876
-	call L_5882		;5879
-	call L_5A27		;587c
-	jp L_5967		;587f
-L_5882:
-	ld a,(0f006h)		;5882
+	call DEMO_MANDO		;5879
+	call PASO_DE_LA_CARRERA		;587c
+	jp CARTEL_DEMO		;587f
+DEMO_MANDO:		; mapea el grupo de la escena, saca el mando de la grabacion y lo mete por los flancos
+	ld a,(0f006h)		;5882   ; F006 distinto de cero corta la reproduccion
 	or a			;5885
 	jr nz,L_58A1		;5886
-	ld a,(0f0f6h)		;5888
+	ld a,(0f0f6h)		;5888   ; la grabacion vive en la pagina que diga F0F6, que cambia con la escena
 	call MAPEA_DESDE_A		;588b
-	call L_5913		;588e
+	call DEMO_REPRODUCE		;588e
 	ld a,(0f004h)		;5891
-	call FLANCOS_E1C9		;5894
+	call FLANCOS_E1C9		;5894   ; F004 y F005 hacen de puerto de mando: los flancos se calculan igual que con un mando de verdad
 	ld a,(0f005h)		;5897
 	call FLANCOS_E1CC		;589a
 	jp MAPEA_1_2_3		;589d
@@ -3930,16 +3940,16 @@ L_58A0:
 	ret			;58a0
 L_58A1:
 	ret			;58a1
-L_58A2:
-	ld a,(0e1deh)		;58a2
+GRABA_MANDO:		; graba el mando: una pareja (cuadros, mascara) cada vez que cambia
+	ld a,(0e1deh)		;58a2   ; con E1DE = 2 no se graba
 	cp 002h		;58a5
 	ret z			;58a7
-	ld a,(0f001h)		;58a8
+	ld a,(0f001h)		;58a8   ; F001 cuenta cuantos fotogramas lleva sin cambiar la mascara
 	ld c,a			;58ab
 	ld d,000h		;58ac
 	ld hl,(0f002h)		;58ae
 	ld a,h			;58b1
-	sub 0c0h		;58b2
+	sub 0c0h		;58b2   ; el puntero tiene que estar entre 0xC000 y 0xDEFF: fuera de ahi se estaria escribiendo en la ROM o pisando otra cosa
 	ret c			;58b4
 	cp 01fh		;58b5
 	ret nc			;58b7
@@ -3948,7 +3958,7 @@ L_58A2:
 	ld hl,0f004h		;58bc
 	call GRABA_SI_CAMBIA_LA_MASCARA		;58bf
 	ld a,(0e1c2h)		;58c2
-	bit 5,a		;58c5
+	bit 5,a		;58c5   ; con dos jugadores tambien se graba el segundo, y su mascara se marca con el bit 7 (el 0x80 de D')
 	jr z,L_58D6		;58c7
 	exx			;58c9
 	ld d,080h		;58ca
@@ -3960,7 +3970,7 @@ L_58D6:
 	exx			;58d6
 	ld a,c			;58d7
 	exx			;58d8
-	inc a			;58d9
+	inc a			;58d9   ; y a los 255 fotogramas iguales se corta igual: el contador no da para mas
 	ld (0f001h),a		;58da
 	cp 0ffh		;58dd
 	ret nz			;58df
@@ -3980,7 +3990,7 @@ L_58E5:
 	ld c,000h		;58ee
 	exx			;58f0
 	ret			;58f1
-L_58F2:
+DEMO_CARGA_GRABACION:		; el puntero de la grabacion de la escena (E1CD) y los contadores a cero
 	ld a,(0e1cdh)		;58f2
 	ld hl,05909h		;58f5
 	call HL_PALABRA_A		;58f8
@@ -4012,16 +4022,16 @@ DATA_partidas_grabadas:
 ; ======================================================================
 
 
-L_5913:
+DEMO_REPRODUCE:		; baja el contador de cuadros y, al llegar, saca la pareja siguiente
 	ld a,(0f001h)		;5913
-	or a			;5916
-	jr z,L_5920		;5917
+	or a			;5916   ; el cero y el uno se tratan igual: los dos piden pareja nueva
+	jr z,DEMO_PAREJA		;5917
 	dec a			;5919
-	jr z,L_5920		;591a
+	jr z,DEMO_PAREJA		;591a
 	ld (0f001h),a		;591c
 	ret			;591f
-L_5920:
-	ld hl,(0f002h)		;5920
+DEMO_PAREJA:		; lee (mascara, cuadros) y aplica la mascara
+	ld hl,(0f002h)		;5920   ; el primer byte es la mascara y el segundo cuantos fotogramas dura
 	ld d,(hl)			;5923
 	inc hl			;5924
 	ld c,(hl)			;5925
@@ -4030,15 +4040,15 @@ L_5920:
 	ld a,c			;592a
 	ld (0f001h),a		;592b
 	push bc			;592e
-	bit 6,d		;592f
-	call nz,L_593D		;5931
-	call z,L_594D		;5934
+	bit 6,d		;592f   ; el bit 6 de la mascara la saca de lo normal: no es un mando, es una orden
+	call nz,DEMO_ORDEN		;5931
+	call z,DEMO_MASCARA		;5934
 	pop bc			;5937
-	ld a,c			;5938
+	ld a,c			;5938   ; con cero cuadros se encadena la pareja siguiente sin gastar fotograma: asi caben dos ordenes seguidas
 	or a			;5939
 	ret nz			;593a
-	jr L_5913		;593b
-L_593D:
+	jr DEMO_REPRODUCE		;593b
+DEMO_ORDEN:		; la unica orden que hace algo es el 0x4F: apaga E1F3 y suena el 0x81
 	ld a,d			;593d
 	cp 04fh		;593e
 	ret nz			;5940
@@ -4048,7 +4058,7 @@ L_593D:
 	call ENCOLA_SONIDO		;5947
 	or 0ffh		;594a
 	ret			;594c
-L_594D:
+DEMO_MASCARA:		; la mascara a F004, o a F005 si trae el bit 7 (el segundo jugador)
 	ld a,d			;594d
 	and 07fh		;594e
 	cp d			;5950
@@ -4058,33 +4068,33 @@ L_594D:
 L_5957:
 	ld (0f005h),a		;5957
 	ret			;595a
-L_595B:
+SPRITES_DEMO:		; la lista p04 0x74F2, solo si no hay jugador 1
 	ld a,(0e1c2h)		;595b
 	and 040h		;595e
 	ret nz			;5960
 	ld hl,074f2h		;5961
 	jp CARGA_LISTA_SPRITES		;5964
-L_5967:
-	ld a,(0e1c2h)		;5967
+CARTEL_DEMO:		; dos sprites arriba a la derecha que parpadean mientras la demo se juega sola
+	ld a,(0e1c2h)		;5967   ; con jugador 1 no hay cartel que pintar
 	and 040h		;596a
 	ret nz			;596c
-	ld a,(0e1d7h)		;596d
+	ld a,(0e1d7h)		;596d   ; y tampoco mientras esten las luces de salida (E1D7)
 	or a			;5970
-	jr nz,L_5987		;5971
+	jr nz,CARTEL_DEMO_BORRA		;5971
 	ld de,0ea80h		;5973
-	ld a,(0e1c3h)		;5976
+	ld a,(0e1c3h)		;5976   ; el bit 3 del contador de fotogramas: ocho encendido y ocho apagado
 	and 008h		;5979
-	jr z,L_5987		;597b
+	jr z,CARTEL_DEMO_BORRA		;597b
 	ld hl,05993h		;597d
 	ld bc,00008h		;5980
 	ldir		;5983
 	ex de,hl			;5985
 	ret			;5986
-L_5987:
+CARTEL_DEMO_BORRA:		; los dos sprites a 0xE0, fuera de la pantalla
 	ex de,hl			;5987
 	ld b,002h		;5988
 L_598A:
-	ld (hl),0e0h		;598a
+	ld (hl),0e0h		;598a   ; los atributos van de cuatro en cuatro y solo se toca la Y
 	inc l			;598c
 	inc l			;598d
 	inc l			;598e
@@ -4106,17 +4116,17 @@ DATA_sprites_5993:
 ; ======================================================================
 
 
-L_599B:
+MONTA_LA_CARRERA:		; la carrera entera montada de cero: pantalla, RAM de objetos, tiles, sprites, circuito y las 32 filas de pista de los dos coches
 	call BORRA_SPRITES_Y_NOMBRES		;599b
 	call LIMPIA_EA80_Y_ATRIBUTOS		;599e
-	ld hl,00000h		;59a1
+	ld hl,00000h		;59a1   ; 0x3000 bytes a cero es la VRAM entera menos los sprites: patrones, colores y nombres
 	ld bc,03000h		;59a4
 	xor a			;59a7
 	call 00056h		;59a8   ; BIOS FILVRM - Fills VRAM with value
 	call MAPEA_D_E_F		;59ab
 	call MAPEA_1_2_3		;59ae
 	call 08762h		;59b1
-	ld hl,0e800h		;59b4
+	ld hl,0e800h		;59b4   ; 0x117 bytes desde E800 y otros tantos desde E928: los cinco objetos de cada jugador, de 0x38 bytes
 	ld bc,00117h		;59b7
 	call RELLENA_RAM_CERO		;59ba
 	ld hl,0e928h		;59bd
@@ -4126,13 +4136,13 @@ L_599B:
 	xor a			;59c9
 	ld (0e221h),a		;59ca
 	ld (0e1d7h),a		;59cd
-	call CARGA_TILES_CIRCUITO		;59d0
+	call CARGA_TILES_CIRCUITO		;59d0   ; los tiles de la pista y, encima, la lista p04 0x620A
 	ld hl,0620ah		;59d3
 	call CARGA_LISTA_TILES		;59d6
 	call COLORES_0_210_A_CERO		;59d9
 	call CARGA_SPRITES_CARRERA		;59dc
 	call 0887ah		;59df
-	ld ix,0e2c0h		;59e2
+	ld ix,0e2c0h		;59e2   ; el circuito se prepara dos veces, una por coche: cada uno lleva su propia posicion en la pista
 	call PREPARA_CIRCUITO		;59e6
 	ld ix,0e380h		;59e9
 	call PREPARA_CIRCUITO		;59ed
@@ -4140,7 +4150,7 @@ L_599B:
 	call 07f3ch		;59f3
 	call 07583h		;59f6
 	ld ix,0e2c0h		;59f9
-	call PINTA_PISTA_32_FILAS		;59fd
+	call PINTA_PISTA_32_FILAS		;59fd   ; y la pantalla de pista tambien se pinta dos veces, cada una en su buffer
 	ld ix,0e380h		;5a00
 	call PINTA_PISTA_32_FILAS		;5a04
 	call 09f74h		;5a07
@@ -4149,21 +4159,21 @@ L_599B:
 	call RELLENA_RAM_CERO		;5a10
 	call 0a5b9h		;5a13
 	xor a			;5a16
-	ld (0e21fh),a		;5a17
+	ld (0e21fh),a		;5a17   ; la semilla del azar y el contador de fotogramas a cero: la carrera empieza siempre igual
 	ld (0e1c3h),a		;5a1a
 	ld (0e213h),a		;5a1d
 	ld (0e214h),a		;5a20
-	ld (0e244h),a		;5a23
+	ld (0e244h),a		;5a23   ; E244 a cero: sin repeticion pedida
 	ret			;5a26
-L_5A27:
+PASO_DE_LA_CARRERA:		; un fotograma del estado 5: E262++, revuelve el azar y despacha por E250
 	ld a,(0f006h)		;5a27
 	or a			;5a2a
 	call nz,L_58A1		;5a2b
-	ld hl,0e262h		;5a2e
+	ld hl,0e262h		;5a2e   ; E262 es el contador de fotogramas de la carrera
 	inc (hl)			;5a31
-	call L_5525		;5a32
+	call REVUELVE_AZAR		;5a32
 	ld a,(0e250h)		;5a35
-	and 07fh		;5a38
+	and 07fh		;5a38   ; el bit 7 de E250 se tira al despachar: solo cuentan los 32 estados de la tabla
 	ld (0e250h),a		;5a3a
 	call DESPACHA		;5a3d
 
@@ -4173,19 +4183,19 @@ L_5A27:
 DATA_tabla_5A3D:
 	defw 05a80h	; 5a40  -> L_5A80
 	defw 05a83h	; 5a42  -> L_5A83
-	defw 05a86h	; 5a44  -> L_5A86
+	defw 05a86h	; 5a44  -> ESTADO_2_MUSICA
 	defw 05a8eh	; 5a46  -> L_5A8E
 	defw 05a94h	; 5a48  -> L_5A94
 	defw 05a97h	; 5a4a  -> L_5A97
 	defw 05a9ah	; 5a4c  -> L_5A9A
 	defw 05a9dh	; 5a4e  -> L_5A9D
-	defw 05aa3h	; 5a50  -> L_5AA3
-	defw 05aa3h	; 5a52  -> L_5AA3
-	defw 05aa3h	; 5a54  -> L_5AA3
-	defw 05aabh	; 5a56  -> L_5AAB
-	defw 05b02h	; 5a58  -> L_5B02
-	defw 05b10h	; 5a5a  -> L_5B10
-	defw 05b19h	; 5a5c  -> L_5B19
+	defw 05aa3h	; 5a50  -> ESTADO_MONTA_CARRERA
+	defw 05aa3h	; 5a52  -> ESTADO_MONTA_CARRERA
+	defw 05aa3h	; 5a54  -> ESTADO_MONTA_CARRERA
+	defw 05aabh	; 5a56  -> ESTADO_11_CARRERA
+	defw 05b02h	; 5a58  -> ESTADO_12_BOXES
+	defw 05b10h	; 5a5a  -> ESTADO_13_BOXES
+	defw 05b19h	; 5a5c  -> ESTADO_14_FINAL
 	defw 05b4fh	; 5a5e  -> L_5B4F
 	defw 05b52h	; 5a60  -> L_5B52
 	defw 05b55h	; 5a62  -> L_5B55
@@ -4199,28 +4209,45 @@ DATA_tabla_5A3D:
 	defw 05a8bh	; 5a72  -> L_5A8B
 	defw 05b6ch	; 5a74  -> L_5B6C
 	defw 05b6fh	; 5a76  -> L_5B6F
-	defw 05b72h	; 5a78  -> L_5B72
-	defw 05b90h	; 5a7a  -> L_5B90
-	defw 05b9dh	; 5a7c  -> L_5B9D
-	defw 05b9dh	; 5a7e  -> L_5B9D
+	defw 05b72h	; 5a78  -> ESTADO_22
+	defw 05b90h	; 5a7a  -> ESTADO_25_REINICIA
+	defw 05b9dh	; 5a7c  -> ESTADO_A_2
+	defw 05b9dh	; 5a7e  -> ESTADO_A_2
 
 ; ======================================================================
 ; CODIGO 0x5a80..0x5d29  (681 bytes)
 ; ======================================================================
 
 
+
+; ----------------------------------------------------------------------
+; La tabla de 0x5A40 son 32 estados y casi todos son un `jp` a otra
+; pagina: aqui solo estan los que tocan la pista. Los que importan:
+; 8, 9 y 10  montar la carrera (0x5AA3)
+; 11         un fotograma de carrera (0x5AAB)
+; 12 y 13    la parada en boxes (0x5B02 y 0x5B10)
+; 14         se acabo la carrera (0x5B19)
+; 25         volver al arranque (0x5B90)
+;
+; EL CRONOMETRO ESTA HECHO PARA 60 Hz. 0x5CAA le suma uno a E210 una
+; vez por paso de logica, la interrupcion solo da un paso cada TRES
+; (F0FC, ver 0x4018) y 0x5339 divide por 20 para sacar los segundos:
+; 3 x 20 = 60. En una maquina NTSC el reloj va exacto; en una PAL,
+; con 50 interrupciones por segundo, salen 16,67 pasos y el reloj se
+; queda al 83 % - marca cinco segundos por cada seis reales.
+; ----------------------------------------------------------------------
 L_5A80:
 	jp 0680ch		;5a80
 L_5A83:
 	jp 06877h		;5a83
-L_5A86:
+ESTADO_2_MUSICA:		; la musica 0x35 y 0x5F6F
 	ld a,035h		;5a86
 	call 0884ch		;5a88
 L_5A8B:
 	jp L_5F6F		;5a8b
 L_5A8E:
 	call L_5FD7		;5a8e
-	jp L_5BA9		;5a91
+	jp SALTA_LA_ESPERA		;5a91
 L_5A94:
 	jp 07162h		;5a94
 L_5A97:
@@ -4229,33 +4256,33 @@ L_5A9A:
 	jp 063f7h		;5a9a
 L_5A9D:
 	call 06452h		;5a9d
-	jp L_5BA9		;5aa0
-L_5AA3:
-	call L_599B		;5aa3
-	ld a,001h		;5aa6
-	jp L_5BA2		;5aa8
-L_5AAB:
-	ld a,(0e244h)		;5aab
+	jp SALTA_LA_ESPERA		;5aa0
+ESTADO_MONTA_CARRERA:		; monta la carrera y pasa al estado siguiente
+	call MONTA_LA_CARRERA		;5aa3
+	ld a,001h		;5aa6   ; el 1 es para p01 0x604C, que es a donde salta 0x5BA2 despues de subir el estado
+	jp ESTADO_MAS_UNO		;5aa8
+ESTADO_11_CARRERA:		; el fotograma de carrera: normal, o la repeticion si E244 vale 2
+	ld a,(0e244h)		;5aab   ; E244 = 2 es la repeticion en marcha, y entonces el fotograma es otro (0x5C5C)
 	cp 002h		;5aae
 	jr nz,L_5AB7		;5ab0
-	call L_5C5C		;5ab2
+	call FOTOGRAMA_REPETICION		;5ab2
 	jr L_5ABA		;5ab5
 L_5AB7:
-	call L_5BF0		;5ab7
+	call FOTOGRAMA_CARRERA		;5ab7
 L_5ABA:
 	call 07f62h		;5aba
 	call 0876eh		;5abd
-	ld a,(0e221h)		;5ac0
+	ld a,(0e221h)		;5ac0   ; E221 a 0xFF: se acabo el tiempo, y p01 0x6049 pasa al estado 14
 	inc a			;5ac3
 	ld a,00eh		;5ac4
 	jp z,06049h		;5ac6
 	ld a,(0e1fdh)		;5ac9
 	or a			;5acc
-	call nz,L_5AF1		;5acd
+	call nz,CORTA_REPETICION		;5acd
 	ld a,(0e20ah)		;5ad0
 	or a			;5ad3
 	ret z			;5ad4
-	ld a,(0e1c0h)		;5ad5
+	ld a,(0e1c0h)		;5ad5   ; el atajo de saltarse la carrera pide varias cosas a la vez: E20A con musica, E1C0 = 5, el bit 0 de E1D8 y ningun boton pulsado
 	cp 005h		;5ad8
 	ret nz			;5ada
 	ld a,(0e1d8h)		;5adb
@@ -4265,10 +4292,10 @@ L_5ABA:
 	ld hl,0e1c9h		;5ae4
 	or (hl)			;5ae7
 	ret nz			;5ae8
-	call L_5B86		;5ae9
+	call GUARDA_E1D5		;5ae9
 	ld a,01ch		;5aec
 	jp 06049h		;5aee
-L_5AF1:
+CORTA_REPETICION:		; con el bit 4 de E1D8 y sin botones, p02 0x928A
 	ld a,(0e1d8h)		;5af1
 	bit 4,a		;5af4
 	ret z			;5af6
@@ -4277,21 +4304,21 @@ L_5AF1:
 	or (hl)			;5afd
 	ret nz			;5afe
 	jp 0928ah		;5aff
-L_5B02:
-	call L_5CAA		;5b02
+ESTADO_12_BOXES:		; monta la parada y arranca su musica (la 0x3C)
+	call CRONOMETRO_MAS_UNO		;5b02
 	call L_543B		;5b05
 	call BOXES_ENTRA		;5b08
 	ld a,03ch		;5b0b
 	jp 0884ch		;5b0d
-L_5B10:
-	call L_5CAA		;5b10
+ESTADO_13_BOXES:		; un fotograma de la parada
+	call CRONOMETRO_MAS_UNO		;5b10
 	call L_543B		;5b13
 	jp BOXES_PASO		;5b16
-L_5B19:
+ESTADO_14_FINAL:		; se acabo la carrera: puntos, musica y a limpiar
 	ld a,(0e1c2h)		;5b19
 	bit 5,a		;5b1c
 	jr nz,L_5B28		;5b1e
-	call 06b49h		;5b20
+	call 06b49h		;5b20   ; p01 0x6B49 reparte los puntos del campeonato; si dice que no (NC), el estado 16
 	ld a,010h		;5b23
 	jp nc,06049h		;5b25
 L_5B28:
@@ -4304,15 +4331,15 @@ L_5B28:
 	jr nz,L_5B3B		;5b36
 	ld hl,0e381h		;5b38
 L_5B3B:
-	ld a,03eh		;5b3b
+	ld a,03eh		;5b3b   ; con dos jugadores se mira el coche que haya ganado (E91B); el bit 1 de sus banderas es "termino"
 	bit 1,(hl)		;5b3d
 	jr nz,L_5B43		;5b3f
-	ld a,03fh		;5b41
+	ld a,03fh		;5b41   ; la musica 0x3E si termino y la 0x3F si no: la de la victoria y la del abandono
 L_5B43:
 	call 0884ch		;5b43
 	call LIMPIA_EA80_Y_ATRIBUTOS		;5b46
-	call L_5BA2		;5b49
-	jp L_5BCE		;5b4c
+	call ESTADO_MAS_UNO		;5b49
+	jp CIERRA_GRABACION		;5b4c
 L_5B4F:
 	jp 06970h		;5b4f
 L_5B52:
@@ -4334,7 +4361,7 @@ L_5B6C:
 	jp 07cd0h		;5b6c
 L_5B6F:
 	jp 07cfdh		;5b6f
-L_5B72:
+ESTADO_22:		; E1D5 = (E1DC) y, con el bit 0 de E1D8, p02 0x864B y el estado 11
 	ld a,(0e1dch)		;5b72
 	ld (0e1d5h),a		;5b75
 	ld a,(0e1d8h)		;5b78
@@ -4343,25 +4370,25 @@ L_5B72:
 	call 0864bh		;5b7e
 	ld a,00bh		;5b81
 	jp 06049h		;5b83
-L_5B86:
+GUARDA_E1D5:		; p02 0x863D y E1DC = (E1D5)
 	call 0863dh		;5b86
 	ld a,(0e1d5h)		;5b89
 	ld (0e1dch),a		;5b8c
 	ret			;5b8f
-L_5B90:
+ESTADO_25_REINICIA:		; bit 0 en E20B y en F0FE, y vuelta al arranque de 0x4202
 	ld hl,0e20bh		;5b90
 	set 0,(hl)		;5b93
 	ld hl,0f0feh		;5b95
 	set 0,(hl)		;5b98
 	jp L_4202		;5b9a
-L_5B9D:
+ESTADO_A_2:		; p01 0x6049 con 2
 	ld a,002h		;5b9d
 	jp 06049h		;5b9f
-L_5BA2:
+ESTADO_MAS_UNO:		; E250++ y p01 0x604C
 	ld hl,0e250h		;5ba2
 	inc (hl)			;5ba5
 	jp 0604ch		;5ba6
-L_5BA9:
+SALTA_LA_ESPERA:		; en los estados 7 y 3 (con subestado), el bit 4 de E1D8 y sin botones se salta a p01 0x68A7 con E25B = 0xFF
 	ld a,(0e250h)		;5ba9
 	cp 007h		;5bac
 	jr z,L_5BB8		;5bae
@@ -4381,15 +4408,15 @@ L_5BB8:
 	ld a,0ffh		;5bc6
 	ld (0e25bh),a		;5bc8
 	jp 068a7h		;5bcb
-L_5BCE:
-	ld a,(0f006h)		;5bce
+CIERRA_GRABACION:		; pone el 0xFF final a la partida grabada, si el puntero cae donde debe
+	ld a,(0f006h)		;5bce   ; F006 a cero: no habia nada que grabar
 	or a			;5bd1
 	ret z			;5bd2
 	ld hl,0f006h		;5bd3
 	res 0,(hl)		;5bd6
 	ld de,(0f002h)		;5bd8
 	inc de			;5bdc
-	ld hl,03fe0h		;5bdd
+	ld hl,03fe0h		;5bdd   ; las dos sumas son la prueba de que el puntero esta dentro de la RAM que se puede escribir; fuera de ahi no se toca nada
 	add hl,de			;5be0
 	ret nc			;5be1
 	ld bc,0e100h		;5be2
@@ -4397,22 +4424,22 @@ L_5BCE:
 	ret c			;5be6
 	ex de,hl			;5be7
 	ld (hl),0ffh		;5be8
-	ld hl,0e1ceh		;5bea
+	ld hl,0e1ceh		;5bea   ; E1CE = 1 hace que la demo vuelva a la primera escena
 	ld (hl),001h		;5bed
 	ret			;5bef
-L_5BF0:
+FOTOGRAMA_CARRERA:		; el fotograma normal: avanza y pinta la pista de cada coche, mueve las camaras y repinta el HUD
 	ld a,001h		;5bf0
 	ld (0e1d5h),a		;5bf2
-	call FOTOGRAMAS_COCHES		;5bf5
+	call FOTOGRAMAS_COCHES		;5bf5   ; los fotogramas de los coches se recalculan antes de nada
 	call 07dcah		;5bf8
-	call L_5CAA		;5bfb
+	call CRONOMETRO_MAS_UNO		;5bfb
 	ld ix,0e2c0h		;5bfe
 	ld iy,0e2c0h		;5c02
-	call SIN_AVANCE		;5c06
+	call SIN_AVANCE		;5c06   ; primero se dice que no hay fila nueva y luego 0x55B1 decide cuantas hay
 	call AVANZA_PISTA		;5c09
 	call PINTA_FILA_PISTA		;5c0c
 	ld hl,0e1c2h		;5c0f
-	bit 5,(hl)		;5c12
+	bit 5,(hl)		;5c12   ; el bit 5 de E1C2 es "dos jugadores": el segundo coche solo se mueve si lo hay
 	jr z,L_5C27		;5c14
 	ld ix,0e380h		;5c16
 	ld iy,0e380h		;5c1a
@@ -4424,26 +4451,26 @@ L_5C27:
 	call 090e7h		;5c2a
 	ld ix,0e2c0h		;5c2d
 	ld iy,0e2c0h		;5c31
-	call L_579C		;5c35
+	call CAMARA_PASO		;5c35   ; una camara por coche, cada una siguiendo la suya
 	ld ix,0e380h		;5c38
 	ld iy,0e380h		;5c3c
 	ld hl,0e1c2h		;5c40
 	bit 5,(hl)		;5c43
-	call nz,L_579C		;5c45
+	call nz,CAMARA_PASO		;5c45
 	call 09d06h		;5c48
 	call 0a110h		;5c4b
 	call 0ab63h		;5c4e
-	call 06ef8h		;5c51
+	call 06ef8h		;5c51   ; p01 0x6EF8 vuelca los objetos y 0x760D repinta el HUD
 	call 0760dh		;5c54
 	call L_5C5B		;5c57
 	ret			;5c5a
 L_5C5B:
 	ret			;5c5b
-L_5C5C:
-	call VENTANA_JUGADOR_2		;5c5c
+FOTOGRAMA_REPETICION:		; el mismo fotograma pero para la repeticion: un solo coche y sin mando
+	call VENTANA_JUGADOR_2		;5c5c   ; en la repeticion no hay segundo coche: ni pista, ni camara, ni HUD para el
 	call 07134h		;5c5f
 	call 07dcah		;5c62
-	call L_5CAA		;5c65
+	call CRONOMETRO_MAS_UNO		;5c65
 	ld ix,0e2c0h		;5c68
 	ld iy,0e2c0h		;5c6c
 	call SIN_AVANCE		;5c70
@@ -4453,7 +4480,7 @@ L_5C5C:
 	call 090e7h		;5c7c
 	ld ix,0e2c0h		;5c7f
 	ld iy,0e2c0h		;5c83
-	call L_579C		;5c87
+	call CAMARA_PASO		;5c87
 	call 09d06h		;5c8a
 	call 0a110h		;5c8d
 	call 0ab63h		;5c90
@@ -4464,12 +4491,12 @@ L_5C5C:
 	ret			;5c9f
 L_5CA0:
 	ret			;5ca0
-L_5CA1:
+CRONOMETRO_A_CERO:		; E210 y E211 a cero
 	ld hl,0e210h		;5ca1
 	ld bc,00002h		;5ca4
 	jp RELLENA_RAM_CERO		;5ca7
-L_5CAA:
-	ld hl,0e210h		;5caa
+CRONOMETRO_MAS_UNO:		; el cronometro de 24 bits (E210, E211, E212) sube uno por paso de logica
+	ld hl,0e210h		;5caa   ; con tres interrupciones por paso, esto son 20 pasos por segundo en una maquina de 60 Hz: por eso 0x5339 divide por 20
 	inc (hl)			;5cad
 	ret nz			;5cae
 	inc hl			;5caf
@@ -4478,53 +4505,63 @@ L_5CAA:
 	inc hl			;5cb2
 	inc (hl)			;5cb3
 	ret			;5cb4
-L_5CB5:
+
+; ----------------------------------------------------------------------
+; La presentacion tiene su propio subestado en E1DD y su despachador
+; de once entradas en 0x5D26. Lo bonito es como aparece el dibujo:
+; no hay paleta que tocar en un MSX1, asi que el desvanecido se hace
+; pintando LOS COLORES DE LOS TILES uno a uno. La lista de 0x5E4A
+; son once tramos de tres bytes -tile final, color y tile de
+; arranque- y 0x5E0D/0x5E17 los recorren tile a tile, tres por
+; vuelta cuando hay prisa (0x5DEA).
+; ----------------------------------------------------------------------
+MONTA_PRESENTACION:		; la pantalla del titulo: borra, pone el marco, carga los tiles y descomprime el dibujo
 	xor a			;5cb5
 	ld (0e1d5h),a		;5cb6
 	ld (0e1ddh),a		;5cb9
-	ld b,0e0h		;5cbc
+	ld b,0e0h		;5cbc   ; 0xE0 en el registro 7 del VDP: el borde de la pantalla
 	call VDP_REG_7		;5cbe
 	call BORRA_SPRITES_Y_NOMBRES		;5cc1
-	ld hl,0e400h		;5cc4
+	ld hl,0e400h		;5cc4   ; el buffer entero a 0xFF...
 	ld bc,002ffh		;5cc7
 	ld a,0ffh		;5cca
 	call RELLENA_RAM		;5ccc
-	ld hl,0e420h		;5ccf
+	ld hl,0e420h		;5ccf   ; ...y por dentro a cero: lo que queda de 0xFF son la fila de arriba y las dos de abajo, que hacen de marco
 	ld bc,0029fh		;5cd2
 	call RELLENA_RAM_CERO		;5cd5
 	call TILES_16_58_F0		;5cd8
 	ld hl,06d34h		;5cdb
 	call CARGA_LISTA_TILES		;5cde
-	ld bc,00800h		;5ce1
+	ld bc,00800h		;5ce1   ; los colores de los 256 tiles a cero en los tres tercios: el dibujo esta ahi pero no se ve
 	ld hl,00000h		;5ce4
 	xor a			;5ce7
 	call LLENA_VRAM_3_TERCIOS_B		;5ce8
 	xor a			;5ceb
 	ld bc,00008h		;5cec
-	ld hl,020ffh		;5cef
+	ld hl,020ffh		;5cef   ; ocho bytes desde 0x20FF, sin alinear con ningun tile: pilla la ultima fila del 31 y las siete primeras del 32
 	call LLENA_VRAM_3_TERCIOS_B		;5cf2
 	ld a,008h		;5cf5
-	call MAPEA_A_EN_8000		;5cf7
+	call MAPEA_A_EN_8000		;5cf7   ; el dibujo del titulo vive en la pagina 8 y se descomprime en el buffer, 0x20 columnas desde E4A0
 	ld a,020h		;5cfa
 	ld hl,0e4a0h		;5cfc
 	ld de,08280h		;5cff
 	call 0637ah		;5d02
 	call MAPEA_1_2_3		;5d05
 	call VUELCA_NOMBRES_E400		;5d08
-	ld a,(0e1c0h)		;5d0b
+	ld a,(0e1c0h)		;5d0b   ; con E1C0 = 5 no hay musica: se viene de otro sitio
 	cp 005h		;5d0e
 	ret z			;5d10
 	ld a,033h		;5d11
 	jp 0884ch		;5d13
-L_5D16:
-	call L_5CB5		;5d16
-L_5D19:
-	call L_5D23		;5d19
+PRESENTACION_MONTA_Y_PASO:		; monta la pantalla y da el primer paso
+	call MONTA_PRESENTACION		;5d16
+PRESENTACION_PASO:		; un paso, y acarreo cuando la presentacion se ha acabado (E1DD = 10)
+	call PRESENTACION_DESPACHA		;5d19
 	ld a,(0e1ddh)		;5d1c
 	cp 00ah		;5d1f
 	ccf			;5d21
 	ret			;5d22
-L_5D23:
+PRESENTACION_DESPACHA:		; por E1DD, con la tabla de 0x5D29
 	ld a,(0e1ddh)		;5d23
 	call DESPACHA		;5d26
 
@@ -4533,16 +4570,16 @@ L_5D23:
 ;   antes se comprobo < 10)
 ;   0x5d29..0x5d3f  (22 bytes)
 DATA_tabla_5D26:
-	defw 05d40h	; 5d29  -> L_5D40
-	defw 05d4eh	; 5d2b  -> L_5D4E
-	defw 05d7ch	; 5d2d  -> L_5D7C
-	defw 05d74h	; 5d2f  -> L_5D74
-	defw 05d7ch	; 5d31  -> L_5D7C
-	defw 05d8dh	; 5d33  -> L_5D8D
-	defw 05d97h	; 5d35  -> L_5D97
-	defw 05d9fh	; 5d37  -> L_5D9F
-	defw 05d7ch	; 5d39  -> L_5D7C
-	defw 05dbch	; 5d3b  -> L_5DBC
+	defw 05d40h	; 5d29  -> PRESENTACION_0
+	defw 05d4eh	; 5d2b  -> PRESENTACION_1
+	defw 05d7ch	; 5d2d  -> PRESENTACION_ESPERA
+	defw 05d74h	; 5d2f  -> PRESENTACION_3
+	defw 05d7ch	; 5d31  -> PRESENTACION_ESPERA
+	defw 05d8dh	; 5d33  -> PRESENTACION_5
+	defw 05d97h	; 5d35  -> PRESENTACION_6
+	defw 05d9fh	; 5d37  -> PRESENTACION_7
+	defw 05d7ch	; 5d39  -> PRESENTACION_ESPERA
+	defw 05dbch	; 5d3b  -> PRESENTACION_9
 	defw 05d3fh	; 5d3d  -> L_5D3F
 
 ; ======================================================================
@@ -4552,25 +4589,25 @@ DATA_tabla_5D26:
 
 L_5D3F:
 	ret			;5d3f
-L_5D40:
+PRESENTACION_0:		; arranca: E252 a cero y cuatro fotogramas de espera
 	xor a			;5d40
 	ld (0e252h),a		;5d41
 	ld a,004h		;5d44
-L_5D46:
+PRESENTACION_SIGUIENTE:		; E1DD++ y la espera en E1C4
 	ld hl,0e1ddh		;5d46
 	inc (hl)			;5d49
 	ld (0e1c4h),a		;5d4a
 	ret			;5d4d
-L_5D4E:
+PRESENTACION_1:		; los colores a 0xEF -blanco sobre negro- y empieza el desvanecido
 	ld hl,00000h		;5d4e
 	ld bc,007f8h		;5d51
-	ld a,0efh		;5d54
+	ld a,0efh		;5d54   ; 0xEF es tinta 14 y fondo 15: es el color con el que va apareciendo el dibujo
 	call LLENA_VRAM_3_TERCIOS_B		;5d56
-	call L_5E37		;5d59
-	ld a,(0e1c0h)		;5d5c
+	call DESVANECIDO_EMPIEZA		;5d59
+	ld a,(0e1c0h)		;5d5c   ; si se viene del estado 5 se salta directo al subestado 8: ni logotipo ni "PUSH SPACE KEY"
 	cp 005h		;5d5f
 	ld a,01eh		;5d61
-	jr nz,L_5D46		;5d63
+	jr nz,PRESENTACION_SIGUIENTE		;5d63
 	xor a			;5d65
 	ld (0e252h),a		;5d66
 	ld a,008h		;5d69
@@ -4578,47 +4615,47 @@ L_5D4E:
 	ld a,01eh		;5d6e
 	ld (0e1c4h),a		;5d70
 	ret			;5d73
-L_5D74:
-	call L_5DEA		;5d74
+PRESENTACION_3:		; tres tramos de desvanecido por fotograma hasta que se acaba la lista
+	call DESVANECE_TRES		;5d74
 	ret nc			;5d77
 	ld a,014h		;5d78
-	jr L_5D46		;5d7a
-L_5D7C:
-	call L_5D82		;5d7c
+	jr PRESENTACION_SIGUIENTE		;5d7a
+PRESENTACION_ESPERA:		; se queda quieta hasta que E1C4 llega a cero
+	call BAJA_E1C4		;5d7c
 	ret nz			;5d7f
-	jr L_5D46		;5d80
-L_5D82:
-	ld a,(0e1c3h)		;5d82
+	jr PRESENTACION_SIGUIENTE		;5d80
+BAJA_E1C4:		; E1C4 baja uno de cada cuatro fotogramas
+	ld a,(0e1c3h)		;5d82   ; uno de cada cuatro: la espera dura cuatro veces lo que dice el numero
 	and 003h		;5d85
 	ret nz			;5d87
 	ld hl,0e1c4h		;5d88
 	dec (hl)			;5d8b
 	ret			;5d8c
-L_5D8D:
+PRESENTACION_5:		; pinta el rotulo p09 0xAFF6 (el logotipo y el 1987) y espera
 	ld de,0aff6h		;5d8d
 	call PINTA_ROTULO		;5d90
 	ld a,014h		;5d93
-	jr L_5D46		;5d95
-L_5D97:
-	call L_5D82		;5d97
+	jr PRESENTACION_SIGUIENTE		;5d95
+PRESENTACION_6:		; espera y pasa con 0x30
+	call BAJA_E1C4		;5d97
 	ret nz			;5d9a
 	ld a,030h		;5d9b
-	jr L_5D46		;5d9d
-L_5D9F:
-	call L_5DAE		;5d9f
-	call L_5D82		;5da2
+	jr PRESENTACION_SIGUIENTE		;5d9d
+PRESENTACION_7:		; hace parpadear "PUSH SPACE KEY" mientras espera
+	call PARPADEA_PUSH_SPACE		;5d9f
+	call BAJA_E1C4		;5da2
 	ret nz			;5da5
 	xor a			;5da6
 	ld (0e252h),a		;5da7
 	ld a,001h		;5daa
-	jr L_5D46		;5dac
-L_5DAE:
+	jr PRESENTACION_SIGUIENTE		;5dac
+PARPADEA_PUSH_SPACE:		; el rotulo p09 0xB000, cuatro fotogramas si y cuatro no
 	ld de,0b000h		;5dae
-	ld a,(0e1c3h)		;5db1
+	ld a,(0e1c3h)		;5db1   ; el bit 2 del contador de fotogramas: cuatro encendido y cuatro apagado
 	and 004h		;5db4
 	jp z,PINTA_ROTULO		;5db6
 	jp BORRA_ROTULO		;5db9
-L_5DBC:
+PRESENTACION_9:		; apaga el dibujo: colores del tile 0 y la tabla de nombres entera
 	ld bc,00008h		;5dbc
 	ld hl,00000h		;5dbf
 	xor a			;5dc2
@@ -4626,33 +4663,33 @@ L_5DBC:
 	ld hl,03800h		;5dc6
 	ld bc,00300h		;5dc9
 	xor a			;5dcc
-	call 00056h		;5dcd   ; BIOS FILVRM - Fills VRAM with value
-	jr nz,L_5DBC		;5dd0
-	jp L_5D46		;5dd2
-L_5DD5:
+	call 00056h		;5dcd   ; BIOS FILVRM - Fills VRAM with value | este `jr nz` cuelga de las banderas que devuelva FILVRM, que no son parte del contrato del BIOS; con el `xor a` de la linea de arriba llegan en Z tanto si el BIOS las restaura como si sale de su propia cuenta a cero, asi que el salto no se toma
+	jr nz,PRESENTACION_9		;5dd0
+	jp PRESENTACION_SIGUIENTE		;5dd2
+PINTA_LOGOTIPO:		; el rotulo p09 0xAFF6 y el desvanecido entero de una vez
 	ld de,0aff6h		;5dd5
 	call PINTA_ROTULO		;5dd8
-	call L_5E37		;5ddb
-L_5DDE:
-	call L_5E0D		;5dde
-	call L_5DFC		;5de1
-	call L_5E17		;5de4
+	call DESVANECIDO_EMPIEZA		;5ddb
+DESVANECE_TODO:		; tramo tras tramo hasta acabar la lista
+	call TRAMO_COLOR		;5dde
+	call PINTA_COLOR_TILE		;5de1
+	call TRAMO_AVANZA		;5de4
 	ret c			;5de7
-	jr L_5DDE		;5de8
-L_5DEA:
-	ld b,003h		;5dea
+	jr DESVANECE_TODO		;5de8
+DESVANECE_TRES:		; tres pasos de desvanecido y vuelve
+	ld b,003h		;5dea   ; tres tiles por fotograma: asi el dibujo tarda lo que tiene que tardar en aparecer
 L_5DEC:
 	push bc			;5dec
-	call L_5E0D		;5ded
-	call L_5DFC		;5df0
-	call L_5E17		;5df3
+	call TRAMO_COLOR		;5ded
+	call PINTA_COLOR_TILE		;5df0
+	call TRAMO_AVANZA		;5df3
 	pop bc			;5df6
 	ret c			;5df7
 	djnz L_5DEC		;5df8
 	or a			;5dfa
 	ret			;5dfb
-L_5DFC:
-	ld l,a			;5dfc
+PINTA_COLOR_TILE:		; los ocho bytes de color del tile A a valor C, en los tres tercios
+	ld l,a			;5dfc   ; el tile por ocho es su sitio en la tabla de colores, que empieza en 0
 	ld a,c			;5dfd
 	ld bc,00008h		;5dfe
 	ld h,000h		;5e01
@@ -4662,44 +4699,44 @@ L_5DFC:
 	ld de,00000h		;5e06
 	add hl,de			;5e09
 	jp LLENA_VRAM_3_TERCIOS_B		;5e0a
-L_5E0D:
-	call L_5E3E		;5e0d
+TRAMO_COLOR:		; A = el tile por el que va (E25E) y C = el color del tramo
+	call TRAMO_ACTUAL		;5e0d
 	ld a,(0e25eh)		;5e10
 	inc hl			;5e13
 	ld c,(hl)			;5e14
 	or a			;5e15
 	ret			;5e16
-L_5E17:
-	call L_5E3E		;5e17
+TRAMO_AVANZA:		; un tile mas; al llegar al ultimo del tramo, pasa al siguiente
+	call TRAMO_ACTUAL		;5e17
 	ld a,(0e25eh)		;5e1a
 	inc a			;5e1d
 	ld (0e25eh),a		;5e1e
-	cp (hl)			;5e21
+	cp (hl)			;5e21   ; el byte 0 del tramo es el tile en el que se acaba
 	ccf			;5e22
 	ret nc			;5e23
-L_5E24:
+TRAMO_SIGUIENTE:		; E25D++ y el tile de arranque del tramo nuevo a E25E; acarreo cuando la lista se acaba
 	ld hl,0e25dh		;5e24
 	inc (hl)			;5e27
-	call L_5E3E		;5e28
-	ld a,(hl)			;5e2b
+	call TRAMO_ACTUAL		;5e28
+	ld a,(hl)			;5e2b   ; un byte 0 a cero cierra la lista
 	or a			;5e2c
 	scf			;5e2d
 	ret z			;5e2e
 	inc hl			;5e2f
 	inc hl			;5e30
-	ld a,(hl)			;5e31
+	ld a,(hl)			;5e31   ; y el byte 2 es por que tile empieza el tramo
 	ld (0e25eh),a		;5e32
 	or a			;5e35
 	ret			;5e36
-L_5E37:
+DESVANECIDO_EMPIEZA:		; E25D = 0xFF y el primer tramo (el `inc` de 0x5E27 lo deja en 0)
 	ld a,0ffh		;5e37
 	ld (0e25dh),a		;5e39
-	jr L_5E24		;5e3c
-L_5E3E:
+	jr TRAMO_SIGUIENTE		;5e3c
+TRAMO_ACTUAL:		; HL = 0x5E4A + 3 * (E25D)
 	ld a,(0e25dh)		;5e3e
 	ld hl,05e4ah		;5e41
 	ld b,a			;5e44
-	add a,a			;5e45
+	add a,a			;5e45   ; por tres, que las filas son de tres bytes
 	add a,b			;5e46
 	jp HL_MAS_A		;5e47
 

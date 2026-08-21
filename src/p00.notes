@@ -1283,3 +1283,247 @@ L 0x542D CORRE_COCIENTE     mete el acarreo por abajo en los tres bytes de EA60
 L 0x5513 AZAR               el numero al azar del juego: mezcla el contador de fotogramas (E1C3) con (E2C6) y con la semilla (E21F), suma 0xCD, rota y guarda
 C 0x5514 el contador de fotogramas de logica es lo que hace que el resultado dependa de cuando se pida
 C 0x551F la suma y la rotacion son todo el revoltijo: ni multiplica ni tiene tabla, y aun asi da de sobra para sortear un carril o una pose
+
+# =============================================================================
+# LOS TRES SPRITES DEL FINAL, LOS NEUMATICOS Y EL SCROLL DE LA PISTA
+# =============================================================================
+L 0x543C SPRITES_FINAL_INICIA  los tres sprites de EA90 a su sitio de salida y los contadores de E800 a cero
+C 0x543C EA90 no es RAM cualquiera: es el sprite 4 de la copia de atributos que empieza en EA80, asi que cada fila de cuatro bytes es un sprite entero (Y, X, patron, color)
+C 0x5447 E800, E801 y E802 son los contadores de la escena; los llaman los pasos 3 y 12 del final (p02 0x8288 y 0x830D)
+L 0x545E SPRITES_FINAL_PASO  los tres a la derecha, y el primero ademas subiendo
+C 0x545E hasta que E801 no arranca, el paso 4 del final no mueve nada: lo enciende el bit 1 de E803
+C 0x5471 a las doce vueltas se reinicia y vuelta a empezar: la escena es un bucle
+C 0x5475 C sale de la vuelta en que se este: 3 en la 1, 2 en la 5, 6 y 8 a 11, 1 en la 7 y 0 en el resto
+C 0x5491 el `srl c` va antes de restar y no se rehace: al primer sprite le toca C/2, al segundo C/4 y al tercero C/8, o sea que **solo sube el primero**, y de un pixel en pixel
+C 0x549F la X sube uno en los tres: los tres se van a la derecha a la vez
+C 0x54B2 y los colores se vuelven a poner cada vuelta (7, 10, 7), que la escena los cambia
+L 0x54C4 SPRITES_FINAL_REINICIA  contadores a cero y otra vez al principio
+L 0x54D4 NEUMATICO_POR_DESGASTE  cuando el desgaste (ix+64) llega a cuatro veces el byte de la carroceria, revienta un neumatico
+C 0x54D4 (ix-0x21) es el byte que p02 0x89AA saca de la tabla 0x88E9 con la carroceria (ix+18): una carroceria mejor aguanta mas
+C 0x54DA el desgaste contra ese limite; mientras no llegue no pasa nada
+L 0x54DF REVIENTA_NEUMATICO  (ix+4A) = 6, el desgaste a cero y uno de los cuatro neumaticos al azar
+C 0x54DF tambien lo llama p02 0x8DBD: a los 0x5A fotogramas de un choque revienta igual
+C 0x54E3 el desgaste vuelve a cero: lo que se ha roto ya no cuenta
+C 0x54E7 ocho entradas para cuatro neumaticos, cada uno dos veces: la tabla es simetrica y los cuatro salen igual de probables
+L 0x54FF NEUMATICO_1       bit 0 de (ix+68)
+L 0x5504 NEUMATICO_2       bit 1
+L 0x5509 NEUMATICO_3       bit 2
+L 0x550E NEUMATICO_4       bit 3
+L 0x5525 REVUELVE_AZAR     mete (E303) rotado dos veces en la semilla E21F
+C 0x5525 se llama al empezar cada carrera (0x5A32): dos partidas distintas no reparten igual
+C 0x5530 E1FE = 0x3C: los 60 de la cuenta atras
+C 0x5535 la secuencia de piezas de la carrera vive en el grupo 7/8/9...
+C 0x5544 ...y las piezas y los metatiles en el A/B/C: tres tablas, las tres indexadas por la carrera (E25C)
+C 0x5562 y se acaba con el coche en la casilla cero de la pista
+C 0x556B (ix+3F..42) es la posicion en la pista, 32 bits; (ix+45) la fila dentro de la pieza y (ix+46,47) la pieza
+C 0x5588 32 filas es la pantalla entera: se pinta de golpe antes de empezar
+C 0x558E 0x800 es una fila de ocho pixeles en las unidades de la posicion
+C 0x55B4 (ix+4C) es cuantas filas nuevas se han pintado en este fotograma, y lo lee quien mueve el buffer
+C 0x55BC (ix+43,44) es lo que avanza la pista en este fotograma, el equivalente a la velocidad
+C 0x55C3 mas de 0x1000 son dos filas de golpe; mas de 0x800, una; el resto es solo mover la posicion
+C 0x55CB la posicion BAJA: la pista viene hacia ti
+C 0x55DD los dos bytes de arriba llevan la cuenta larga, la de toda la carrera
+C 0x55E5 lo que se compara son los bits de las filas -los tres de abajo se tiran- antes y despues de restar: si cambian, hay fila nueva
+C 0x55EC el `neg` y las tres rotaciones convierten la diferencia en numero de filas
+C 0x55F3 aqui si hay fila nueva...
+C 0x55FD ...y a las doce filas se agota la pieza y se pasa a la siguiente
+C 0x5606 (ix+6F) = 3 avisa de que ha cambiado la pieza: el bit 1 lo consume 0x5674 y el otro alguien mas
+C 0x560F las dos filas se pintan enteras y el sobrante se aplica a la posicion sin pintar nada
+C 0x562D 3 en (ix+4C): dos filas nuevas y pico
+C 0x5647 y aqui 2: una fila nueva y pico
+C 0x564C la fila de pista se pinta en el buffer del jugador que sea
+C 0x5660 la pieza que toca (ix+46,47) por dos: la secuencia son parejas de bytes
+C 0x566E el 0xFF cierra la secuencia: se ha completado una vuelta
+C 0x5674 el bit 1 de (ix+6F) dice que la pieza acaba de cambiar, y solo entonces se mira si trae desplazamiento
+C 0x567F el bit 6 del segundo byte de la pieza es "esta pieza mueve la pista de lado"...
+C 0x5683 ...y los seis de abajo, cuanto: se acumulan en (ix-0x19) modulo 8, que es la columna por la que empieza a leerse la fila de metatiles
+C 0x5691 el `jr c` mira el acarreo que dejaron los `and`, no el bit 7 de C: en la practica el bit 7 de (ix-1) se pone en las filas donde no hubo desplazamiento
+C 0x5699 la pieza por 24: son 3 filas de 8 metatiles
+C 0x56A3 de las doce filas de la pieza, la de metatiles es la de los bits 3 y 2...
+C 0x56B6 ...y los dos de abajo dicen que fila del metatile toca, contada AL REVES (3 - fila), que la pista viene hacia el jugador
+C 0x56CB los ocho metatiles de la fila, y detras 0x5E6C, que es quien pone encima los objetos de la pista
+C 0x56D7 fin de vuelta: fila y pieza a cero y una vuelta mas en (ix-2)
+C 0x56EF p01 0x77A7 se entera de la vuelta nueva (el marcador y el cronometro)
+C 0x56F4 y la fila que iba a pintarse se pinta ya con la secuencia desde el principio: no se pierde ninguna
+C 0x56F7 (ix+40) es el byte de la posicion que cuenta filas; el -0x40 lo coloca en el buffer y el *4 lo pasa a casillas (32 por fila)
+C 0x5705 ocho metatiles: 8 x 4 = las 32 casillas de la fila
+C 0x570A la columna de partida son los tres bits de abajo de HL; los otros cinco se guardan en D para no salirse de la fila
+C 0x5710 la columna avanza modulo 8: la fila de metatiles es circular, y eso es lo que deja que la pista se desplace de lado
+C 0x5716 el indice del metatile por 16 -cuatro filas de cuatro tiles- mas la fila que dijo E255
+C 0x5724 cuatro `ldi` y no un `ldir`: son cuatro tiles justos y asi no hay que montar BC
+C 0x5730 la escena fija se pinta con las mismas rutinas que la carrera, asi que hay que guardar y devolver las tres tablas
+C 0x575F la escena siempre se pinta desde la casilla cero
+
+# =============================================================================
+# LA CAMARA, LA DEMO QUE SE JUEGA SOLA Y EL MONTAJE DE LA CARRERA
+# =============================================================================
+B 0x579C La demo no es una peliculita: es el JUEGO corriendo con el mando
+B 0x579C enchufado a una grabacion. 0x58A2 graba -parejas de (mascara,
+B 0x579C cuadros) segun cambia el mando- y 0x5913 reproduce, metiendo la
+B 0x579C mascara en F004 (jugador 1) y F005 (jugador 2) como si viniera del
+B 0x579C puerto. Las cinco grabaciones estan en 0x5909 y solo la primera,
+B 0x579C 0xC000, esta en RAM: por eso el grabador se planta si el puntero
+B 0x579C sale de 0xC000-0xDEFF.
+L 0x579C CAMARA_PASO        mueve la camara del coche IX, salvo que este en los estados altos o que lo prohiba el bit 6 de (ix-1)
+C 0x57A2 con el coche en estado 3 o mas (meta, choque, parado) la camara se queda quieta
+L 0x57AA CAMARA_COPIA       (ix+54) = camara, pero solo si la pista ha avanzado en este fotograma
+C 0x57AA con la velocidad alta a cero se copia siempre; si no, hace falta que (ix+4C) diga que hubo fila nueva
+L 0x57BD CAMARA_AL_COCHE    la camara salta a (ix+6) - E1FE si la diferencia cabe en un byte con signo
+C 0x57C3 E1FE vale 0x3C: la camara se queda 60 pixeles por detras del coche
+C 0x57C8 la prueba es "esta la diferencia entre -0x40 y 0x3F"
+C 0x57CF si no cabe se suma la diferencia CAMBIADA DE SIGNO, con lo que la camara se va al lado contrario; medido, no visto en el emulador
+L 0x57D9 DEMO_SIGUIENTE     monta la siguiente escena de la demo y la echa a andar
+C 0x57E0 E1CD es que escena de la demo toca; da la vuelta sola en la fila 5 de la tabla de 0x584D
+C 0x57E7 y E1CE la fuerza a la primera
+C 0x57FD este `bit 2` no lo mira nadie: las dos instrucciones siguientes machacan HL y no tocan las banderas
+C 0x580D bit 6 de E1C2 apagado: en la demo no hay jugador 1, y de ahi cuelga que se pinte el cartel de 0x5967
+C 0x5813 el sonido 0x35 es la musica de la demo
+L 0x5818 DEMO_PRIMERA_ESCENA  E1CD = 1 y a repetir
+L 0x581D DEMO_MONTA_ESCENA  copia la fila de 0x584D a E25B, E250, E1C2 y F0F6
+C 0x5820 cuatro bytes por fila, de ahi el indice por cuatro
+C 0x582A el 0xFE de la ultima fila no es una escena: es la marca de "vuelve a la primera"
+C 0x582F los cuatro `ldi` van a cuatro sitios distintos, y por eso no hay un `ldir`: categoria, subestado, banderas y grupo de paginas
+L 0x5876 DEMO_PASO          un fotograma de la demo: sprites, mando grabado y el paso normal de la carrera
+L 0x5882 DEMO_MANDO         mapea el grupo de la escena, saca el mando de la grabacion y lo mete por los flancos
+C 0x5882 F006 distinto de cero corta la reproduccion
+C 0x5888 la grabacion vive en la pagina que diga F0F6, que cambia con la escena
+C 0x5894 F004 y F005 hacen de puerto de mando: los flancos se calculan igual que con un mando de verdad
+L 0x58A2 GRABA_MANDO        graba el mando: una pareja (cuadros, mascara) cada vez que cambia
+C 0x58A2 con E1DE = 2 no se graba
+C 0x58A8 F001 cuenta cuantos fotogramas lleva sin cambiar la mascara
+C 0x58B2 el puntero tiene que estar entre 0xC000 y 0xDEFF: fuera de ahi se estaria escribiendo en la ROM o pisando otra cosa
+C 0x58C5 con dos jugadores tambien se graba el segundo, y su mascara se marca con el bit 7 (el 0x80 de D')
+C 0x58D9 y a los 255 fotogramas iguales se corta igual: el contador no da para mas
+L 0x58F2 DEMO_CARGA_GRABACION  el puntero de la grabacion de la escena (E1CD) y los contadores a cero
+L 0x5913 DEMO_REPRODUCE    baja el contador de cuadros y, al llegar, saca la pareja siguiente
+C 0x5916 el cero y el uno se tratan igual: los dos piden pareja nueva
+L 0x5920 DEMO_PAREJA       lee (mascara, cuadros) y aplica la mascara
+C 0x5920 el primer byte es la mascara y el segundo cuantos fotogramas dura
+C 0x592F el bit 6 de la mascara la saca de lo normal: no es un mando, es una orden
+C 0x5938 con cero cuadros se encadena la pareja siguiente sin gastar fotograma: asi caben dos ordenes seguidas
+L 0x593D DEMO_ORDEN        la unica orden que hace algo es el 0x4F: apaga E1F3 y suena el 0x81
+L 0x594D DEMO_MASCARA      la mascara a F004, o a F005 si trae el bit 7 (el segundo jugador)
+L 0x595B SPRITES_DEMO      la lista p04 0x74F2, solo si no hay jugador 1
+L 0x5967 CARTEL_DEMO       dos sprites arriba a la derecha que parpadean mientras la demo se juega sola
+C 0x5967 con jugador 1 no hay cartel que pintar
+C 0x596D y tampoco mientras esten las luces de salida (E1D7)
+C 0x5976 el bit 3 del contador de fotogramas: ocho encendido y ocho apagado
+L 0x5987 CARTEL_DEMO_BORRA  los dos sprites a 0xE0, fuera de la pantalla
+C 0x598A los atributos van de cuatro en cuatro y solo se toca la Y
+L 0x599B MONTA_LA_CARRERA  la carrera entera montada de cero: pantalla, RAM de objetos, tiles, sprites, circuito y las 32 filas de pista de los dos coches
+C 0x59A1 0x3000 bytes a cero es la VRAM entera menos los sprites: patrones, colores y nombres
+C 0x59B4 0x117 bytes desde E800 y otros tantos desde E928: los cinco objetos de cada jugador, de 0x38 bytes
+C 0x59D0 los tiles de la pista y, encima, la lista p04 0x620A
+C 0x59E2 el circuito se prepara dos veces, una por coche: cada uno lleva su propia posicion en la pista
+C 0x59FD y la pantalla de pista tambien se pinta dos veces, cada una en su buffer
+C 0x5A17 la semilla del azar y el contador de fotogramas a cero: la carrera empieza siempre igual
+C 0x5A23 E244 a cero: sin repeticion pedida
+L 0x5A27 PASO_DE_LA_CARRERA  un fotograma del estado 5: E262++, revuelve el azar y despacha por E250
+C 0x5A2E E262 es el contador de fotogramas de la carrera
+C 0x5A38 el bit 7 de E250 se tira al despachar: solo cuentan los 32 estados de la tabla
+
+# =============================================================================
+# LOS 32 ESTADOS DE LA CARRERA Y EL CRONOMETRO
+# =============================================================================
+B 0x5A80 La tabla de 0x5A40 son 32 estados y casi todos son un `jp` a otra
+B 0x5A80 pagina: aqui solo estan los que tocan la pista. Los que importan:
+B 0x5A80   8, 9 y 10  montar la carrera (0x5AA3)
+B 0x5A80   11         un fotograma de carrera (0x5AAB)
+B 0x5A80   12 y 13    la parada en boxes (0x5B02 y 0x5B10)
+B 0x5A80   14         se acabo la carrera (0x5B19)
+B 0x5A80   25         volver al arranque (0x5B90)
+B 0x5A80
+B 0x5A80 EL CRONOMETRO ESTA HECHO PARA 60 Hz. 0x5CAA le suma uno a E210 una
+B 0x5A80 vez por paso de logica, la interrupcion solo da un paso cada TRES
+B 0x5A80 (F0FC, ver 0x4018) y 0x5339 divide por 20 para sacar los segundos:
+B 0x5A80 3 x 20 = 60. En una maquina NTSC el reloj va exacto; en una PAL,
+B 0x5A80 con 50 interrupciones por segundo, salen 16,67 pasos y el reloj se
+B 0x5A80 queda al 83 % - marca cinco segundos por cada seis reales.
+L 0x5A86 ESTADO_2_MUSICA    la musica 0x35 y 0x5F6F
+L 0x5AA3 ESTADO_MONTA_CARRERA  monta la carrera y pasa al estado siguiente
+C 0x5AA6 el 1 es para p01 0x604C, que es a donde salta 0x5BA2 despues de subir el estado
+L 0x5AAB ESTADO_11_CARRERA  el fotograma de carrera: normal, o la repeticion si E244 vale 2
+C 0x5AAB E244 = 2 es la repeticion en marcha, y entonces el fotograma es otro (0x5C5C)
+C 0x5AC0 E221 a 0xFF: se acabo el tiempo, y p01 0x6049 pasa al estado 14
+C 0x5AD5 el atajo de saltarse la carrera pide varias cosas a la vez: E20A con musica, E1C0 = 5, el bit 0 de E1D8 y ningun boton pulsado
+L 0x5AF1 CORTA_REPETICION   con el bit 4 de E1D8 y sin botones, p02 0x928A
+L 0x5B02 ESTADO_12_BOXES    monta la parada y arranca su musica (la 0x3C)
+L 0x5B10 ESTADO_13_BOXES    un fotograma de la parada
+L 0x5B19 ESTADO_14_FINAL    se acabo la carrera: puntos, musica y a limpiar
+C 0x5B20 p01 0x6B49 reparte los puntos del campeonato; si dice que no (NC), el estado 16
+C 0x5B3B con dos jugadores se mira el coche que haya ganado (E91B); el bit 1 de sus banderas es "termino"
+C 0x5B41 la musica 0x3E si termino y la 0x3F si no: la de la victoria y la del abandono
+L 0x5B72 ESTADO_22          E1D5 = (E1DC) y, con el bit 0 de E1D8, p02 0x864B y el estado 11
+L 0x5B86 GUARDA_E1D5        p02 0x863D y E1DC = (E1D5)
+L 0x5B90 ESTADO_25_REINICIA  bit 0 en E20B y en F0FE, y vuelta al arranque de 0x4202
+L 0x5B9D ESTADO_A_2         p01 0x6049 con 2
+L 0x5BA2 ESTADO_MAS_UNO     E250++ y p01 0x604C
+L 0x5BA9 SALTA_LA_ESPERA    en los estados 7 y 3 (con subestado), el bit 4 de E1D8 y sin botones se salta a p01 0x68A7 con E25B = 0xFF
+L 0x5BCE CIERRA_GRABACION   pone el 0xFF final a la partida grabada, si el puntero cae donde debe
+C 0x5BCE F006 a cero: no habia nada que grabar
+C 0x5BDD las dos sumas son la prueba de que el puntero esta dentro de la RAM que se puede escribir; fuera de ahi no se toca nada
+C 0x5BEA E1CE = 1 hace que la demo vuelva a la primera escena
+L 0x5BF0 FOTOGRAMA_CARRERA  el fotograma normal: avanza y pinta la pista de cada coche, mueve las camaras y repinta el HUD
+C 0x5BF5 los fotogramas de los coches se recalculan antes de nada
+C 0x5C06 primero se dice que no hay fila nueva y luego 0x55B1 decide cuantas hay
+C 0x5C12 el bit 5 de E1C2 es "dos jugadores": el segundo coche solo se mueve si lo hay
+C 0x5C35 una camara por coche, cada una siguiendo la suya
+C 0x5C51 p01 0x6EF8 vuelca los objetos y 0x760D repinta el HUD
+L 0x5C5C FOTOGRAMA_REPETICION  el mismo fotograma pero para la repeticion: un solo coche y sin mando
+C 0x5C5C en la repeticion no hay segundo coche: ni pista, ni camara, ni HUD para el
+L 0x5CA1 CRONOMETRO_A_CERO  E210 y E211 a cero
+L 0x5CAA CRONOMETRO_MAS_UNO  el cronometro de 24 bits (E210, E211, E212) sube uno por paso de logica
+C 0x5CAA con tres interrupciones por paso, esto son 20 pasos por segundo en una maquina de 60 Hz: por eso 0x5339 divide por 20
+
+# =============================================================================
+# LA PRESENTACION: LA PANTALLA DEL TITULO Y SU DESVANECIDO
+# =============================================================================
+B 0x5CB5 La presentacion tiene su propio subestado en E1DD y su despachador
+B 0x5CB5 de once entradas en 0x5D26. Lo bonito es como aparece el dibujo:
+B 0x5CB5 no hay paleta que tocar en un MSX1, asi que el desvanecido se hace
+B 0x5CB5 pintando LOS COLORES DE LOS TILES uno a uno. La lista de 0x5E4A
+B 0x5CB5 son once tramos de tres bytes -tile final, color y tile de
+B 0x5CB5 arranque- y 0x5E0D/0x5E17 los recorren tile a tile, tres por
+B 0x5CB5 vuelta cuando hay prisa (0x5DEA).
+L 0x5CB5 MONTA_PRESENTACION  la pantalla del titulo: borra, pone el marco, carga los tiles y descomprime el dibujo
+C 0x5CBC 0xE0 en el registro 7 del VDP: el borde de la pantalla
+C 0x5CC4 el buffer entero a 0xFF...
+C 0x5CCF ...y por dentro a cero: lo que queda de 0xFF son la fila de arriba y las dos de abajo, que hacen de marco
+C 0x5CE1 los colores de los 256 tiles a cero en los tres tercios: el dibujo esta ahi pero no se ve
+C 0x5CEF ocho bytes desde 0x20FF, sin alinear con ningun tile: pilla la ultima fila del 31 y las siete primeras del 32
+C 0x5CF7 el dibujo del titulo vive en la pagina 8 y se descomprime en el buffer, 0x20 columnas desde E4A0
+C 0x5D0B con E1C0 = 5 no hay musica: se viene de otro sitio
+L 0x5D16 PRESENTACION_MONTA_Y_PASO  monta la pantalla y da el primer paso
+L 0x5D19 PRESENTACION_PASO  un paso, y acarreo cuando la presentacion se ha acabado (E1DD = 10)
+L 0x5D23 PRESENTACION_DESPACHA  por E1DD, con la tabla de 0x5D29
+L 0x5D40 PRESENTACION_0    arranca: E252 a cero y cuatro fotogramas de espera
+L 0x5D46 PRESENTACION_SIGUIENTE  E1DD++ y la espera en E1C4
+L 0x5D4E PRESENTACION_1    los colores a 0xEF -blanco sobre negro- y empieza el desvanecido
+C 0x5D54 0xEF es tinta 14 y fondo 15: es el color con el que va apareciendo el dibujo
+C 0x5D5C si se viene del estado 5 se salta directo al subestado 8: ni logotipo ni "PUSH SPACE KEY"
+L 0x5D74 PRESENTACION_3    tres tramos de desvanecido por fotograma hasta que se acaba la lista
+L 0x5D7C PRESENTACION_ESPERA  se queda quieta hasta que E1C4 llega a cero
+L 0x5D82 BAJA_E1C4         E1C4 baja uno de cada cuatro fotogramas
+C 0x5D82 uno de cada cuatro: la espera dura cuatro veces lo que dice el numero
+L 0x5D8D PRESENTACION_5    pinta el rotulo p09 0xAFF6 (el logotipo y el 1987) y espera
+L 0x5D97 PRESENTACION_6    espera y pasa con 0x30
+L 0x5D9F PRESENTACION_7    hace parpadear "PUSH SPACE KEY" mientras espera
+L 0x5DAE PARPADEA_PUSH_SPACE  el rotulo p09 0xB000, cuatro fotogramas si y cuatro no
+C 0x5DB1 el bit 2 del contador de fotogramas: cuatro encendido y cuatro apagado
+L 0x5DBC PRESENTACION_9    apaga el dibujo: colores del tile 0 y la tabla de nombres entera
+C 0x5DCD este `jr nz` cuelga de las banderas que devuelva FILVRM, que no son parte del contrato del BIOS; con el `xor a` de la linea de arriba llegan en Z tanto si el BIOS las restaura como si sale de su propia cuenta a cero, asi que el salto no se toma
+L 0x5DD5 PINTA_LOGOTIPO    el rotulo p09 0xAFF6 y el desvanecido entero de una vez
+L 0x5DDE DESVANECE_TODO    tramo tras tramo hasta acabar la lista
+L 0x5DEA DESVANECE_TRES    tres pasos de desvanecido y vuelve
+C 0x5DEA tres tiles por fotograma: asi el dibujo tarda lo que tiene que tardar en aparecer
+L 0x5DFC PINTA_COLOR_TILE  los ocho bytes de color del tile A a valor C, en los tres tercios
+C 0x5DFC el tile por ocho es su sitio en la tabla de colores, que empieza en 0
+L 0x5E0D TRAMO_COLOR       A = el tile por el que va (E25E) y C = el color del tramo
+L 0x5E17 TRAMO_AVANZA      un tile mas; al llegar al ultimo del tramo, pasa al siguiente
+C 0x5E21 el byte 0 del tramo es el tile en el que se acaba
+L 0x5E24 TRAMO_SIGUIENTE   E25D++ y el tile de arranque del tramo nuevo a E25E; acarreo cuando la lista se acaba
+C 0x5E2B un byte 0 a cero cierra la lista
+C 0x5E31 y el byte 2 es por que tile empieza el tramo
+L 0x5E37 DESVANECIDO_EMPIEZA  E25D = 0xFF y el primer tramo (el `inc` de 0x5E27 lo deja en 0)
+L 0x5E3E TRAMO_ACTUAL      HL = 0x5E4A + 3 * (E25D)
+C 0x5E45 por tres, que las filas son de tres bytes
