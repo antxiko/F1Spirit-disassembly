@@ -598,3 +598,98 @@ F 0x7f78 16
 # --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
 D 0x730e 0x7370 pendiente_de_trazar Sin trazar ni identificar todavia (98 bytes)
 # --- fin de la seccion pendiente ---
+
+C 0x6A20 la tabla de 0x6F04 son parejas: los dos bytes del efecto que se activa
+C 0x6A29 el primero a (ix+27)...
+C 0x6A2F ...y el segundo a (ix+28), con el bit 7 de (ix+0F) para encenderlo
+C 0x6A4A el bucle de la partitura: se cuenta una vuelta mas y, al llegar al tope, se sigue de largo
+C 0x6A56 el destino del salto viene detras de la orden, dos bytes
+C 0x6A64 el segundo bucle, con su propio contador en (ix+6)
+C 0x6A7C la orden 4 apaga los tres bytes de efectos del canal
+C 0x6A90 por debajo de 6 el valor va a (ix+16); de ahi arriba enciende el bit 6 y va a (ix+15)
+C 0x6AA5 un paso del reproductor por interrupcion: primero los canales y luego la cola
+C 0x6AB9 los tres canales del PSG, cada uno con sus dos bytes de periodo y su volumen
+C 0x6AD0 el periodo son dos registros seguidos, el fino y el basto
+C 0x6AE2 el bit 3 del cuarto byte silencia el canal: ni se escribe el volumen
+C 0x6AEB y el bit 2 hace que se escriba una sola vez
+C 0x6AEE el registro 6 es el periodo del ruido, y se escribe en dos pasos con los bits 0 y 1 de E17A
+C 0x6B03 el segundo valor de ruido va un paso despues: asi el ruido cambia con dos valores encadenados
+C 0x6B17 los registros 11, 12 y 13 son la envolvente del PSG: periodo largo, periodo corto y forma
+C 0x6B45 y por ultimo el arbitro de canales, que decide que suena en cada uno
+
+C 0x68A7 la vuelta comun de las ordenes: se sigue leyendo la partitura
+C 0x68BC el canal 4 -el del ruido- usa un par de bits y los demas otro
+C 0x68D9 el valor de ruido son cinco bits
+C 0x68E7 el canal 4 escribe en E178...
+C 0x68F5 ...y los demas en E179
+C 0x6903 el registro 13 es la FORMA de la envolvente
+C 0x6918 el 12 es su periodo basto
+C 0x6928 y el 11 el fino; los tres se marcan en E17A para escribirse en el paso siguiente
+C 0x6939 esta orden apaga todos los avisos de envolvente de golpe
+C 0x6956 dos nibbles: el de arriba es el ataque y el de abajo la caida del vibrato
+C 0x6963 cuatro rotaciones para bajar el nibble alto
+C 0x6967 por debajo de 8 el ajuste es hacia arriba y de ahi en adelante hacia abajo: el bit 3 es el signo
+C 0x6970 el `res 3` quita ese bit de signo y el `inc a` deja el valor de 1 a 8
+C 0x697E el ataque a (ix+21)...
+C 0x698D ...y la caida a (ix+22), con el mismo apano del signo
+C 0x6994 el tercer byte trae los otros dos tramos del vibrato
+C 0x69B6 (ix+26) es el deslizamiento de nota, y el bit 1 de (ix+0E) lo enciende
+C 0x69D1 los dos nibbles de esta orden son las dos fases de la envolvente por software
+C 0x69EC y esta pone el paso, con dos bits mas de (ix+0E)
+
+B 0x6B92 EL FILTRO DE ESCRITURAS AL SCC. Los cinco canales tienen tres
+B 0x6B92 valores cada uno -periodo fino, periodo basto y volumen- y
+B 0x6B92 escribirlos todos en cada interrupcion costaria quince accesos.
+B 0x6B92 Este bloque compara cada valor con la copia que guarda en E180 y
+B 0x6B92 E18A, y solo enciende su bit en E17E/E17F cuando ha cambiado; el
+B 0x6B92 volcado de 0x6C97 escribe unicamente los que estan marcados. Son
+B 0x6B92 quince trozos calcados de siete instrucciones, escritos a mano y
+B 0x6B92 sin bucle: mas largos, pero sin cuentas de indices.
+C 0x6B92 IX apunta a los dos bytes de marcas, DE a las copias de periodos y BC a las de volumen
+C 0x6B9C E08E es el primer canal del SCC; de uno al siguiente hay 0x2C bytes
+C 0x6BA0 la marca se apaga y solo se enciende si el valor ha cambiado
+C 0x6BAD el segundo byte del periodo
+C 0x6BBD y el volumen, que lleva su marca en el otro byte
+C 0x6BCD segundo canal, en E0BA
+C 0x6BDF su periodo basto
+C 0x6BEF y su volumen
+C 0x6BFF tercer canal, en E0E6
+C 0x6C11 su periodo basto
+C 0x6C21 y su volumen
+C 0x6C31 cuarto canal, en E112
+C 0x6C43 su periodo basto
+C 0x6C53 y su volumen
+C 0x6C63 quinto canal, en E13E
+C 0x6C75 su periodo basto
+C 0x6C85 y su volumen; con esto los quince valores estan comparados
+C 0x6B68 el registro 7 es el mezclador: dice que canales suenan y cuales llevan ruido
+C 0x6B72 los dos bits de abajo eligen la entrada de la tabla
+C 0x6B85 el paso del SCC: comparar, volcar, registros y formas de onda
+C 0x6C97 el mezclador del SCC: un bit por canal, encendido si su volumen no es cero
+C 0x6CA3 el primer canal, en E091
+C 0x6CAF el segundo, con el bit corrido
+C 0x6CBB el tercero
+C 0x6CC7 el cuarto
+C 0x6CD3 el quinto, y luego se compara con lo que ya habia
+C 0x6CDC solo si el mezclador cambia se marca para escribirlo
+C 0x6CE9 los dieciseis registros del SCC viven en 0x9880 y su copia en E180
+C 0x6D96 el ultimo par de registros
+C 0x6DA1 escribir en el SCC pide mapear la pagina 0x3F en 0x8000 y devolver la 2 despues
+C 0x6DA5 0x9000 es el registro del mapper de esta ranura
+C 0x6DB0 la forma de onda son 32 bytes y solo se copia cuando el bit 7 de la bandera del canal lo pide
+C 0x6DB9 el puntero a la forma esta en E0AB
+C 0x6DC6 segundo canal, forma en 0x9820
+C 0x6DDC tercero, en 0x9840
+C 0x6DF2 y cuarto, en 0x9860; el quinto comparte la forma del cuarto, que es como funciona el SCC
+C 0x6E0F y aqui se copian los 32 bytes de la forma de onda
+C 0x6B49 la tabla de 0x6B79 traduce el estado del canal a sus dos bits del mezclador
+C 0x6B50 el segundo canal, en E039
+C 0x69D6 el `or 0x14` enciende de golpe los dos bits que hacen falta
+C 0x69E1 y el nibble de abajo es la otra fase
+C 0x67D3 y cada canal se calla por su cuenta
+C 0x67DF los canales del SCC empiezan en E0B0
+C 0x68AB de aqui salen todas las ordenes que no cambian el flujo
+C 0x6E12 los dos punteros suben a la vez, 32 vueltas
+C 0x6A82 y con el valor 4 se apagan ademas los tres bytes de estado
+C 0x6DCD la bandera se apaga: la forma ya esta copiada
+C 0x6DE3 lo mismo en el tercero
