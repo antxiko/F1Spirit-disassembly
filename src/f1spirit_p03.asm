@@ -469,7 +469,7 @@ ESPEJA_LOS_5_OBJETOS:		; calcula el (iy+5A) de este coche y copia a la otra list
 	ld de,00038h		;a2a8
 	ld b,005h		;a2ab   ; los cinco huecos
 L_A2AD:
-	exx			;a2ad
+	exx			;a2ad   ; el juego alterno guarda el puntero mientras se hace la cuenta
 	call ESPEJA_UN_OBJETO		;a2ae
 	exx			;a2b1
 	add ix,de		;a2b2
@@ -849,7 +849,7 @@ RESTA_AVANCES_2_1:		; la gemela de 0xA46D con los dos coches cambiados de sitio
 	jr nz,L_A499		;a496
 	inc l			;a498   ; la misma compensacion del neg de cero, ahora en el otro orden
 L_A499:
-	neg		;a499
+	neg		;a499   ; el contador de la cadencia baja hasta cero y ahi se queda
 	ld b,a			;a49b
 	ld a,c			;a49c
 	and a			;a49d
@@ -1204,7 +1204,7 @@ DATA_posicion_extra_por_carrera:
 
 
 L_A673:
-	xor a			;a673
+	xor a			;a673   ; la parrilla: el jugador 1 sale TERCERO (E331 = 3) y el 2 CUARTO
 	ld (0ea7fh),a		;a674
 	ld a,003h		;a677
 	ld (0e331h),a		;a679
@@ -1212,22 +1212,22 @@ L_A673:
 	ld (0e3f1h),a		;a67e
 	ld ix,0e2c0h		;a681
 	ld iy,0e380h		;a685
-	call L_A860		;a689
-	ld b,006h		;a68c
+	call L_A860		;a689   ; antes de colocar a nadie se apuntan las dos posiciones
+	ld b,006h		;a68c   ; seis plazas que repartir
 	ld a,(0e25ch)		;a68e
-	ld hl,0a7b9h		;a691
+	ld hl,0a7b9h		;a691   ; y cada carrera tiene su punto de salida en la pista
 	call 04a44h		;a694
 	ex de,hl			;a697
 	ld ix,0e800h		;a698
 L_A69C:
-	ld a,(0e240h)		;a69c
+	ld a,(0e240h)		;a69c   ; con E240 -dos jugadores alternos- la parrilla se monta de otra manera
 	and a			;a69f
 	jp nz,L_A785		;a6a0
 	ld hl,0a7e3h		;a6a3
 	ld a,(0e25ch)		;a6a6
 	call 04a44h		;a6a9
 	ld a,b			;a6ac
-	ld iy,0e2c0h		;a6ad
+	ld iy,0e2c0h		;a6ad   ; si la plaza es la del jugador 1, ahi va el jugador y no un rival
 	cp (iy+071h)		;a6b1
 	jp z,L_A73D		;a6b4
 	ld a,(0e1c2h)		;a6b7
@@ -1238,8 +1238,8 @@ L_A69C:
 	cp (iy+071h)		;a6c3
 	jp z,L_A73D		;a6c6
 L_A6C9:
-	call 04a44h		;a6c9
-	push ix		;a6cc
+	call 04a44h		;a6c9   ; la rejilla dice cuanto se aparta esta plaza del punto de salida
+	push ix		;a6cc   ; el hueco se guarda mientras se monta el rival
 	exx			;a6ce
 	ld de,0e800h		;a6cf
 	push ix		;a6d2
@@ -1250,13 +1250,13 @@ L_A6C9:
 	jr z,L_A6E2		;a6dc
 	ld iy,0e380h		;a6de
 L_A6E2:
-	call HUECO_DE_ESTE_COCHE		;a6e2
+	call HUECO_DE_ESTE_COCHE		;a6e2   ; se le busca hueco en la lista del coche que toque
 	push hl			;a6e5
 	pop ix		;a6e6
 	call LIMPIA_HUECO		;a6e8
 	exx			;a6eb
 	push hl			;a6ec
-	ld hl,0ea7fh		;a6ed
+	ld hl,0ea7fh		;a6ed   ; EA7F cuenta las plazas ya repartidas, y de ahi sale el tipo de rival
 	ld a,(hl)			;a6f0
 	inc (hl)			;a6f1
 	ld hl,0a85bh		;a6f2
@@ -1266,8 +1266,8 @@ L_A6E2:
 	pop hl			;a6fc
 	ld a,(iy+009h)		;a6fd
 	ld (ix+009h),a		;a700
-	set 2,(ix+001h)		;a703
-	ld a,d			;a707
+	set 2,(ix+001h)		;a703   ; el bit 2 de las banderas marca a los coches de la parrilla
+	ld a,d			;a707   ; la posicion es el punto de salida mas el desplazamiento de la rejilla
 	add a,h			;a708
 	ld (ix+006h),a		;a709
 	ld a,e			;a70c
@@ -1276,7 +1276,7 @@ L_A6E2:
 	exx			;a711
 	call OBJETO_ALTA		;a712
 	call 0996ah		;a715
-	ld a,(ix+011h)		;a718
+	ld a,(ix+011h)		;a718   ; la velocidad se guarda como objetivo y el coche arranca parado
 	ld (ix+01ah),a		;a71b
 	ld (ix+011h),000h		;a71e
 	pop hl			;a722
@@ -1294,14 +1294,14 @@ L_A73A:
 	exx			;a73a
 	jr L_A761		;a73b
 L_A73D:
-	call 04a44h		;a73d
+	call 04a44h		;a73d   ; la plaza del jugador no crea rival: se le coloca a el
 	ld a,d			;a740
 	add a,h			;a741
 	ld (iy+006h),a		;a742
 	ld a,e			;a745
 	add a,l			;a746
 	ld (iy+004h),a		;a747
-	ld hl,0a831h		;a74a
+	ld hl,0a831h		;a74a   ; y su camara sale de otra tabla, segun sea plaza par o impar
 	ld a,(0e25ch)		;a74d
 	call 04a44h		;a750
 	bit 0,(iy+071h)		;a753
@@ -1312,12 +1312,12 @@ L_A75B:
 	ld (iy+04bh),a		;a75b
 	ld (iy+054h),a		;a75e
 L_A761:
-	dec b			;a761
+	dec b			;a761   ; y a la plaza siguiente
 	jp nz,L_A69C		;a762
 	ld a,(0e1c2h)		;a765
 	bit 5,a		;a768
 	ret z			;a76a
-	call MIDE_SEPARACION		;a76b
+	call MIDE_SEPARACION		;a76b   ; con dos jugadores hay que medir la separacion y copiar las listas
 	ld ix,0e800h		;a76e
 	ld iy,0e2c0h		;a772
 	call ESPEJA_LOS_5_OBJETOS		;a776
@@ -1326,7 +1326,7 @@ L_A761:
 	call ESPEJA_LOS_5_OBJETOS		;a781
 	ret			;a784
 L_A785:
-	ld hl,0a7e3h		;a785
+	ld hl,0a7e3h		;a785   ; la version de dos jugadores alternos: solo se colocan los dos coches
 	ld a,(0e25ch)		;a788
 	call 04a44h		;a78b
 	ld a,b			;a78e
@@ -1337,7 +1337,7 @@ L_A785:
 	cp (iy+071h)		;a79d
 	jp nz,L_A761		;a7a0
 L_A7A3:
-	ld a,(0ea7fh)		;a7a3
+	ld a,(0ea7fh)		;a7a3   ; tres plazas como mucho, y la posicion sale de restarlas de tres
 	inc a			;a7a6
 	cp 003h		;a7a7
 	jp z,L_A761		;a7a9
@@ -1471,7 +1471,7 @@ DATA_tabla_A85B:
 
 
 L_A860:
-	ld a,(ix+071h)		;a860
+	ld a,(ix+071h)		;a860   ; EA7C dice cual de los dos jugadores va delante: 1 o 2
 	cp (iy+071h)		;a863
 	ccf			;a866
 	ld a,000h		;a867
@@ -1479,7 +1479,7 @@ L_A860:
 	inc a			;a86a
 	ld (0ea7ch),a		;a86b
 	ld a,(ix+071h)		;a86e
-	cp 007h		;a871
+	cp 007h		;a871   ; ninguno de los dos pasa de la plaza 6
 	jr c,L_A87A		;a873
 	ld a,006h		;a875
 	ld (ix+071h),a		;a877
@@ -1487,13 +1487,13 @@ L_A87A:
 	ld a,(0e1c2h)		;a87a
 	bit 5,a		;a87d
 	ret z			;a87f
-	ld a,(iy+071h)		;a880
+	ld a,(iy+071h)		;a880   ; y el jugador 2 tampoco pasa de la plaza 6
 	cp 007h		;a883
 	jr c,L_A88C		;a885
 	ld a,006h		;a887
 	ld (iy+071h),a		;a889
 L_A88C:
-	ld a,(ix+071h)		;a88c
+	ld a,(ix+071h)		;a88c   ; y si los dos coinciden en la misma plaza, al de detras se le baja una
 	cp (iy+071h)		;a88f
 	ret nz			;a892
 	ld a,(0ea7ch)		;a893
@@ -1505,16 +1505,16 @@ L_A89D:
 	dec (ix+071h)		;a89d
 	ret			;a8a0
 L_A8A1:
-	call L_AAF9		;a8a1
+	call L_AAF9		;a8a1   ; el turno del rival: cada uno se atiende uno de cada ocho fotogramas
 	ld a,(0e1c3h)		;a8a4
-	add a,(ix+037h)		;a8a7
+	add a,(ix+037h)		;a8a7   ; (ix+37) es su turno, y por eso los cinco no caen todos en el mismo fotograma
 	and 007h		;a8aa
 	ret nz			;a8ac
 	call L_A8B4		;a8ad
 	call L_A915		;a8b0
 	ret			;a8b3
 L_A8B4:
-	ld a,(ix+032h)		;a8b4
+	ld a,(ix+032h)		;a8b4   ; (ix+32) trae la curva que viene: el bit 7 dice si es nueva
 	and a			;a8b7
 	jr z,L_A8FF		;a8b8
 	cp 080h		;a8ba
@@ -1524,18 +1524,18 @@ L_A8B4:
 	and 07fh		;a8c1
 	ld (ix+032h),a		;a8c3
 L_A8C6:
-	set 4,(ix+001h)		;a8c6
+	set 4,(ix+001h)		;a8c6   ; el bit 4 de las banderas marca que este rival esta frenando por curva
 	ld b,a			;a8ca
 	ld a,(ix+01fh)		;a8cb
 	and 00fh		;a8ce
 	ld (ix+01fh),a		;a8d0
 	ld a,b			;a8d3
-	and 003h		;a8d4
+	and 003h		;a8d4   ; los dos bits bajos eligen una de las tres listas de frenada
 	jr z,L_A908		;a8d6
 	dec a			;a8d8
 	ld hl,0a94fh		;a8d9
 	call 04a44h		;a8dc
-	ld a,(ix+000h)		;a8df
+	ld a,(ix+000h)		;a8df   ; y el tipo de rival elige la palabra dentro de la lista
 	and 00fh		;a8e2
 	dec a			;a8e4
 	add a,a			;a8e5
@@ -1545,18 +1545,18 @@ L_A8C6:
 	ld e,(hl)			;a8ea
 	inc hl			;a8eb
 	ld d,(hl)			;a8ec
-	ld l,(ix+01bh)		;a8ed
+	ld l,(ix+01bh)		;a8ed   ; a la velocidad base se le RESTA lo que diga la lista: eso es la velocidad objetivo en la curva
 	ld h,(ix+01ch)		;a8f0
 	ex de,hl			;a8f3
 	add hl,de			;a8f4
-	jr nc,L_A8F8		;a8f5
+	jr nc,L_A8F8		;a8f5   ; y si la resta se sale, se queda en la base
 	ex de,hl			;a8f7
 L_A8F8:
 	ld (ix+019h),e		;a8f8
 	ld (ix+01ah),d		;a8fb
 	ret			;a8fe
 L_A8FF:
-	and 07fh		;a8ff
+	and 07fh		;a8ff   ; sin curva la velocidad objetivo es la base pelada
 	ld (ix+032h),a		;a901
 	call L_AB62		;a904
 	ret c			;a907
@@ -1567,7 +1567,7 @@ L_A908:
 	ld (ix+01ah),d		;a911
 	ret			;a914
 L_A915:
-	ld d,(ix+01ah)		;a915
+	ld d,(ix+01ah)		;a915   ; la aceleracion del rival sale de comparar su velocidad con la objetivo
 	ld e,(ix+019h)		;a918
 	ld l,(ix+010h)		;a91b
 	ld h,(ix+011h)		;a91e
@@ -1575,17 +1575,17 @@ L_A915:
 	or a			;a922
 	sbc hl,de		;a923
 	ld h,a			;a925
-	ld a,000h		;a926
+	ld a,000h		;a926   ; si van iguales, aceleracion cero
 	jr z,L_A944		;a928
-	ld a,0e8h		;a92a
+	ld a,0e8h		;a92a   ; y si se pasa, 0xE8: frena
 	jr nc,L_A944		;a92c
 	ld a,h			;a92e
 	push af			;a92f
-	ld hl,0a991h		;a930
+	ld hl,0a991h		;a930   ; cuando falta velocidad, la aceleracion sale de una tabla por categoria y por lo lejos que este
 	ld a,(0e25bh)		;a933
 	call 04a44h		;a936
 	pop af			;a939
-	cp 010h		;a93a
+	cp 010h		;a93a   ; la diferencia se recorta a dieciseis, que es lo que tiene la tabla
 	jr c,L_A940		;a93c
 	ld a,00fh		;a93e
 L_A940:
@@ -1595,7 +1595,7 @@ L_A944:
 	ld (ix+012h),a		;a944
 	ret			;a947
 L_A948:
-	ld e,(ix+01bh)		;a948
+	ld e,(ix+01bh)		;a948   ; estas tres instrucciones solo devuelven la velocidad base; la tabla de debajo no es suya
 	ld d,(ix+01ch)		;a94b
 	ret			;a94e
 
@@ -1829,21 +1829,21 @@ DATA_tablas_A9FD:
 
 
 L_AAF9:
-	call L_B353		;aaf9
+	call L_B353		;aaf9   ; el rival mira la pista que tiene por delante para saber si viene curva
 	ret nc			;aafc
-	bit 6,a		;aafd
+	bit 6,a		;aafd   ; el bit 6 del byte de pista no es curva: es un aviso especial
 	jp nz,L_AB24		;aaff
-	bit 4,(ix+001h)		;ab02
+	bit 4,(ix+001h)		;ab02   ; si ya venia frenando, un cero se ignora
 	jr nz,L_AB20		;ab06
 L_AB08:
 	and 07fh		;ab08
 	ld b,a			;ab0a
 L_AB0B:
-	ld a,(ix+032h)		;ab0b
+	ld a,(ix+032h)		;ab0b   ; y si la curva es la misma que ya tenia, no hay nada que cambiar
 	cp b			;ab0e
 	ret z			;ab0f
 	ld a,b			;ab10
-	or 080h		;ab11
+	or 080h		;ab11   ; el bit 7 marca la curva como nueva, que es lo que mira 0xA8B4
 	ld (ix+032h),a		;ab13
 	ld a,(ix+017h)		;ab16
 	and 080h		;ab19
@@ -1851,24 +1851,24 @@ L_AB0B:
 	ld (ix+017h),a		;ab1c
 	ret			;ab1f
 L_AB20:
-	and a			;ab20
+	and a			;ab20   ; el cero solo cuenta si no se estaba frenando
 	ret z			;ab21
 	jr L_AB08		;ab22
 L_AB24:
-	and 03fh		;ab24
+	and 03fh		;ab24   ; los seis bits bajos separan las tres ordenes: 0 meta, 1 fin de curva y 2 otra cosa
 	jr z,L_AB34		;ab26
 	dec a			;ab28
 	jr nz,L_AB5B		;ab29
-	res 4,(ix+001h)		;ab2b
+	res 4,(ix+001h)		;ab2b   ; fin de curva: se apaga el bit 4 y la velocidad objetivo vuelve a la base
 	ld b,000h		;ab2f
 	jp L_AB0B		;ab31
 L_AB34:
-	bit 1,(iy+001h)		;ab34
+	bit 1,(iy+001h)		;ab34   ; UN RIVAL QUE CRUZA LA META TE CUESTA UN PUESTO: sube E331 (o E3F1) en uno, con tope 99
 	ret z			;ab38
-	ld a,(0e214h)		;ab39
+	ld a,(0e214h)		;ab39   ; y solo cuenta desde que el jugador ha llegado
 	dec a			;ab3c
 	ret nz			;ab3d
-	bit 1,(ix+001h)		;ab3e
+	bit 1,(ix+001h)		;ab3e   ; cada rival lo cobra una sola vez: el bit 1 de sus banderas
 	ret nz			;ab42
 	bit 0,(iy+009h)		;ab43
 	ld hl,0e331h		;ab47
@@ -1886,12 +1886,12 @@ L_AB55:
 L_AB5B:
 	dec a			;ab5b
 	ret nz			;ab5c
-	set 4,(ix+017h)		;ab5d
+	set 4,(ix+017h)		;ab5d   ; la tercera orden solo enciende el bit 4 de (ix+17)
 	ret			;ab61
 L_AB62:
-	ret			;ab62
+	ret			;ab62   ; un `ret` pelado: la rutina que llamaba 0xA904 no hace nada
 L_AB63:
-	ld a,(0e1c2h)		;ab63
+	ld a,(0e1c2h)		;ab63   ; con dos jugadores hay tres pasadas y con uno solo una
 	bit 5,a		;ab66
 	jr z,L_AB74		;ab68
 	call L_AB7B		;ab6a
@@ -1912,7 +1912,7 @@ L_AB86:
 L_AB8E:
 	ld b,005h		;ab8e
 L_AB90:
-	ld a,(iy+000h)		;ab90
+	ld a,(iy+000h)		;ab90   ; los cinco rivales del coche, uno por uno
 	or a			;ab93
 	jr z,L_ABAF		;ab94
 	push bc			;ab96
@@ -1920,7 +1920,7 @@ L_AB90:
 	jr c,L_ABA0		;ab9a
 	ld (iy+026h),000h		;ab9c
 L_ABA0:
-	call c,L_AEEF		;aba0
+	call c,L_AEEF		;aba0   ; con acarreo hay contacto y se resuelve
 	res 2,(ix+05eh)		;aba3
 	ld a,(iy+026h)		;aba7
 	and a			;abaa
@@ -1932,12 +1932,12 @@ L_ABAF:
 	djnz L_AB90		;abb4
 	ret			;abb6
 L_ABB7:
-	call L_ABF8		;abb7
-	ld a,(ix+004h)		;abba
+	call L_ABF8		;abb7   ; (iy+26) encendido es "este rival esta pegado al coche"
+	ld a,(ix+004h)		;abba   ; se compara la vertical del coche con la del rival
 	sub 008h		;abbd
 	sub (iy+004h)		;abbf
 	jr nc,L_ABD5		;abc2
-	ld h,(iy+01ah)		;abc4
+	ld h,(iy+01ah)		;abc4   ; el que va detras se queda con la mitad de la velocidad objetivo: se descuelga
 	ld l,(iy+019h)		;abc7
 	sra h		;abca
 	rr l		;abcc
@@ -1945,7 +1945,7 @@ L_ABB7:
 	ld (iy+019h),l		;abd1
 	ret			;abd4
 L_ABD5:
-	ld a,(ix+006h)		;abd5
+	ld a,(ix+006h)		;abd5   ; y el que va delante se aparta de lado si esta muy pegado al borde
 	sub 007h		;abd8
 	ld a,(iy+006h)		;abda
 	cp 00fh		;abdd
@@ -1954,7 +1954,7 @@ L_ABD5:
 	ld l,(iy+007h)		;abe3
 	ld d,h			;abe6
 	ld e,l			;abe7
-	sra h		;abe8
+	sra h		;abe8   ; vx se multiplica por 1,75: dos corrimientos y la suma
 	rr l		;abea
 	sra h		;abec
 	rr l		;abee
@@ -1963,7 +1963,7 @@ L_ABD5:
 	ld (iy+007h),l		;abf4
 	ret			;abf7
 L_ABF8:
-	ld a,(iy+006h)		;abf8
+	ld a,(iy+006h)		;abf8   ; los dos bytes que se escriben dicen por que lado se esquiva, y cambian segun quien vaya arriba
 	cp (ix+006h)		;abfb
 	ld hl,00104h		;abfe
 	jr nc,L_AC06		;ac01
@@ -1973,9 +1973,9 @@ L_AC06:
 	ld (ix+034h),l		;ac09
 	ret			;ac0c
 L_AC0D:
-	ld a,(iy+000h)		;ac0d
+	ld a,(iy+000h)		;ac0d   ; la permutacion de 0xAC22 cambia el tipo de rival por otro: los tipos 1 y 2 se van al 6 y al 7
 	ld c,a			;ac10
-	and 00fh		;ac11
+	and 00fh		;ac11   ; el nibble bajo es el tipo
 	ld l,a			;ac13
 	ld h,000h		;ac14
 	ld de,0ac22h		;ac16
@@ -2000,9 +2000,9 @@ DATA_tabla_AC22:
 
 
 L_AC32:
-	ld iy,0e380h		;ac32
+	ld iy,0e380h		;ac32   ; el choque entre los dos jugadores solo se mira con los dos en estado 0
 	ld ix,0e2c0h		;ac36
-	ld a,(ix+05dh)		;ac3a
+	ld a,(ix+05dh)		;ac3a   ; los dos coches tienen que estar en estado 0
 	cp 000h		;ac3d
 	ret nz			;ac3f
 	ld a,(iy+05dh)		;ac40
@@ -2014,32 +2014,32 @@ L_AC32:
 	res 0,(iy+05eh)		;ac50
 	ret			;ac54
 L_AC55:
-	ld a,(0e214h)		;ac55
+	ld a,(0e214h)		;ac55   ; y no despues de que alguien haya llegado a meta
 	and a			;ac58
 	ret nz			;ac59
 	ld hl,0ea71h		;ac5a
-	ld a,(ix+004h)		;ac5d
+	ld a,(ix+004h)		;ac5d   ; la distancia vertical entre los dos coches, que se guarda en EA71 y en (ix+29)
 	sub (iy+05ah)		;ac60
 	ld d,(ix+029h)		;ac63
 	ld (hl),a			;ac66
 	ld (ix+029h),a		;ac67
-	add a,00fh		;ac6a
+	add a,00fh		;ac6a   ; si estan a mas de quince pixeles no hay nada que mirar
 	cp 01eh		;ac6c
 	jp nc,L_ADA5		;ac6e
-	ld a,(ix+006h)		;ac71
+	ld a,(ix+006h)		;ac71   ; y luego lo mismo de lado, con ocho
 	sub (iy+006h)		;ac74
 	add a,008h		;ac77
 	cp 010h		;ac79
 	push af			;ac7b
 	ld a,d			;ac7c
-	xor (ix+029h)		;ac7d
+	xor (ix+029h)		;ac7d   ; el `xor` con el valor anterior dice si se han cruzado en este fotograma
 	rla			;ac80
 	jp nc,L_ADA4		;ac81
 	call L_AC89		;ac84
 	pop af			;ac87
 	ret			;ac88
 L_AC89:
-	ld a,(iy+071h)		;ac89
+	ld a,(iy+071h)		;ac89   ; al cruzarse, los dos coches se intercambian el puesto
 	ld b,(ix+071h)		;ac8c
 	ld (ix+071h),a		;ac8f
 	ld (iy+071h),b		;ac92
@@ -2051,8 +2051,8 @@ L_AC89:
 	ld d,(iy+011h)		;aca3
 	or a			;aca6
 	sbc hl,de		;aca7
-	call c,04b04h		;aca9
-	ld de,00200h		;acac
+	call c,04b04h		;aca9   ; la diferencia de velocidad en valor absoluto
+	ld de,00200h		;acac   ; y solo con mas de 0x200 de diferencia suena el 3: el adelantamiento se oye
 	or a			;acaf
 	sbc hl,de		;acb0
 	jp c,L_ADA2		;acb2
@@ -2062,7 +2062,7 @@ L_AC89:
 	or a			;acbe
 	ret			;acbf
 L_ACC0:
-	ld ix,0e928h		;acc0
+	ld ix,0e928h		;acc0   ; y aqui se miran los rivales entre si, todos contra todos
 	ld a,(ix+000h)		;acc4
 	and a			;acc7
 	call nz,L_ACCF		;acc8
@@ -2077,10 +2077,10 @@ L_ACD1:
 	ld de,00038h		;acd6
 	add iy,de		;acd9
 L_ACDB:
-	ld a,(ix+000h)		;acdb
+	ld a,(ix+000h)		;acdb   ; los cinco rivales del otro coche, uno por uno
 	and a			;acde
 	push bc			;acdf
-	call nz,L_ACF4		;ace0
+	call nz,L_ACF4		;ace0   ; el objeto vacio se salta
 	call c,L_AF4C		;ace3
 	pop bc			;ace6
 	ld de,00038h		;ace7
@@ -2091,8 +2091,8 @@ L_ACDB:
 	djnz L_ACD1		;acf1
 	ret			;acf3
 L_ACF4:
-	ld b,a			;acf4
-	and 070h		;acf5
+	ld b,a			;acf4   ; los tipos con algun bit del nibble alto no chocan, y el tipo 15 tampoco
+	and 070h		;acf5   ; el nibble alto ocupado significa que el objeto esta en otro estado
 	ret nz			;acf7
 	ld a,b			;acf8
 	and 00fh		;acf9
@@ -2108,19 +2108,19 @@ L_ACF4:
 	and 00fh		;ad08
 	cp 00fh		;ad0a
 	ret z			;ad0c
-	ld a,(ix+004h)		;ad0d
+	ld a,(ix+004h)		;ad0d   ; la misma prueba de siempre: quince pixeles de alto y ocho de ancho
 	sub (iy+004h)		;ad10
 	ld (0ea71h),a		;ad13
-	add a,00fh		;ad16
+	add a,00fh		;ad16   ; quince pixeles de alto...
 	cp 01eh		;ad18
 	ret nc			;ad1a
 	ld a,(ix+006h)		;ad1b
 	sub (iy+006h)		;ad1e
-	add a,008h		;ad21
+	add a,008h		;ad21   ; ...y ocho de ancho, la misma ventana de siempre
 	cp 010h		;ad23
 	ret			;ad25
 L_AD26:
-	ld a,(ix+004h)		;ad26
+	ld a,(ix+004h)		;ad26   ; aqui se compara el coche del jugador con uno de sus rivales
 	sub (iy+004h)		;ad29
 	ld d,(iy+029h)		;ad2c
 	ld (iy+029h),a		;ad2f
@@ -2133,20 +2133,20 @@ L_AD26:
 	cp 010h		;ad40
 	push af			;ad42
 	ld a,d			;ad43
-	xor (iy+029h)		;ad44
+	xor (iy+029h)		;ad44   ; y el `xor` con la distancia anterior dice si se acaban de cruzar
 	rla			;ad47
 	jr nc,L_ADA4		;ad48
 	call L_AD4F		;ad4a
 	pop af			;ad4d
 	ret			;ad4e
 L_AD4F:
-	ld a,(iy+000h)		;ad4f
+	ld a,(iy+000h)		;ad4f   ; al cruzarse con un rival se le adelanta -o te adelanta a ti-
 	and 00fh		;ad52
 	cp 00fh		;ad54
 	ret z			;ad56
 	call L_ADAA		;ad57
 	ld a,(ix+05dh)		;ad5a
-	cp 006h		;ad5d
+	cp 006h		;ad5d   ; el coche parado no adelanta a nadie
 	ret z			;ad5f
 	bit 0,(iy+030h)		;ad60
 	ret nz			;ad64
@@ -2156,17 +2156,17 @@ L_AD4F:
 	ld d,(iy+011h)		;ad6e
 	or a			;ad71
 	sbc hl,de		;ad72
-	call c,04b04h		;ad74
+	call c,04b04h		;ad74   ; la diferencia de velocidad en valor absoluto
 	ld de,00180h		;ad77
 	or a			;ad7a
-	sbc hl,de		;ad7b
+	sbc hl,de		;ad7b   ; por debajo de 0x180 el adelantamiento no suena
 	ret c			;ad7d
 	ld de,00300h		;ad7e
 	set 0,(iy+030h)		;ad81
 	ld a,(0e1c2h)		;ad85
 	bit 5,a		;ad88
 	jr z,L_AD97		;ad8a
-	ld a,006h		;ad8c
+	ld a,006h		;ad8c   ; con dos jugadores suenan los sonidos 6 y 8 y con uno el 4 y el 5, segun lo fuerte que sea el cruce
 	sbc hl,de		;ad8e
 	jr nc,L_AD94		;ad90
 	ld a,008h		;ad92
@@ -2185,13 +2185,13 @@ L_ADA2:
 L_ADA4:
 	pop af			;ada4
 L_ADA5:
-	res 0,(iy+030h)		;ada5
+	res 0,(iy+030h)		;ada5   ; al separarse se limpia la marca: el cruce siguiente volvera a contar
 	ret			;ada9
 L_ADAA:
-	ld a,(0e214h)		;adaa
+	ld a,(0e214h)		;adaa   ; aqui se recalcula el puesto del jugador al cruzarse con un rival
 	and a			;adad
 	ret nz			;adae
-	bit 1,(iy+001h)		;adaf
+	bit 1,(iy+001h)		;adaf   ; ni el que ya llego ni el rival que ya llego cuentan
 	ret nz			;adb3
 	bit 1,(ix+001h)		;adb4
 	ret nz			;adb8
@@ -2200,26 +2200,26 @@ L_ADAA:
 	bit 7,(iy+030h)		;adbe
 	jr nz,L_AE03		;adc2
 	ld a,(ix+071h)		;adc4
-	dec a			;adc7
+	dec a			;adc7   ; el que va primero no puede subir mas
 	jr z,L_AE03		;adc8
 	ld a,(ix-002h)		;adca
 	and a			;adcd
 	jr z,L_AE03		;adce
-	ld hl,0e1fch		;add0
+	ld hl,0e1fch		;add0   ; y hasta que no falten menos de dos vueltas, el puesto no se toca
 	sub (hl)			;add3
 	cp 002h		;add4
 	jr c,L_AE03		;add6
-	ld a,(ix+07eh)		;add8
+	ld a,(ix+07eh)		;add8   ; (ix+7E) es el ritmo: por debajo de el no se sube de puesto
 	cp (ix+071h)		;addb
 	jr z,L_AE03		;adde
 	jp m,L_AE03		;ade0
 	ld a,(ix+030h)		;ade3
-	xor 002h		;ade6
+	xor 002h		;ade6   ; el `xor 2` alterna: solo uno de cada dos cruces cuenta
 	ld (ix+030h),a		;ade8
 	bit 1,(ix+030h)		;adeb
 	jr nz,L_AE03		;adef
 L_ADF1:
-	bit 7,(iy+000h)		;adf1
+	bit 7,(iy+000h)		;adf1   ; el bit 7 del tipo del rival dice si es de los rapidos
 	jp z,L_AEC3		;adf5
 	jr L_AE0E		;adf8
 L_ADFA:
@@ -2227,18 +2227,18 @@ L_ADFA:
 	jp nz,L_AEC3		;adfe
 	jr L_AE0E		;ae01
 L_AE03:
-	ld a,(ix+071h)		;ae03
+	ld a,(ix+071h)		;ae03   ; los puestos 1 y 99 se tratan aparte: son los extremos
 	cp 001h		;ae06
 	jr z,L_ADF1		;ae08
 	cp 063h		;ae0a
 	jr z,L_ADFA		;ae0c
 L_AE0E:
-	bit 7,(iy+029h)		;ae0e
+	bit 7,(iy+029h)		;ae0e   ; el bit 7 de la distancia dice si el rival va por detras
 	ld b,(ix+071h)		;ae12
 	jr nz,L_AE6E		;ae15
-	call L_AEE5		;ae17
+	call L_AEE5		;ae17   ; los rivales rapidos van por otra rama
 	jr c,L_AE3F		;ae1a
-	bit 7,(iy+030h)		;ae1c
+	bit 7,(iy+030h)		;ae1c   ; el bit 7 dice si el rival ya conto en un cruce anterior
 	jr nz,L_AE60		;ae20
 	ld a,(ix+05eh)		;ae22
 	rra			;ae25
@@ -2249,7 +2249,7 @@ L_AE0E:
 	jr nz,L_AE31		;ae2e
 	inc a			;ae30
 L_AE31:
-	sub 064h		;ae31
+	sub 064h		;ae31   ; el puesto se cuenta desde 99 hacia abajo
 	neg		;ae33
 	inc b			;ae35
 	cp b			;ae36
@@ -2257,7 +2257,7 @@ L_AE31:
 	ld (ix+071h),b		;ae3a
 	jr L_AE4E		;ae3d
 L_AE3F:
-	inc b			;ae3f
+	inc b			;ae3f   ; adelantado por el rival: un puesto mas, sin pasar de 99
 	ld a,b			;ae40
 	cp 064h		;ae41
 	jr nc,L_AEBF		;ae43
@@ -2267,14 +2267,14 @@ L_AE3F:
 L_AE4E:
 	call L_AECE		;ae4e
 L_AE51:
-	set 7,(iy+030h)		;ae51
+	set 7,(iy+030h)		;ae51   ; y se marca el rival como ya contado
 	ld a,(ix+071h)		;ae55
 	cp 063h		;ae58
 	ret nz			;ae5a
 	res 7,(iy+000h)		;ae5b
 	ret			;ae5f
 L_AE60:
-	inc b			;ae60
+	inc b			;ae60   ; la otra rama, la del rival que ya contaba
 	ld a,b			;ae61
 	cp 064h		;ae62
 	jr nc,L_AEC3		;ae64
@@ -2282,7 +2282,7 @@ L_AE60:
 	call L_AEC8		;ae69
 	jr L_AE51		;ae6c
 L_AE6E:
-	call L_AEE5		;ae6e
+	call L_AEE5		;ae6e   ; y todo lo de arriba otra vez, para el caso de que el rival vaya delante
 	jr c,L_AE91		;ae71
 	bit 7,(iy+030h)		;ae73
 	jr nz,L_AEAE		;ae77
@@ -2290,7 +2290,7 @@ L_AE6E:
 	rra			;ae7c
 	rra			;ae7d
 	rra			;ae7e
-	and 007h		;ae7f
+	and 007h		;ae7f   ; tres bits de (ix+30): cuantos puestos se ganan de golpe
 	bit 2,(ix+030h)		;ae81
 	jr z,L_AE88		;ae85
 	inc a			;ae87
@@ -2301,7 +2301,7 @@ L_AE88:
 	ld (ix+071h),b		;ae8c
 	jr L_AE9D		;ae8f
 L_AE91:
-	dec b			;ae91
+	dec b			;ae91   ; adelantar sube un puesto, hasta el primero
 	jr z,L_AEB9		;ae92
 	ld (ix+071h),b		;ae94
 	res 2,(ix+030h)		;ae97
@@ -2313,7 +2313,7 @@ L_AEA0:
 	ld a,(ix+071h)		;aea4
 	dec a			;aea7
 	ret nz			;aea8
-	set 7,(iy+000h)		;aea9
+	set 7,(iy+000h)		;aea9   ; y al llegar al primero se le quita al rival la marca de rapido
 	ret			;aead
 L_AEAE:
 	dec b			;aeae
@@ -2325,12 +2325,12 @@ L_AEB9:
 	res 2,(ix+030h)		;aeb9
 	jr L_AEC3		;aebd
 L_AEBF:
-	set 2,(ix+030h)		;aebf
+	set 2,(ix+030h)		;aebf   ; y aqui se enciende, que se ha ido al ultimo
 L_AEC3:
-	set 6,(iy+030h)		;aec3
+	set 6,(iy+030h)		;aec3   ; el bit 6 marca al rival como ya contado en este cruce
 	ret			;aec7
 L_AEC8:
-	push ix		;aec8
+	push ix		;aec8   ; las cuatro puertas de aqui abajo suben o bajan las cuentas de los de delante y los de detras
 	pop hl			;aeca
 	call MENOS_UNO_DETRAS		;aecb
 L_AECE:
@@ -2349,14 +2349,14 @@ L_AEE0:
 	ld a,(ix+000h)		;aee0
 	jr L_AEE8		;aee3
 L_AEE5:
-	ld a,(iy+000h)		;aee5
+	ld a,(iy+000h)		;aee5   ; los tipos 8 y 9 son los rivales rapidos
 L_AEE8:
 	and 00fh		;aee8
 	sub 008h		;aeea
 	cp 002h		;aeec
 	ret			;aeee
 L_AEEF:
-	ld a,(ix+05dh)		;aeef
+	ld a,(ix+05dh)		;aeef   ; el toque entre el coche y un rival, con los dos rodando
 	cp 000h		;aef2
 	ret nz			;aef4
 	ld a,(iy+000h)		;aef5
@@ -2364,32 +2364,32 @@ L_AEEF:
 	cp 00fh		;aefa
 	ret z			;aefc
 	ld a,(ix+004h)		;aefd
-	add a,008h		;af00
+	add a,008h		;af00   ; ocho pixeles de margen para que se considere toque
 	cp (iy+004h)		;af02
 	call c,L_AF32		;af05
 	ret c			;af08
-	set 7,(ix+001h)		;af09
+	set 7,(ix+001h)		;af09   ; los dos quedan marcados con el bit 7: el toque los descoloca
 	set 7,(iy+001h)		;af0d
 	ld a,(iy+026h)		;af11
 	and a			;af14
 	jp nz,L_B158		;af15
-	ld a,017h		;af18
+	ld a,017h		;af18   ; el sonido 0x17 es el golpe
 	call 0867bh		;af1a
-	ld (ix+026h),001h		;af1d
+	ld (ix+026h),001h		;af1d   ; uno queda como 1 y el otro como 2: quien empujo a quien
 	ld (iy+026h),002h		;af21
-	call L_B24A		;af25
+	call L_B24A		;af25   ; y el golpe desgasta al coche
 	add a,(ix+064h)		;af28
 	ld (ix+064h),a		;af2b
 	exx			;af2e
 	jp L_B01D		;af2f
 L_AF32:
-	ld a,(iy+000h)		;af32
+	ld a,(iy+000h)		;af32   ; los rivales rapidos solo cuentan si ademas van mas despacio
 	and 00fh		;af35
 	sub 008h		;af37
 	cp 002h		;af39
 	ccf			;af3b
 	ret nc			;af3c
-	ld a,(ix+008h)		;af3d
+	ld a,(ix+008h)		;af3d   ; solo si ademas el rival va mas despacio
 	sub 001h		;af40
 	cp (iy+008h)		;af42
 	ccf			;af45
@@ -2398,10 +2398,10 @@ L_AF32:
 	scf			;af4a
 	ret			;af4b
 L_AF4C:
-	call L_B00C		;af4c
+	call L_B00C		;af4c   ; el toque entre dos rivales: se separan un pixel cada uno
 	ld a,(ix+004h)		;af4f
 	cp (iy+004h)		;af52
-	ld d,001h		;af55
+	ld d,001h		;af55   ; D dice hacia donde se aparta cada uno
 	jr nc,L_AF5B		;af57
 	ld d,0ffh		;af59
 L_AF5B:
@@ -2413,23 +2413,23 @@ L_AF5B:
 	add a,(iy+004h)		;af65
 	ld (iy+004h),a		;af68
 	bit 7,d		;af6b
-	call L_AFAB		;af6d
+	call L_AFAB		;af6d   ; y al que va detras se le quita velocidad
 	ld a,(ix+006h)		;af70
 	cp (iy+006h)		;af73
-	ld d,010h		;af76
+	ld d,010h		;af76   ; de lado el empujon es de 0x10, y se reparte entre los dos
 	jr nc,L_AF7C		;af78
 	ld d,0f0h		;af7a
 L_AF7C:
 	ld a,(ix+036h)		;af7c
-	call L_AFC3		;af7f
+	call L_AFC3		;af7f   ; la suma con tope, para no pasarse de lado
 	ld (ix+036h),c		;af82
 	ld a,d			;af85
 	neg		;af86
 	ld d,a			;af88
-	ld a,(iy+036h)		;af89
+	ld a,(iy+036h)		;af89   ; y lo mismo con el otro coche
 	call L_AFC3		;af8c
 	ld (iy+036h),c		;af8f
-	sra d		;af92
+	sra d		;af92   ; cuatro corrimientos con signo: el empujon de lado se aplica en decimosextas partes
 	sra d		;af94
 	sra d		;af96
 	sra d		;af98
@@ -2442,7 +2442,7 @@ L_AF7C:
 	ld (ix+006h),a		;afa7
 	ret			;afaa
 L_AFAB:
-	bit 7,d		;afab
+	bit 7,d		;afab   ; el que pierde velocidad es siempre el de detras
 	jr nz,L_AFB9		;afad
 	ld a,(ix+011h)		;afaf
 	sub 001h		;afb2
@@ -2456,7 +2456,7 @@ L_AFB9:
 	ld (iy+011h),a		;afbf
 	ret			;afc2
 L_AFC3:
-	or a			;afc3
+	or a			;afc3   ; la suma con tope: si al sumar cambia el signo, se queda como estaba
 	ld e,a			;afc4
 	jp p,L_AFCB		;afc5
 	sub d			;afc8
@@ -2470,19 +2470,19 @@ L_AFCC:
 	ld c,e			;afcf
 	ret			;afd0
 L_AFD1:
-	set 7,(ix+001h)		;afd1
+	set 7,(ix+001h)		;afd1   ; el choque entre los DOS JUGADORES: los dos marcados y los dos desgastados
 	set 7,(iy+001h)		;afd5
 	bit 0,(ix+05eh)		;afd9
 	ret nz			;afdd
-	ld a,(0e161h)		;afde
+	ld a,(0e161h)		;afde   ; y el sonido no se repite si ya estaba sonando
 	cp 017h		;afe1
 	jr z,L_AFEA		;afe3
 	ld a,017h		;afe5
 	call 04174h		;afe7
 L_AFEA:
 	set 0,(ix+05eh)		;afea
-	set 0,(iy+05eh)		;afee
-	ld (ix+026h),001h		;aff2
+	set 0,(iy+05eh)		;afee   ; los dos coches quedan marcados
+	ld (ix+026h),001h		;aff2   ; los dos quedan marcados como tocados
 	ld (iy+026h),001h		;aff6
 	call L_B24A		;affa
 	add a,(ix+064h)		;affd
@@ -2492,7 +2492,7 @@ L_AFEA:
 	exx			;b009
 	jr L_B01D		;b00a
 L_B00C:
-	ld a,(iy+000h)		;b00c
+	ld a,(iy+000h)		;b00c   ; el tipo 15 no participa en golpes
 	and 00fh		;b00f
 	cp 00fh		;b011
 	ret z			;b013
@@ -2502,7 +2502,7 @@ L_B00C:
 	ret z			;b01b
 	exx			;b01c
 L_B01D:
-	ld c,(iy+007h)		;b01d
+	ld c,(iy+007h)		;b01d   ; el reparto del golpe: primero vx de los dos...
 	ld b,(iy+008h)		;b020
 	ld e,(ix+007h)		;b023
 	ld d,(ix+008h)		;b026
@@ -2513,7 +2513,7 @@ L_B01D:
 	ld (ix+007h),l		;b033
 	ld (ix+008h),h		;b036
 	exx			;b039
-	call L_B265		;b03a
+	call L_B265		;b03a   ; ...y luego vy
 	ld c,(iy+00ah)		;b03d
 	ld b,(iy+00bh)		;b040
 	ld e,(ix+00ah)		;b043
@@ -2525,13 +2525,13 @@ L_B01D:
 	ld (ix+00ah),l		;b053
 	ld (ix+00bh),h		;b056
 	exx			;b059
-	call L_B2F6		;b05a
+	call L_B2F6		;b05a   ; y al final se copia el resultado a las parejas de dos jugadores
 	jp L_B0E8		;b05d
 L_B060:
-	ld h,b			;b060
+	ld h,b			;b060   ; la vx nueva de los dos es la media mas o menos la cuarta parte de la diferencia: un choque elastico a medias
 	ld l,c			;b061
 	add hl,de			;b062
-	sra h		;b063
+	sra h		;b063   ; la media de las dos velocidades
 	rr l		;b065
 	ex de,hl			;b067
 	or a			;b068
@@ -2544,22 +2544,22 @@ L_B060:
 	cpl			;b070
 	ld l,a			;b071
 	inc hl			;b072
-	sra h		;b073
+	sra h		;b073   ; y la diferencia entre ellas, en valor absoluto, dividida por cuatro
 	rr l		;b075
 	sra h		;b077
 	rr l		;b079
 	or a			;b07b
 	adc hl,de		;b07c
-	jp m,L_B084		;b07e
+	jp m,L_B084		;b07e   ; si sale positiva se queda a cero: no se puede rebotar hacia delante
 	ld hl,00000h		;b081
 L_B084:
-	push hl			;b084
+	push hl			;b084   ; la vy del segundo se calcula igual que la del primero
 	ld h,b			;b085
 	ld l,c			;b086
 	or a			;b087
 	sbc hl,de		;b088
 	push hl			;b08a
-	ld a,h			;b08b
+	ld a,h			;b08b   ; la diferencia, esta vez del otro
 	cpl			;b08c
 	ld h,a			;b08d
 	ld a,l			;b08e
@@ -2572,7 +2572,7 @@ L_B084:
 	rr l		;b098
 	or a			;b09a
 	adc hl,de		;b09b
-	jp m,L_B0A3		;b09d
+	jp m,L_B0A3		;b09d   ; y tampoco puede salir positiva
 	ld hl,00000h		;b0a0
 L_B0A3:
 	exx			;b0a3
@@ -2581,12 +2581,12 @@ L_B0A3:
 	pop de			;b0a6
 	ret			;b0a7
 L_B0A8:
-	ld h,b			;b0a8
+	ld h,b			;b0a8   ; lo mismo con vy, pero repartiendo por OCHO en vez de por cuatro: de lado el golpe es mas suave
 	ld l,c			;b0a9
 	add hl,de			;b0aa
 	sra h		;b0ab
 	rr l		;b0ad
-	ex de,hl			;b0af
+	ex de,hl			;b0af   ; la media queda en DE y la diferencia se calcula contra ella
 	or a			;b0b0
 	sbc hl,de		;b0b1
 	push hl			;b0b3
@@ -2597,19 +2597,19 @@ L_B0A8:
 	cpl			;b0b8
 	ld l,a			;b0b9
 	inc hl			;b0ba
-	sra h		;b0bb
+	sra h		;b0bb   ; tres corrimientos, o sea entre ocho
 	rr l		;b0bd
 	sra h		;b0bf
 	rr l		;b0c1
 	sra h		;b0c3
 	rr l		;b0c5
 	add hl,de			;b0c7
-	push hl			;b0c8
+	push hl			;b0c8   ; la vy nueva del primero
 	ld h,b			;b0c9
 	ld l,c			;b0ca
 	or a			;b0cb
 	sbc hl,de		;b0cc
-	push hl			;b0ce
+	push hl			;b0ce   ; y ahora la del segundo, con la resta al reves
 	ld a,h			;b0cf
 	cpl			;b0d0
 	ld h,a			;b0d1
@@ -2623,36 +2623,36 @@ L_B0A8:
 	rr l		;b0dc
 	sra h		;b0de
 	rr l		;b0e0
-	add hl,de			;b0e2
+	add hl,de			;b0e2   ; el resultado se suma a la media
 	exx			;b0e3
 	pop bc			;b0e4
 	pop hl			;b0e5
 	pop de			;b0e6
 	ret			;b0e7
 L_B0E8:
-	push ix		;b0e8
+	push ix		;b0e8   ; y aqui la velocidad del golpe se le copia a la pareja del objeto en la otra pantalla
 	ld l,(ix+024h)		;b0ea
 	ld h,(ix+025h)		;b0ed
 	ld a,h			;b0f0
 	or l			;b0f1
 	jr z,L_B10F		;b0f2
-	ld e,(ix+007h)		;b0f4
+	ld e,(ix+007h)		;b0f4   ; las dos velocidades del objeto
 	ld d,(ix+008h)		;b0f7
 	ld c,(ix+00ah)		;b0fa
 	ld b,(ix+00bh)		;b0fd
 	push hl			;b100
 	pop ix		;b101
-	ld (ix+007h),e		;b103
+	ld (ix+007h),e		;b103   ; y se escriben en su pareja de la otra pantalla
 	ld (ix+008h),d		;b106
 	ld (ix+00ah),c		;b109
 	ld (ix+00bh),b		;b10c
 L_B10F:
-	ld l,(iy+024h)		;b10f
+	ld l,(iy+024h)		;b10f   ; lo mismo para el otro
 	ld h,(iy+025h)		;b112
 	ld a,h			;b115
 	or l			;b116
 	jr z,L_B134		;b117
-	ld e,(iy+007h)		;b119
+	ld e,(iy+007h)		;b119   ; lo mismo para el segundo
 	ld d,(iy+008h)		;b11c
 	ld c,(iy+00ah)		;b11f
 	ld b,(iy+00bh)		;b122
@@ -2666,7 +2666,7 @@ L_B134:
 	pop ix		;b134
 	ret			;b136
 L_B137:
-	ld e,(ix+00ah)		;b137
+	ld e,(ix+00ah)		;b137   ; con los dos parados de lado, uno se aparta ocho pixeles
 	ld d,(ix+00bh)		;b13a
 	ld a,e			;b13d
 	or d			;b13e
@@ -2676,7 +2676,7 @@ L_B137:
 	ld a,e			;b146
 	or d			;b147
 	ret nz			;b148
-	ld a,(0ea70h)		;b149
+	ld a,(0ea70h)		;b149   ; y el bit 7 de EA70 decide hacia que lado
 	bit 7,a		;b14c
 	ld a,008h		;b14e
 	jr z,L_B154		;b150
@@ -2685,10 +2685,10 @@ L_B154:
 	ld (ix+00ch),a		;b154
 	ret			;b157
 L_B158:
-	dec (iy+026h)		;b158
+	dec (iy+026h)		;b158   ; (iy+26) baja: el toque se va gastando
 	ret nz			;b15b
 L_B15C:
-	push bc			;b15c
+	push bc			;b15c   ; aqui se intercambian IX e IY para resolver el golpe desde el otro lado
 	push ix		;b15d
 	push iy		;b15f
 	push ix		;b161
@@ -2700,12 +2700,12 @@ L_B15C:
 	call L_B559		;b16b
 	ld e,(ix+024h)		;b16e
 	ld d,(ix+025h)		;b171
-	ld a,021h		;b174
+	ld a,021h		;b174   ; el sonido 0x21 es el roce entre coches
 	call 08674h		;b176
 	ld a,d			;b179
 	or e			;b17a
 	jr z,L_B183		;b17b
-	push de			;b17d
+	push de			;b17d   ; y si el objeto tiene pareja en la otra pantalla, se le hace lo mismo
 	pop ix		;b17e
 	call L_B559		;b180
 L_B183:
@@ -2714,7 +2714,7 @@ L_B183:
 	pop bc			;b187
 	ret			;b188
 L_B189:
-	ld a,(0e1c2h)		;b189
+	ld a,(0e1c2h)		;b189   ; con dos jugadores esto no corre: los puestos van por otro lado
 	bit 5,a		;b18c
 	ret nz			;b18e
 	call L_B1D3		;b18f
@@ -2724,7 +2724,7 @@ L_B189:
 	jr c,L_B1C1		;b19b
 	ld b,(iy+071h)		;b19d
 	ld a,(iy+030h)		;b1a0
-	rra			;b1a3
+	rra			;b1a3   ; tres bits de (iy+30): cuantos puestos vale el adelantamiento
 	rra			;b1a4
 	rra			;b1a5
 	and 007h		;b1a6
@@ -2732,7 +2732,7 @@ L_B189:
 	jr z,L_B1AF		;b1ac
 	inc a			;b1ae
 L_B1AF:
-	dec b			;b1af
+	dec b			;b1af   ; y no se sube por encima de lo que ya tiene el de delante
 	cp b			;b1b0
 	ret nc			;b1b1
 	bit 6,(ix+030h)		;b1b2
@@ -2744,7 +2744,7 @@ L_B1BB:
 	jr c,L_B1CE		;b1be
 	ret			;b1c0
 L_B1C1:
-	res 2,(iy+030h)		;b1c1
+	res 2,(iy+030h)		;b1c1   ; el rival adelantado baja un puesto, sin llegar a cero
 	ld a,(iy+071h)		;b1c5
 	dec a			;b1c8
 	ret z			;b1c9
@@ -2754,9 +2754,9 @@ L_B1CE:
 	res 2,(iy+030h)		;b1ce
 	ret			;b1d2
 L_B1D3:
-	push ix		;b1d3
+	push ix		;b1d3   ; antes de recolocar se repasan los cinco rivales para saber cuantos van delante y cuantos detras
 	set 3,(ix+030h)		;b1d5
-	ld a,(iy+030h)		;b1d9
+	ld a,(iy+030h)		;b1d9   ; se limpian los bits de cuenta antes de recontar
 	and 0c7h		;b1dc
 	ld (iy+030h),a		;b1de
 	ld a,(iy+05eh)		;b1e1
@@ -2769,7 +2769,7 @@ L_B1F2:
 	ld a,(ix+000h)		;b1f2
 	and a			;b1f5
 	jr z,L_B23F		;b1f6
-	cp 00fh		;b1f8
+	cp 00fh		;b1f8   ; el tipo 15 no cuenta, ni los que tienen algo en el nibble alto
 	jr z,L_B23F		;b1fa
 	and 070h		;b1fc
 	jr nz,L_B23F		;b1fe
@@ -2779,7 +2779,7 @@ L_B1F2:
 	jr c,L_B23F		;b209
 	bit 6,(ix+030h)		;b20b
 	jr nz,L_B23F		;b20f
-	ld a,(iy+004h)		;b211
+	ld a,(iy+004h)		;b211   ; y se reparten en dos cuentas segun vayan por delante o por detras
 	cp (ix+004h)		;b214
 	jr nc,L_B22D		;b217
 	bit 7,(ix+030h)		;b219
@@ -2807,14 +2807,14 @@ L_B23F:
 	pop ix		;b247
 	ret			;b249
 L_B24A:
-	exx			;b24a
+	exx			;b24a   ; el desgaste del golpe sale de la diferencia de velocidades entre cuatro, mas uno
 	ld e,(ix+010h)		;b24b
 	ld d,(ix+011h)		;b24e
 	ld l,(iy+010h)		;b251
 	ld h,(iy+011h)		;b254
 	or a			;b257
 	sbc hl,de		;b258
-	call c,04b04h		;b25a
+	call c,04b04h		;b25a   ; la diferencia en valor absoluto
 	ld a,h			;b25d
 	srl a		;b25e
 	srl a		;b260
@@ -2822,10 +2822,10 @@ L_B24A:
 	exx			;b263
 	ret			;b264
 L_B265:
-	ld a,(ix+000h)		;b265
+	ld a,(ix+000h)		;b265   ; el golpe tambien mueve el angulo: cuatro grados por un lado y ocho por el otro
 	or a			;b268
 	jr z,L_B291		;b269
-	ld a,(iy+000h)		;b26b
+	ld a,(iy+000h)		;b26b   ; con los dos siendo objetos, el reparto es otro
 	or a			;b26e
 	jr nz,L_B2C7		;b26f
 	call L_B291		;b271
@@ -2836,7 +2836,7 @@ L_B265:
 L_B27C:
 	add a,(ix+00ch)		;b27c
 	ld (ix+00ch),a		;b27f
-	bit 7,b		;b282
+	bit 7,b		;b282   ; el segundo giro, de ocho grados
 	ld a,008h		;b284
 	jr nz,L_B28A		;b286
 	neg		;b288
@@ -2845,16 +2845,16 @@ L_B28A:
 	ld (ix+00ch),a		;b28d
 	ret			;b290
 L_B291:
-	ld h,(ix+004h)		;b291
+	ld h,(ix+004h)		;b291   ; y separa a los dos por su eje largo, restando dos veces
 	ld l,(ix+003h)		;b294
 	or a			;b297
 	sbc hl,de		;b298
 	or a			;b29a
-	sbc hl,de		;b29b
+	sbc hl,de		;b29b   ; la segunda resta: el desplazamiento es el doble
 	call L_B2B9		;b29d
 	ld (ix+004h),h		;b2a0
 	ld (ix+003h),l		;b2a3
-	ld h,(iy+004h)		;b2a6
+	ld h,(iy+004h)		;b2a6   ; y al otro coche se le hace lo mismo en sentido contrario
 	ld l,(iy+003h)		;b2a9
 	or a			;b2ac
 	sbc hl,bc		;b2ad
@@ -2864,7 +2864,7 @@ L_B291:
 	ld (iy+003h),l		;b2b5
 	ret			;b2b8
 L_B2B9:
-	ld a,(iy+000h)		;b2b9
+	ld a,(iy+000h)		;b2b9   ; con un rival rapido la separacion es de tres restas y no de dos
 	and 00fh		;b2bc
 	sub 008h		;b2be
 	cp 002h		;b2c0
@@ -2873,18 +2873,18 @@ L_B2B9:
 	sbc hl,de		;b2c4
 	ret			;b2c6
 L_B2C7:
-	call L_B291		;b2c7
+	call L_B291		;b2c7   ; cuando los dos son objetos, las velocidades se promedian: se quedan casi iguales
 	ld b,(ix+011h)		;b2ca
 	ld c,(ix+010h)		;b2cd
 	ld d,(iy+011h)		;b2d0
 	ld e,(iy+010h)		;b2d3
 	ld h,b			;b2d6
 	ld l,c			;b2d7
-	add hl,de			;b2d8
+	add hl,de			;b2d8   ; la media de las dos...
 	sra h		;b2d9
 	rr l		;b2db
 	ex de,hl			;b2dd
-	add hl,de			;b2de
+	add hl,de			;b2de   ; ...y luego cada uno se acerca a la media a medias
 	sra h		;b2df
 	rr l		;b2e1
 	ld (iy+011h),h		;b2e3
@@ -2897,16 +2897,16 @@ L_B2C7:
 	ld (ix+010h),l		;b2f2
 	ret			;b2f5
 L_B2F6:
-	ld h,(ix+006h)		;b2f6
+	ld h,(ix+006h)		;b2f6   ; y por el eje corto, el mismo reparto
 	ld l,(ix+005h)		;b2f9
-	or a			;b2fc
+	or a			;b2fc   ; dos restas: la separacion por el eje corto
 	sbc hl,de		;b2fd
 	or a			;b2ff
 	sbc hl,de		;b300
 	call L_B2B9		;b302
 	ld (ix+006h),h		;b305
 	ld (ix+005h),l		;b308
-	ld h,(iy+006h)		;b30b
+	ld h,(iy+006h)		;b30b   ; y al otro se le suma lo mismo por el lado contrario
 	ld l,(iy+005h)		;b30e
 	or a			;b311
 	sbc hl,bc		;b312
@@ -2916,7 +2916,7 @@ L_B2F6:
 	ld (iy+005h),l		;b31a
 	ld a,(ix+000h)		;b31d
 	or a			;b320
-	ld hl,00810h		;b321
+	ld hl,00810h		;b321   ; el giro del golpe es mayor si el que lo recibe es el coche del jugador (8 y 16) que si es un rival (3 y 3)
 	jr z,L_B329		;b324
 	ld hl,00303h		;b326
 L_B329:
@@ -2927,7 +2927,7 @@ L_B329:
 L_B330:
 	add a,(ix+00ch)		;b330
 	ld (ix+00ch),a		;b333
-	bit 7,b		;b336
+	bit 7,b		;b336   ; y el segundo, con el otro valor de la pareja
 	ld a,l			;b338
 	jr nz,L_B33D		;b339
 	neg		;b33b
@@ -2936,22 +2936,22 @@ L_B33D:
 	ld (ix+00ch),a		;b340
 	ret			;b343
 L_B344:
-	push hl			;b344
+	push hl			;b344   ; el bit 6 de E1C2 dice si hay jugador 1
 	ld hl,0e1c2h		;b345
 	bit 6,(hl)		;b348
 	pop hl			;b34a
 	jr nz,L_B365		;b34b
 	jr L_B368		;b34d
 L_B34F:
-	ld e,080h		;b34f
+	ld e,080h		;b34f   ; por aqui se entra con la fila ya puesta
 	jr L_B362		;b351
 L_B353:
-	ld a,(0e1c3h)		;b353
+	ld a,(0e1c3h)		;b353   ; el rival mira la pista un fotograma de cada dos, y a cada uno le toca uno
 	add a,(ix+009h)		;b356
 	and 001h		;b359
 	ret nz			;b35b
 	ld a,(ix+004h)		;b35c
-	sub 018h		;b35f
+	sub 018h		;b35f   ; veinticuatro pixeles por delante del coche
 	ld e,a			;b361
 L_B362:
 	call 04adch		;b362
@@ -2959,9 +2959,9 @@ L_B365:
 	xor a			;b365
 	ld c,000h		;b366
 L_B368:
-	cp (hl)			;b368
+	cp (hl)			;b368   ; cuatro casillas de la fila, de dos en dos columnas y con la vuelta del `res 6,l`
 	call nz,L_B387		;b369
-	inc l			;b36c
+	inc l			;b36c   ; dos columnas de separacion y la vuelta con `res 6,l`
 	inc l			;b36d
 	res 6,l		;b36e
 	cp (hl)			;b370
@@ -2971,7 +2971,7 @@ L_B368:
 	res 6,l		;b376
 	cp (hl)			;b378
 	call nz,L_B387		;b379
-	inc l			;b37c
+	inc l			;b37c   ; la tercera casilla
 	inc l			;b37d
 	res 6,l		;b37e
 	cp (hl)			;b380
@@ -2980,7 +2980,7 @@ L_B368:
 	scf			;b385
 	ret			;b386
 L_B387:
-	ld a,c			;b387
+	ld a,c			;b387   ; la primera casilla que no coincida se queda como candidata
 	or a			;b388
 	jr nz,L_B38E		;b389
 	ld c,(hl)			;b38b
@@ -2992,18 +2992,18 @@ L_B38E:
 	xor a			;b392
 	ret			;b393
 L_B394:
-	ld b,a			;b394
+	ld b,a			;b394   ; los tiles 0xC0, 0xC6 y 0xC7 mandan sobre los demas: si sale uno de ellos, es el que cuenta
 	ld a,0c0h		;b395
 	cp b			;b397
 	ret z			;b398
 	cp c			;b399
 	ret z			;b39a
-	ld a,0c6h		;b39b
+	ld a,0c6h		;b39b   ; los tres tiles que mandan son el 0xC0, el 0xC6 y el 0xC7
 	cp b			;b39d
 	ret z			;b39e
 	cp c			;b39f
 	ret z			;b3a0
-	ld a,0c7h		;b3a1
+	ld a,0c7h		;b3a1   ; y el ultimo de ellos
 	cp b			;b3a3
 	ret z			;b3a4
 	cp c			;b3a5
@@ -3011,12 +3011,12 @@ L_B394:
 	ld a,c			;b3a7
 	ret			;b3a8
 L_B3A9:
-	xor a			;b3a9
+	xor a			;b3a9   ; la lectura del teclado para escribir la contrasena, linea por linea de la matriz
 	ld d,a			;b3aa
 	ld e,030h		;b3ab
 	call L_B418		;b3ad
 	ld a,001h		;b3b0
-	call 00141h		;b3b2   ; BIOS SNSMAT - Returns the value of the specified line from the keyboard matrix
+	call 00141h		;b3b2   ; BIOS SNSMAT - Returns the value of the specified line from the keyboard matrix | la linea 1 son los digitos y las dos primeras letras
 	cpl			;b3b5
 	and 003h		;b3b6
 	jr z,L_B3C2		;b3b8
@@ -3028,12 +3028,12 @@ L_B3BF:
 	ld e,a			;b3c1
 L_B3C2:
 	ld a,002h		;b3c2
-	call 00141h		;b3c4   ; BIOS SNSMAT - Returns the value of the specified line from the keyboard matrix
+	call 00141h		;b3c4   ; BIOS SNSMAT - Returns the value of the specified line from the keyboard matrix | la linea 2 son las letras siguientes
 	cpl			;b3c7
 	rla			;b3c8
 	rla			;b3c9
 	rla			;b3ca
-	and 003h		;b3cb
+	and 003h		;b3cb   ; tres rotaciones para llegar a los bits que interesan
 	jr z,L_B3D7		;b3cd
 	cp 003h		;b3cf
 	jr nz,L_B3D4		;b3d1
@@ -3045,17 +3045,17 @@ L_B3D7:
 	ld a,003h		;b3d7
 	ld d,e			;b3d9
 	ld e,043h		;b3da
-	call L_B418		;b3dc
+	call L_B418		;b3dc   ; la linea 3 son mas letras
 	ld a,004h		;b3df
 	ld d,e			;b3e1
 	ld e,04bh		;b3e2
-	call L_B418		;b3e4
+	call L_B418		;b3e4   ; la 4 y la 5, el resto del abecedario
 	ld a,005h		;b3e7
 	ld d,e			;b3e9
 	ld e,053h		;b3ea
 	call L_B418		;b3ec
 	ld a,007h		;b3ef
-	call 00141h		;b3f1   ; BIOS SNSMAT - Returns the value of the specified line from the keyboard matrix
+	call 00141h		;b3f1   ; BIOS SNSMAT - Returns the value of the specified line from the keyboard matrix | la linea 7 trae el intro y el borrado
 	rla			;b3f4
 	jr c,L_B3F9		;b3f5
 	ld e,00dh		;b3f7
@@ -3065,13 +3065,13 @@ L_B3F9:
 	jr c,L_B3FF		;b3fb
 	ld e,008h		;b3fd
 L_B3FF:
-	ld a,008h		;b3ff
+	ld a,008h		;b3ff   ; y la 8 el espacio
 	call 00141h		;b401   ; BIOS SNSMAT - Returns the value of the specified line from the keyboard matrix
 	rra			;b404
 	jr c,L_B409		;b405
 	ld e,020h		;b407
 L_B409:
-	ld a,(0e243h)		;b409
+	ld a,(0e243h)		;b409   ; la tecla se guarda en E243, y solo cuenta si es distinta de la de antes: eso es el flanco
 	ld d,a			;b40c
 	ld a,e			;b40d
 	ld (0e243h),a		;b40e
@@ -3083,7 +3083,7 @@ L_B416:
 	scf			;b416
 	ret			;b417
 L_B418:
-	call 00141h		;b418   ; BIOS SNSMAT - Returns the value of the specified line from the keyboard matrix
+	call 00141h		;b418   ; BIOS SNSMAT - Returns the value of the specified line from the keyboard matrix | ocho bits por linea, y el primero que este pulsado gana
 	cpl			;b41b
 	ld b,008h		;b41c
 L_B41E:
@@ -3092,9 +3092,9 @@ L_B41E:
 	inc e			;b420
 	djnz L_B41E		;b421
 	ld e,d			;b423
-	ret			;b424
+	ret			;b424   ; y si ninguna tecla de la linea vale, se devuelve la de antes
 L_B425:
-	ld ix,0e2c0h		;b425
+	ld ix,0e2c0h		;b425   ; el bloque de sombra del coche 2 se rellena con la posicion del 1: la escena y el reloj lo usan de referencia
 	ld iy,0e380h		;b429
 	ld a,(ix+006h)		;b42d
 	ld (iy+006h),a		;b430
@@ -3102,14 +3102,14 @@ L_B425:
 	ld (iy+004h),a		;b436
 	ld l,(ix+03fh)		;b439
 	ld h,(ix+040h)		;b43c
-	add hl,hl			;b43f
+	add hl,hl			;b43f   ; la posicion por cuatro
 	add hl,hl			;b440
 	ld (iy+03fh),l		;b441
 	ld (iy+040h),h		;b444
-	ld (iy+009h),002h		;b447
+	ld (iy+009h),002h		;b447   ; y (iy+9) = 2 manda el dibujo al buffer de EC00
 	ret			;b44b
 L_B44C:
-	call L_B425		;b44c
+	call L_B425		;b44c   ; solo con la repeticion en marcha (E244 >= 2) se pinta el objeto de tiles del coche
 	ld iy,0e2c0h		;b44f
 	ld a,(0e244h)		;b453
 	cp 002h		;b456
@@ -3118,7 +3118,7 @@ L_B44C:
 	ld ix,0e2c0h		;b45c
 	jp L_B49E		;b460
 L_B463:
-	ld ix,0e3d8h		;b463
+	ld ix,0e3d8h		;b463   ; las tres fichas de E3D8 -los rivales de boxes- pintadas como objetos de tiles
 	ld b,003h		;b467
 	exx			;b469
 	ld de,0e947h		;b46a
@@ -3127,10 +3127,10 @@ L_B46E:
 	ld a,(ix+000h)		;b46e
 	and a			;b471
 	jr z,L_B496		;b472
-	call L_B4D5		;b474
+	call L_B4D5		;b474   ; la ficha que no se pinta se salta
 	jr c,L_B496		;b477
 	ld iy,0e380h		;b479
-	call 04a9dh		;b47d
+	call 04a9dh		;b47d   ; la casilla se calcula con el bloque de sombra y luego se devuelve el bueno
 	ld iy,0e2c0h		;b480
 	ld a,l			;b484
 	exx			;b485
@@ -3138,7 +3138,7 @@ L_B46E:
 	ld (de),a			;b487
 	inc de			;b488
 	exx			;b489
-	ld a,h			;b48a
+	ld a,h			;b48a   ; los dos bytes de la casilla se guardan en el juego alterno y en la lista
 	exx			;b48b
 	ld h,a			;b48c
 	ld (de),a			;b48d
@@ -3147,19 +3147,19 @@ L_B46E:
 	call L_B4B7		;b492
 	exx			;b495
 L_B496:
-	ld de,00008h		;b496
+	ld de,00008h		;b496   ; ocho bytes de una ficha a la siguiente
 	add ix,de		;b499
 	djnz L_B46E		;b49b
 	ret			;b49d
 L_B49E:
-	push de			;b49e
+	push de			;b49e   ; 0x4080 es fila 8, columna 16: donde va el objeto del coche en la repeticion
 	ld de,04080h		;b49f
 	ld iy,0e380h		;b4a2
 	call 04a9dh		;b4a6
 	ld iy,0e2c0h		;b4a9
 	pop de			;b4ad
 L_B4AE:
-	ld a,l			;b4ae
+	ld a,l			;b4ae   ; la entrada del objeto de tiles: destino, destino y variante
 	ld (de),a			;b4af
 	inc de			;b4b0
 	ld a,h			;b4b1
@@ -3167,18 +3167,18 @@ L_B4AE:
 	inc de			;b4b3
 	ld a,(ix+018h)		;b4b4
 L_B4B7:
-	sub 003h		;b4b7
+	sub 003h		;b4b7   ; el `sub 3` en bucle es un modulo 3: la carroceria se reduce a tres variantes de dibujo
 	jr nc,L_B4B7		;b4b9
 	add a,003h		;b4bb
 	ld (de),a			;b4bd
 	inc de			;b4be
 	ld a,007h		;b4bf
 L_B4C1:
-	ldi		;b4c1
+	ldi		;b4c1   ; siete filas de cuatro tiles, con la vuelta del kilobyte
 	ldi		;b4c3
 	ldi		;b4c5
 	ldi		;b4c7
-	res 2,h		;b4c9
+	res 2,h		;b4c9   ; el bit 2 de H es la vuelta dentro del kilobyte
 	ld bc,0001ch		;b4cb
 	add hl,bc			;b4ce
 	set 2,h		;b4cf
@@ -3186,7 +3186,7 @@ L_B4C1:
 	jr nz,L_B4C1		;b4d2
 	ret			;b4d4
 L_B4D5:
-	ld a,(ix+001h)		;b4d5
+	ld a,(ix+001h)		;b4d5   ; solo las banderas entre 0x54 y 0x92 valen; el resto no se pinta
 	sub 054h		;b4d8
 	cp 03fh		;b4da
 	ccf			;b4dc
@@ -3195,27 +3195,27 @@ L_B4D5:
 	add a,a			;b4e0
 	add a,a			;b4e1
 	ld e,a			;b4e2
-	ld d,070h		;b4e3
+	ld d,070h		;b4e3   ; 0x70 en D: la plantilla de estos objetos vive en otro sitio
 	or a			;b4e5
 	ret			;b4e6
 L_B4E7:
-	set 7,(ix+001h)		;b4e7
+	set 7,(ix+001h)		;b4e7   ; el rival retirado: se frena solo y parpadea entre los colores 15 y 6
 	call RESTA_OCTAVA_PARTE_A_DOS_PALABRAS		;b4eb
 	ld a,(0e1c3h)		;b4ee
-	and 003h		;b4f1
+	and 003h		;b4f1   ; el color cambia uno de cada cuatro fotogramas
 	ld a,00fh		;b4f3
 	jr z,L_B4F9		;b4f5
 	ld a,006h		;b4f7
 L_B4F9:
 	ld (ix+00fh),a		;b4f9
-	ld a,(0e1c3h)		;b4fc
+	ld a,(0e1c3h)		;b4fc   ; y cada ocho fotogramas se cuenta un paso mas
 	and 007h		;b4ff
 	ret nz			;b501
 	ld a,(ix+027h)		;b502
-	inc a			;b505
+	inc a			;b505   ; y a los tres pasos el objeto se quita del todo
 	ld (ix+027h),a		;b506
 	cp 003h		;b509
-	jp nc,09e2dh		;b50b
+	jp nc,09e2dh		;b50b   ; a los tres pasos el objeto desaparece
 	and 001h		;b50e
 	ld l,a			;b510
 	ld h,000h		;b511
@@ -3224,7 +3224,7 @@ L_B4F9:
 	ld a,(hl)			;b517
 	ld (ix+00eh),a		;b518
 	ld (ix+033h),a		;b51b
-	ld a,(ix+008h)		;b51e
+	ld a,(ix+008h)		;b51e   ; parado del todo, el dibujo es otro (0xF8)
 	or a			;b521
 	ret nz			;b522
 	ld (ix+00eh),0f8h		;b523
@@ -3245,9 +3245,9 @@ DATA_tabla_B52C:
 
 
 RESTA_OCTAVA_PARTE_A_DOS_PALABRAS:		; resta a la palabra (ix+0A,0B) y a la (ix+07,08) su octava parte con signo (p00 0x4A8A = tres `sra h / rr l`)
-	ld h,(ix+00bh)		;b52e
+	ld h,(ix+00bh)		;b52e   ; las dos palabras -vy y vx- pierden su octava parte: es el rozamiento del retirado
 	ld l,(ix+00ah)		;b531
-	ld d,h			;b534
+	ld d,h			;b534   ; la palabra se copia para poder dividirla sin perderla
 	ld e,l			;b535
 	call 04a8ah		;b536
 	ex de,hl			;b539
@@ -3255,7 +3255,7 @@ RESTA_OCTAVA_PARTE_A_DOS_PALABRAS:		; resta a la palabra (ix+0A,0B) y a la (ix+0
 	sbc hl,de		;b53b
 	ld (ix+00bh),h		;b53d
 	ld (ix+00ah),l		;b540
-	ld h,(ix+008h)		;b543
+	ld h,(ix+008h)		;b543   ; y ahora vx
 	ld l,(ix+007h)		;b546
 	ld d,h			;b549
 	ld e,l			;b54a
@@ -3267,15 +3267,15 @@ RESTA_OCTAVA_PARTE_A_DOS_PALABRAS:		; resta a la palabra (ix+0A,0B) y a la (ix+0
 	ld (ix+007h),l		;b555
 	ret			;b558
 L_B559:
-	ld a,(ix+000h)		;b559
+	ld a,(ix+000h)		;b559   ; aqui se retira un rival: el tipo pasa a 0x0F, que es el de "ya no corre"
 	or a			;b55c
 	ret z			;b55d
 	and 00fh		;b55e
 	sub 008h		;b560
 	cp 002h		;b562
-	call c,07ff6h		;b564
+	call c,07ff6h		;b564   ; los rivales rapidos avisan a p01 antes de irse
 	ld a,(iy+05ah)		;b567
-	cp 0e0h		;b56a
+	cp 0e0h		;b56a   ; si el coche no se ve en la otra pantalla, se quita sin mas
 	jr nz,L_B574		;b56c
 	bit 0,(ix+031h)		;b56e
 	jr z,L_B590		;b572
@@ -3284,8 +3284,8 @@ L_B574:
 	ld (ix+000h),00fh		;b577
 L_B57B:
 	ld (ix+00fh),006h		;b57b
-	ld (ix+027h),000h		;b57f
-	set 7,(ix+001h)		;b583
+	ld (ix+027h),000h		;b57f   ; el contador de la retirada empieza a cero
+	set 7,(ix+001h)		;b583   ; el retirado se marca con el bit 7 y se le da el dibujo de humo
 	ld (ix+00eh),0e8h		;b587
 	ld (ix+033h),0e8h		;b58b
 	ret			;b58f
@@ -3295,7 +3295,7 @@ L_B590:
 	pop ix		;b595
 	ret			;b597
 L_B598:
-	ld (ix+006h),d		;b598
+	ld (ix+006h),d		;b598   ; el rival nuevo se coloca donde diga DE y con las dos velocidades a cero
 	ld (ix+004h),e		;b59b
 	ld a,(iy+009h)		;b59e
 	ld (ix+009h),a		;b5a1
@@ -3305,12 +3305,12 @@ L_B598:
 	ld (ix+00ah),000h		;b5b0
 	jr L_B57B		;b5b4
 L_B5B6:
-	ld a,(0e1c3h)		;b5b6
+	ld a,(0e1c3h)		;b5b6   ; la tabla de EB00 del jugador se limpia un fotograma de cada dos
 	xor (iy+009h)		;b5b9
 	rrca			;b5bc
 	ret nc			;b5bd
 	bit 0,(iy+009h)		;b5be
-	ld l,001h		;b5c2
+	ld l,001h		;b5c2   ; el jugador 1 usa EB01 y el 2 EB81
 	jr nz,L_B5C8		;b5c4
 	ld l,081h		;b5c6
 L_B5C8:
@@ -3318,20 +3318,20 @@ L_B5C8:
 	ld b,020h		;b5ca
 	xor a			;b5cc
 L_B5CD:
-	ld (hl),a			;b5cd
+	ld (hl),a			;b5cd   ; las 32 filas de la tabla, de dos en dos bytes
 	inc l			;b5ce
 	inc l			;b5cf
 	djnz L_B5CD		;b5d0
 	ret			;b5d2
 L_B5D3:
-	call L_B5E0		;b5d3
+	call L_B5E0		;b5d3   ; la reaccion del rival: la separacion que guarda y el volante
 	ld a,(0e1c3h)		;b5d6
-	xor (ix+009h)		;b5d9
+	xor (ix+009h)		;b5d9   ; a cada coche le toca un fotograma
 	rrca			;b5dc
 	ret nc			;b5dd
 	jr L_B643		;b5de
 L_B5E0:
-	ld a,(ix+011h)		;b5e0
+	ld a,(ix+011h)		;b5e0   ; (ix+62) es la separacion que quiere guardar: 12 despacio, 8 a media y 4 rapido
 	cp 004h		;b5e3
 	ld d,00ch		;b5e5
 	jr c,L_B5F5		;b5e7
@@ -3339,7 +3339,7 @@ L_B5E0:
 	ld d,008h		;b5eb
 	jr c,L_B5F5		;b5ed
 	ld d,004h		;b5ef
-	ld (ix+049h),001h		;b5f1
+	ld (ix+049h),001h		;b5f1   ; y a partir de cierta velocidad se enciende (ix+49): ya ha cogido ritmo
 L_B5F5:
 	ld a,(ix+049h)		;b5f5
 	or a			;b5f8
@@ -3350,24 +3350,24 @@ L_B5FF:
 	ld (ix+062h),001h		;b5ff
 	ret			;b603
 L_B604:
-	call L_B63A		;b604
+	call L_B63A		;b604   ; (ix+34) es la correccion de trayectoria que se le acumula al objetivo
 	ld a,(ix+034h)		;b607
 	or a			;b60a
 	jr z,L_B619		;b60b
 	add a,(ix+015h)		;b60d
 	ld (ix+015h),a		;b610
-	ld (ix+02dh),001h		;b613
+	ld (ix+02dh),001h		;b613   ; y (ix+2D) marca que se ha corregido en este paso
 	scf			;b617
 	ret			;b618
 L_B619:
-	ld a,(ix+02dh)		;b619
+	ld a,(ix+02dh)		;b619   ; al dejar de corregir, la trayectoria se compara con la de partida
 	or a			;b61c
 	ret z			;b61d
 	ld (ix+02dh),000h		;b61e
 	ld a,(ix+015h)		;b622
 	sub (ix+016h)		;b625
 	ld b,a			;b628
-	xor (ix+036h)		;b629
+	xor (ix+036h)		;b629   ; si el signo cambia, se reduce a un solo bit: la correccion se satura
 	rlca			;b62c
 	jr nc,L_B635		;b62d
 	ld a,(ix+036h)		;b62f
@@ -3379,23 +3379,23 @@ L_B635:
 	or a			;b638
 	ret			;b639
 L_B63A:
-	ld a,(0e1c3h)		;b63a
+	ld a,(0e1c3h)		;b63a   ; un fotograma de cada dos por rival
 	xor (ix+009h)		;b63d
 	rrca			;b640
 	jr c,L_B652		;b641
 L_B643:
-	bit 5,(ix+000h)		;b643
+	bit 5,(ix+000h)		;b643   ; y el que tiene el bit 5 no se apunta en la tabla de filas
 	ret nz			;b647
-	call 04ad9h		;b648
+	call 04ad9h		;b648   ; el rival se apunta en la tabla de EB00 de su fila, para que los demas lo vean
 	inc l			;b64b
 	ld a,(ix+006h)		;b64c
 	ld (hl),a			;b64f
 	or a			;b650
 	ret			;b651
 L_B652:
-	ld (ix+034h),000h		;b652
+	ld (ix+034h),000h		;b652   ; aqui se decide hacia donde tira el rival: mira su fila y las siete de delante
 	ld a,(ix+004h)		;b656
-	sub 044h		;b659
+	sub 044h		;b659   ; 0x44 pixeles por delante
 	ld e,a			;b65b
 	call 04adch		;b65c
 	call L_B68B		;b65f
@@ -3404,13 +3404,13 @@ L_B652:
 	push bc			;b664
 	call L_B899		;b665
 	pop bc			;b668
-	and c			;b669
+	and c			;b669   ; el `and c` y el `xor 5` eligen el hueco por el que se va
 	jr nz,L_B66F		;b66a
 	ld a,c			;b66c
 	xor 005h		;b66d
 L_B66F:
 	ld b,a			;b66f
-	ld a,(ix+011h)		;b670
+	ld a,(ix+011h)		;b670   ; despacio la correccion se divide por ocho: los rivales lentos se mueven poco
 	cp 006h		;b673
 	ld a,(iy+062h)		;b675
 	jr nc,L_B680		;b678
@@ -3426,7 +3426,7 @@ L_B686:
 	scf			;b689
 	ret			;b68a
 L_B68B:
-	ld d,000h		;b68b
+	ld d,000h		;b68b   ; siete filas por delante, mirando la tabla de EB00
 	inc l			;b68d
 	ld c,000h		;b68e
 	ld b,007h		;b690
@@ -3434,11 +3434,11 @@ L_B692:
 	ld a,(hl)			;b692
 	or a			;b693
 	call nz,L_B6A6		;b694
-	inc l			;b697
+	inc l			;b697   ; dos columnas y la vuelta dentro de la fila
 	res 6,l		;b698
 	inc l			;b69a
 	djnz L_B692		;b69b
-	ld a,d			;b69d
+	ld a,d			;b69d   ; con tres o mas coches por delante ya no hay hueco
 	cp 003h		;b69e
 	ccf			;b6a0
 	ret c			;b6a1
@@ -3446,7 +3446,7 @@ L_B692:
 	cp 001h		;b6a3
 	ret			;b6a5
 L_B6A6:
-	inc d			;b6a6
+	inc d			;b6a6   ; catorce pixeles de margen a cada lado para considerar que estorba
 	sub (ix+015h)		;b6a7
 	add a,00eh		;b6aa
 	cp 01dh		;b6ac
@@ -3459,7 +3459,7 @@ L_B6A6:
 L_B6B7:
 	ld c,000h		;b6b7
 L_B6B9:
-	ld a,(ix+00ch)		;b6b9
+	ld a,(ix+00ch)		;b6b9   ; el volante del rival sale de una tabla indexada por su angulo
 	neg		;b6bc
 	add a,030h		;b6be
 	ld e,a			;b6c0
@@ -3472,10 +3472,10 @@ L_B6B9:
 	sub c			;b6cc
 	add a,h			;b6cd
 	sub (ix+015h)		;b6ce
-	cp 080h		;b6d1
+	cp 080h		;b6d1   ; el resultado se compara con 0x80 para saber el signo
 	rr l		;b6d3
 	add a,002h		;b6d5
-	cp 005h		;b6d7
+	cp 005h		;b6d7   ; y con menos de cinco pixeles de desvio el volante se queda a cero
 	jr c,L_B6E7		;b6d9
 	rl l		;b6db
 	ld a,003h		;b6dd
@@ -3508,9 +3508,9 @@ DATA_tabla_B6EC:
 
 
 L_B74D:
-	call L_B604		;b74d
+	call L_B604		;b74d   ; los rivales adelantan uno de cada cuatro turnos
 	ret c			;b750
-	ld a,(ix+017h)		;b751
+	ld a,(ix+017h)		;b751   ; uno de cada cuatro turnos
 	and 003h		;b754
 	call z,L_B75C		;b756
 	jp L_B789		;b759
@@ -3518,17 +3518,17 @@ L_B75C:
 	ld a,(ix+002h)		;b75c
 	or a			;b75f
 	ret nz			;b760
-	ld a,(0e1c3h)		;b761
+	ld a,(0e1c3h)		;b761   ; y solo uno de cada 32 fotogramas
 	and 01ch		;b764
 	ret nz			;b766
 	ld a,(ix+004h)		;b767
-	add a,050h		;b76a
+	add a,050h		;b76a   ; 0x50 pixeles de margen para plantearse el adelantamiento
 	sub (iy+004h)		;b76c
 	cp 050h		;b76f
 	ret nc			;b771
 	ld a,(iy+006h)		;b772
 	sub (ix+015h)		;b775
-	sbc a,a			;b778
+	sbc a,a			;b778   ; el `sbc a,a` convierte el signo en 0 o 0xFF, y de ahi salen los ocho pixeles a un lado o a otro
 	add a,a			;b779
 	add a,a			;b77a
 	add a,a			;b77b
@@ -3537,13 +3537,13 @@ L_B75C:
 	ld (ix+015h),a		;b781
 	ret			;b784
 L_B785:
-	ld a,001h		;b785
+	ld a,001h		;b785   ; EA7F reparte: 1 desde aqui y 0 desde 0xB789
 	jr L_B78B		;b787
 L_B789:
 	ld a,000h		;b789
 L_B78B:
 	ld (0ea7fh),a		;b78b
-	ld a,(ix+002h)		;b78e
+	ld a,(ix+002h)		;b78e   ; (ix+2) dice de que tabla se saca la correccion: 0, 1 o 2
 	and 00fh		;b791
 	dec a			;b793
 	jr z,L_B79E		;b794
@@ -3551,7 +3551,7 @@ L_B78B:
 	ld hl,0b82fh		;b799
 	jr L_B7C4		;b79c
 L_B79E:
-	ld hl,0b83fh		;b79e
+	ld hl,0b83fh		;b79e   ; con el bit 4 de (ix+17) el rival cambia de lado y vuelve
 	call L_B7C4		;b7a1
 	ld a,(ix+017h)		;b7a4
 	and 010h		;b7a7
@@ -3560,7 +3560,7 @@ L_B79E:
 	ld (ix+002h),002h		;b7ac
 	ret			;b7b0
 L_B7B1:
-	ld hl,0b837h		;b7b1
+	ld hl,0b837h		;b7b1   ; la tercera tabla de correccion
 	call L_B7C4		;b7b4
 	ld a,(ix+017h)		;b7b7
 	and 010h		;b7ba
@@ -3569,7 +3569,7 @@ L_B7B1:
 	ld (ix+002h),001h		;b7bf
 	ret			;b7c3
 L_B7C4:
-	push hl			;b7c4
+	push hl			;b7c4   ; se miran tres casillas por delante y de ahi salen tres bits: por donde hay sitio
 	ld a,0c8h		;b7c5
 	add a,(ix+004h)		;b7c7
 	ld e,a			;b7ca
@@ -3579,11 +3579,11 @@ L_B7C4:
 	ld d,000h		;b7d2
 	pop hl			;b7d4
 	add hl,de			;b7d5
-	ld a,(hl)			;b7d6
+	ld a,(hl)			;b7d6   ; la tabla convierte esos tres bits en cuanto se desvia
 	ld d,a			;b7d7
 	add a,(ix+015h)		;b7d8
 	ld (ix+015h),a		;b7db
-	bit 1,e		;b7de
+	bit 1,e		;b7de   ; y si el bit 1 esta apagado, ademas se le quita la correccion acumulada
 	jr nz,L_B7E8		;b7e0
 	sub (ix+034h)		;b7e2
 	ld (ix+015h),a		;b7e5
@@ -3591,19 +3591,19 @@ L_B7E8:
 	ld a,(0ea7fh)		;b7e8
 	dec a			;b7eb
 	jr nz,L_B7F4		;b7ec
-	ld a,(ix+017h)		;b7ee
+	ld a,(ix+017h)		;b7ee   ; y solo cuando el turno lo permite
 	and 003h		;b7f1
 	ret nz			;b7f3
 L_B7F4:
 	ld a,(ix+034h)		;b7f4
 	and a			;b7f7
 	ret nz			;b7f8
-	ld a,e			;b7f9
+	ld a,e			;b7f9   ; con los tres bits a 7 -todo libre- el rival vuelve poco a poco a su carril
 	cp 007h		;b7fa
 	ret nz			;b7fc
 	bit 7,(ix+036h)		;b7fd
 	jr z,L_B816		;b801
-	ld a,(ix+015h)		;b803
+	ld a,(ix+015h)		;b803   ; y segun el signo de (ix+36), vuelve por un lado o por el otro
 	sub (ix+016h)		;b806
 	ld d,0feh		;b809
 	jr nc,L_B827		;b80b
@@ -3614,7 +3614,7 @@ L_B7F4:
 L_B816:
 	ld a,(ix+015h)		;b816
 	sub (ix+016h)		;b819
-	ld d,001h		;b81c
+	ld d,001h		;b81c   ; el signo decide si se vuelve por un lado o por el otro
 	jr c,L_B827		;b81e
 	cp (ix+036h)		;b820
 	jr c,L_B827		;b823
@@ -3641,7 +3641,7 @@ DATA_tablas_B82F:
 
 
 L_B847:
-	ld hl,0b837h		;b847
+	ld hl,0b837h		;b847   ; la misma faena para el otro objetivo, el de (ix+16)
 	bit 7,(ix+036h)		;b84a
 	jr z,L_B853		;b84e
 	ld hl,0b83fh		;b850
@@ -3649,19 +3649,19 @@ L_B853:
 	push hl			;b853
 	ld a,0c8h		;b854
 	add a,(ix+004h)		;b856
-	ld e,a			;b859
+	ld e,a			;b859   ; 0xC8 pixeles por delante del coche
 	ld d,(ix+016h)		;b85a
 	call L_B89F		;b85d
 	ld e,a			;b860
 	ld d,000h		;b861
 	pop hl			;b863
 	add hl,de			;b864
-	ld a,(hl)			;b865
+	ld a,(hl)			;b865   ; y de la tabla sale cuanto se corrige
 	add a,(ix+016h)		;b866
 	ld (ix+016h),a		;b869
 	ret			;b86c
 L_B86D:
-	ld a,(ix+017h)		;b86d
+	ld a,(ix+017h)		;b86d   ; las dos rutinas de aqui son gemelas y opuestas: una manda al rival a la izquierda y la otra a la derecha
 	and 03ch		;b870
 	cp 030h		;b872
 	ret nc			;b874
@@ -3673,7 +3673,7 @@ L_B86D:
 	jr L_B88F		;b87e
 L_B880:
 	ld a,(ix+017h)		;b880
-	and 03ch		;b883
+	and 03ch		;b883   ; el mismo reparto que su gemela, pero al reves
 	cp 030h		;b885
 	ret nc			;b887
 	cp 004h		;b888
@@ -3687,27 +3687,27 @@ L_B894:
 	ld (ix+002h),002h		;b894
 	ret			;b898
 L_B899:
-	ld d,(ix+006h)		;b899
+	ld d,(ix+006h)		;b899   ; tres casillas de la fila, separadas tres columnas, 0x18 pixeles por delante
 	ld e,(ix+004h)		;b89c
 L_B89F:
 	ld a,d			;b89f
 	sub 018h		;b8a0
 	ld d,a			;b8a2
 	call 04a9dh		;b8a3
-	ld a,(0e26ch)		;b8a6
+	ld a,(0e26ch)		;b8a6   ; E26C y E272 marcan otra vez el rango de la calzada
 	ld d,a			;b8a9
 	ld a,(0e272h)		;b8aa
 	sub d			;b8ad
 	ld e,a			;b8ae
-	ld a,l			;b8af
+	ld a,l			;b8af   ; la fila se recorta al principio para no salirse de ella
 	and 0e0h		;b8b0
 	ld b,a			;b8b2
 	ld a,(hl)			;b8b3
 	sub d			;b8b4
 	cp e			;b8b5
-	rl c		;b8b6
+	rl c		;b8b6   ; el `rl c` va juntando los tres bits, uno por casilla
 	ld a,l			;b8b8
-	add a,003h		;b8b9
+	add a,003h		;b8b9   ; tres columnas de separacion entre las casillas que se miran
 	and 01fh		;b8bb
 	or b			;b8bd
 	ld l,a			;b8be
@@ -3716,7 +3716,7 @@ L_B89F:
 	cp e			;b8c1
 	rl c		;b8c2
 	ld a,l			;b8c4
-	add a,003h		;b8c5
+	add a,003h		;b8c5   ; y otras tres para la tercera
 	and 01fh		;b8c7
 	or b			;b8c9
 	ld l,a			;b8ca
@@ -3728,10 +3728,10 @@ L_B89F:
 	and 007h		;b8d1
 	ret			;b8d3
 L_B8D4:
-	ld d,(ix+006h)		;b8d4
+	ld d,(ix+006h)		;b8d4   ; la misma prueba, pero solo 0x10 pixeles por delante
 	ld e,(ix+004h)		;b8d7
 	ld a,d			;b8da
-	sub 010h		;b8db
+	sub 010h		;b8db   ; 0x10 pixeles por delante en vez de 0x18
 	ld d,a			;b8dd
 	call 04a9dh		;b8de
 	ld a,(0e26ch)		;b8e1
@@ -3739,7 +3739,7 @@ L_B8D4:
 	ld a,(0e272h)		;b8e5
 	sub d			;b8e8
 	ld e,a			;b8e9
-	ld a,(hl)			;b8ea
+	ld a,(hl)			;b8ea   ; aqui las tres casillas van seguidas, no separadas
 	inc hl			;b8eb
 	sub d			;b8ec
 	cp e			;b8ed
@@ -3770,7 +3770,7 @@ PON_IX15_CASILLA_ADELANTE:		; la gemela de 0xB8FF con BUSCA_CASILLA_ADELANTE
 	ret			;b916
 PON_IX16_SEGUN_SENTIDO:		; E = 0xC8; con el bit 7 de (ix+36) escoge BUSCA_CASILLA_ATRAS o BUSCA_CASILLA_ADELANTE y mete D en (ix+16)
 	ld e,0c8h		;b917
-	bit 7,(ix+036h)		;b919
+	bit 7,(ix+036h)		;b919   ; el bit 7 de (ix+36) dice por que borde busca
 	jr nz,L_B926		;b91d
 	call BUSCA_CASILLA_ADELANTE		;b91f
 	ld (ix+016h),d		;b922
@@ -3779,10 +3779,19 @@ L_B926:
 	call BUSCA_CASILLA_ATRAS		;b926
 	ld (ix+016h),d		;b929
 	ret			;b92c
+
+; ----------------------------------------------------------------------
+; LAS NUEVE RUTINAS DE TIPO DE RIVAL, una por entrada de la tabla
+; de p02 0x9F53. Todas siguen el mismo molde: ajustar el carril con
+; 0xB847, decidir el desvio (0xB604 y el reparto por (ix+17)) y por
+; ultimo el volante (0xB6B7). Lo que cambia de una a otra es
+; cuantas columnas se meten desde el borde -(EA7D): 1, 4, 2, 5 o
+; 1- y que dibujo lleva el rival ((ix+18)).
+; ----------------------------------------------------------------------
 L_B92D:
-	bit 1,(ix+030h)		;b92d
+	bit 1,(ix+030h)		;b92d   ; el bit 1 de (ix+30) marca al rival ya colocado
 	jr nz,L_B951		;b931
-	bit 7,(ix+000h)		;b933
+	bit 7,(ix+000h)		;b933   ; el bit 7 del tipo dice si es de los rapidos: los lentos se aparcan en x = 0
 	ld a,000h		;b937
 	jp nz,L_B95A		;b939
 	jr L_B94D		;b93c
@@ -3790,7 +3799,7 @@ L_B93E:
 	bit 1,(ix+030h)		;b93e
 	jr nz,L_B951		;b942
 	bit 7,(ix+000h)		;b944
-	ld a,0bfh		;b948
+	ld a,0bfh		;b948   ; y los rapidos en 0xBF, o sea por detras
 	jp z,L_B95A		;b94a
 L_B94D:
 	set 1,(ix+030h)		;b94d
@@ -3799,34 +3808,34 @@ L_B951:
 	call L_B960		;b954
 	jp L_B6B7		;b957
 L_B95A:
-	ld (ix+004h),a		;b95a
+	ld (ix+004h),a		;b95a   ; el rival que no cabe se quita de la lista
 	jp 09e2dh		;b95d
 L_B960:
-	call L_B604		;b960
-	ret c			;b963
+	call L_B604		;b960   ; el molde: desvio y adelantamiento
+	ret c			;b963   ; con acarreo el desvio ya esta hecho
 	ld a,(ix+017h)		;b964
 	and 003h		;b967
 	call z,L_B75C		;b969
 	jp L_B785		;b96c
 L_B96F:
-	call AJUSTA_ATRAS_Y_MARCA		;b96f
+	call AJUSTA_ATRAS_Y_MARCA		;b96f   ; este tipo va con el color 12
 	ld (ix+00fh),00ch		;b972
 	ret			;b976
 L_B977:
-	ld a,00ah		;b977
+	ld a,00ah		;b977   ; y este ademas avisa a p02 con E209 = 10
 	ld (0e209h),a		;b979
 	call AJUSTA_ATRAS_Y_MARCA		;b97c
 	ld (ix+00fh),004h		;b97f
 	jp 080f4h		;b983
 AJUSTA_ATRAS_Y_MARCA:		; (EA7D) = 1, AJUSTA_CON_CASILLA_ATRAS, 0xB996 y (ix+18) = 0
-	ld a,001h		;b986
+	ld a,001h		;b986   ; EA7D = 1: se pega al borde
 	ld (0ea7dh),a		;b988
-	call AJUSTA_CON_CASILLA_ATRAS		;b98b
+	call AJUSTA_CON_CASILLA_ATRAS		;b98b   ; EA7D ya esta puesto: se busca el borde y se ajusta
 	call PON_IX02_A_1		;b98e
 	ld (ix+018h),000h		;b991
 	ret			;b995
 PON_IX02_A_1:		; `ld (ix+02),1 / ret`
-	ld (ix+002h),001h		;b996
+	ld (ix+002h),001h		;b996   ; (ix+2) = 1 fija por que tabla de desvio va
 	ret			;b99a
 L_B99B:
 	call L_B847		;b99b
@@ -3836,11 +3845,11 @@ L_B9A4:
 	call L_B604		;b9a4
 	ret c			;b9a7
 	ld a,(ix+017h)		;b9a8
-	and 003h		;b9ab
+	and 003h		;b9ab   ; el mismo reparto por turnos
 	call z,L_B75C		;b9ad
 	jp L_B789		;b9b0
 L_B9B3:
-	ld a,004h		;b9b3
+	ld a,004h		;b9b3   ; aqui son cuatro columnas desde el borde
 	ld (0ea7dh),a		;b9b5
 	call AJUSTA_CON_CASILLA_ATRAS		;b9b8
 	ld (ix+018h),001h		;b9bb
@@ -3853,11 +3862,11 @@ L_B9C9:
 	call L_B604		;b9c9
 	ret c			;b9cc
 	ld a,(ix+017h)		;b9cd
-	and 003h		;b9d0
+	and 003h		;b9d0   ; y aqui igual
 	call z,L_B75C		;b9d2
 	jp L_B789		;b9d5
 L_B9D8:
-	ld a,004h		;b9d8
+	ld a,004h		;b9d8   ; tambien cuatro, pero con otro dibujo
 	ld (0ea7dh),a		;b9da
 	call AJUSTA_CON_CASILLA_ATRAS		;b9dd
 	ld (ix+018h),003h		;b9e0
@@ -3871,12 +3880,12 @@ L_B9F0:
 	call L_B604		;b9f0
 	ret c			;b9f3
 	ld a,(ix+017h)		;b9f4
-	and 003h		;b9f7
+	and 003h		;b9f7   ; el reparto de este tipo se salta 0xB75C
 	jp z,L_B789		;b9f9
 	ld hl,0b837h		;b9fc
 	jp L_B7C4		;b9ff
 L_BA02:
-	ld a,002h		;ba02
+	ld a,002h		;ba02   ; y aqui dos
 	ld (0ea7dh),a		;ba04
 	call AJUSTA_CON_CASILLA_ATRAS		;ba07
 	ld (ix+018h),000h		;ba0a
@@ -3889,13 +3898,13 @@ L_BA18:
 	call L_B604		;ba18
 	ret c			;ba1b
 	ld a,(ix+017h)		;ba1c
-	and 00fh		;ba1f
+	and 00fh		;ba1f   ; el `and 0x0f` de aqui no hace nada: el `and 3` de la linea siguiente ya recorta mas
 	and 003h		;ba21
 	jp z,L_B789		;ba23
 	ld hl,0b83fh		;ba26
 	jp L_B7C4		;ba29
 L_BA2C:
-	ld a,005h		;ba2c
+	ld a,005h		;ba2c   ; cinco: este va por el centro de la calzada
 	ld (0ea7dh),a		;ba2e
 	call AJUSTA_CON_CASILLA_ATRAS		;ba31
 	ld (ix+018h),002h		;ba34
@@ -3909,14 +3918,14 @@ L_BA44:
 	call L_B604		;ba44
 	ret c			;ba47
 	ld a,(ix+017h)		;ba48
-	and 003h		;ba4b
+	and 003h		;ba4b   ; y aqui tambien
 	call z,L_B75C		;ba4d
 	jp L_B785		;ba50
 L_BA53:
-	ld a,001h		;ba53
+	ld a,001h		;ba53   ; este entra por el otro borde, buscando la casilla hacia delante
 	ld (0ea7dh),a		;ba55
 	call AJUSTA_CON_CASILLA_ADELANTE		;ba58
-	ld a,(ix+015h)		;ba5b
+	ld a,(ix+015h)		;ba5b   ; y si ya esta a menos de ocho pixeles de su sitio, se queda
 	sub (ix+006h)		;ba5e
 	add a,008h		;ba61
 	cp 010h		;ba63
@@ -3925,7 +3934,7 @@ L_BA53:
 	ld (ix+01fh),002h		;ba6b
 	ret			;ba6f
 L_BA70:
-	ld a,(ix+000h)		;ba70
+	ld a,(ix+000h)		;ba70   ; si no, se le cambia el tipo por el 1 y se recoloca
 	and 0f0h		;ba73
 	or 001h		;ba75
 	ld (ix+000h),a		;ba77
@@ -3939,20 +3948,20 @@ L_BA87:
 	call L_B604		;ba87
 	ret c			;ba8a
 	ld a,(ix+017h)		;ba8b
-	and 003h		;ba8e
+	and 003h		;ba8e   ; el ultimo tipo, con el mismo molde
 	call z,L_B75C		;ba90
 	jp L_B789		;ba93
 L_BA96:
-	ld a,001h		;ba96
+	ld a,001h		;ba96   ; el ultimo tipo solo se pega al borde y nada mas
 	ld (0ea7dh),a		;ba98
 	call AJUSTA_CON_CASILLA_ATRAS		;ba9b
 	ret			;ba9e
 L_BA9F:
-	ld a,(0e1c3h)		;ba9f
+	ld a,(0e1c3h)		;ba9f   ; un fotograma de cada dos: aqui es donde el rival lee la pista que viene
 	xor (iy+009h)		;baa2
 	rrca			;baa5
 	ret c			;baa6
-	ld e,0e8h		;baa7
+	ld e,0e8h		;baa7   ; 0xE8 pixeles por delante, casi una pantalla entera
 	call 04af0h		;baa9
 	call L_B344		;baac
 	ld b,a			;baaf
@@ -3978,9 +3987,9 @@ L_BAD6:
 	and 07fh		;bad7
 	ld (iy-00dh),a		;bad9
 L_BADC:
-	ld e,098h		;badc
+	ld e,098h		;badc   ; la segunda lectura de pista, mas cerca: 0x98 pixeles
 	call 04af0h		;bade
-	call L_B344		;bae1
+	call L_B344		;bae1   ; y el mismo reparto de tiles que manda
 	ld b,a			;bae4
 	cp 0c1h		;bae5
 	jr z,L_BAFC		;bae7
@@ -4597,11 +4606,11 @@ PANTALLA_INICIAL_2:		; estado 0/1: escribe 21 patrones (0xF0) por fila a partir 
 	ld a,0ebh		;be5a
 	inc b			;be5c
 L_BE5D:
-	add a,015h		;be5d
+	add a,015h		;be5d   ; 0x15 por fila: veintiuna casillas de ancho
 	djnz L_BE5D		;be5f
 	ld l,a			;be61
 	ld h,b			;be62
-	add hl,hl			;be63
+	add hl,hl			;be63   ; por ocho: cada patron son ocho bytes
 	add hl,hl			;be64
 	add hl,hl			;be65
 	ld de,00a00h		;be66
@@ -4612,9 +4621,9 @@ L_BE5D:
 	ld de,00008h		;be70
 	ld a,0f0h		;be73
 L_BE75:
-	call 0004dh		;be75   ; BIOS WRTVRM - Writes data in VRAM
+	call 0004dh		;be75   ; BIOS WRTVRM - Writes data in VRAM | veintiun patrones seguidos, de ocho en ocho bytes
 	add hl,de			;be78
-	djnz L_BE75		;be79
+	djnz L_BE75		;be79   ; y ocho bytes hasta el patron de la fila de abajo
 	ld hl,0e1d0h		;be7b
 	ld a,(hl)			;be7e
 	inc a			;be7f

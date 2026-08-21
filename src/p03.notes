@@ -804,3 +804,352 @@ C 0xA656 p00 0x40D0: HL += A
 C 0xA65A la plaza mas los coches que van delante sin verse
 L 0xA65C SIN_SUMAR_POSICION  con E240 la plaza se queda como esta
 C 0xA65C se recupera la plaza sin tocarla y se devuelve tal cual
+
+C 0xA2AD el juego alterno guarda el puntero mientras se hace la cuenta
+C 0xA499 el contador de la cadencia baja hasta cero y ahi se queda
+C 0xA673 la parrilla: el jugador 1 sale TERCERO (E331 = 3) y el 2 CUARTO
+C 0xA689 antes de colocar a nadie se apuntan las dos posiciones
+C 0xA68C seis plazas que repartir
+C 0xA691 y cada carrera tiene su punto de salida en la pista
+C 0xA69C con E240 -dos jugadores alternos- la parrilla se monta de otra manera
+C 0xA6AD si la plaza es la del jugador 1, ahi va el jugador y no un rival
+C 0xA6C9 la rejilla dice cuanto se aparta esta plaza del punto de salida
+C 0xA6E2 se le busca hueco en la lista del coche que toque
+C 0xA6ED EA7F cuenta las plazas ya repartidas, y de ahi sale el tipo de rival
+C 0xA703 el bit 2 de las banderas marca a los coches de la parrilla
+C 0xA707 la posicion es el punto de salida mas el desplazamiento de la rejilla
+C 0xA718 la velocidad se guarda como objetivo y el coche arranca parado
+C 0xA73D la plaza del jugador no crea rival: se le coloca a el
+C 0xA74A y su camara sale de otra tabla, segun sea plaza par o impar
+C 0xA761 y a la plaza siguiente
+C 0xA76B con dos jugadores hay que medir la separacion y copiar las listas
+C 0xA785 la version de dos jugadores alternos: solo se colocan los dos coches
+C 0xA7A3 tres plazas como mucho, y la posicion sale de restarlas de tres
+
+C 0xA860 EA7C dice cual de los dos jugadores va delante: 1 o 2
+C 0xA871 ninguno de los dos pasa de la plaza 6
+C 0xA88C y si los dos coinciden en la misma plaza, al de detras se le baja una
+C 0xA8A1 el turno del rival: cada uno se atiende uno de cada ocho fotogramas
+C 0xA8A7 (ix+37) es su turno, y por eso los cinco no caen todos en el mismo fotograma
+C 0xA8B4 (ix+32) trae la curva que viene: el bit 7 dice si es nueva
+C 0xA8C6 el bit 4 de las banderas marca que este rival esta frenando por curva
+C 0xA8D4 los dos bits bajos eligen una de las tres listas de frenada
+C 0xA8DF y el tipo de rival elige la palabra dentro de la lista
+C 0xA8ED a la velocidad base se le RESTA lo que diga la lista: eso es la velocidad objetivo en la curva
+C 0xA8F5 y si la resta se sale, se queda en la base
+C 0xA8FF sin curva la velocidad objetivo es la base pelada
+C 0xA915 la aceleracion del rival sale de comparar su velocidad con la objetivo
+C 0xA926 si van iguales, aceleracion cero
+C 0xA92A y si se pasa, 0xE8: frena
+C 0xA930 cuando falta velocidad, la aceleracion sale de una tabla por categoria y por lo lejos que este
+C 0xA93A la diferencia se recorta a dieciseis, que es lo que tiene la tabla
+C 0xA948 estas tres instrucciones solo devuelven la velocidad base; la tabla de debajo no es suya
+
+C 0xAAF9 el rival mira la pista que tiene por delante para saber si viene curva
+C 0xAAFD el bit 6 del byte de pista no es curva: es un aviso especial
+C 0xAB02 si ya venia frenando, un cero se ignora
+C 0xAB0B y si la curva es la misma que ya tenia, no hay nada que cambiar
+C 0xAB11 el bit 7 marca la curva como nueva, que es lo que mira 0xA8B4
+C 0xAB20 el cero solo cuenta si no se estaba frenando
+C 0xAB24 los seis bits bajos separan las tres ordenes: 0 meta, 1 fin de curva y 2 otra cosa
+C 0xAB2B fin de curva: se apaga el bit 4 y la velocidad objetivo vuelve a la base
+C 0xAB34 UN RIVAL QUE CRUZA LA META TE CUESTA UN PUESTO: sube E331 (o E3F1) en uno, con tope 99
+C 0xAB39 y solo cuenta desde que el jugador ha llegado
+C 0xAB3E cada rival lo cobra una sola vez: el bit 1 de sus banderas
+C 0xAB5D la tercera orden solo enciende el bit 4 de (ix+17)
+C 0xAB62 un `ret` pelado: la rutina que llamaba 0xA904 no hace nada
+C 0xAB63 con dos jugadores hay tres pasadas y con uno solo una
+
+C 0xAB90 los cinco rivales del coche, uno por uno
+C 0xABA0 con acarreo hay contacto y se resuelve
+C 0xABB7 (iy+26) encendido es "este rival esta pegado al coche"
+C 0xABBA se compara la vertical del coche con la del rival
+C 0xABC4 el que va detras se queda con la mitad de la velocidad objetivo: se descuelga
+C 0xABD5 y el que va delante se aparta de lado si esta muy pegado al borde
+C 0xABE8 vx se multiplica por 1,75: dos corrimientos y la suma
+C 0xABF8 los dos bytes que se escriben dicen por que lado se esquiva, y cambian segun quien vaya arriba
+C 0xAC0D la permutacion de 0xAC22 cambia el tipo de rival por otro: los tipos 1 y 2 se van al 6 y al 7
+C 0xAC32 el choque entre los dos jugadores solo se mira con los dos en estado 0
+C 0xAC55 y no despues de que alguien haya llegado a meta
+C 0xAC5D la distancia vertical entre los dos coches, que se guarda en EA71 y en (ix+29)
+C 0xAC6A si estan a mas de quince pixeles no hay nada que mirar
+C 0xAC71 y luego lo mismo de lado, con ocho
+C 0xAC7D el `xor` con el valor anterior dice si se han cruzado en este fotograma
+C 0xAC89 al cruzarse, los dos coches se intercambian el puesto
+C 0xACA9 la diferencia de velocidad en valor absoluto
+C 0xACAC y solo con mas de 0x200 de diferencia suena el 3: el adelantamiento se oye
+C 0xACC0 y aqui se miran los rivales entre si, todos contra todos
+
+C 0xACF4 los tipos con algun bit del nibble alto no chocan, y el tipo 15 tampoco
+C 0xAD0D la misma prueba de siempre: quince pixeles de alto y ocho de ancho
+C 0xAD26 aqui se compara el coche del jugador con uno de sus rivales
+C 0xAD44 y el `xor` con la distancia anterior dice si se acaban de cruzar
+C 0xAD4F al cruzarse con un rival se le adelanta -o te adelanta a ti-
+C 0xAD5D el coche parado no adelanta a nadie
+C 0xAD74 la diferencia de velocidad en valor absoluto
+C 0xAD7B por debajo de 0x180 el adelantamiento no suena
+C 0xAD8C con dos jugadores suenan los sonidos 6 y 8 y con uno el 4 y el 5, segun lo fuerte que sea el cruce
+C 0xADA5 al separarse se limpia la marca: el cruce siguiente volvera a contar
+C 0xADAA aqui se recalcula el puesto del jugador al cruzarse con un rival
+C 0xADAF ni el que ya llego ni el rival que ya llego cuentan
+C 0xADC7 el que va primero no puede subir mas
+C 0xADD0 y hasta que no falten menos de dos vueltas, el puesto no se toca
+C 0xADD8 (ix+7E) es el ritmo: por debajo de el no se sube de puesto
+C 0xADE6 el `xor 2` alterna: solo uno de cada dos cruces cuenta
+C 0xADF1 el bit 7 del tipo del rival dice si es de los rapidos
+C 0xAE03 los puestos 1 y 99 se tratan aparte: son los extremos
+C 0xAE0E el bit 7 de la distancia dice si el rival va por detras
+C 0xAE31 el puesto se cuenta desde 99 hacia abajo
+C 0xAE3F adelantado por el rival: un puesto mas, sin pasar de 99
+C 0xAE51 y se marca el rival como ya contado
+C 0xAE60 la otra rama, la del rival que ya contaba
+C 0xAE6E y todo lo de arriba otra vez, para el caso de que el rival vaya delante
+
+C 0xAE7F tres bits de (ix+30): cuantos puestos se ganan de golpe
+C 0xAE91 adelantar sube un puesto, hasta el primero
+C 0xAEA9 y al llegar al primero se le quita al rival la marca de rapido
+C 0xAEBF y aqui se enciende, que se ha ido al ultimo
+C 0xAEC3 el bit 6 marca al rival como ya contado en este cruce
+C 0xAEC8 las cuatro puertas de aqui abajo suben o bajan las cuentas de los de delante y los de detras
+C 0xAEE5 los tipos 8 y 9 son los rivales rapidos
+C 0xAEEF el toque entre el coche y un rival, con los dos rodando
+C 0xAF00 ocho pixeles de margen para que se considere toque
+C 0xAF09 los dos quedan marcados con el bit 7: el toque los descoloca
+C 0xAF18 el sonido 0x17 es el golpe
+C 0xAF1D uno queda como 1 y el otro como 2: quien empujo a quien
+C 0xAF25 y el golpe desgasta al coche
+C 0xAF32 los rivales rapidos solo cuentan si ademas van mas despacio
+C 0xAF4C el toque entre dos rivales: se separan un pixel cada uno
+C 0xAF55 D dice hacia donde se aparta cada uno
+C 0xAF6D y al que va detras se le quita velocidad
+C 0xAF76 de lado el empujon es de 0x10, y se reparte entre los dos
+C 0xAF92 cuatro corrimientos con signo: el empujon de lado se aplica en decimosextas partes
+C 0xAFAB el que pierde velocidad es siempre el de detras
+C 0xAFC3 la suma con tope: si al sumar cambia el signo, se queda como estaba
+C 0xAFD1 el choque entre los DOS JUGADORES: los dos marcados y los dos desgastados
+C 0xAFDE y el sonido no se repite si ya estaba sonando
+
+C 0xB01D el reparto del golpe: primero vx de los dos...
+C 0xB03A ...y luego vy
+C 0xB05A y al final se copia el resultado a las parejas de dos jugadores
+C 0xB060 la vx nueva de los dos es la media mas o menos la cuarta parte de la diferencia: un choque elastico a medias
+C 0xB063 la media de las dos velocidades
+C 0xB073 y la diferencia entre ellas, en valor absoluto, dividida por cuatro
+C 0xB07E si sale positiva se queda a cero: no se puede rebotar hacia delante
+C 0xB0A8 lo mismo con vy, pero repartiendo por OCHO en vez de por cuatro: de lado el golpe es mas suave
+C 0xB0BB tres corrimientos, o sea entre ocho
+C 0xB0E8 y aqui la velocidad del golpe se le copia a la pareja del objeto en la otra pantalla
+C 0xB10F lo mismo para el otro
+C 0xB137 con los dos parados de lado, uno se aparta ocho pixeles
+C 0xB149 y el bit 7 de EA70 decide hacia que lado
+C 0xB158 (iy+26) baja: el toque se va gastando
+C 0xB15C aqui se intercambian IX e IY para resolver el golpe desde el otro lado
+
+C 0xB174 el sonido 0x21 es el roce entre coches
+C 0xB17D y si el objeto tiene pareja en la otra pantalla, se le hace lo mismo
+C 0xB189 con dos jugadores esto no corre: los puestos van por otro lado
+C 0xB1A3 tres bits de (iy+30): cuantos puestos vale el adelantamiento
+C 0xB1AF y no se sube por encima de lo que ya tiene el de delante
+C 0xB1C1 el rival adelantado baja un puesto, sin llegar a cero
+C 0xB1D3 antes de recolocar se repasan los cinco rivales para saber cuantos van delante y cuantos detras
+C 0xB1F8 el tipo 15 no cuenta, ni los que tienen algo en el nibble alto
+C 0xB211 y se reparten en dos cuentas segun vayan por delante o por detras
+C 0xB24A el desgaste del golpe sale de la diferencia de velocidades entre cuatro, mas uno
+C 0xB25A la diferencia en valor absoluto
+C 0xB265 el golpe tambien mueve el angulo: cuatro grados por un lado y ocho por el otro
+C 0xB291 y separa a los dos por su eje largo, restando dos veces
+C 0xB2B9 con un rival rapido la separacion es de tres restas y no de dos
+C 0xB2C7 cuando los dos son objetos, las velocidades se promedian: se quedan casi iguales
+C 0xB2D8 la media de las dos...
+C 0xB2DE ...y luego cada uno se acerca a la media a medias
+
+C 0xB2F6 y por el eje corto, el mismo reparto
+C 0xB321 el giro del golpe es mayor si el que lo recibe es el coche del jugador (8 y 16) que si es un rival (3 y 3)
+C 0xB344 el bit 6 de E1C2 dice si hay jugador 1
+C 0xB34F por aqui se entra con la fila ya puesta
+C 0xB353 el rival mira la pista un fotograma de cada dos, y a cada uno le toca uno
+C 0xB35F veinticuatro pixeles por delante del coche
+C 0xB368 cuatro casillas de la fila, de dos en dos columnas y con la vuelta del `res 6,l`
+C 0xB387 la primera casilla que no coincida se queda como candidata
+C 0xB394 los tiles 0xC0, 0xC6 y 0xC7 mandan sobre los demas: si sale uno de ellos, es el que cuenta
+C 0xB3A9 la lectura del teclado para escribir la contrasena, linea por linea de la matriz
+C 0xB3B2 la linea 1 son los digitos y las dos primeras letras
+C 0xB3F1 la linea 7 trae el intro y el borrado
+C 0xB3FF y la 8 el espacio
+C 0xB409 la tecla se guarda en E243, y solo cuenta si es distinta de la de antes: eso es el flanco
+C 0xB418 ocho bits por linea, y el primero que este pulsado gana
+C 0xB425 el bloque de sombra del coche 2 se rellena con la posicion del 1: la escena y el reloj lo usan de referencia
+C 0xB43F la posicion por cuatro
+C 0xB447 y (iy+9) = 2 manda el dibujo al buffer de EC00
+
+C 0xB44C solo con la repeticion en marcha (E244 >= 2) se pinta el objeto de tiles del coche
+C 0xB463 las tres fichas de E3D8 -los rivales de boxes- pintadas como objetos de tiles
+C 0xB47D la casilla se calcula con el bloque de sombra y luego se devuelve el bueno
+C 0xB496 ocho bytes de una ficha a la siguiente
+C 0xB49E 0x4080 es fila 8, columna 16: donde va el objeto del coche en la repeticion
+C 0xB4AE la entrada del objeto de tiles: destino, destino y variante
+C 0xB4B7 el `sub 3` en bucle es un modulo 3: la carroceria se reduce a tres variantes de dibujo
+C 0xB4C1 siete filas de cuatro tiles, con la vuelta del kilobyte
+C 0xB4D5 solo las banderas entre 0x54 y 0x92 valen; el resto no se pinta
+C 0xB4E3 0x70 en D: la plantilla de estos objetos vive en otro sitio
+C 0xB4E7 el rival retirado: se frena solo y parpadea entre los colores 15 y 6
+C 0xB4F1 el color cambia uno de cada cuatro fotogramas
+C 0xB505 y a los tres pasos el objeto se quita del todo
+C 0xB51E parado del todo, el dibujo es otro (0xF8)
+C 0xB559 aqui se retira un rival: el tipo pasa a 0x0F, que es el de "ya no corre"
+C 0xB564 los rivales rapidos avisan a p01 antes de irse
+C 0xB56A si el coche no se ve en la otra pantalla, se quita sin mas
+C 0xB598 el rival nuevo se coloca donde diga DE y con las dos velocidades a cero
+C 0xB5B6 la tabla de EB00 del jugador se limpia un fotograma de cada dos
+C 0xB5C2 el jugador 1 usa EB01 y el 2 EB81
+
+C 0xB5CD las 32 filas de la tabla, de dos en dos bytes
+C 0xB5D3 la reaccion del rival: la separacion que guarda y el volante
+C 0xB5E0 (ix+62) es la separacion que quiere guardar: 12 despacio, 8 a media y 4 rapido
+C 0xB5F1 y a partir de cierta velocidad se enciende (ix+49): ya ha cogido ritmo
+C 0xB604 (ix+34) es la correccion de trayectoria que se le acumula al objetivo
+C 0xB613 y (ix+2D) marca que se ha corregido en este paso
+C 0xB619 al dejar de corregir, la trayectoria se compara con la de partida
+C 0xB629 si el signo cambia, se reduce a un solo bit: la correccion se satura
+C 0xB63A un fotograma de cada dos por rival
+C 0xB643 y el que tiene el bit 5 no se apunta en la tabla de filas
+C 0xB648 el rival se apunta en la tabla de EB00 de su fila, para que los demas lo vean
+C 0xB652 aqui se decide hacia donde tira el rival: mira su fila y las siete de delante
+C 0xB659 0x44 pixeles por delante
+C 0xB669 el `and c` y el `xor 5` eligen el hueco por el que se va
+C 0xB670 despacio la correccion se divide por ocho: los rivales lentos se mueven poco
+C 0xB68B siete filas por delante, mirando la tabla de EB00
+C 0xB69D con tres o mas coches por delante ya no hay hueco
+C 0xB6A6 catorce pixeles de margen a cada lado para considerar que estorba
+C 0xB6B9 el volante del rival sale de una tabla indexada por su angulo
+C 0xB6D1 el resultado se compara con 0x80 para saber el signo
+C 0xB6D7 y con menos de cinco pixeles de desvio el volante se queda a cero
+C 0xB74D los rivales adelantan uno de cada cuatro turnos
+C 0xB761 y solo uno de cada 32 fotogramas
+C 0xB76A 0x50 pixeles de margen para plantearse el adelantamiento
+
+C 0xB778 el `sbc a,a` convierte el signo en 0 o 0xFF, y de ahi salen los ocho pixeles a un lado o a otro
+C 0xB785 EA7F reparte: 1 desde aqui y 0 desde 0xB789
+C 0xB78E (ix+2) dice de que tabla se saca la correccion: 0, 1 o 2
+C 0xB79E con el bit 4 de (ix+17) el rival cambia de lado y vuelve
+C 0xB7C4 se miran tres casillas por delante y de ahi salen tres bits: por donde hay sitio
+C 0xB7D6 la tabla convierte esos tres bits en cuanto se desvia
+C 0xB7DE y si el bit 1 esta apagado, ademas se le quita la correccion acumulada
+C 0xB7F9 con los tres bits a 7 -todo libre- el rival vuelve poco a poco a su carril
+C 0xB803 y segun el signo de (ix+36), vuelve por un lado o por el otro
+C 0xB847 la misma faena para el otro objetivo, el de (ix+16)
+C 0xB86D las dos rutinas de aqui son gemelas y opuestas: una manda al rival a la izquierda y la otra a la derecha
+C 0xB899 tres casillas de la fila, separadas tres columnas, 0x18 pixeles por delante
+C 0xB8A6 E26C y E272 marcan otra vez el rango de la calzada
+C 0xB8B6 el `rl c` va juntando los tres bits, uno por casilla
+C 0xB8D4 la misma prueba, pero solo 0x10 pixeles por delante
+
+B 0xB92D LAS NUEVE RUTINAS DE TIPO DE RIVAL, una por entrada de la tabla
+B 0xB92D de p02 0x9F53. Todas siguen el mismo molde: ajustar el carril con
+B 0xB92D 0xB847, decidir el desvio (0xB604 y el reparto por (ix+17)) y por
+B 0xB92D ultimo el volante (0xB6B7). Lo que cambia de una a otra es
+B 0xB92D cuantas columnas se meten desde el borde -(EA7D): 1, 4, 2, 5 o
+B 0xB92D 1- y que dibujo lleva el rival ((ix+18)).
+C 0xB92D el bit 1 de (ix+30) marca al rival ya colocado
+C 0xB933 el bit 7 del tipo dice si es de los rapidos: los lentos se aparcan en x = 0
+C 0xB948 y los rapidos en 0xBF, o sea por detras
+C 0xB95A el rival que no cabe se quita de la lista
+C 0xB960 el molde: desvio y adelantamiento
+C 0xB96F este tipo va con el color 12
+C 0xB977 y este ademas avisa a p02 con E209 = 10
+C 0xB986 EA7D = 1: se pega al borde
+C 0xB996 (ix+2) = 1 fija por que tabla de desvio va
+C 0xB9B3 aqui son cuatro columnas desde el borde
+C 0xB9D8 tambien cuatro, pero con otro dibujo
+C 0xBA02 y aqui dos
+C 0xBA2C cinco: este va por el centro de la calzada
+C 0xBA53 este entra por el otro borde, buscando la casilla hacia delante
+C 0xBA5B y si ya esta a menos de ocho pixeles de su sitio, se queda
+C 0xBA70 si no, se le cambia el tipo por el 1 y se recoloca
+C 0xBA96 el ultimo tipo solo se pega al borde y nada mas
+C 0xBA9F un fotograma de cada dos: aqui es donde el rival lee la pista que viene
+C 0xBAA7 0xE8 pixeles por delante, casi una pantalla entera
+
+C 0xB0AF la media queda en DE y la diferencia se calcula contra ella
+C 0xB0C8 la vy nueva del primero
+C 0xB0CE y ahora la del segundo, con la resta al reves
+C 0xB0E2 el resultado se suma a la media
+C 0xB8AF la fila se recorta al principio para no salirse de ella
+C 0xB8B9 tres columnas de separacion entre las casillas que se miran
+C 0xB8C5 y otras tres para la tercera
+C 0xACF5 el nibble alto ocupado significa que el objeto esta en otro estado
+C 0xAD16 quince pixeles de alto...
+C 0xAD21 ...y ocho de ancho, la misma ventana de siempre
+C 0xB8DB 0x10 pixeles por delante en vez de 0x18
+C 0xB8EA aqui las tres casillas van seguidas, no separadas
+C 0xB4FC y cada ocho fotogramas se cuenta un paso mas
+C 0xB50B a los tres pasos el objeto desaparece
+C 0xB2FC dos restas: la separacion por el eje corto
+C 0xB30B y al otro se le suma lo mismo por el lado contrario
+C 0xB474 la ficha que no se pinta se salta
+C 0xB48A los dos bytes de la casilla se guardan en el juego alterno y en la lista
+C 0xAF7F la suma con tope, para no pasarse de lado
+C 0xAF89 y lo mismo con el otro coche
+C 0xB084 la vy del segundo se calcula igual que la del primero
+C 0xB08B la diferencia, esta vez del otro
+C 0xB09D y tampoco puede salir positiva
+C 0xB52E las dos palabras -vy y vx- pierden su octava parte: es el rozamiento del retirado
+C 0xB543 y ahora vx
+C 0xB36C dos columnas de separacion y la vuelta con `res 6,l`
+C 0xB37C la tercera casilla
+C 0xB29B la segunda resta: el desplazamiento es el doble
+C 0xB2A6 y al otro coche se le hace lo mismo en sentido contrario
+C 0xB39B los tres tiles que mandan son el 0xC0, el 0xC6 y el 0xC7
+C 0xB3A1 y el ultimo de ellos
+C 0xB3DC la linea 3 son mas letras
+C 0xB3E4 la 4 y la 5, el resto del abecedario
+C 0xB0F4 las dos velocidades del objeto
+C 0xB103 y se escriben en su pareja de la otra pantalla
+C 0xAE17 los rivales rapidos van por otra rama
+C 0xAE1C el bit 7 dice si el rival ya conto en un cruce anterior
+C 0xB119 lo mismo para el segundo
+C 0xBADC la segunda lectura de pista, mas cerca: 0x98 pixeles
+C 0xBAE1 y el mismo reparto de tiles que manda
+C 0xAF3D solo si ademas el rival va mas despacio
+C 0xB697 dos columnas y la vuelta dentro de la fila
+C 0xB859 0xC8 pixeles por delante del coche
+C 0xB865 y de la tabla sale cuanto se corrige
+C 0xBE5D 0x15 por fila: veintiuna casillas de ancho
+C 0xBE75 veintiun patrones seguidos, de ocho en ocho bytes
+C 0xAC3A los dos coches tienen que estar en estado 0
+C 0xACDB los cinco rivales del otro coche, uno por uno
+C 0xAC11 el nibble bajo es el tipo
+C 0xA6CC el hueco se guarda mientras se monta el rival
+C 0xAFEE los dos coches quedan marcados
+C 0xB1D9 se limpian los bits de cuenta antes de recontar
+C 0xB26B con los dos siendo objetos, el reparto es otro
+C 0xB3C4 la linea 2 son las letras siguientes
+C 0xB4C9 el bit 2 de H es la vuelta dentro del kilobyte
+C 0xB00C el tipo 15 no participa en golpes
+C 0xA880 y el jugador 2 tampoco pasa de la plaza 6
+C 0xB7B1 la tercera tabla de correccion
+C 0xB883 el mismo reparto que su gemela, pero al reves
+C 0xBA1F el `and 0x0f` de aqui no hace nada: el `and 3` de la linea siguiente ya recorta mas
+C 0xB81C el signo decide si se vuelve por un lado o por el otro
+C 0xB9F7 el reparto de este tipo se salta 0xB75C
+C 0xB282 el segundo giro, de ocho grados
+C 0xB336 y el segundo, con el otro valor de la pareja
+C 0xB424 y si ninguna tecla de la linea vale, se devuelve la de antes
+C 0xB583 el retirado se marca con el bit 7 y se le da el dibujo de humo
+C 0xB5D9 a cada coche le toca un fotograma
+C 0xB751 uno de cada cuatro turnos
+C 0xB7EE y solo cuando el turno lo permite
+C 0xB919 el bit 7 de (ix+36) dice por que borde busca
+C 0xB963 con acarreo el desvio ya esta hecho
+C 0xB98B EA7D ya esta puesto: se busca el borde y se ajusta
+C 0xB9AB el mismo reparto por turnos
+C 0xB9D0 y aqui igual
+C 0xBA4B y aqui tambien
+C 0xBA8E el ultimo tipo, con el mismo molde
+C 0xBE63 por ocho: cada patron son ocho bytes
+C 0xBE79 y ocho bytes hasta el patron de la fila de abajo
+C 0xACE0 el objeto vacio se salta
+C 0xAFF2 los dos quedan marcados como tocados
+C 0xB3CB tres rotaciones para llegar a los bits que interesan
+C 0xB57F el contador de la retirada empieza a cero
+C 0xB534 la palabra se copia para poder dividirla sin perderla
