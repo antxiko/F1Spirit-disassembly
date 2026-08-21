@@ -747,3 +747,253 @@ F 0x7DD3 w1
 
 # --- PENDIENTE DE TRAZAR (seccion que reescribe tools/huecos.py; no editar a mano) ---
 # --- fin de la seccion pendiente ---
+
+# =============================================================================
+# TANDA 2026-08-22: LOS MENUS DE ELECCION (0x6000-0x6145)
+# =============================================================================
+B 0x6000 El menu va por dos variables: E251 es el paso -que pantalla de
+B 0x6000 menu se esta ensenando- y E27E la opcion marcada, con E27F como
+B 0x6000 ultima opcion valida. El cursor es un sprite cuyos cuatro bytes de
+B 0x6000 atributo se copian de una tabla de p03, y los rotulos son textos
+B 0x6000 comprimidos de p09 que pinta y borra la pareja p00 0x4B8F/0x4B99.
+C 0x6000 se entra desde p00 0x5FFD; el Z de alli dice si hay categoria elegida
+C 0x6003 con el `dec` la opcion 1 sale por Z y las de mas arriba por el signo
+C 0x601F E240 a cero, que la eleccion de jugadores empieza de nuevo
+C 0x6024 tres opciones: uno, dos, y la tercera
+C 0x602D los cuatro bytes del cursor son un atributo de sprite entero (Y, X, patron y color) que se copia de p03
+C 0x6035 se borran los dos rotulos de la pantalla anterior antes de pintar el de esta
+C 0x604D los tres a cero: paso, subpaso y opcion marcada
+C 0x605A el cursor se mueve con la tabla de p03 0xBBCB, que dice donde va cada opcion
+C 0x6061 la opcion 0 es un jugador y las otras dos son dos
+C 0x606E la tercera opcion ademas enciende E240
+C 0x607A al pasar de pantalla la opcion vuelve a la primera
+C 0x6090 el cursor cambia de sitio con el menu: otra tabla, otros cuatro bytes
+C 0x60AE ...con 0x0C dos mas (el `inc` va dos veces)...
+C 0x60BD ...y con 0x19 una mas
+C 0x60D2 trece casillas borradas: el hueco del nombre del GP
+C 0x60F9 el nombre de la categoria se repinta en cada fotograma: cambia al mover el cursor
+C 0x6102 la opcion 5 es la de F1, y ahi el mando ademas mueve el numero de GP
+C 0x6120 E25F a cero: elige el jugador 1
+C 0x612A de la 5 en adelante no hay traduccion que hacer
+C 0x613A la raya que parte el menu en dos columnas no es un dibujo: es un flujo RLE de catorce filas, siete del tile 0x5F y siete del 0x5E
+
+C 0x617F el +1 es porque los numeros del menu se ensenan desde 1 y por dentro cuentan desde 0
+C 0x6188 las cuatro rotaciones bajan el nibble de arriba: la decena
+C 0x618E una decena a cero no se pinta: se queda el tile 0, que es el fondo
+C 0x6199 los digitos son los tiles 0x10 a 0x19
+C 0x61AD de la opcion 5 en adelante el nombre depende ademas del GP elegido
+C 0x61BB once columnas descomprimidas en E423: el hueco del nombre en el menu
+C 0x61C7 los ocho umbrales son 0x21, 0x30, 0x41, 0x54, 0x69, 0x80, 0x99 y 0xB4: la escalera de puntos que va abriendo los GP
+C 0x61CB dos GP mas por cada umbral pasado
+C 0x61F5 y si se pasan los ocho, uno mas: 16 GP en total
+C 0x6227 con E1DF encendido -el desbloqueo- no hay umbral que valga: todo abierto
+C 0x622E los puntos son de 16 bits y hay dos juegos, uno por jugador
+C 0x6235 basta con que UNO de los dos llegue al umbral para abrirlo
+C 0x623C los flancos de los dos mandos se juntan: el GP lo puede mover cualquiera de los dos
+C 0x6243 tres rotaciones para llegar al bit 2 (izquierda) y una mas para el 3 (derecha)
+C 0x624A a la derecha no se pasa del GP maximo alcanzado
+C 0x6258 y a la izquierda no se baja del primero
+C 0x6267 aqui solo manda el mando del jugador que este eligiendo (E25F)
+C 0x626D los dos mandos otra vez: el cursor lo mueve cualquiera
+C 0x6274 bit 0 arriba y bit 1 abajo, y se miran en ese orden
+C 0x627D E27F es la ultima opcion valida: por debajo de ella el cursor se queda clavado
+C 0x6287 y hacia arriba el tope es el 0: el `inc a` detras del `dec` es la prueba de que se ha pasado
+C 0x628E la opcion por dos: la tabla son parejas de (Y, X)
+C 0x6297 solo se copian dos bytes -la posicion-, que el patron y el color del cursor ya estaban puestos
+C 0x629C en el estado 0x18 el cursor se mueve callado
+C 0x62B3 el bit 4 es el boton, y tambien vale el de cualquiera de los dos mandos
+
+C 0x62C5 en la eleccion de coche cada jugador manda sobre lo suyo, y E25F dice de quien es el turno
+C 0x62E5 siete filas de once columnas: el hueco de la tabla de la izquierda
+C 0x62EC B' = 0x30 es la fuente: al codigo de cada letra se le suma eso para dar con su tile
+C 0x62F2 los totales de los dos jugadores, uno debajo del otro
+C 0x6310 y el valor conseguido en la categoria que marque el cursor, tambien por jugador
+C 0x6326 el mismo apano del menu: la opcion se traduce a categoria y la 5 se suma al GP
+C 0x6331 0xFFC0 es -0x40: la tabla de valores empieza 0x40 por debajo del bloque del coche
+C 0x633D B = 0x60 es la fuente de los digitos de esta pantalla
+C 0x6345 tres listas de tiles y una de sprites: todo lo que hace falta para los menus
+C 0x637A el ancho en columnas viaja en C' y es lo que decide donde se corta cada fila
+C 0x6380 por aqui el flujo empieza por su propio destino, dos bytes
+C 0x6385 el 0x00 acaba el flujo
+C 0x638A el bit 7 del codigo separa lo que se copia tal cual de lo demas
+C 0x6390 un 0x80 pelado no copia nada: es la marca de "aqui viene un destino nuevo"
+C 0x6392 copiar es byte a byte porque hay que ir contando columnas
+C 0x6397 EA69 cuenta la columna, y al llegar al ancho se salta a la fila de abajo
+C 0x63A3 de 0x81 a 0xE0 es repetir; de 0xE1 arriba, series
+C 0x63A9 el byte que se repite viene detras del codigo
+C 0x63AC el `push af` es para no perder el byte: el salto de fila se lleva A por delante
+C 0x63BC por debajo de 0x10 la serie sube y de ahi arriba baja
+C 0x63C4 la serie creciente escribe t, t+1, t+2...: sirve para las filas de tiles numeradas
+C 0x63D9 y esta la misma al reves
+C 0x63E9 fin de fila: la columna vuelve a cero y el puntero salta lo que falte hasta las 32 casillas del buffer
+C 0x63ED 32 menos el ancho es lo que sobra de la fila
+C 0x63F7 la pantalla de eleccion de coche se monta de cero
+C 0x63FF los tiles 16 a 58 en blanco (0xE0) y los 0 a 15 macizos: el marco de las fichas
+C 0x6411 E27F = 1: de momento solo dos opciones
+C 0x641F 0x21F bytes del buffer a cero: las 17 filas de arriba
+C 0x642E cada paso de la eleccion tiene su fila en la tabla p03 0xBC45, con hasta tres fichas
+C 0x6432 un 0xFF cierra la fila: hay pasos con una ficha y pasos con tres
+C 0x6435 las tres fichas van a E422, E42C y E436: tres columnas separadas diez casillas
+C 0x6452 el buffer se vuelca en cada fotograma, que la pantalla se mueve
+C 0x645C del paso 6 en adelante ya no se elige nada, se contesta si o no
+C 0x6464 E252 = 2 es el panel deslizandose: mientras dure, el mando no pinta nada
+C 0x646C tres rotaciones para el bit 2 (izquierda), una mas para el 3 (derecha) y otra para el 4 (boton)
+C 0x6480 el paso 0 es el coche entero; del 1 en adelante se elige pieza a pieza
+C 0x6487 la eleccion se apunta en el bloque del jugador, un byte por paso
+C 0x6496 el paso 5 es el ultimo: la caja de cambios
+C 0x649D dos palabras por paso: el texto que se borra y el que se pinta
+C 0x64AF el rotulo de "de acuerdo" p03 0xAC07
+C 0x64B6 si se venia del paso 0 -el coche predefinido- se salta al 7 y no al 6
+C 0x64C2 el cursor cambia de sitio para la pregunta de si o no
+C 0x64D3 el coche predefinido trae sus cinco bytes hechos: no hay nada que elegir
+C 0x64DB con un solo jugador no hay turno que pasar
+
+C 0x64E4 con dos jugadores se vuelve al estado 6 para que elija el segundo; cuando E25F llega a 2 ya han elegido los dos
+C 0x64F3 esta es la pregunta de si o no, con su propia tabla de cursor
+C 0x64FD la opcion 0 es "si": se da por buena la eleccion
+C 0x6509 y con la 1 se vuelve a empezar; el paso 7 -el coche predefinido- vuelve al estado 6 entero
+C 0x6521 E252 reparte: 0 elegir, 1 mando y 2 o mas el panel deslizandose
+C 0x6535 la opcion 0 es el coche predefinido y la 1 montarlo pieza a pieza
+C 0x654A se borra el rotulo de la pregunta y se pinta el de la eleccion
+C 0x6559 el cursor entero, cuatro bytes
+C 0x6569 el valor elegido es la columna E27E de la fila E251 de la tabla de p03
+C 0x6573 por cinco: cada coche predefinido son cinco bytes (motor, carroceria, dos mas y caja de cambios)
+C 0x6583 el `inc a` detras del `dec (hl)` es la prueba de que se ha pasado de 0
+C 0x658E 0x48 es el borde izquierdo: alli el cursor ya no se mueve mas y lo que se desliza es el panel
+C 0x6590 0xB0 es lo que retrocede el cursor cuando aun le queda sitio
+C 0x659C se prueba a avanzar y, si la fila no tiene mas fichas (0xFF), se deshace
+C 0x65AF 0xE8 es el borde derecho
+C 0x65B9 E25D dice por que lado entra el panel y E25E cuantos pasos le quedan
+C 0x65C6 0xFF bytes de E920 a cero: el sitio donde se monta la ficha que entra
+C 0x65D8 el `inc a` es lo que convierte el indice en el de la ficha siguiente
+C 0x65DE un paso de deslizamiento por fotograma, diez en total
+C 0x65E4 hacia la derecha se copia de E41D a E41E, o sea todo un byte mas alla
+C 0x65EF y hacia la izquierda al reves
+C 0x65FD al acabar, el paso 0 vuelve a 0 y los demas a 1
+C 0x660A el cursor se mueve C pixeles y suena
+C 0x6613 la ficha son tres cosas: el texto, el dibujo y el marco
+C 0x6621 el marco se pinta 0x21 casillas por delante: una fila y una columna antes
+C 0x662D 0x200 bytes son las 16 filas de arriba de la tabla de nombres
+C 0x6638 0x38E0 es la fila 7: las de arriba las deja quietas quien pinta el rotulo
+
+C 0x663E el origen es siempre el buffer de E400; lo que cambia es cuanto y a donde
+C 0x6645 dos tablas encadenadas: primero el paso (E251) y luego la ficha dentro del paso
+C 0x6650 el `dec a` y el `and 0x7f` son porque la ficha llega contada desde 1 y con el bit 7 puesto en algunos sitios
+C 0x665F ocho columnas de ancho tiene el dibujo de la ficha
+C 0x666B ocho filas de nueve columnas para el texto, justo debajo
+C 0x6672 B' = 0xE0 es la fuente pequena, la de las fichas
+C 0x6675 los dos contadores -columna y fila dentro de la caja- empiezan a cero
+C 0x667A el 1 es salto de linea y el 0x5F el final del texto
+C 0x6685 el espacio no lleva letra: se queda el tile 0
+C 0x6689 a cada letra se le suma la fuente, que es lo unico que cambia entre una pantalla y otra
+C 0x6694 EA69 cuenta la columna y se compara con el ancho de la caja
+C 0x669B fin de fila: se salta lo que falta hasta las 32 casillas del buffer
+C 0x66A6 y EA6A cuenta las filas: al llegar al alto, se acabo
+C 0x66B0 C' guarda el ancho durante todo el recorrido, que es lo unico que no cabe en la memoria de los contadores
+C 0x66BC el marco son seis tiles: dos esquinas arriba, dos abajo, uno horizontal y uno vertical
+C 0x66C3 quince filas de alto
+C 0x66C6 nueve casillas separan los dos lados del marco
+C 0x66CC y 0x17 mas para caer en la fila siguiente
+C 0x66D5 ocho tiles horizontales entre las dos esquinas
+C 0x66E7 diecisiete filas, y cada una se corre con un `ldir` de 29 bytes
+C 0x66F1 la fila por 32: la columna nueva sale del bloque de E800, que es donde se monto la ficha que entra
+C 0x6707 y la columna que toca es 10 menos lo que quede de deslizamiento
+C 0x670D un solo `ldi`: la columna que entra es una casilla por fila
+C 0x671C la misma faena al reves, con `lddr`, y la columna nueva por el otro lado
+
+C 0x6743 0x3E son las dos filas que hay que subir para caer en la siguiente, ya contando el byte que se acaba de escribir
+C 0x674E la columna del cursor es la que elige el valor dentro de la fila
+C 0x6757 primero se borra el rotulo viejo y luego se pinta el nuevo, en el mismo sitio
+C 0x6765 y de paso se avanza el paso y se vuelve a montar la pantalla
+C 0x676C doce bytes por categoria: seis palabras, una por paso
+C 0x6772 por cuatro y luego mas el doble: eso es por doce
+C 0x6784 la lista p04 0x6E0D lleva los tiles comunes de las fichas
+C 0x678D los pasos 0 y 2 -el coche entero y la carroceria- tienen tiles distintos por categoria
+C 0x67A2 el texto de la ficha se apunta en EA6B, que es de donde lo saca 0x6663
+C 0x67AD la ficha llega contada desde 1, como en el dibujo
+C 0x67D3 el tile 0x11 es el 1 y el 0x12 el 2: el numero del jugador que esta eligiendo
+C 0x67DF fila 3, columna 12 de la tabla de nombres
+C 0x67F0 los dos jugadores tienen su bloque, y E25F dice cual toca
+C 0x67FC lo mismo pero con IX y cuatro bytes mas alla
+C 0x680C el damero es la pantalla de "READY": se pinta con una tabla de casillas
+C 0x681C E25E hace de indice de la tabla mientras se pinta
+C 0x6827 se pinta de una vez, en un bucle, y no una casilla por fotograma
+C 0x6836 el indice sube antes de leer: asi la siguiente vuelta ya apunta a la casilla siguiente
+C 0x683C por tres, que las entradas son (y, x, tile)
+C 0x6842 un 0xFF en la Y cierra la tabla
+C 0x6849 cada casilla del damero son 8 x 8 tiles
+
+C 0x684C el relleno de 8 x 8 lo hace la rutina de rectangulos de p00
+C 0x6877 el estado 1 pinta la presentacion a trozos, sin bloquear el fotograma
+C 0x6884 un bloque cada cuatro fotogramas: asi la pantalla se va montando a la vista
+C 0x6893 y cuando se acaban los bloques, veinte fotogramas de regalo antes de seguir
+C 0x689E la espera del final, un fotograma por vuelta
+C 0x68A7 el estado 0x19 es la vuelta al menu; lo piden desde varios sitios
+C 0x68B4 el indice sube antes de usarse, igual que en el damero
+C 0x68B9 por cuatro: cada entrada es un destino y un puntero
+C 0x68C2 un 0xFF cierra la tabla
+C 0x68CD el destino viene como pareja (fila, columna) y 0x4A9D lo convierte en casilla del buffer
+C 0x68D1 ocho columnas de ancho tiene cada bloque
+C 0x690C el texto vive en la pagina 9, que se mapea aqui y se devuelve al acabar
+C 0x6915 el 0xFF cierra el texto para el pintador de tiles de p00
+C 0x6921 y el 0x5F para el pintador de buffers de 0x6675: son dos consumidores distintos
+C 0x6926 C' son los niveles de macro que se permiten: diez
+C 0x692A el 0x5F cierra el texto
+C 0x692E de 0x60 en adelante no es una letra, es una macro: un trozo de texto que se repite
+C 0x6937 y el texto expandido no puede pasar de 0xEE02: ahi se corta
+C 0x6943 la macro se expande llamando al mismo bucle: los textos pueden llevar macros dentro de macros
+C 0x694F por dos, que la tabla de macros de p09 son punteros
+C 0x695E al volver se devuelve el nivel gastado
+C 0x6962 sin niveles que gastar la macro se copia como un cero, o sea como nada
+C 0x6967 C' a cero es "ya no se puede bajar mas"
+
+C 0x6970 el ranking es la pantalla de resultados de despues de la carrera
+C 0x697C 0x1E0 es la cuenta larga que la deja puesta un rato aunque nadie toque nada
+C 0x6982 el 0xD0 en el primer atributo apaga todos los sprites de golpe
+C 0x6993 con dos jugadores hay dos fichas, una en cada buffer
+C 0x69A8 EA70 dice en que buffer se esta pintando: E400 el jugador 1 y EC00 el 2
+C 0x69C5 la ficha del jugador: tiempo, posicion, puntos y total
+C 0x69CB el fondo de la ficha es el tile 5...
+C 0x69D6 ...y por dentro una ventana de 22 x 15 casillas en blanco
+C 0x69E7 el tiempo del coche son tres bytes, (iy+4D..4F)
+C 0x69FF y solo se pinta si el coche llego a meta: el bit 1 de sus banderas
+C 0x6A0D el que no termino no tiene tiempo ni puesto: le sale RETIRE
+C 0x6A33 y entonces manda otra cosa, E2D6 contra E396
+C 0x6A4A si el desempate sale al reves, los dos puestos se cambian
+C 0x6A5B con E240 encendido -la tercera opcion de jugadores- el puesto no se pinta
+C 0x6A75 B = 0x10 es la fuente de los digitos del ranking
+C 0x6A7A el total del campeonato vive en (iy-0x2B), justo por delante del bloque del coche
+C 0x6A90 los doce tiles de 0x6ECC son "RETIRE EMPTY" ya hechos, sin pasar por el expansor de textos
+C 0x6A9F con dos jugadores el panel es otro y no se toca aqui
+C 0x6AA5 los colores de los cuatro ultimos tiles a cero antes de cargar el panel
+C 0x6AB9 el paso 1 es el volcado, con la cortinilla de p02
+C 0x6AC7 hasta que E252 no llega a 0x14 no se pasa de paso
+C 0x6ACF el paso 2 es la espera larga, con su contador de 16 bits
+C 0x6ADB a cero se pasa solo, sin tocar nada
+
+C 0x6AE1 si nadie llego a meta la espera es mas larga: no hay nada que leer
+C 0x6AEE y el boton se la salta
+C 0x6AF9 con un jugador solo hay un buffer que volcar
+C 0x6B02 0x8C fotogramas para el paso siguiente, y el sonido 0x81 para abrirlo
+C 0x6B13 el boton adelanta el paso 3
+C 0x6B24 el sonido 0x80 cierra la pantalla
+C 0x6B29 el bit 6 de E1C2 es "hay jugador 1": sin el, esto es la demo y no se vuelve al menu
+C 0x6B37 el sonido 0x46 y de vuelta al estado 2
+C 0x6B3E el GP elegido y el maximo vuelven a cero: se empieza campeonato nuevo
+C 0x6B4C solo la carrera 20 -el ultimo GP- puede cerrar el campeonato
+C 0x6B4F el bit 1 de las banderas del coche es "termino"
+C 0x6B59 y ademas hay que haber quedado primero o segundo
+C 0x6B5D si el coche 1 no vale, se prueba con el 2
+C 0x6B6B 0xB4 es el ultimo umbral de la escalera de puntos, el mismo que abre el GP 16
+C 0x6B6F este `ld d,0xBD` no lo llama nadie: se entra siempre por 0x6B6B, que se lo salta con el `jr`
+C 0x6B71 basta con que uno de los dos jugadores llegue al umbral
+C 0x6B81 el fondo del ranking es el tile 5, la pantalla entera
+C 0x6B8F los cinco bytes son las cinco categorias, y estan desordenados a proposito: (iy-3F) es STOCK, (iy-40) RALLY, (iy-3D) F3, (iy-3C) F3000 y (iy-3E) ENDURANCE, que es el orden en que las ensena el menu
+C 0x6BAA se copian antes a EA50 para poder recorrerlos de corrido
+C 0x6BB3 0x20B es la fila 16, columna 11 del buffer
+C 0x6BC8 y de una categoria a la siguiente se baja una fila entera
+C 0x6BD5 0xFFC5 es -0x3B: los 16 bytes de los GP de F1
+C 0x6BE1 la fila de F1 no es un byte: es la suma de los dieciseis GP
+C 0x6BF3 el total del campeonato son 16 bits
+C 0x6C00 -0x40 es donde empieza la tabla de las 21 carreras
+C 0x6C0B se suman los 21 bytes: la mejor puntuacion de cada carrera
