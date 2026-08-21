@@ -536,8 +536,8 @@ CARGA_6DB5_POR_FILAS:		; lista p04 0x6DB5 por filas (p00 0x4C93) con espera 0x10
 	ld de,00100h		;836a
 	jp 04c93h		;836d
 TEXTO_FINAL:		; E62C.. 16x3 de tile 0xFE; pagina 9 en A000; texto p09 0xAFCF expandido (p01 0x691B) y pintado en E62C (3 filas x 16, fuente 0xE0; p01 0x666E)
-	ld bc,01003h		;8370
-	ld hl,0e62ch		;8373
+	ld bc,01003h		;8370   ; el texto del final, con su posicion dentro
+	ld hl,0e62ch		;8373   ; el hueco del texto empieza en E62C
 	ld a,0feh		;8376
 	call 04b6ch		;8378
 	ld a,009h		;837b
@@ -561,28 +561,28 @@ FINAL_FUNDE_Y_PINTA:		; limpia sprites; fundido (0x83BA) hasta acabar (NZ mientr
 	pop hl			;839d
 	ret nz			;839e
 	push hl			;839f
-	ld hl,0e50ch		;83a0
+	ld hl,0e50ch		;83a0   ; el dibujo se descomprime en el buffer, 16 columnas
 	ld a,010h		;83a3
-	call 0637ah		;83a5
-	call TEXTO_FINAL		;83a8
+	call 0637ah		;83a5   ; el dibujo son 16 columnas
+	call TEXTO_FINAL		;83a8   ; y encima, el texto
 	call 044bch		;83ab
 	pop hl			;83ae
-	ld de,00100h		;83af
+	ld de,00100h		;83af   ; DE = 0x100 es la espera entre filas: aqui si se quiere que se note
 	call 04c93h		;83b2
-	call CARGA_6DB5_POR_FILAS		;83b5
+	call CARGA_6DB5_POR_FILAS		;83b5   ; y por ultimo los tiles de la lista, fila a fila
 	xor a			;83b8
 	ret			;83b9
 FUNDIDO_FF:		; C = 0xFF (blanco sobre blanco) y 0x83BC
-	ld c,0ffh		;83ba
+	ld c,0ffh		;83ba   ; 0xFF es tinta 15 sobre fondo 15: todo blanco, que es como se funde a blanco en un MSX1 -no hay paleta que tocar-
 FUNDIDO_FF_B0:		; B = 0 (256 tiles), HL = 0 (desde la tabla de colores) (E250 = 18 entra aqui desde p00 0x5B5A)
 	ld b,000h		;83bc
 	ld hl,00000h		;83be
 FUNDIDO_BANDA:		; escribe C en el byte E252 (fila de 8 px) de la entrada de colores de B tiles (0 = 256) desde HL, en los 3 tercios; E252++; Z al llegar a 8 (las 8 filas hechas)
-	ld a,(0e252h)		;83c1
+	ld a,(0e252h)		;83c1   ; E252 dice que fila de ocho pixeles toca; se pinta la misma fila de TODOS los tiles
 	call 040d0h		;83c4
 FUNDIDO_BANDA_TILE:		; un tile por vuelta (tres WRTVRM)
 	ld a,c			;83c7
-	call 0004dh		;83c8   ; BIOS WRTVRM - Writes data in VRAM
+	call 0004dh		;83c8   ; BIOS WRTVRM - Writes data in VRAM | tres escrituras por tile, una por tercio de pantalla
 	push hl			;83cb
 	ld de,00800h		;83cc
 	add hl,de			;83cf
@@ -590,16 +590,16 @@ FUNDIDO_BANDA_TILE:		; un tile por vuelta (tres WRTVRM)
 	add hl,de			;83d3
 	call 0004dh		;83d4   ; BIOS WRTVRM - Writes data in VRAM
 	pop hl			;83d7
-	ld de,00008h		;83d8
+	ld de,00008h		;83d8   ; ocho bytes de un tile al siguiente
 	add hl,de			;83db
 	djnz FUNDIDO_BANDA_TILE		;83dc
 	ld hl,0e252h		;83de
-	inc (hl)			;83e1
+	inc (hl)			;83e1   ; y al llegar a la fila 8 el fundido se ha acabado
 	ld a,(hl)			;83e2
 	cp 008h		;83e3
 	ret			;83e5
 ESPERA_E25D:		; E25D--; si no es 0 vuelve (NZ); si no E25D = A, E25E = 0 y paso siguiente
-	ld hl,0e25dh		;83e6
+	ld hl,0e25dh		;83e6   ; la espera de los pasos del final: un fotograma por vuelta
 	dec (hl)			;83e9
 	ret nz			;83ea
 PASO_SIGUIENTE_CON_ESPERA:		; E25D = A, E25E = 0, E251++, E252 = 0
@@ -607,29 +607,29 @@ PASO_SIGUIENTE_CON_ESPERA:		; E25D = A, E25E = 0, E251++, E252 = 0
 	xor a			;83ee
 	ld (0e25eh),a		;83ef
 PASO_SIGUIENTE:		; E251++, E252 = 0, Z
-	ld hl,0e251h		;83f2
+	ld hl,0e251h		;83f2   ; al pasar de paso, el subpaso vuelve a cero
 	inc (hl)			;83f5
 	inc hl			;83f6
 	ld (hl),000h		;83f7
 	xor a			;83f9
 	ret			;83fa
 COLORES_A_FF:		; 0x520 bytes de 0xFF desde la tabla de colores 0x0008, 3 tercios
-	ld a,0ffh		;83fb
+	ld a,0ffh		;83fb   ; 0x520 bytes son 164 tiles de ocho filas
 	ld hl,00008h		;83fd
 	ld bc,00520h		;8400
 	jp 047e6h		;8403
 FUNDIDO_RANKING:		; por E252 (0x10..0x28): bandas de la tabla 0x8431 (pares de filas x 8 px) con C = bits de tercio (0x844F); en 0x14 espera E25D (3C); (desde p01 0x6AC1, C = 7)
-	ld a,(0e252h)		;8406
+	ld a,(0e252h)		;8406   ; el fundido del ranking va y vuelve: de 0x10 a 0x14 entra, espera, y de 0x14 a 0x28 sale
 	cp 014h		;8409
 	jr z,FUNDIDO_RANKING_ESPERA		;840b
 	jr c,FUNDIDO_RANKING_BANDA		;840d
 	cp 028h		;840f
-	jr z,$+52		;8411
+	jr z,$+52		;8411   ; en 0x28 se acabo
 	ld b,a			;8413
 	ld a,028h		;8414
 	sub b			;8416
 FUNDIDO_RANKING_BANDA:		; A = fila de la tabla 0x8431[E252 o 0x28-E252], B = la anterior
-	ld hl,08431h		;8417
+	ld hl,08431h		;8417   ; la tabla trae las filas por parejas: cada paso pinta dos
 	call 040d0h		;841a
 	ld a,(hl)			;841d
 	dec hl			;841e
@@ -640,7 +640,7 @@ FUNDIDO_RANKING_SIGUE:		; E252++
 	inc (hl)			;8426
 	ret			;8427
 FUNDIDO_RANKING_ESPERA:		; E25D-- a cero -> E25D = 0x3C y E252++
-	ld hl,0e25dh		;8428
+	ld hl,0e25dh		;8428   ; en mitad del fundido, 0x3C fotogramas de descanso
 	dec (hl)			;842b
 	ret nz			;842c
 	ld (hl),03ch		;842d
@@ -669,20 +669,20 @@ DATA_tabla_bandas_ranking:
 
 
 ESPERA_E25D_E252:		; E25D-- a cero -> E252 = 0
-	ld hl,0e25dh		;8445
+	ld hl,0e25dh		;8445   ; la espera corta: al agotarse, el subpaso vuelve a cero
 	dec (hl)			;8448
 	ret nz			;8449
 	xor a			;844a
 	ld (0e252h),a		;844b
 	ret			;844e
 PINTA_BANDA_TERCIOS:		; por cada bit 0/1/2 de C: la fila de colores HL (+0x80) del tercio 0/1/2 con A y B (0x846C)
-	ld hl,00080h		;844f
+	ld hl,00080h		;844f   ; C dice a que tercios va la banda, un bit por tercio
 	bit 0,c		;8452
 	push af			;8454
 	call nz,PINTA_BANDA_AB		;8455
 	pop af			;8458
 	push af			;8459
-	ld hl,00880h		;845a
+	ld hl,00880h		;845a   ; el segundo tercio esta 0x800 mas alla y el tercero 0x1000
 	bit 1,c		;845d
 	call nz,PINTA_BANDA_AB		;845f
 	pop af			;8462
@@ -691,23 +691,23 @@ PINTA_BANDA_TERCIOS:		; por cada bit 0/1/2 de C: la fila de colores HL (+0x80) d
 	call nz,PINTA_BANDA_AB		;8468
 	ret			;846b
 PINTA_BANDA_AB:		; 0xAC tiles: byte A en L y B en L+1 (0x8473)
-	push hl			;846c
+	push hl			;846c   ; dos filas seguidas: la A y la B
 	call PINTA_BANDA_AC		;846d
 	ld a,b			;8470
 	pop hl			;8471
 	inc l			;8472
 PINTA_BANDA_AC:		; B = 0xAC y el bucle
 	push bc			;8473
-	ld b,0ach		;8474
+	ld b,0ach		;8474   ; 0xAC tiles, que es hasta donde llega el dibujo del ranking
 PINTA_BANDA_BUCLE:		; un WRTVRM cada 2 bytes, 0xAC veces
-	call 0004dh		;8476   ; BIOS WRTVRM - Writes data in VRAM
+	call 0004dh		;8476   ; BIOS WRTVRM - Writes data in VRAM | de dos en dos bytes: se escribe una fila de cada dos
 	inc hl			;8479
 	inc hl			;847a
 	djnz PINTA_BANDA_BUCLE		;847b
 	pop bc			;847d
 	ret			;847e
 FINAL_PASO_18:		; espera E25D y E250 = 0x1D
-	ld hl,0e25dh		;847f
+	ld hl,0e25dh		;847f   ; la ultima espera antes de los creditos
 	dec (hl)			;8482
 	ret nz			;8483
 	ld a,01dh		;8484
@@ -719,6 +719,10 @@ FINAL_PASO_18:		; espera E25D y E250 = 0x1D
 ;   M.OZAWA, R.SAGISAKA; GRAPHIC: H.MAKITANI, T.SHIMIZU, B.KINOSHITA; SOUND:
 ;   K.UEHARA, M.SASAKI, M.FURUKAWA
 ;   0x848a..0x851d  (147 bytes)
+
+; ----------------------------------------------------------------------
+; LOS CREDITOS del juego, en claro: PROGRAM T.ADACHI, M.OZAWA y R.SAGISAKA; GRAPHIC H.MAKITANI, T.SHIMIZU y B.KINOSHITA; SOUND K.UEHARA, M.SASAKI y M.FURUKAWA
+; ----------------------------------------------------------------------
 DATA_creditos:
 	defb 04eh,038h,053h,054h,041h,046h,046h,0feh	; 848a  N8STAFF.
 	defb 084h,038h,050h,052h,04fh,047h,052h,041h,04dh,03eh,0feh	; 8492  .8PROGRAM>.
@@ -743,12 +747,12 @@ SPRITES_FINAL_4:		; 4 atributos (0x0E, 0x60, 0x0C, 0x0F) de 0x8533 en EA80..; EA
 	ld a,004h		;851d
 	ld de,0ea80h		;851f
 SPRITES_FINAL_BUCLE:		; uno por vuelta
-	ld bc,00004h		;8522
+	ld bc,00004h		;8522   ; el mismo atributo copiado cuatro veces: cuatro sprites en el mismo sitio
 	ld hl,08533h		;8525
 	ldir		;8528
 	dec a			;852a
 	jr nz,SPRITES_FINAL_BUCLE		;852b
-	ld a,082h		;852d
+	ld a,082h		;852d   ; y al primero se le cambia el patron: 0x82 en vez de 0x0C
 	ld (0ea81h),a		;852f
 	ret			;8532
 
@@ -764,7 +768,7 @@ DATA_atributo_final:
 
 
 SPRITES_FINAL_MUEVE:		; D/E = 0xD8 (o 0x9E/0xA0 con E251 >= 4): dos grupos de 2 sprites (EA80 y EA88) que se mueven en x (+2/+1 cada 4 fotogramas) con el color 5/10 alternando; al pasar D, color 0 o vuelta a x = 0x60 (E803++)
-	ld d,0d8h		;8537
+	ld d,0d8h		;8537   ; 0xD8 es hasta donde llegan; a partir del paso 4 se paran antes
 	ld e,0d8h		;8539
 	ld a,(0e251h)		;853b
 	cp 004h		;853e
@@ -775,11 +779,11 @@ SPRITES_FINAL_VA:		; 0x854A
 	call SPRITES_FINAL_GRUPOS		;8546
 	ret			;8549
 SPRITES_FINAL_GRUPOS:		; patrones 0x4B (IY = E811, IX = EA80, C = 2) y 0x5B (E812, EA88, C = 1)
-	ld iy,0e811h		;854a
+	ld iy,0e811h		;854a   ; dos grupos de dos sprites, cada uno con su patron y su paso
 	ld ix,0ea80h		;854e
 	ld b,002h		;8552
 	ld c,002h		;8554
-	ld a,04bh		;8556
+	ld a,04bh		;8556   ; el primer grupo lleva el patron 0x4B y el segundo el 0x5B
 	call SPRITE_FINAL		;8558
 	ld d,e			;855b
 	ld iy,0e812h		;855c
@@ -791,7 +795,7 @@ SPRITE_FINAL:		; patron A, color 5/10 por bit 0 de E1C3, x += C cada 4 fotograma
 	ld (ix+000h),a		;856a
 	ex af,af'			;856d
 	push de			;856e
-	ld a,(0e1c3h)		;856f
+	ld a,(0e1c3h)		;856f   ; el bit 0 del contador de fotogramas alterna el color entre 5 y 10: eso es el parpadeo
 	ld d,005h		;8572
 	bit 0,a		;8574
 	jr z,SPRITE_FINAL_COLOR		;8576
@@ -801,13 +805,13 @@ SPRITE_FINAL_COLOR:		; color D
 	pop de			;857b
 	ld (ix+003h),a		;857c
 	ld a,(0e1c3h)		;857f
-	and 003h		;8582
+	and 003h		;8582   ; y la X solo avanza uno de cada cuatro fotogramas
 	ld a,(ix+001h)		;8584
 	jr nz,SPRITE_FINAL_X		;8587
 	add a,c			;8589
 	ld (ix+001h),a		;858a
 SPRITE_FINAL_X:		; compara con D
-	cp d			;858d
+	cp d			;858d   ; al pasar del tope, o se apagan o vuelven a empezar
 	call nc,SPRITE_FINAL_PASA		;858e
 	push de			;8591
 	ld de,00004h		;8592
@@ -817,46 +821,46 @@ SPRITE_FINAL_X:		; compara con D
 	djnz SPRITE_FINAL		;8599
 	ret			;859b
 SPRITE_FINAL_REINICIA:		; x = 0x60 y E803++
-	ld a,060h		;859c
+	ld a,060h		;859c   ; x = 0x60 otra vez, y E803 cuenta las vueltas dadas
 	ld (ix+001h),a		;859e
 	ld hl,0e803h		;85a1
 	inc (hl)			;85a4
 	ret			;85a5
 SPRITE_FINAL_PASA:		; x >= 0xD8 -> 0x859C; si no color 0
-	cp 0d8h		;85a6
+	cp 0d8h		;85a6   ; solo los que llegan a 0xD8 vuelven a empezar; los demas se apagan poniendo el color 0
 	jp nc,SPRITE_FINAL_REINICIA		;85a8
 	xor a			;85ab
 	ld (ix+003h),a		;85ac
 	ret			;85af
 E821_E823_CERO:		; E821 = E822 = E823 = 0
-	xor a			;85b0
+	xor a			;85b0   ; los tres contadores de la escena a cero
 	ld (0e821h),a		;85b1
 	ld (0e822h),a		;85b4
 	ld (0e823h),a		;85b7
 	ret			;85ba
 SPRITES_FINAL_TABLA:		; pagina 6 en A000; 0x85C6; 1/2/3
 	ld a,006h		;85bb
-	call 04457h		;85bd
+	call 04457h		;85bd   ; la lista de sprites del final vive en la pagina 6
 	call SPRITES_FINAL_TABLA_VA		;85c0
 	jp 043feh		;85c3
 SPRITES_FINAL_TABLA_VA:		; cada 4 fotogramas: si E821 = 0, cada 32 fotogramas E822 = p00 0x5513 (azar) & 1; lee desde la tabla p06 0x8639[E822] + E823 atributos de 4 bytes (0xFF fin: limpia) hasta uno con bit 7 en el 4o byte
 	ld a,(0e1c3h)		;85c6
-	and 003h		;85c9
+	and 003h		;85c9   ; un paso de esta escena cada cuatro fotogramas
 	ret nz			;85cb
 	ld a,(0e821h)		;85cc
 	and a			;85cf
 	jr nz,SPRITES_TABLA_LEE		;85d0
 	ld a,(0e1c3h)		;85d2
-	and 01ah		;85d5
+	and 01ah		;85d5   ; el `and 0x1a` no es una mascara de "cada 32": deja pasar solo los fotogramas cuyos bits 1, 3 y 4 esten todos a cero, o sea 1 de cada 8 de los que ya pasaron el filtro anterior
 	ret nz			;85d7
-	call 05513h		;85d8
+	call 05513h		;85d8   ; y entonces se sortea cual de las dos listas toca
 	and 001h		;85db
 	ld (0e822h),a		;85dd
 SPRITES_TABLA_LEE:		; HL = p06 (0x8639[E822]) + E823
 	ld a,(0e822h)		;85e0
-	add a,a			;85e3
+	add a,a			;85e3   ; por dos: la tabla son punteros
 	ld hl,08639h		;85e4
-	call 040d0h		;85e7
+	call 040d0h		;85e7   ; la tabla da la lista que toca
 	ld e,(hl)			;85ea
 	inc hl			;85eb
 	ld d,(hl)			;85ec
@@ -865,12 +869,12 @@ SPRITES_TABLA_LEE:		; HL = p06 (0x8639[E822]) + E823
 	ld a,(0e823h)		;85f2
 	call 040d0h		;85f5
 SPRITES_TABLA_BUCLE:		; un atributo por vuelta: E821 = y; color = byte & 0x0F; bit 7 = para
-	ld a,(0e823h)		;85f8
+	ld a,(0e823h)		;85f8   ; el indice avanza de cuatro en cuatro: los atributos son de cuatro bytes
 	add a,004h		;85fb
 	ld (0e823h),a		;85fd
 	ld c,000h		;8600
 	ld a,(hl)			;8602
-	cp 0ffh		;8603
+	cp 0ffh		;8603   ; un 0xFF en la Y cierra la lista
 	jr z,SPRITES_TABLA_FIN		;8605
 	ld (ix+000h),a		;8607
 	ld (0e821h),a		;860a
@@ -882,11 +886,11 @@ SPRITES_TABLA_BUCLE:		; un atributo por vuelta: E821 = y; color = byte & 0x0F; b
 	ld (ix+002h),a		;8614
 	inc hl			;8617
 	ld a,(hl)			;8618
-	add a,080h		;8619
+	add a,080h		;8619   ; el bit 7 del byte de color no es color: es la marca de "este es el ultimo de la tanda"
 	jr nc,SPRITES_TABLA_COLOR		;861b
 	ld c,a			;861d
 SPRITES_TABLA_COLOR:		; color
-	and 00fh		;861e
+	and 00fh		;861e   ; y del byte solo se queda el nibble de abajo, que es el color de verdad
 	ld (ix+003h),a		;8620
 	ld a,c			;8623
 	and a			;8624
@@ -896,7 +900,7 @@ SPRITES_TABLA_COLOR:		; color
 	add ix,de		;862a
 	jr SPRITES_TABLA_BUCLE		;862c
 SPRITES_TABLA_FIN:		; E821 = E823 = 0 y limpia sprites
-	xor a			;862e
+	xor a			;862e   ; al acabar la lista se apagan todos los sprites
 	ld (0e821h),a		;862f
 	ld (0e823h),a		;8632
 	call 04460h		;8635
@@ -916,7 +920,7 @@ DATA_tabla_sprites_final:
 
 
 PAUSA_SONIDO_MOTOR:		; E1DB = E190, E190 = 0 y sonido 0x83 (desde p00 0x5B86)
-	ld hl,0e190h		;863d
+	ld hl,0e190h		;863d   ; el volumen del motor se guarda antes de callarlo, para poder devolverlo igual
 	ld a,(hl)			;8640
 	ld (hl),000h		;8641
 	ld (0e1dbh),a		;8643
@@ -924,31 +928,31 @@ PAUSA_SONIDO_MOTOR:		; E1DB = E190, E190 = 0 y sonido 0x83 (desde p00 0x5B86)
 	jp 04174h		;8648
 REANUDA_SONIDO_MOTOR:		; sonido 0x82, espera la interrupcion, E190 = E1DB y la musica de la carrera (0x881D) (desde p00 0x5B7E)
 	ld a,082h		;864b
-	call 04174h		;864d
+	call 04174h		;864d   ; el sonido 0x82 lo devuelve
 	call ESPERA_INTERRUPCION		;8650
 	ld a,(0e1dbh)		;8653
 	ld (0e190h),a		;8656
 	jp MUSICA_CARRERA_B		;8659
 CUENTA_ATRAS_ACABADA:		; Z si F0F7/F0F8 = 0
-	ld a,(0f0f8h)		;865c
+	ld a,(0f0f8h)		;865c   ; la cuenta atras de F0F7/F0F8 es de 16 bits y hay que mirar los dos bytes
 	or a			;865f
 	ret nz			;8660
 	ld a,(0f0f7h)		;8661
 	or a			;8664
 	ret			;8665
 ESPERA_INTERRUPCION:		; bit 7 de E1C5 y espera a que la interrupcion lo quite
-	push af			;8666
+	push af			;8666   ; el bit 7 de E1C5 es la peticion de esperar: la interrupcion lo apaga y este bucle sale
 	di			;8667
 	ld hl,0e1c5h		;8668
 	set 7,(hl)		;866b
 ESPERA_INTERRUPCION_BUCLE:		; ei y comprueba
-	ei			;866d
+	ei			;866d   ; el `ei` va DENTRO del bucle: si no, la interrupcion nunca entraria a apagarlo
 	bit 7,(hl)		;866e
 	jr nz,ESPERA_INTERRUPCION_BUCLE		;8670
 	pop af			;8672
 	ret			;8673
 SONIDO_JUGADOR:		; ENCOLA_SONIDO A + (ix+9) - 1
-	add a,(ix+009h)		;8674
+	add a,(ix+009h)		;8674   ; el sonido lleva sumado el numero de jugador menos uno: cada coche tiene su juego de sonidos
 	dec a			;8677
 	jp 04174h		;8678
 SONIDO_JUGADOR_B:		; idem
@@ -957,9 +961,9 @@ SONIDO_JUGADOR_B:		; idem
 	jp 04174h		;867f
 MUSICA_META:		; di; canales del jugador fuera (0x8744); sonido 2; E217 = 0, E218 = 8; musica 0x3D; ei
 	di			;8682
-	call CANALES_JUGADOR_FUERA		;8683
+	call CANALES_JUGADOR_FUERA		;8683   ; al llegar a meta se le quitan los canales al jugador: la musica se los queda
 	ld a,002h		;8686
-	call 04174h		;8688
+	call 04174h		;8688   ; el sonido 2 abre la musica de meta
 	ld hl,0e217h		;868b
 	ld (hl),000h		;868e
 	inc hl			;8690
@@ -970,8 +974,8 @@ MUSICA_META:		; di; canales del jugador fuera (0x8744); sonido 2; E217 = 0, E218
 	ret			;8699
 PARA_MUSICA:		; E20A = 0, E217 = E218 = 0, E190 = 0, sonidos 0x46 y 0x80 (desde p00 0x42AE y p01)
 	xor a			;869a
-	ld (0e20ah),a		;869b
-	ld hl,0e217h		;869e
+	ld (0e20ah),a		;869b   ; E20A a cero: no hay musica en curso
+	ld hl,0e217h		;869e   ; los dos bytes de la musica pendiente a cero
 	ld (hl),a			;86a1
 	inc hl			;86a2
 	ld (hl),a			;86a3
@@ -982,13 +986,13 @@ PARA_MUSICA:		; E20A = 0, E217 = E218 = 0, E190 = 0, sonidos 0x46 y 0x80 (desde 
 	jp 04174h		;86ae
 SONIDO_2C_JUGADOR:		; di; canales fuera; sonido 0x2C; ei
 	di			;86b1
-	call CANALES_JUGADOR_FUERA		;86b2
+	call CANALES_JUGADOR_FUERA		;86b2   ; al chocar se le quitan los canales al jugador
 	ld a,02ch		;86b5
 	call 04174h		;86b7
 	ei			;86ba
 	ret			;86bb
 L_86BC:
-	ld hl,0e217h		;86bc
+	ld hl,0e217h		;86bc   ; este trozo no lo llama nadie: deja la musica pendiente en 8 y suena el 0x2B
 	ld (hl),000h		;86bf
 	inc hl			;86c1
 	ld (hl),008h		;86c2
@@ -1001,9 +1005,9 @@ L_86CB:
 	ld (0e190h),a		;86cc
 	ret			;86cf
 CANAL_MOTOR:		; si el coche esta parado ((iy+10,11) = 0) y E221 >= 7: E190 |= mascara del jugador (0x86FA); si se mueve y E190 & 0x44: E190 &= ~mascara
-	ld a,(iy+010h)		;86d0
+	ld a,(iy+010h)		;86d0   ; el canal del motor se enciende con el coche parado y la salida ya dada
 	or (iy+011h)		;86d3
-	ld a,(0e190h)		;86d6
+	ld a,(0e190h)		;86d6   ; E190 es la mascara de canales que suenan
 	ld e,a			;86d9
 	jr nz,CANAL_MOTOR_QUITA		;86da
 	ex af,af'			;86dc
@@ -1011,13 +1015,13 @@ CANAL_MOTOR:		; si el coche esta parado ((iy+10,11) = 0) y E221 >= 7: E190 |= ma
 	cp 007h		;86e0
 	ret c			;86e2
 	ex af,af'			;86e3
-	call MASCARA_JUGADOR		;86e4
+	call MASCARA_JUGADOR		;86e4   ; la mascara del jugador se pone o se quita segun el coche este parado o rodando
 	ld e,a			;86e7
 	or d			;86e8
 	ld (0e190h),a		;86e9
 	ret			;86ec
 CANAL_MOTOR_QUITA:		; mascara fuera
-	and 044h		;86ed
+	and 044h		;86ed   ; y con el coche en marcha se quita, pero solo si estaba puesto
 	ret z			;86ef
 	call MASCARA_JUGADOR		;86f0
 	ld a,d			;86f3
@@ -1026,13 +1030,13 @@ CANAL_MOTOR_QUITA:		; mascara fuera
 	ld (0e190h),a		;86f6
 	ret			;86f9
 MASCARA_JUGADOR:		; D = 4 (jugador 1) o 0x40 (jugador 2)
-	bit 0,(iy+009h)		;86fa
+	bit 0,(iy+009h)		;86fa   ; el bit 0 del numero de jugador reparte: el 4 es del coche 1 y el 0x40 del 2
 	ld d,004h		;86fe
 	ret nz			;8700
 	ld d,040h		;8701
 	ret			;8703
 CANALES_INICIALES:		; E190 = 0x0B (un jugador) o 0xBB (dos) (desde p01 0x7E17)
-	ld a,(0e1c2h)		;8704
+	ld a,(0e1c2h)		;8704   ; con un jugador tres canales y con dos, seis: 0x0B y 0xBB
 	bit 5,a		;8707
 	jr nz,CANALES_DOS		;8709
 	ld a,00bh		;870b
@@ -1043,13 +1047,13 @@ CANALES_DOS:		; E190 = 0xBB
 	ld (0e190h),a		;8713
 	ret			;8716
 REVS_A_FRECUENCIA:		; p00 0x4A8A (desde 0x89EC)
-	call 04a8ah		;8717
+	call 04a8ah		;8717   ; esta rutina es solo un `call` a p00 y un `ret`: la frecuencia son las revoluciones entre ocho
 	ret			;871a
 REVS_A_FRECUENCIA_B:		; p00 0x4A86
 	call 04a86h		;871b
 	ret			;871e
 CANALES_BOXES:		; E190 = (E190 & 0xF0) | 0x0B (jugador 1) o (& 0x0F) | 0xB0 (jugador 2)
-	ld hl,00bf0h		;871f
+	ld hl,00bf0h		;871f   ; al entrar en boxes cada jugador recupera sus tres canales sin tocar los del otro
 	ld de,0b00fh		;8722
 	bit 0,(iy+009h)		;8725
 	jr nz,CANALES_BOXES_APLICA		;8729
@@ -1065,12 +1069,12 @@ E190_CERO:		; E190 = 0
 	ld (0e190h),a		;8736
 	ret			;8739
 SONIDO_46_Y_CANALES:		; sonido 0x46 si un jugador y 0x8744
-	ld a,(0e1c2h)		;873a
+	ld a,(0e1c2h)		;873a   ; con dos jugadores no suena la senal: se pisaria con el otro coche
 	bit 5,a		;873d
 	ld a,046h		;873f
 	call z,04174h		;8741
 CANALES_JUGADOR_FUERA:		; E190 &= 0 (un jugador), 0x0F o 0xF0 segun el jugador (ix+9)
-	ld a,(0e1c2h)		;8744
+	ld a,(0e1c2h)		;8744   ; y aqui se le quitan los canales al jugador que sea, dejandole los del otro
 	bit 5,a		;8747
 	jr nz,CANALES_MASCARA_2J		;8749
 	ld a,000h		;874b
@@ -1086,17 +1090,17 @@ CANALES_AND:		; E190 &= A
 	ld (hl),a			;875d
 	ret			;875e
 L_875F:
-	xor a			;875f
+	xor a			;875f   ; la pareja de 0x8762: uno pone E21A a 1 y el otro a 0
 	jr L_8764		;8760
 E21A_UNO:		; E21A = 1, (E217) = 0 (desde p00 0x59B1)
-	ld a,001h		;8762
+	ld a,001h		;8762   ; E21A encendido es "hay musica que atender"
 L_8764:
 	ld (0e21ah),a		;8764
 	ld hl,00000h		;8767
 	ld (0e217h),hl		;876a
 	ret			;876d
 SONIDO_CARRERA:		; F0FB pendiente (0x87D0), volumen del motor de cada coche (0x877D); si E21A: musica (0x880B)
-	call SONIDO_F0FB		;876e
+	call SONIDO_F0FB		;876e   ; el sonido de la carrera son tres cosas: la cola pendiente, el volumen de los dos motores y la musica
 	call VOLUMEN_MOTORES		;8771
 	ld a,(0e21ah)		;8774
 	or a			;8777
@@ -1104,7 +1108,7 @@ SONIDO_CARRERA:		; F0FB pendiente (0x87D0), volumen del motor de cada coche (0x8
 	call MUSICA_PENDIENTE		;8779
 	ret			;877c
 VOLUMEN_MOTORES:		; E197 = volumen del coche 1 (0x879A), E198 = del 2; (ix-1C) = 0
-	ld ix,0e2c0h		;877d
+	ld ix,0e2c0h		;877d   ; cada coche tiene su volumen: E197 el 1 y E198 el 2
 	call VOLUMEN_MOTOR		;8781
 	ld (0e197h),a		;8784
 	ld (ix-01ch),000h		;8787
@@ -1114,14 +1118,14 @@ VOLUMEN_MOTORES:		; E197 = volumen del coche 1 (0x879A), E198 = del 2; (ix-1C) =
 	ld (ix-01ch),000h		;8795
 	ret			;8799
 VOLUMEN_MOTOR:		; (ix-1C) != 0 -> objetivo 0xFF; si no 0x0A si (ix+12) en -16..15, si no 0xA0; (ix-1B) sube 15 o baja 2 hacia el objetivo; A = (ix-1B)
-	ld a,(ix-01ch)		;879a
+	ld a,(ix-01ch)		;879a   ; (ix-1C) encendido pide el volumen a tope; si no, depende de si el acelerador esta suave o a fondo
 	and a			;879d
 	jr z,VOLUMEN_OBJETIVO		;879e
 	ld d,0ffh		;87a0
 	ld (ix-01bh),0ffh		;87a2
 	jr VOLUMEN_ACERCA		;87a6
 VOLUMEN_OBJETIVO:		; por la aceleracion (ix+12)
-	ld a,(ix+012h)		;87a8
+	ld a,(ix+012h)		;87a8   ; el acelerador entre -16 y 15 es el motor suave; fuera de ahi, a fondo
 	add a,010h		;87ab
 	cp 020h		;87ad
 	jr nc,VOLUMEN_A0		;87af
@@ -1130,7 +1134,7 @@ VOLUMEN_OBJETIVO:		; por la aceleracion (ix+12)
 VOLUMEN_A0:		; D = 0xA0
 	ld d,0a0h		;87b5
 VOLUMEN_ACERCA:		; (ix-1B) hacia D
-	ld a,(ix-01bh)		;87b7
+	ld a,(ix-01bh)		;87b7   ; el volumen no salta: sube de 15 en 15 y baja de 2 en 2, asi que el motor se apaga mucho mas despacio de lo que se enciende
 	cp d			;87ba
 	jr c,VOLUMEN_SUBE		;87bb
 	sub 002h		;87bd
@@ -1147,7 +1151,7 @@ VOLUMEN_GUARDA_SUBE:		; (ix-1B) = A
 	ld (ix-01bh),a		;87cc
 	ret			;87cf
 SONIDO_F0FB:		; si F0FB != 0: ENCOLA_SONIDO F0FB y F0FB = 0
-	ld a,(0f0fbh)		;87d0
+	ld a,(0f0fbh)		;87d0   ; la cola de F0FB es de un solo sonido, y se vacia en cuanto se atiende
 	or a			;87d3
 	ret z			;87d4
 	call 04174h		;87d5
@@ -1155,19 +1159,19 @@ SONIDO_F0FB:		; si F0FB != 0: ENCOLA_SONIDO F0FB y F0FB = 0
 	ld (0f0fbh),a		;87d9
 	ret			;87dc
 L_87DD:
-	ld a,046h		;87dd
+	ld a,046h		;87dd   ; el 0x46 suelto, sin nada mas
 	jp 04174h		;87df
 MUSICA_CARRERA:		; sonido 0x80, espera la interrupcion, E217 = 1, E218 = 0, E20A = 1 y la musica de la categoria (tabla 0x8804) (desde p01 0x7ED3)
 	ld a,080h		;87e2
-	call 04174h		;87e4
+	call 04174h		;87e4   ; el sonido 0x80 corta lo que hubiera sonando
 	call ESPERA_INTERRUPCION		;87e7
-	ld hl,0e217h		;87ea
+	ld hl,0e217h		;87ea   ; E217 a 1 y E218 a 0: hay musica en curso y no hay siguiente pendiente
 	ld (hl),001h		;87ed
 	inc hl			;87ef
 	ld (hl),000h		;87f0
 	ld a,001h		;87f2
 	ld (0e20ah),a		;87f4
-	ld a,(0e25bh)		;87f7
+	ld a,(0e25bh)		;87f7   ; cada categoria tiene su musica de carrera: la tabla de 0x8804
 	ld hl,08804h		;87fa
 	call 040d0h		;87fd
 	ld a,(hl)			;8800
@@ -1186,7 +1190,7 @@ DATA_tabla_musica_carrera:
 
 
 MUSICA_PENDIENTE:		; cada 8 fotogramas: si E217 = 0 y E218 > 0: E218-- y a cero la musica (0x881D)
-	ld a,(0e1c3h)		;880b
+	ld a,(0e1c3h)		;880b   ; la musica pendiente se mira una vez cada ocho fotogramas
 	and 007h		;880e
 	ret nz			;8810
 	ld hl,0e217h		;8811
@@ -1194,16 +1198,16 @@ MUSICA_PENDIENTE:		; cada 8 fotogramas: si E217 = 0 y E218 > 0: E218-- y a cero 
 	or a			;8815
 	ret nz			;8816
 	inc hl			;8817
-	ld a,(hl)			;8818
+	ld a,(hl)			;8818   ; E218 es la cuenta atras para arrancar la musica siguiente
 	or a			;8819
 	ret z			;881a
 	dec (hl)			;881b
 	ret nz			;881c
 MUSICA_CARRERA_B:		; como 0x87E2 con la tabla 0x883F (desde p00 0x50A3)
-	ld a,080h		;881d
-	call 04174h		;881f
+	ld a,080h		;881d   ; la misma faena que 0x87E2 pero con la otra tabla: son dos juegos de musica, uno por vuelta de la carrera
+	call 04174h		;881f   ; el mismo arranque que 0x87E2
 	call ESPERA_INTERRUPCION		;8822
-	ld hl,0e217h		;8825
+	ld hl,0e217h		;8825   ; y los mismos dos bytes de control
 	ld (hl),001h		;8828
 	inc hl			;882a
 	ld (hl),000h		;882b
@@ -1228,22 +1232,22 @@ DATA_tabla_musica_carrera_b:
 
 
 L_8846:
-	call E20A_CERO		;8846
+	call E20A_CERO		;8846   ; esta pareja es la misma rutina dos veces, con y sin apagar E20A
 	jp 04174h		;8849
 MUSICA_A:		; E20A = 0 y ENCOLA_SONIDO A (desde p00 0x424B, 0x5A88, 0x5D13)
 	call E20A_CERO		;884c
 	jp 04174h		;884f
 E20A_CERO:		; E20A = 0
-	push hl			;8852
+	push hl			;8852   ; E20A a cero antes de encolar: es la marca de "no hay musica de carrera sonando"
 	ld hl,0e20ah		;8853
 	ld (hl),000h		;8856
 	pop hl			;8858
 	ret			;8859
 L_885A:
-	ld a,(0e1c2h)		;885a
+	ld a,(0e1c2h)		;885a   ; con dos jugadores se contestan dos bits, uno por coche, y con uno solo el signo
 	bit 5,a		;885d
 	jr z,L_8873		;885f
-	ld a,(0e31dh)		;8861
+	ld a,(0e31dh)		;8861   ; con dos jugadores se miran los dos estados y salen dos bits
 	cp 003h		;8864
 	rl d		;8866
 	ld a,(0e3ddh)		;8868
@@ -1258,7 +1262,7 @@ L_8873:
 	sbc a,a			;8878
 	ret			;8879
 INICIA_COCHES:		; coche 1: 0x88B8, jugador 1, patron 0, (ix+61) = 0x50, (ix+30) = 4; coche 2: jugador 2, patron 8; E199 = E19C = E19E = E1A1 = 0x0FFF
-	ld ix,0e2c0h		;887a
+	ld ix,0e2c0h		;887a   ; los dos coches se montan iguales; lo unico que cambia es el numero de jugador y el patron del sprite
 	call INICIA_COCHE		;887e
 	ld (ix+009h),001h		;8881
 	ld (ix+033h),000h		;8885
@@ -1270,7 +1274,7 @@ INICIA_COCHES:		; coche 1: 0x88B8, jugador 1, patron 0, (ix+61) = 0x50, (ix+30) 
 	ld (ix+033h),008h		;889c
 	ld (ix+061h),050h		;88a0
 	ld (ix+030h),004h		;88a4
-	ld hl,00fffh		;88a8
+	ld hl,00fffh		;88a8   ; 0x0FFF en las cuatro palabras de revoluciones filtradas: el filtro arranca arriba y baja solo
 	ld (0e199h),hl		;88ab
 	ld (0e19ch),hl		;88ae
 	ld (0e19eh),hl		;88b1
@@ -1279,14 +1283,14 @@ INICIA_COCHES:		; coche 1: 0x88B8, jugador 1, patron 0, (ix+61) = 0x50, (ix+30) 
 INICIA_COCHE:		; 0x90 bytes desde ix-0x20 a cero; (ix-1E) = 0; combustible (ix+50) = 0xFF; (ix+49) = 0; 0x8943
 	push ix		;88b8
 	pop hl			;88ba
-	ld de,0ffe0h		;88bb
+	ld de,0ffe0h		;88bb   ; -0x20 es donde empieza el bloque de verdad del coche: 0x90 bytes a cero
 	add hl,de			;88be
 	ld bc,00090h		;88bf
 	call 04b87h		;88c2
 	push ix		;88c5
 	pop de			;88c7
 	ld (ix-01eh),000h		;88c8
-	ld (ix+050h),0ffh		;88cc
+	ld (ix+050h),0ffh		;88cc   ; el deposito arranca lleno
 	ld (ix+049h),000h		;88d0
 	jp PARAMETROS_COCHE		;88d4
 
@@ -1324,8 +1328,8 @@ DATA_tabla_motor:
 
 
 PARAMETROS_COCHE:		; (ix+15) = 0x3C, x = y = 0x80, (ix+5C) = 0x20, estado 0, angulo 0, fotograma 2, (ix+3E) = 3; los 5 bytes de ix-0x29: (ix+74) motor, (ix+18) carroceria, (ix+77), (ix+76), (ix+75) = byte & 0x7F (bit 7 -> (ix+70) = 1); color (ix+F) = 0x88D7[carroceria]; (ix-20,-1F) = 0x88FB[motor]; (ix-21) = 0x88E9[carroceria]; tope de revoluciones (ix+72) = 4*C+1 con el primer C cuyo 0x9C1F da 0
-	ld (ix+015h),03ch		;8943
-	ld (ix+004h),080h		;8947
+	ld (ix+015h),03ch		;8943   ; aqui se traducen las cinco elecciones del jugador a los numeros con los que corre el coche
+	ld (ix+004h),080h		;8947   ; el coche empieza en el centro de la pista, 0x80 en los dos ejes
 	ld (ix+006h),080h		;894b
 	ld (ix+05ch),020h		;894f
 	ld (ix+05dh),000h		;8953
@@ -1334,7 +1338,7 @@ PARAMETROS_COCHE:		; (ix+15) = 0x3C, x = y = 0x80, (ix+5C) = 0x20, estado 0, ang
 	ld (ix+03eh),003h		;895f
 	push ix		;8963
 	pop hl			;8965
-	ld de,0ffd7h		;8966
+	ld de,0ffd7h		;8966   ; -0x29 es donde estan los cinco bytes que eligio el jugador
 	add hl,de			;8969
 	ld a,(hl)			;896a
 	inc hl			;896b
@@ -1351,18 +1355,18 @@ PARAMETROS_COCHE:		; (ix+15) = 0x3C, x = y = 0x80, (ix+5C) = 0x20, estado 0, ang
 	ld b,(hl)			;897e
 	inc hl			;897f
 	ld a,b			;8980
-	and 07fh		;8981
+	and 07fh		;8981   ; el bit 7 del quinto byte no es parte del valor: enciende (ix+70)
 	ld (ix+075h),a		;8983
 	bit 7,b		;8986
 	jr z,PARAMETROS_TABLAS		;8988
 	ld (ix+070h),001h		;898a
 PARAMETROS_TABLAS:		; las tablas por carroceria y motor
-	ld a,(ix+018h)		;898e
+	ld a,(ix+018h)		;898e   ; el color del sprite lo manda la carroceria
 	ld hl,088d7h		;8991
 	call 040d0h		;8994
 	ld a,(hl)			;8997
 	ld (ix+00fh),a		;8998
-	ld a,(ix+074h)		;899b
+	ld a,(ix+074h)		;899b   ; y del motor salen dos bytes: el par que usa la tabla de fuerza
 	ld hl,088fbh		;899e
 	call 04a44h		;89a1
 	ld (ix-020h),l		;89a4
@@ -1374,26 +1378,26 @@ PARAMETROS_TABLAS:		; las tablas por carroceria y motor
 	ld (ix-021h),a		;89b4
 	ld bc,02000h		;89b7
 TOPE_REVS_BUCLE:		; prueba C = 1..0x20 en 0x9C1F (p09 0xB72E)
-	inc c			;89ba
+	inc c			;89ba   ; el tope de revoluciones se busca probando: se sube C hasta que el par motor da cero
 	push bc			;89bb
 	ld a,c			;89bc
 	add a,a			;89bd
 	add a,a			;89be
-	ld l,(ix+074h)		;89bf
+	ld l,(ix+074h)		;89bf   ; el motor entra por L y el escalon que se prueba por A
 	call PAR_MOTOR_INDICE		;89c2
 	or a			;89c5
 	pop bc			;89c6
 	jr z,TOPE_REVS_GUARDA		;89c7
 	djnz TOPE_REVS_BUCLE		;89c9
 TOPE_REVS_GUARDA:		; (ix+72) = 4*C + 1
-	ld a,c			;89cb
+	ld a,c			;89cb   ; y el tope es cuatro veces ese C mas uno
 	add a,a			;89cc
 	add a,a			;89cd
 	inc a			;89ce
 	ld (ix+072h),a		;89cf
 	ret			;89d2
-COCHE_SIGUE_OBJETO:		; (ix+4,6,7,8) copiados de/al objeto E800 (repeticion) y 0x8D21
-	ld a,(ix+004h)		;89d3
+COCHE_SIGUE_OBJETO_MUERTO:		; CODIGO MUERTO: (ix+4,6,7,8) copiados de/al objeto E800 y 0x8D21, pero la unica referencia en los 128 KB es el `jp nc` de 0x8C72, que nunca se toma
+	ld a,(ix+004h)		;89d3   ; la idea era que en la repeticion el coche copiase lo que hace el objeto grabado; el salto que traia aqui esta desactivado
 	ld (0e804h),a		;89d6
 	ld a,(0e806h)		;89d9
 	ld (ix+006h),a		;89dc
@@ -1402,7 +1406,7 @@ COCHE_SIGUE_OBJETO:		; (ix+4,6,7,8) copiados de/al objeto E800 (repeticion) y 0x
 	ld (ix+007h),e		;89e6
 	jp AVANCE_PISTA		;89e9
 COCHE_JUGADOR:		; coche 1 (0x8A75); E199 = filtro de (ix+59) (0x8A56); E19C = frecuencia (0x8A4C, 0x8717); E19B = 1 si el terreno (ix+22) < 10; lo mismo para el coche 2 (E19E, E1A1, E1A0) si hay dos jugadores
-	ld ix,0e2c0h		;89ec
+	ld ix,0e2c0h		;89ec   ; un paso de cada coche, con su filtro de revoluciones y su frecuencia de motor
 	ld iy,0e2c0h		;89f0
 	call COCHE_PASO		;89f4
 	ld a,(ix+059h)		;89f7
@@ -1412,18 +1416,18 @@ COCHE_JUGADOR:		; coche 1 (0x8A75); E199 = filtro de (ix+59) (0x8A56); E19C = fr
 	call REVS_MENOS_TOPE		;8a03
 	call REVS_A_FRECUENCIA		;8a06
 	ld (0e19ch),hl		;8a09
-	ld a,(ix+022h)		;8a0c
+	ld a,(ix+022h)		;8a0c   ; con el terreno por debajo de 10 el motor suena distinto: es pista, no hierba
 	cp 00ah		;8a0f
 	ld a,001h		;8a11
 	jr c,COCHE_1_E19B		;8a13
 	xor a			;8a15
 COCHE_1_E19B:		; E19B = A
 	ld (0e19bh),a		;8a16
-	ld ix,0e380h		;8a19
+	ld ix,0e380h		;8a19   ; el mismo trabajo para el coche 2
 	ld iy,0e380h		;8a1d
 	ld hl,0e1c2h		;8a21
-	bit 5,(hl)		;8a24
-	call nz,COCHE_PASO		;8a26
+	bit 5,(hl)		;8a24   ; el segundo coche solo da un paso si de verdad hay dos jugadores
+	call nz,COCHE_PASO		;8a26   ; y el segundo coche solo da un paso si hay dos jugadores
 	ld a,(ix+059h)		;8a29
 	ld hl,(0e19eh)		;8a2c
 	call FILTRA_REVS		;8a2f
@@ -1440,29 +1444,29 @@ COCHE_2_E1A0:		; E1A0 = A
 	ld (0e1a0h),a		;8a48
 	ret			;8a4b
 REVS_MENOS_TOPE:		; HL = (ix+72)*256 - HL
-	ld e,000h		;8a4c
+	ld e,000h		;8a4c   ; el tope por 256 menos las revoluciones: cuanto mas se sube de vueltas, mas baja el numero, que es lo que el sonido usa de periodo
 	ld d,(ix+072h)		;8a4e
 	or a			;8a51
 	ex de,hl			;8a52
 	sbc hl,de		;8a53
 	ret			;8a55
 FILTRA_REVS:		; A = min(A, 0x7F); HL = (3*HL + A*256) / 4 (filtro hacia A)
-	cp 080h		;8a56
+	cp 080h		;8a56   ; mas de 0x7F no se filtra: se recorta antes
 	jr c,FILTRA_REVS_VA		;8a58
 	ld a,07fh		;8a5a
 FILTRA_REVS_VA:		; el calculo
-	ld b,a			;8a5c
+	ld b,a			;8a5c   ; el filtro es (3*HL + A*256) / 4, y por eso las revoluciones suben y bajan suave en vez de dar saltos
 	ld c,000h		;8a5d
 	ld d,h			;8a5f
 	ld e,l			;8a60
 	sub a			;8a61
-	add hl,hl			;8a62
+	add hl,hl			;8a62   ; tres veces HL sumadas a mano, con el acarreo recogido en A
 	adc a,c			;8a63
 	add hl,de			;8a64
 	adc a,c			;8a65
 	add hl,bc			;8a66
 	adc a,c			;8a67
-	rr a		;8a68
+	rr a		;8a68   ; y las dos rotaciones dobles de 24 bits son la division por cuatro
 	rr h		;8a6a
 	rr l		;8a6c
 	rr a		;8a6e
@@ -1470,7 +1474,7 @@ FILTRA_REVS_VA:		; el calculo
 	rr l		;8a72
 	ret			;8a74
 COCHE_PASO:		; estado (0x8B0C), p03 0xB5D3, 0x8CCC, p00 0x54D4, mando (0x8A8B); (ix+19) = (ix+22)
-	call ESTADO_COCHE		;8a75
+	call ESTADO_COCHE		;8a75   ; un paso del coche son cinco cosas: su estado, los rivales, el terreno, el desgaste y el mando
 	call 0b5d3h		;8a78
 	call TERRENO_P03		;8a7b
 	call 054d4h		;8a7e
@@ -1479,7 +1483,7 @@ COCHE_PASO:		; estado (0x8B0C), p03 0xB5D3, 0x8CCC, p00 0x54D4, mando (0x8A8B); 
 	ld (ix+019h),a		;8a87
 	ret			;8a8a
 MANDO_COCHE:		; (ix+3A) = flancos de (ix+1) respecto a (ix+3B); 0x8AA2; bit 0 de (ix+1) = 0
-	ld b,(ix+001h)		;8a8b
+	ld b,(ix+001h)		;8a8b   ; los flancos del mando: lo que esta puesto ahora y no lo estaba antes
 	ld a,b			;8a8e
 	xor (ix+03bh)		;8a8f
 	and b			;8a92
@@ -1490,17 +1494,17 @@ MANDO_COCHE:		; (ix+3A) = flancos de (ix+1) respecto a (ix+3B); 0x8AA2; bit 0 de
 	res 0,(ix+001h)		;8a9d
 	ret			;8aa1
 MANDO_SONIDOS:		; canal del motor (0x86D0); terreno 8/9 -> sonido 0x1B si antes no (0x8AF9); estado < 3: bits 0/6/7 de (ix+1) (fuera de pista, derrape) -> FFE3++ y sonidos 0x15 (bit 0 nuevo), 0x0F (bit 6), 0x0C/0x0E (bit 7, cada 4)
-	push bc			;8aa2
+	push bc			;8aa2   ; los sonidos que cuelgan del mando y del terreno
 	call CANAL_MOTOR		;8aa3
 	ld a,(ix+022h)		;8aa6
-	sub 008h		;8aa9
+	sub 008h		;8aa9   ; los terrenos 8 y 9 son los unicos que suenan al pisarlos
 	cp 002h		;8aab
 	call c,SONIDO_TERRENO_1B		;8aad
 	pop bc			;8ab0
-	ld a,(ix+05dh)		;8ab1
+	ld a,(ix+05dh)		;8ab1   ; con el coche en estado 3 o mas -meta, choque, parado- ya no suena nada
 	cp 003h		;8ab4
 	ret nc			;8ab6
-	ld a,0c1h		;8ab7
+	ld a,0c1h		;8ab7   ; 0xC1 son los bits 0, 6 y 7: fuera de pista y los dos del derrape
 	and b			;8ab9
 	jr z,FFE3_FF		;8aba
 	set 0,(ix-01ch)		;8abc
@@ -1512,10 +1516,10 @@ MANDO_SONIDOS:		; canal del motor (0x86D0); terreno 8/9 -> sonido 0x1B si antes 
 	jr nz,SONIDO_0F_CADA_4		;8aca
 	bit 7,b		;8acc
 	ret z			;8ace
-	ld a,(0ffe3h)		;8acf
+	ld a,(0ffe3h)		;8acf   ; y el derrape suena uno de cada cuatro fotogramas
 	and 003h		;8ad2
 	ret nz			;8ad4
-	ld a,(0e25bh)		;8ad5
+	ld a,(0e25bh)		;8ad5   ; en la categoria 0 -RALLY- el derrape suena distinto que en las demas
 	or a			;8ad8
 	jr nz,SONIDO_0C		;8ad9
 	ld a,(ix+022h)		;8adb
@@ -1527,27 +1531,27 @@ SONIDO_0C:		; 0x0C
 SONIDO_A:		; ENCOLA_SONIDO A
 	jp 04174h		;8ae6
 SONIDO_0F_CADA_4:		; bit 6: sonido 0x0F cada 4
-	ld a,(0ffe3h)		;8ae9
+	ld a,(0ffe3h)		;8ae9   ; el mismo reparto de uno de cada cuatro
 	and 003h		;8aec
 	ret nz			;8aee
 	ld a,00fh		;8aef
 	jp SONIDO_JUGADOR_B		;8af1
 SONIDO_15:		; bit 0 nuevo: sonido 0x15 + jugador
-	ld a,015h		;8af4
+	ld a,015h		;8af4   ; el 0x15 es el golpe de salirse de la pista, y solo suena en el flanco: cuando se acaba de salir
 	jp SONIDO_JUGADOR_B		;8af6
 SONIDO_TERRENO_1B:		; si el terreno anterior (ix+19) no era 8/9: sonido 0x1B + jugador
-	ld a,(ix+019h)		;8af9
+	ld a,(ix+019h)		;8af9   ; y el 0x1B solo si el terreno anterior no era ya de los que suenan: si no, sonaria en cada fotograma
 	sub 008h		;8afc
 	cp 002h		;8afe
 	ret c			;8b00
 	ld a,01bh		;8b01
 	jp SONIDO_JUGADOR		;8b03
 FFE3_FF:		; FFE3 = 0xFF
-	ld hl,0ffe3h		;8b06
+	ld hl,0ffe3h		;8b06   ; 0xFF en FFE3 para que el `inc` de 0x8AC3 lo deje en 0 la primera vez
 	ld (hl),0ffh		;8b09
 	ret			;8b0b
 ESTADO_COCHE:		; despacha por (ix+5D) con la tabla 0x8B12: 0 normal 0x8C70, 1 entra en boxes 0x8C04, 2 en boxes 0x8D65, 3 meta 0x8C21, 4 choque 0x8D88, 5 tras el choque 0x8E0B, 6 parado 0x8E1E, 7 reaparece 0x8B26, 8 0x8B50, 9 0x8B6A
-	ld a,(ix+05dh)		;8b0c
+	ld a,(ix+05dh)		;8b0c   ; diez estados por coche, cada uno con su rutina
 	call 040dah		;8b0f
 
 ; ----------------------------------------------------------------------
@@ -1572,9 +1576,9 @@ DATA_tabla_8B0F:
 
 
 COCHE_ESTADO_7:		; reinicia los parametros (0x8943), (ix+5C) = 0, sin sprite, estado 8, velocidad/vx/vy/aceleracion a cero, (ix+38) = 10
-	call PARAMETROS_COCHE		;8b26
+	call PARAMETROS_COCHE		;8b26   ; el estado 7 es reaparecer: se rehacen los parametros y se apaga el sprite
 	ld (ix+05ch),000h		;8b29
-	set 7,(ix+031h)		;8b2d
+	set 7,(ix+031h)		;8b2d   ; el bit 7 de (ix+31) esconde el coche
 	ld (ix+05dh),008h		;8b31
 	xor a			;8b35
 	ld (ix+010h),a		;8b36
@@ -1584,10 +1588,10 @@ COCHE_ESTADO_7:		; reinicia los parametros (0x8943), (ix+5C) = 0, sin sprite, es
 	ld (ix+00bh),a		;8b42
 	ld (ix+00ah),a		;8b45
 	ld (ix+012h),a		;8b48
-	ld (ix+038h),00ah		;8b4b
+	ld (ix+038h),00ah		;8b4b   ; diez fotogramas invisible
 	ret			;8b4f
 COCHE_ESTADO_8:		; 10 fotogramas sin sprite; luego (ix-1) = (ix+1) = 0, estado 9, (ix-3) = 0 y FOTOGRAMAS_COCHES (p00 0x4689)
-	dec (ix+038h)		;8b50
+	dec (ix+038h)		;8b50   ; el estado 8 solo cuenta esos diez fotogramas
 	set 7,(ix+031h)		;8b53
 	ret nz			;8b57
 	xor a			;8b58
@@ -1597,22 +1601,22 @@ COCHE_ESTADO_8:		; 10 fotogramas sin sprite; luego (ix-1) = (ix+1) = 0, estado 9
 	ld (ix-003h),000h		;8b63
 	jp 04689h		;8b67
 COCHE_ESTADO_9:		; (ix+38)-- (a cero: estado 6, 0x8E17); avanza 8 px (0x8BD2) hasta que el terreno bajo el coche (0x9550) sea 9..14; luego hasta que deje de serlo; si el tile es 0xB5 avanza otro; (ix-1) = 0, sin sprite, (ix+1) &= 2, estado 0, (ix-1E) = 1, marcha 0, canales de boxes; (ix+55) = 1 si E240 = 0
-	dec (ix+038h)		;8b6a
+	dec (ix+038h)		;8b6a   ; el estado 9 busca sitio en la pista: avanza de ocho en ocho pixeles hasta dar con un terreno de 9 a 14
 	jp z,COCHE_ESTADO_9_FIN		;8b6d
 	call AVANZA_8_PX		;8b70
 	call TERRENO_BAJO_COCHE		;8b73
-	sub 009h		;8b76
+	sub 009h		;8b76   ; el `sub 9 / cp 6` juntos preguntan si el terreno esta entre 9 y 14
 	cp 006h		;8b78
 	jr c,COCHE_ESTADO_9		;8b7a
 COCHE_ESTADO_9_BUSCA:		; avanza mientras el terreno no sea 9..14
-	call AVANZA_8_PX		;8b7c
+	call AVANZA_8_PX		;8b7c   ; y una vez dentro, sigue avanzando hasta salir: se busca el borde
 	dec (ix+038h)		;8b7f
 	jp z,COCHE_ESTADO_9_FIN		;8b82
 	call TERRENO_BAJO_COCHE		;8b85
 	sub 009h		;8b88
 	cp 006h		;8b8a
 	jr nc,COCHE_ESTADO_9_BUSCA		;8b8c
-	bit 7,(ix+038h)		;8b8e
+	bit 7,(ix+038h)		;8b8e   ; el bit 7 de la cuenta dice que se ha pasado de vueltas buscando
 	jr z,COCHE_ESTADO_9_COLOCA		;8b92
 	call AVANZA_8_PX		;8b94
 	call TERRENO_BAJO_COCHE		;8b97
@@ -1622,25 +1626,25 @@ COCHE_ESTADO_9_BUSCA:		; avanza mientras el terreno no sea 9..14
 COCHE_ESTADO_9_COLOCA:		; reaparece en la pista
 	call TERRENO_BAJO_COCHE		;8ba0
 	ld a,(hl)			;8ba3
-	cp 0b5h		;8ba4
+	cp 0b5h		;8ba4   ; el tile 0xB5 pide un paso mas: es el que no vale para reaparecer
 	call z,AVANZA_8_PX		;8ba6
 	xor a			;8ba9
 	ld (ix-001h),a		;8baa
 	set 7,(ix+031h)		;8bad
 	ld a,(ix+001h)		;8bb1
-	and 002h		;8bb4
+	and 002h		;8bb4   ; de las banderas solo se conserva el bit 1, "termino"
 	ld (ix+001h),a		;8bb6
 	ld (ix+05dh),000h		;8bb9
 	ld (ix-01eh),001h		;8bbd
 	ld (ix+069h),000h		;8bc1
-	call CANALES_BOXES		;8bc5
-	ld a,(0e240h)		;8bc8
+	call CANALES_BOXES		;8bc5   ; al reaparecer se le devuelven los canales de sonido
+	ld a,(0e240h)		;8bc8   ; y con E240 encendido no se le da la salida
 	or a			;8bcb
 	ret nz			;8bcc
 	ld (ix+055h),001h		;8bcd
 	ret			;8bd1
 AVANZA_8_PX:		; (ix+54) += 8 -> (ix+4B) (camara) y (ix+6) = (ix+54) + E1FE
-	ld a,008h		;8bd2
+	ld a,008h		;8bd2   ; avanzar ocho pixeles es mover la camara: la pista viene sola
 	add a,(ix+054h)		;8bd4
 	ld (ix+054h),a		;8bd7
 	ld (ix+04bh),a		;8bda
@@ -1649,7 +1653,7 @@ AVANZA_8_PX:		; (ix+54) += 8 -> (ix+4B) (camara) y (ix+6) = (ix+54) + E1FE
 	ld (ix+006h),a		;8be1
 	ret			;8be4
 REVS_POR_BOTON:		; (ix+59) = (ix+72) si el boton del jugador esta pulsado, si no 0; marcha 0
-	bit 0,(ix+009h)		;8be5
+	bit 0,(ix+009h)		;8be5   ; con el boton pulsado el motor se queda al maximo de revoluciones
 	ld a,(0e1c9h)		;8be9
 	jr nz,REVS_POR_BOTON_BIT		;8bec
 	ld a,(0e1cch)		;8bee
@@ -1658,13 +1662,13 @@ REVS_POR_BOTON_BIT:		; bit 4
 	ld a,000h		;8bf3
 	jr z,REVS_GUARDA		;8bf5
 	ld a,(ix+072h)		;8bf7
-	sub 000h		;8bfa
+	sub 000h		;8bfa   ; este `sub 000h` no resta nada: solo deja las banderas, y ni esas se miran
 REVS_GUARDA:		; (ix+59) = A, (ix+69) = 0
 	ld (ix+059h),a		;8bfc
 	ld (ix+069h),000h		;8bff
 	ret			;8c03
 COCHE_ESTADO_1:		; entra en boxes: p01 0x7886, marcha 0; un jugador: E250 = 0x0C y estado 0; dos: estado 2
-	call 07886h		;8c04
+	call 07886h		;8c04   ; entrar en boxes con un jugador cambia el estado de la PARTIDA (E250 = 0x0C); con dos, solo el del coche
 	ld (ix+069h),000h		;8c07
 	ld a,(0e1c2h)		;8c0b
 	bit 5,a		;8c0e
@@ -1677,10 +1681,10 @@ COCHE_ESTADO_1_2J:		; estado 2
 	ld (ix+05dh),002h		;8c1c
 	ret			;8c20
 COCHE_ESTADO_3:		; meta: angulo 0, aceleracion 0x10, 0x8CC1; (ix+43,44) -= p00 0x4A8A de si mismo (frena el avance); x (0x9D89); cuando x < 0x10: estado 6, avance y velocidad a cero, x = 0xE0, y = 0xFF
-	ld (ix+00ch),000h		;8c21
+	ld (ix+00ch),000h		;8c21   ; en meta el coche frena solo: se le quita a su avance una octava parte en cada fotograma
 	ld (ix+012h),010h		;8c25
-	call FISICA_COCHE		;8c29
-	ld l,(ix+043h)		;8c2c
+	call FISICA_COCHE		;8c29   ; un paso de fisica normal antes de frenar
+	ld l,(ix+043h)		;8c2c   ; el avance de la pista se guarda para poder restarle su octava parte
 	ld h,(ix+044h)		;8c2f
 	ld e,l			;8c32
 	ld d,h			;8c33
@@ -1690,9 +1694,9 @@ COCHE_ESTADO_3:		; meta: angulo 0, aceleracion 0x10, 0x8CC1; (ix+43,44) -= p00 0
 	sbc hl,de		;8c39
 	ld (ix+043h),l		;8c3b
 	ld (ix+044h),h		;8c3e
-	call MUEVE_X		;8c41
+	call MUEVE_X		;8c41   ; y el coche sigue moviendose de lado mientras frena
 	ld a,(ix+004h)		;8c44
-	cp 010h		;8c47
+	cp 010h		;8c47   ; y por debajo de x = 0x10 se para del todo y se aparca fuera
 	ret nc			;8c49
 	ld (ix+05dh),006h		;8c4a
 	xor a			;8c4e
@@ -1704,24 +1708,24 @@ COCHE_ESTADO_3:		; meta: angulo 0, aceleracion 0x10, 0x8CC1; (ix+43,44) -= p00 0
 	ld (ix+006h),0ffh		;8c5f
 	ret			;8c63
 L_8C64:
-	ld (ix+013h),000h		;8c64
+	ld (ix+013h),000h		;8c64   ; este trozo no lo llama nadie: acelerador a 0xE0 y un paso de fisica
 	ld (ix+012h),0e0h		;8c68
 	call FISICA_COCHE		;8c6c
 	ret			;8c6f
-COCHE_ESTADO_0:		; normal: repeticion (E244 = 2) -> 0x89D3; si no: boxes/combustible (0x8E52), volante (0x92A0), marchas (0x8F66), acelerador (0x8FD4), neumaticos (0x8F11), mando en la salida (E221 < 7: 0x8D11), derrape (0x8CE0), fisica (0x8CC1), avance (0x8D21), posicion (0x8D5F); choque (bit 3 de ix+1): estado 4, (ix+38) = 0, objeto 0x0F en (x, y) (0x9FCC) y sonido 0x2C
-	or a			;8c70
-	scf			;8c71
-	jp nc,COCHE_SIGUE_OBJETO		;8c72
+COCHE_ESTADO_0:		; normal (el `jp nc` de la repeticion NO SE TOMA NUNCA, ver 0x8C70): si no: boxes/combustible (0x8E52), volante (0x92A0), marchas (0x8F66), acelerador (0x8FD4), neumaticos (0x8F11), mando en la salida (E221 < 7: 0x8D11), derrape (0x8CE0), fisica (0x8CC1), avance (0x8D21), posicion (0x8D5F); choque (bit 3 de ix+1): estado 4, (ix+38) = 0, objeto 0x0F en (x, y) (0x9FCC) y sonido 0x2C
+	or a			;8c70   ; el `or a` borra el acarreo y el `scf` de la linea siguiente lo pone: el `jp nc` de 0x8C72 NO SE TOMA NUNCA
+	scf			;8c71   ; los bytes son B7 37 D2 D3 89, comprobado en la ROM
+	jp nc,COCHE_SIGUE_OBJETO_MUERTO		;8c72   ; y con el se cae COCHE_SIGUE_OBJETO (0x89D3): sus dos bytes D3 89 aparecen UNA sola vez en los 128 KB, y es justo el operando de este salto. La rama de la repeticion que dice la ficha de arriba esta desactivada
 	call BOXES_Y_COMBUSTIBLE		;8c75
 	call VOLANTE		;8c78
 	call MARCHAS		;8c7b
 	call ACELERADOR		;8c7e
-	bit 0,(ix+05eh)		;8c81
+	bit 0,(ix+05eh)		;8c81   ; el bit 0 de (ix+5E) deja el acelerador a cero: es el freno de los rivales
 	jr z,COCHE_ESTADO_0_SIGUE		;8c85
 	ld (ix+012h),000h		;8c87
 COCHE_ESTADO_0_SIGUE:		; tras el acelerador
 	call NEUMATICOS_EFECTO		;8c8b
-	ld a,(0e221h)		;8c8e
+	ld a,(0e221h)		;8c8e   ; antes de la salida (E221 < 7) el mando no vale para conducir, solo para revolucionar
 	cp 007h		;8c91
 	call c,MANDO_SALIDA		;8c93
 	call DERRAPE		;8c96
@@ -1729,49 +1733,49 @@ COCHE_ESTADO_0_SIGUE:		; tras el acelerador
 	call AVANCE_PISTA		;8c9c
 	call POSICION_COCHE		;8c9f
 COCHE_CHOCA:		; bit 3 de (ix+1): estado 4, explosion (0x9FCC con A = 0x0F) y sonido 0x2C (0x86B1)
-	bit 3,(ix+001h)		;8ca2
+	bit 3,(ix+001h)		;8ca2   ; el bit 3 de las banderas es el choque, y aqui se convierte en estado 4 y explosion
 	ret z			;8ca6
 	ld (ix+05dh),004h		;8ca7
 	ld (ix+038h),000h		;8cab
 	ld e,(ix+004h)		;8caf
 	ld d,(ix+006h)		;8cb2
-	ld a,00fh		;8cb5
+	ld a,00fh		;8cb5   ; el objeto 0x0F es la explosion, y se crea en la posicion del coche
 	push ix		;8cb7
 	call CREA_OBJETO_EN		;8cb9
 	pop ix		;8cbc
 	jp SONIDO_2C_JUGADOR		;8cbe
 FISICA_COCHE:		; 0x9408 y, si (ix+0) != 0 (hipotesis: un objeto), frenada por categoria (0x94B4)
-	call FISICA_COCHE_JUGADOR		;8cc1
+	call FISICA_COCHE_JUGADOR		;8cc1   ; la fisica del coche y, si es un rival, ademas la frenada por categoria
 	ld a,(ix+000h)		;8cc4
 	or a			;8cc7
 	ret z			;8cc8
 	jp FRENADA_CATEGORIA		;8cc9
 TERRENO_P03:		; p03 0xB34F; si C, (ix-1A) = A
-	call 0b34fh		;8ccc
+	call 0b34fh		;8ccc   ; el terreno lo calcula p03; si contesta con acarreo, se guarda
 	ret nc			;8ccf
 	ld (ix-01ah),a		;8cd0
 	ret			;8cd3
 L_8CD4:
-	bit 0,(ix+009h)		;8cd4
+	bit 0,(ix+009h)		;8cd4   ; este trozo no lo llama nadie: da el bloque del OTRO coche
 	ld hl,0e380h		;8cd8
 	ret nz			;8cdb
 	ld hl,0e2c0h		;8cdc
 	ret			;8cdf
 DERRAPE:		; bit 6 de (ix+1): angulo += (ix+39), bit 7; sale del derrape (bits 6/7 fuera) si el angulo vuelve a -0x20..0x20 y la velocidad o el volante lo permiten
-	bit 6,(ix+001h)		;8ce0
+	bit 6,(ix+001h)		;8ce0   ; en el derrape el coche gira solo, sumando (ix+39) al angulo en cada fotograma
 	ret z			;8ce4
 	ld a,(ix+039h)		;8ce5
 	add a,(ix+00ch)		;8ce8
 	ld (ix+00ch),a		;8ceb
 	set 7,(ix+001h)		;8cee
-	add a,020h		;8cf2
+	add a,020h		;8cf2   ; y no se sale del derrape hasta que el angulo vuelve a estar entre -0x20 y 0x20
 	cp 041h		;8cf4
 	ret nc			;8cf6
-	ld a,(ix+008h)		;8cf7
+	ld a,(ix+008h)		;8cf7   ; con velocidad baja se sale seguro...
 	add a,004h		;8cfa
 	cp 009h		;8cfc
 	jr c,DERRAPE_FIN		;8cfe
-	ld b,(ix+039h)		;8d00
+	ld b,(ix+039h)		;8d00   ; ...y si no, hace falta que el volante y el giro del derrape vayan en sentidos contrarios (el `xor` y el `ret p`)
 	ld a,(ix+013h)		;8d03
 	xor b			;8d06
 	ret p			;8d07
@@ -1780,7 +1784,7 @@ DERRAPE_FIN:		; bits 6 y 7 de (ix+1) fuera
 	res 7,(ix+001h)		;8d0c
 	ret			;8d10
 MANDO_SALIDA:		; antes de la salida: revoluciones por el boton (0x8BE5), aceleracion 0, angulo 0, (ix-1C) = 0xFF
-	call REVS_POR_BOTON		;8d11
+	call REVS_POR_BOTON		;8d11   ; antes de la salida el coche no se mueve: acelerador y angulo a cero y el motor a tope
 	ld (ix+012h),000h		;8d14
 	ld (ix+00ch),000h		;8d18
 	ld (ix-01ch),0ffh		;8d1c
@@ -1788,12 +1792,12 @@ MANDO_SALIDA:		; antes de la salida: revoluciones por el boton (0x8BE5), acelera
 AVANCE_PISTA:		; D = 0x80; 0x8D23
 	ld d,080h		;8d21
 AVANCE_PISTA_D:		; si (ix-1E) != 0: HL = p00 0x4A86(((ix+4) - D)/2); si no HL = 0; (ix+43,44) = max(0, min(0x1500, HL + vx (ix+7,8)))
-	ld a,(ix-01eh)		;8d23
+	ld a,(ix-01eh)		;8d23   ; el avance de la pista depende de lo lejos que este el coche del centro: cuanto mas se abre, menos avanza
 	or a			;8d26
 	jr z,AVANCE_CERO		;8d27
 	ld a,(ix+004h)		;8d29
 	sub d			;8d2c
-	rra			;8d2d
+	rra			;8d2d   ; la resta se divide por dos con signo, y por eso el `sbc a,a / and 0x80` reconstruye el bit de arriba
 	ld h,a			;8d2e
 	sbc a,a			;8d2f
 	and 080h		;8d30
@@ -1801,21 +1805,21 @@ AVANCE_PISTA_D:		; si (ix-1E) != 0: HL = p00 0x4A86(((ix+4) - D)/2); si no HL = 
 	call 04a86h		;8d33
 	jr AVANCE_SUMA_VX		;8d36
 L_8D38:
-	ld hl,00000h		;8d38
+	ld hl,00000h		;8d38   ; este trozo no lo llama nadie: es la misma puesta a cero que hace 0x8D4D
 AVANCE_SUMA_VX:		; HL += vx; negativo -> 0; > 0x1500 -> 0x1500
 	ld e,(ix+007h)		;8d3b
 	ld d,(ix+008h)		;8d3e
 	ex de,hl			;8d41
 	add hl,de			;8d42
 	ex de,hl			;8d43
-	ld hl,00000h		;8d44
+	ld hl,00000h		;8d44   ; si la suma sale negativa, avance cero
 	or a			;8d47
 	sbc hl,de		;8d48
 	jp p,AVANCE_TOPE		;8d4a
 AVANCE_CERO:		; HL = 0
 	ld hl,00000h		;8d4d
 AVANCE_TOPE:		; tope 0x1500
-	ld a,015h		;8d50
+	ld a,015h		;8d50   ; y el tope es 0x1500, que es lo que puede correr la pista en un fotograma
 	cp h			;8d52
 	jr nc,AVANCE_GUARDA		;8d53
 	ld hl,01500h		;8d55
@@ -1827,13 +1831,13 @@ POSICION_COCHE:		; x (0x9D89) y y (0x9AFE)
 	call MUEVE_X		;8d5f
 	jp AVANZA_Y		;8d62
 COCHE_ESTADO_2:		; en boxes (p01 0x788F): al salir (C) estado 0 y 0x8CA2
-	call 0788fh		;8d65
+	call 0788fh		;8d65   ; en boxes el coche no da pasos: solo se mira si el jugador quiere salir
 	ret nc			;8d68
 	ld (ix+05dh),000h		;8d69
 	jp COCHE_CHOCA		;8d6d
 GUARDA_TIEMPO:		; (ix+4D..4F) = cronometro E210..E212; (ix+16) = x
-	ld hl,0e210h		;8d70
-	ld a,(hl)			;8d73
+	ld hl,0e210h		;8d70   ; al cruzar la meta se guarda el cronometro entero, tres bytes
+	ld a,(hl)			;8d73   ; los tres bytes del cronometro, uno a uno
 	ld (ix+04dh),a		;8d74
 	inc hl			;8d77
 	ld a,(hl)			;8d78
@@ -1845,33 +1849,33 @@ GUARDA_TIEMPO:		; (ix+4D..4F) = cronometro E210..E212; (ix+16) = x
 	ld (ix+016h),a		;8d84
 	ret			;8d87
 COCHE_ESTADO_4:		; choque: bit 6 de (ix-1) = bit 7; fotograma (0x9A01); frena vx/vy (0x8DD1); (ix+38)++ hasta 0xFF; avance por D = 0x80 - (ix+38)/... (0x8D23); posicion; marchas; a los 0x5A fotogramas: p00 0x54DF, avance 0, estado 5, (ix+38) = 10
-	ld a,(ix-001h)		;8d88
+	ld a,(ix-001h)		;8d88   ; el choque dura 0x5A fotogramas, con el coche frenando y el avance cayendo
 	ld c,a			;8d8b
-	rr a		;8d8c
+	rr a		;8d8c   ; el bit 7 de (ix-1) se copia al 6: el fotograma anterior
 	and 040h		;8d8e
 	or c			;8d90
 	ld (ix-001h),a		;8d91
 	call FOTOGRAMA_COCHE		;8d94
 	call FRENA_VX_VY		;8d97
 	ld a,(ix+038h)		;8d9a
-	inc a			;8d9d
+	inc a			;8d9d   ; el contador se planta en 0xFF: no da la vuelta
 	jr z,CHOQUE_AVANCE		;8d9e
 	ld (ix+038h),a		;8da0
 CHOQUE_AVANCE:		; D = min(0x60, 0x60 - A) + 0x20
-	neg		;8da3
+	neg		;8da3   ; D baja de 0x80 a 0x20 segun avanza el choque: el coche se va yendo hacia atras
 	add a,060h		;8da5
 	jr c,CHOQUE_AVANCE_D		;8da7
 	ld a,060h		;8da9
 CHOQUE_AVANCE_D:		; D = A + 0x20
 	add a,020h		;8dab
-	ld d,a			;8dad
+	ld d,a			;8dad   ; D es lo que se le pasa al calculo del avance
 	call AVANCE_PISTA_D		;8dae
 	call MUEVE_X		;8db1
-	call MARCHAS		;8db4
+	call MARCHAS		;8db4   ; y las marchas siguen contando durante el choque
 	ld a,(ix+038h)		;8db7
 	cp 05ah		;8dba
 	ret c			;8dbc
-	call 054dfh		;8dbd
+	call 054dfh		;8dbd   ; y al acabar, p00 0x54DF revienta un neumatico
 	ld (ix+043h),000h		;8dc0
 	ld (ix+044h),000h		;8dc4
 	ld (ix+05dh),005h		;8dc8
@@ -1879,8 +1883,8 @@ CHOQUE_AVANCE_D:		; D = A + 0x20
 	ret			;8dd0
 FRENA_VX_VY:		; vy -= vy/64 (p00 0x4A7E son SEIS `sra h / rr l`, no tres), vx -= vx/64; a cero si el byte alto se anula
 	ld h,(ix+00bh)		;8dd1
-	ld l,(ix+00ah)		;8dd4
-	ld d,h			;8dd7
+	ld l,(ix+00ah)		;8dd4   ; y la parte baja
+	ld d,h			;8dd7   ; la velocidad de lado se copia para poder dividirla sin perderla
 	ld e,l			;8dd8
 	call 04a7eh		;8dd9
 	ex de,hl			;8ddc
@@ -1891,14 +1895,14 @@ FRENA_VX_VY:		; vy -= vy/64 (p00 0x4A7E son SEIS `sra h / rr l`, no tres), vx -=
 	jr nz,FRENA_VX		;8de2
 	ld hl,00000h		;8de4
 FRENA_VX:		; la parte de vx
-	ld (ix+00bh),h		;8de7
+	ld (ix+00bh),h		;8de7   ; vx se frena igual que vy, y con la vy nueva sumada
 	ld (ix+00ah),l		;8dea
-	ld h,(ix+008h)		;8ded
+	ld h,(ix+008h)		;8ded   ; y la misma frenada para vx, con la vy ya frenada sumada encima
 	ld l,(ix+007h)		;8df0
 	add hl,de			;8df3
 	ld d,h			;8df4
 	ld e,l			;8df5
-	call 04a7eh		;8df6
+	call 04a7eh		;8df6   ; la misma 64 parte
 	ex de,hl			;8df9
 	or a			;8dfa
 	sbc hl,de		;8dfb
@@ -1911,23 +1915,23 @@ FRENA_VX_GUARDA:		; (ix+7,8) = HL
 	ld (ix+007h),l		;8e07
 	ret			;8e0a
 COCHE_ESTADO_5:		; (ix+38)-- a cero: estado 7 y combustible -= 0x18 (p01 0x7646)
-	dec (ix+038h)		;8e0b
+	dec (ix+038h)		;8e0b   ; el estado 5 es la espera despues del choque: al acabarse, se reaparece y se paga combustible
 	ret nz			;8e0e
 	ld (ix+05dh),007h		;8e0f
 	call 07646h		;8e13
 	ret			;8e16
 COCHE_ESTADO_9_FIN:		; estado 6 y guarda el tiempo (0x8D70)
-	ld (ix+05dh),006h		;8e17
+	ld (ix+05dh),006h		;8e17   ; al pararse del todo se guarda el tiempo: es el que sale en el ranking
 	jp GUARDA_TIEMPO		;8e1b
 COCHE_ESTADO_6:		; parado: aceleracion 0 y sin sprite
-	ld (ix+012h),000h		;8e1e
+	ld (ix+012h),000h		;8e1e   ; el estado 6 es "parado": ni acelera ni se pinta
 	set 7,(ix+031h)		;8e22
 	ret			;8e26
 L_8E27:
-	ld a,(0e25bh)		;8e27
+	ld a,(0e25bh)		;8e27   ; este trozo no lo llama nadie: guarda la velocidad alta en (ix+2B) al pisar el terreno 11, y solo fuera de RALLY
 	or a			;8e2a
 	ret z			;8e2b
-	ld a,(ix+02bh)		;8e2c
+	ld a,(ix+02bh)		;8e2c   ; (ix+2B) solo se carga si estaba a cero
 	or a			;8e2f
 	ret nz			;8e30
 	ld a,(ix+022h)		;8e31
@@ -1937,7 +1941,7 @@ L_8E27:
 	ld (ix+02bh),a		;8e3a
 	ret			;8e3d
 L_8E3E:
-	ld a,(ix+02bh)		;8e3e
+	ld a,(ix+02bh)		;8e3e   ; ni este: baja ese contador y, al agotarse, mueve el angulo con los tres bits bajos del contador de fotogramas
 	dec a			;8e41
 	ld (ix+02bh),a		;8e42
 	ret nz			;8e45
@@ -1947,28 +1951,28 @@ L_8E3E:
 	ld (ix+00ch),a		;8e4e
 	ret			;8e51
 BOXES_Y_COMBUSTIBLE:		; sin combustible y parado -> estado 6 (0x8EB5); (ix+5C) baja con las filas avanzadas (ix+4C); a cero y parado: si el cronometro pasa de 0x80 (0x8E8E) y la casilla de boxes esta bajo el coche (0x8E98; o E244 = 2 con un jugador) -> estado 1
-	call SIN_COMBUSTIBLE		;8e52
+	call SIN_COMBUSTIBLE		;8e52   ; boxes y combustible se miran juntos porque los dos pueden parar el coche
 	ld a,(ix+05ch)		;8e55
 	or a			;8e58
 	jr z,BOXES_PARADO		;8e59
-	inc a			;8e5b
+	inc a			;8e5b   ; un 0xFF en (ix+5C) es "ya se ha comprobado": no se vuelve a mirar
 	ret z			;8e5c
 	ld a,(ix+05ch)		;8e5d
-	sub (ix+04ch)		;8e60
+	sub (ix+04ch)		;8e60   ; el contador baja con las filas de pista avanzadas, no con los fotogramas
 	ld (ix+05ch),a		;8e63
 	ret nc			;8e66
 	ld (ix+05ch),000h		;8e67
 	ret			;8e6b
 BOXES_PARADO:		; velocidad 0: comprueba boxes
-	ld a,(ix+010h)		;8e6c
+	ld a,(ix+010h)		;8e6c   ; parado del todo, velocidad cero
 	or (ix+011h)		;8e6f
 	ret nz			;8e72
-	call CRONOMETRO_PASA_80		;8e73
+	call CRONOMETRO_PASA_80		;8e73   ; y ademas el cronometro tiene que pasar de 0x80: no se puede entrar en boxes recien salido
 	ret nc			;8e76
 	ld a,(0e1c2h)		;8e77
 	bit 5,a		;8e7a
 	jr nz,BOXES_CASILLA		;8e7c
-	ld a,(0e244h)		;8e7e
+	ld a,(0e244h)		;8e7e   ; con un jugador, la repeticion en marcha vale como si estuviera en boxes
 	cp 002h		;8e81
 	jr z,A_ESTADO_1		;8e83
 BOXES_CASILLA:		; 0x8E98: NC no
@@ -1984,7 +1988,7 @@ CRONOMETRO_PASA_80:		; NC si (E211) >= 0x80
 	sbc hl,de		;8e95
 	ret			;8e97
 BAJO_BOXES:		; casilla del buffer de nombres en (x-8, y-0x20) (p00 0x4A9D); C si alguno de los 5x2 tiles esta entre E276 y E276+E277 (p00 0x4B0C)
-	ld a,(ix+004h)		;8e98
+	ld a,(ix+004h)		;8e98   ; la ventana que se mira es de 5 x 2 casillas, y esta ocho pixeles arriba y 0x20 a la izquierda de la posicion del coche
 	sub 008h		;8e9b
 	ld e,a			;8e9d
 	ld a,(ix+006h)		;8e9e
@@ -1995,16 +1999,16 @@ BAJO_BOXES:		; casilla del buffer de nombres en (x-8, y-0x20) (p00 0x4A9D); C si
 	ld d,a			;8eaa
 	ld a,(0e277h)		;8eab
 	ld e,a			;8eae
-	ld bc,00502h		;8eaf
+	ld bc,00502h		;8eaf   ; B = 5 columnas y C = 2 filas
 	jp 04b0ch		;8eb2
 SIN_COMBUSTIBLE:		; vx = 0 y combustible 0: si esta en boxes -> estado 1; si no estado 6, guarda el tiempo y sonido 0x46 (0x873A)
-	ld a,(ix+008h)		;8eb5
+	ld a,(ix+008h)		;8eb5   ; sin combustible y sin vx el coche se planta donde este
 	or a			;8eb8
 	ret nz			;8eb9
 	ld a,(ix+050h)		;8eba
 	or a			;8ebd
 	ret nz			;8ebe
-	call BAJO_BOXES		;8ebf
+	call BAJO_BOXES		;8ebf   ; sin combustible, si el coche esta en boxes se entra; si no, se planta
 	jr c,A_ESTADO_1		;8ec2
 	ld (ix+05dh),006h		;8ec4
 	call GUARDA_TIEMPO		;8ec8
@@ -2014,6 +2018,10 @@ SIN_COMBUSTIBLE:		; vx = 0 y combustible 0: si esta en boxes -> estado 1; si no 
 ; DATOS tabla_8ECE: ocho bytes (04 01 04 01 02 04 02 01) entre dos rutinas sin
 ;   llamador; nadie los referencia en la ROM trazada
 ;   0x8ece..0x8ed6  (8 bytes)
+
+; ----------------------------------------------------------------------
+; estos ocho bytes estan entre dos rutinas sin llamador y no los referencia nadie
+; ----------------------------------------------------------------------
 DATA_tabla_8ECE:
 	defb 004h,001h,004h,001h,002h,004h,002h,001h	; 8ece  ........
 
@@ -2023,26 +2031,26 @@ DATA_tabla_8ECE:
 
 
 L_8ED6:
-	ld d,(ix+006h)		;8ed6
+	ld d,(ix+006h)		;8ed6   ; este trozo no lo llama nadie: mira tres casillas de la fila, de cuatro en cuatro columnas, y devuelve tres bits diciendo cuales caen en el rango de E26C
 	ld e,(ix+004h)		;8ed9
 	ld a,d			;8edc
 	sub 020h		;8edd
 	ld d,a			;8edf
 	call 04a9dh		;8ee0
 	ld a,l			;8ee3
-	and 0e0h		;8ee4
+	and 0e0h		;8ee4   ; la fila se recorta al principio: se van a mirar tres casillas de la misma
 	ld b,a			;8ee6
 	ld a,(0e26ch)		;8ee7
 	ld d,a			;8eea
-	ld a,(0e272h)		;8eeb
+	ld a,(0e272h)		;8eeb   ; E26C y E272 marcan el rango de tiles que cuenta
 	sub d			;8eee
 	ld e,a			;8eef
 	ld a,(hl)			;8ef0
 	sub d			;8ef1
 	cp e			;8ef2
-	rl c		;8ef3
+	rl c		;8ef3   ; el `rl c` va metiendo un bit por casilla: el resultado son tres bits
 	ld a,l			;8ef5
-	add a,004h		;8ef6
+	add a,004h		;8ef6   ; de cuatro en cuatro columnas, dando la vuelta dentro de la fila
 	and 01fh		;8ef8
 	or b			;8efa
 	ld l,a			;8efb
@@ -2050,7 +2058,7 @@ L_8ED6:
 	sub d			;8efd
 	cp e			;8efe
 	rl c		;8eff
-	ld a,l			;8f01
+	ld a,l			;8f01   ; y la tercera casilla, otras cuatro columnas mas alla
 	add a,004h		;8f02
 	and 01fh		;8f04
 	or b			;8f06
@@ -2059,15 +2067,15 @@ L_8ED6:
 	sub d			;8f09
 	cp e			;8f0a
 	rl c		;8f0b
-	ld a,c			;8f0d
+	ld a,c			;8f0d   ; solo se devuelven tres bits, uno por casilla
 	and 007h		;8f0e
 	ret			;8f10
 NEUMATICOS_EFECTO:		; bits 1, 2, 3 de (ix+68) (0x8F29, 0x8F46, 0x8F56)
-	call NEUMATICO_1		;8f11
+	call NEUMATICO_1		;8f11   ; los cuatro neumaticos rotos hacen cuatro cosas distintas
 	call NEUMATICO_2		;8f14
 	jr NEUMATICO_3		;8f17
 NEUMATICO_0:		; bit 0 de (ix+68): cada 4 fotogramas el volante (ix+13) = 0
-	bit 0,(ix+068h)		;8f19
+	bit 0,(ix+068h)		;8f19   ; el bit 0 deja el volante clavado a cero uno de cada cuatro fotogramas
 	ret z			;8f1d
 	ld a,(0e1c3h)		;8f1e
 	and 003h		;8f21
@@ -2075,7 +2083,7 @@ NEUMATICO_0:		; bit 0 de (ix+68): cada 4 fotogramas el volante (ix+13) = 0
 	ld (ix+013h),000h		;8f24
 	ret			;8f28
 NEUMATICO_1:		; bit 1: a velocidad >= 0x400 y azar (p00 0x5513) >= 0xD0: angulo += azar&7 - 4
-	bit 1,(ix+068h)		;8f29
+	bit 1,(ix+068h)		;8f29   ; el bit 1 tira del coche al azar, y solo a partir de cierta velocidad
 	ret z			;8f2d
 	ld a,(ix+011h)		;8f2e
 	cp 004h		;8f31
@@ -2085,12 +2093,12 @@ NEUMATICO_1:		; bit 1: a velocidad >= 0x400 y azar (p00 0x5513) >= 0xD0: angulo 
 	ret c			;8f39
 	and 007h		;8f3a
 	ret z			;8f3c
-	sub 004h		;8f3d
+	sub 004h		;8f3d   ; el azar entre 0 y 7 menos cuatro: un tiron a un lado o a otro
 	add a,(ix+00ch)		;8f3f
 	ld (ix+00ch),a		;8f42
 	ret			;8f45
 NEUMATICO_2:		; bit 2: la aceleracion positiva a la mitad
-	bit 2,(ix+068h)		;8f46
+	bit 2,(ix+068h)		;8f46   ; el bit 2 se come la mitad de lo que aceleras
 	ret z			;8f4a
 	ld a,(ix+012h)		;8f4b
 	or a			;8f4e
@@ -2099,7 +2107,7 @@ NEUMATICO_2:		; bit 2: la aceleracion positiva a la mitad
 	ld (ix+012h),a		;8f52
 	ret			;8f55
 NEUMATICO_3:		; bit 3: la aceleracion negativa a la mitad
-	bit 3,(ix+068h)		;8f56
+	bit 3,(ix+068h)		;8f56   ; y el bit 3 la mitad de lo que frenas
 	ret z			;8f5a
 	ld a,(ix+012h)		;8f5b
 	or a			;8f5e
@@ -2108,7 +2116,7 @@ NEUMATICO_3:		; bit 3: la aceleracion negativa a la mitad
 	ld (ix+012h),a		;8f62
 	ret			;8f65
 MARCHAS:		; (ix+70) != 0: cambio automatico cada 0x1E fotogramas por revoluciones (< 0x20 baja, >= 0x38 sube); si no arriba (bit 0 del mando) sube (0x8F9A) y abajo (bit 1) baja (0x8FB9)
-	ld a,(ix+070h)		;8f66
+	ld a,(ix+070h)		;8f66   ; (ix+70) encendido es el cambio automatico, y viene del bit 7 del quinto byte del coche elegido
 	or a			;8f69
 	jr z,MARCHA_MANUAL		;8f6a
 	dec a			;8f6c
@@ -2116,7 +2124,7 @@ MARCHAS:		; (ix+70) != 0: cambio automatico cada 0x1E fotogramas por revolucione
 	ld (ix+070h),a		;8f6f
 	ret			;8f72
 MARCHA_AUTOMATICA:		; (ix+70) = 0x1E y decide por (ix+59)
-	ld a,01eh		;8f73
+	ld a,01eh		;8f73   ; el automatico decide cada 0x1E fotogramas: por debajo de 0x20 revoluciones baja y por encima de 0x38 sube
 	ld (ix+070h),a		;8f75
 	ld a,(ix+059h)		;8f78
 	cp 020h		;8f7b
@@ -2125,7 +2133,7 @@ MARCHA_AUTOMATICA:		; (ix+70) = 0x1E y decide por (ix+59)
 	jr nc,SUBE_MARCHA		;8f81
 	ret			;8f83
 MARCHA_MANUAL:		; flancos del mando del jugador (ix+9)
-	ld hl,0e1cbh		;8f84
+	ld hl,0e1cbh		;8f84   ; en manual, arriba sube y abajo baja
 	bit 0,(ix+009h)		;8f87
 	jr z,MARCHA_MANUAL_BITS		;8f8b
 	ld hl,0e1c8h		;8f8d
@@ -2138,7 +2146,7 @@ MARCHA_MANUAL_BITS:		; bit 0 sube, bit 1 baja
 SUBE_MARCHA:		; (ix+69)++ (tope 3); E19A/E19F = (ix+72), E199/E19E = 0; sprite extra 2 si acelera (0x8FC5)
 	ld a,(ix+069h)		;8f9a
 	inc a			;8f9d
-	cp 004h		;8f9e
+	cp 004h		;8f9e   ; cuatro marchas, de la 0 a la 3
 	ret nc			;8fa0
 	ld (ix+069h),a		;8fa1
 	ld hl,0e19ah		;8fa4
@@ -2146,26 +2154,26 @@ SUBE_MARCHA:		; (ix+69)++ (tope 3); E19A/E19F = (ix+72), E199/E19E = 0; sprite e
 	jr nz,SUBE_MARCHA_REVS		;8fab
 	ld hl,0e19fh		;8fad
 SUBE_MARCHA_REVS:		; el filtro de revoluciones al tope
-	ld a,(ix+072h)		;8fb0
+	ld a,(ix+072h)		;8fb0   ; al cambiar, el filtro de revoluciones se planta en el tope: el motor pega el tiron
 	ld (hl),a			;8fb3
 	dec hl			;8fb4
 	ld (hl),000h		;8fb5
 	jr MARCHA_SPRITE		;8fb7
 BAJA_MARCHA:		; bit 0 de (ix-1C); (ix+69)-- (minimo 0)
-	set 0,(ix-01ch)		;8fb9
+	set 0,(ix-01ch)		;8fb9   ; al bajar de marcha se enciende (ix-1C), que es lo que pone el motor a todo volumen
 	ld a,(ix+069h)		;8fbd
 	dec a			;8fc0
 	ret m			;8fc1
 	ld (ix+069h),a		;8fc2
 MARCHA_SPRITE:		; si (ix+12) > 0: (ix+2F) = 2 y bit 6 de (ix+31) (el sprite extra del cambio)
-	ld a,(ix+012h)		;8fc5
+	ld a,(ix+012h)		;8fc5   ; y si ademas se esta acelerando, sale el sprite del cambio
 	neg		;8fc8
 	ret p			;8fca
 	ld (ix+02fh),002h		;8fcb
 	set 6,(ix+031h)		;8fcf
 	ret			;8fd3
 ACELERADOR:		; un fotograma de cada dos (por jugador): revoluciones (0x9CA8); boton 2 (bit 5) -> freno (0x902E); sin combustible -> aceleracion -5 (0x9012); boton 1 (bit 4) -> 0x9017; si no (ix-0A) = 0 y aceleracion = tabla 0x90B1[revs >> 4] (retencion)
-	ld a,(0e1c3h)		;8fd4
+	ld a,(0e1c3h)		;8fd4   ; el acelerador se atiende un fotograma de cada dos, y a cada coche le toca uno distinto: por eso el `xor (ix+9)`
 	xor (ix+009h)		;8fd7
 	rrca			;8fda
 	ret c			;8fdb
@@ -2175,16 +2183,16 @@ ACELERADOR:		; un fotograma de cada dos (por jugador): revoluciones (0x9CA8); bo
 	jr z,ACELERADOR_BOTONES		;8fe6
 	ld hl,0e1c9h		;8fe8
 ACELERADOR_BOTONES:		; bits 5 y 4 del mando
-	bit 5,(hl)		;8feb
+	bit 5,(hl)		;8feb   ; el bit 5 es el freno y el bit 4 el acelerador
 	jr nz,FRENA		;8fed
-	ld a,(ix+050h)		;8fef
+	ld a,(ix+050h)		;8fef   ; sin combustible no hay acelerador que valga
 	or a			;8ff2
 	jr z,SIN_COMBUSTIBLE_ACEL		;8ff3
-	bit 4,(hl)		;8ff5
+	bit 4,(hl)		;8ff5   ; y el bit 4 es el que acelera
 	jr nz,ACELERA		;8ff7
-	ld (ix-00ah),000h		;8ff9
+	ld (ix-00ah),000h		;8ff9   ; sin tocar nada la aceleracion la manda la retencion del motor: la tabla de 0x90B1 por revoluciones
 	ld a,(ix+059h)		;8ffd
-	rrca			;9000
+	rrca			;9000   ; las revoluciones divididas por dieciseis: el indice de la retencion
 	rrca			;9001
 	rrca			;9002
 	rrca			;9003
@@ -2197,10 +2205,10 @@ ACELERADOR_BOTONES:		; bits 5 y 4 del mando
 	ld (ix+012h),a		;900e
 	ret			;9011
 SIN_COMBUSTIBLE_ACEL:		; aceleracion = -5
-	ld (ix+012h),0fbh		;9012
+	ld (ix+012h),0fbh		;9012   ; sin combustible el coche se va frenando solo, -5 por fotograma
 	ret			;9016
 ACELERA:		; (ix-0A) = 0; revoluciones >= 0x55 y azar: sprite extra 3 (humo)
-	ld (ix-00ah),000h		;9017
+	ld (ix-00ah),000h		;9017   ; acelerando a mas de 0x55 revoluciones sale humo, y no siempre: el registro R decide
 	ld a,(ix+059h)		;901b
 	cp 055h		;901e
 	ret c			;9020
@@ -2211,11 +2219,11 @@ ACELERA:		; (ix-0A) = 0; revoluciones >= 0x55 y azar: sprite extra 3 (humo)
 	set 6,(ix+031h)		;9029
 	ret			;902d
 FRENA:		; (ix-0A) != 0: tabla 0x905A; cada 4 fotogramas sonido 0x13 si vx >= 4; la primera vez (ix-09) = 4, (ix-0B) = 1 y sonido 0x11
-	ld a,(ix-00ah)		;902e
+	ld a,(ix-00ah)		;902e   ; frenar tiene curva: la tabla de 0x9081 da cuatro escalones de fuerza segun se mantenga el freno
 	or a			;9031
 	jr z,FRENA_EMPIEZA		;9032
 	call FRENA_TABLA		;9034
-	dec (ix-009h)		;9037
+	dec (ix-009h)		;9037   ; el sonido del freno se repite cada cuatro pasos
 	ret nz			;903a
 	ld (ix-009h),004h		;903b
 	ld d,013h		;903f
@@ -2226,21 +2234,21 @@ FRENA_SONIDO:		; sonido D + jugador si vx (ix+8) >= 4
 	ld a,d			;9047
 	jp SONIDO_JUGADOR		;9048
 FRENA_EMPIEZA:		; (ix-09) = 4, (ix-0B) = 1, tabla, sonido 0x11
-	ld (ix-009h),004h		;904b
+	ld (ix-009h),004h		;904b   ; la primera pisada suena distinta, el 0x11
 	ld (ix-00bh),001h		;904f
 	call FRENA_TABLA		;9053
 	ld d,011h		;9056
 	jr FRENA_SONIDO		;9058
 FRENA_TABLA:		; aceleracion = tabla 0x9081[(ix+77)*8 + (ix-0A)*2]; (ix-0B)-- a cero: recarga con el 2o byte y (ix-0A)++ (hasta 3)
-	ld c,a			;905a
+	ld c,a			;905a   ; el indice mezcla los frenos elegidos (ix+77) y el escalon en el que va (ix-0A)
 	ld a,(ix+077h)		;905b
 	add a,a			;905e
 	add a,a			;905f
-	add a,c			;9060
+	add a,c			;9060   ; el escalon en el que va la frenada
 	add a,a			;9061
 	ld l,a			;9062
 	ld h,000h		;9063
-	ld de,09081h		;9065
+	ld de,09081h		;9065   ; la tabla son parejas: fuerza y duracion
 	add hl,de			;9068
 	ld a,(hl)			;9069
 	ld (ix+012h),a		;906a
@@ -2248,8 +2256,8 @@ FRENA_TABLA:		; aceleracion = tabla 0x9081[(ix+77)*8 + (ix-0A)*2]; (ix-0B)-- a c
 	ret nz			;9070
 	inc hl			;9071
 	ld a,(hl)			;9072
-	ld (ix-00bh),a		;9073
-	ld a,(ix-00ah)		;9076
+	ld (ix-00bh),a		;9073   ; y el segundo byte de la pareja es cuanto dura ese escalon
+	ld a,(ix-00ah)		;9076   ; y de un escalon al siguiente, hasta el tercero
 	cp 003h		;9079
 	ret nc			;907b
 	inc a			;907c
@@ -2281,34 +2289,34 @@ DATA_tabla_retencion:
 
 
 L_90C1:
-	push ix		;90c1
+	push ix		;90c1   ; este trozo no lo llama nadie: lleva un anillo de 30 velocidades en (ix+0xC0) y saca vx de la diferencia con la de hace 30 pasos
 	pop hl			;90c3
 	ld l,0c0h		;90c4
 	ld a,(hl)			;90c6
 	inc a			;90c7
-	cp 01eh		;90c8
+	cp 01eh		;90c8   ; el indice da la vuelta a las 30
 	jr c,L_90CD		;90ca
 	xor a			;90cc
 L_90CD:
-	ld (hl),a			;90cd
+	ld (hl),a			;90cd   ; el indice por dos: el anillo son palabras
 	add a,a			;90ce
 	add a,l			;90cf
 	ld l,a			;90d0
 	ld e,(ix+010h)		;90d1
 	ld d,(ix+011h)		;90d4
-	ld c,(hl)			;90d7
+	ld c,(hl)			;90d7   ; se lee la velocidad de hace 30 pasos y se escribe la de ahora, todo de una vez
 	ld (hl),e			;90d8
 	inc l			;90d9
 	ld b,(hl)			;90da
 	ld (hl),d			;90db
 	ex de,hl			;90dc
 	or a			;90dd
-	sbc hl,bc		;90de
+	sbc hl,bc		;90de   ; y la diferencia entre las dos es la vx que se guarda
 	ld (ix+007h),l		;90e0
 	ld (ix+008h),h		;90e3
 	ret			;90e6
 META_Y_VUELTAS:		; coche 1: 0x9103 y 0x9207; con dos jugadores el coche 2
-	ld ix,0e2c0h		;90e7
+	ld ix,0e2c0h		;90e7   ; la meta y las vueltas se miran por coche
 	ld iy,0e2c0h		;90eb
 	call TILE_ESPECIAL		;90ef
 	call REPETICION		;90f2
@@ -2318,10 +2326,10 @@ META_Y_VUELTAS:		; coche 1: 0x9103 y 0x9207; con dos jugadores el coche 2
 	ld ix,0e380h		;90fb
 	ld iy,0e380h		;90ff
 TILE_ESPECIAL:		; (ix-1A) con bit 6 y < 9: despacha (tabla 0x9111)
-	ld a,(ix-01ah)		;9103
+	ld a,(ix-01ah)		;9103   ; (ix-1A) trae el terreno con el bit 6 puesto cuando es un tile especial
 	bit 6,a		;9106
 	ret z			;9108
-	and 03fh		;9109
+	and 03fh		;9109   ; nueve tiles especiales, y solo tres hacen algo: la meta, el 6 y el 7
 	cp 009h		;910b
 	ret nc			;910d
 	call 040dah		;910e
@@ -2347,34 +2355,34 @@ DATA_tabla_910E:
 
 
 LINEA_DE_META:		; si no termino (bit 1 de ix+1): ultima vuelta (0x91CC) -> estado 3, bit 1, (bit 7 de ix+3C si no venia de 4), E214++ (el primero: posicion (0x9161)), guarda el tiempo (0x8D70), musica de meta (0x8682); un jugador con bit 7 de (ix+3C) -> E250 = 0x1A; si no vuelta nueva (0x9180)
-	bit 1,(ix+001h)		;9123
+	bit 1,(ix+001h)		;9123   ; el que ya termino no vuelve a cruzar la meta
 	ret nz			;9127
 	ld e,000h		;9128
-	call VUELTAS_COMPARA		;912a
+	call VUELTAS_COMPARA		;912a   ; si era la ultima vuelta, se acabo la carrera para este coche
 	jr nz,VUELTA_NUEVA		;912d
 	ld a,(ix+05dh)		;912f
 	ld (ix+05dh),003h		;9132
 	set 1,(ix+001h)		;9136
-	cp 004h		;913a
+	cp 004h		;913a   ; viniendo de un choque no se enciende el bit 7 de (ix+3C)
 	jr z,META_LLEGADA		;913c
 	set 7,(ix+03ch)		;913e
 META_LLEGADA:		; E214++ y lo demas
-	ld hl,0e214h		;9142
+	ld hl,0e214h		;9142   ; E214 cuenta los que van llegando: al primero se le apunta el puesto
 	inc (hl)			;9145
 	ld a,(hl)			;9146
 	dec a			;9147
 	call z,META_PRIMERO		;9148
 	call GUARDA_TIEMPO		;914b
-	call MUSICA_META		;914e
+	call MUSICA_META		;914e   ; y suena la musica de meta
 	ld a,(0e1c2h)		;9151
 	bit 5,a		;9154
 	ret nz			;9156
-	bit 7,(ix+03ch)		;9157
+	bit 7,(ix+03ch)		;9157   ; con un jugador y el bit 7 puesto, la partida pasa al estado 0x1A
 	ret z			;915b
 	ld a,01ah		;915c
 	jp 06049h		;915e
 META_PRIMERO:		; con dos jugadores (ix+71) = (ix+7E); E331/E3F1 (por jugador) = (ix+71) + 1
-	ld a,(0e1c2h)		;9161
+	ld a,(0e1c2h)		;9161   ; con dos jugadores el puesto sale del ritmo (ix+7E)
 	bit 5,a		;9164
 	jr z,META_POSICION_JUGADOR		;9166
 	ld a,(ix+07eh)		;9168
@@ -2385,18 +2393,18 @@ META_POSICION_JUGADOR:		; HL = E331 (jugador 1) o E3F1
 	jr z,META_POSICION_ESCRIBE		;9175
 	ld hl,0e3f1h		;9177
 META_POSICION_ESCRIBE:		; (HL) = (ix+71) + 1
-	ld a,(ix+071h)		;917a
+	ld a,(ix+071h)		;917a   ; y se guarda sumandole uno: en pantalla se cuenta desde 1
 	inc a			;917d
 	ld (hl),a			;917e
 	ret			;917f
 VUELTA_NUEVA:		; si (ix-2) cambio respecto a (ix-8): (ix-8) = (ix-2), (ix-7) = 0x40; tiempo de vuelta = cronometro E210.. - (ix-12..-10) (p00 0x52BB, 0x5339) -> 6 digitos a ix+0x78.. y p00 0x48B7
-	ld a,(ix-002h)		;9180
+	ld a,(ix-002h)		;9180   ; y si no era la ultima, vuelta nueva: se apunta el tiempo de la que se acaba de cerrar
 	cp (ix-008h)		;9183
 	ret z			;9186
 	ld (ix-008h),a		;9187
 	ld a,040h		;918a
 	ld (ix-007h),a		;918c
-	ld c,(ix-012h)		;918f
+	ld c,(ix-012h)		;918f   ; el cronometro de la vuelta anterior se guarda y se sustituye por el de ahora, los tres bytes
 	ld e,(ix-011h)		;9192
 	ld d,(ix-010h)		;9195
 	ld hl,0e210h		;9198
@@ -2409,7 +2417,7 @@ VUELTA_NUEVA:		; si (ix-2) cambio respecto a (ix-8): (ix-8) = (ix-2), (ix-7) = 0
 	ld (ix-012h),b		;91a1
 	ld (ix-011h),l		;91a4
 	ld (ix-010h),h		;91a7
-	call 052bbh		;91aa
+	call 052bbh		;91aa   ; la resta y el paso a digitos los hace p00
 	call 05339h		;91ad
 	push ix		;91b0
 	pop hl			;91b2
@@ -2417,7 +2425,7 @@ VUELTA_NUEVA:		; si (ix-2) cambio respecto a (ix-8): (ix-8) = (ix-2), (ix-7) = 0
 	add hl,de			;91b6
 	ex de,hl			;91b7
 	ld hl,0ea51h		;91b8
-	ldi		;91bb
+	ldi		;91bb   ; seis `ldi`: los seis digitos del tiempo de vuelta se guardan en el bloque del coche
 	ldi		;91bd
 	ldi		;91bf
 	ldi		;91c1
@@ -2425,10 +2433,10 @@ VUELTA_NUEVA:		; si (ix-2) cambio respecto a (ix-8): (ix-8) = (ix-2), (ix-7) = 0
 	ldi		;91c5
 	jp 048b7h		;91c7
 VUELTAS_CARRERA:		; A = tabla 0x91DB[E25B] (vueltas) comparado con (ix-2) (desde p01 0x76F2; devuelve A = vueltas)
-	ld e,000h		;91ca
+	ld e,000h		;91ca   ; las vueltas de la carrera dependen de la categoria: tres o cuatro
 VUELTAS_COMPARA:		; cp (ix-2)
 	ld hl,091dbh		;91cc
-	ld a,(0e25bh)		;91cf
+	ld a,(0e25bh)		;91cf   ; la categoria elige cuantas vueltas tiene la carrera
 	ld d,000h		;91d2
 	ld e,a			;91d4
 	add hl,de			;91d5
@@ -2448,7 +2456,7 @@ DATA_tabla_vueltas:
 
 
 TILE_6_REPETICION:		; si E244 != 0: E244 = 0 y, si era 2, 0x91EC
-	ld hl,0e244h		;91e1
+	ld hl,0e244h		;91e1   ; el tile 6 corta la repeticion
 	ld a,(hl)			;91e4
 	and a			;91e5
 	ret z			;91e6
@@ -2456,12 +2464,12 @@ TILE_6_REPETICION:		; si E244 != 0: E244 = 0 y, si era 2, 0x91EC
 	cp 002h		;91e9
 	ret nz			;91eb
 REINICIA_PISTA_REPETICION:		; E315 = 1, p00 0x44F3 y CARGA_TILES_CIRCUITO (p00 0x4BCE)
-	ld a,001h		;91ec
+	ld a,001h		;91ec   ; y hay que volver a cargar los tiles del circuito: la repeticion los habia cambiado
 	ld (0e315h),a		;91ee
 	call 044f3h		;91f1
 	jp 04bceh		;91f4
 TILE_7_PIDE_REPETICION:		; un jugador y E244 = 0: E244 = 1
-	ld a,(0e1c2h)		;91f7
+	ld a,(0e1c2h)		;91f7   ; el tile 7 la pide, y solo con un jugador
 	bit 5,a		;91fa
 	ret nz			;91fc
 	ld hl,0e244h		;91fd
@@ -2473,30 +2481,30 @@ TILE_7_PIDE_REPETICION:		; un jugador y E244 = 0: E244 = 1
 NADA_9206:		; ret (entradas 1-5 y 8 de la tabla)
 	ret			;9206
 REPETICION:		; en estado 0, con el boton 2 (bit 5 de E1C9) y E244 = 1 y terreno 15: angulo 0, volante 0, (ix+1) &= 0x3F, E1D5 = 0, E244 = 2, pista (0x9263) y 0x923A
-	ld a,(ix+05dh)		;9207
+	ld a,(ix+05dh)		;9207   ; para que la repeticion arranque hacen falta cuatro cosas: estado 0, el boton 2, que este pedida y que el coche pise el terreno 15
 	cp 000h		;920a
 	ret nz			;920c
-	ld hl,0e1c9h		;920d
+	ld hl,0e1c9h		;920d   ; el boton 2 es el bit 5 del mando del jugador 1
 	bit 5,(hl)		;9210
 	ret z			;9212
 	ld a,(0e244h)		;9213
 	dec a			;9216
 	ret nz			;9217
-	ld a,(ix+022h)		;9218
+	ld a,(ix+022h)		;9218   ; el terreno 15 es la meta: la repeticion solo se pide al cruzarla
 	cp 00fh		;921b
 	ret nz			;921d
 	ld (ix+00ch),000h		;921e
 	ld (ix+013h),000h		;9222
 	ld a,(ix+001h)		;9226
-	and 03fh		;9229
+	and 03fh		;9229   ; y se le quitan los dos bits altos de las banderas: el derrape no se graba
 	ld (ix+001h),a		;922b
 	xor a			;922e
 	ld (0e1d5h),a		;922f
-	ld a,002h		;9232
+	ld a,002h		;9232   ; E244 = 2 es la repeticion en marcha
 	ld (0e244h),a		;9234
 	call CARGA_PISTA_REPETICION		;9237
 OBJETOS_A_UN_LADO:		; los 5 objetos E800..: x = 0xC8 o 0xF8 por el bit 7 de (ix+29); E315 = 0
-	push ix		;923a
+	push ix		;923a   ; al arrancar la repeticion los cinco objetos se apartan a un lado de la pista
 	ld ix,0e800h		;923c
 	ld de,00038h		;9240
 	ld b,005h		;9243
@@ -2504,7 +2512,7 @@ OBJETOS_LADO_BUCLE:		; un objeto por vuelta
 	ld a,(ix+000h)		;9245
 	or a			;9248
 	jr z,OBJETO_LADO_SIGUIENTE		;9249
-	bit 7,(ix+029h)		;924b
+	bit 7,(ix+029h)		;924b   ; el bit 7 de (ix+29) reparte: unos a 0xC8 y otros a 0xF8
 	ld a,0c8h		;924f
 	jr nz,OBJETO_LADO_X		;9251
 	ld a,0f8h		;9253
@@ -2512,13 +2520,13 @@ OBJETO_LADO_X:		; (ix+4) = A
 	ld (ix+004h),a		;9255
 OBJETO_LADO_SIGUIENTE:		; IX += 0x38
 	add ix,de		;9258
-	djnz OBJETOS_LADO_BUCLE		;925a
+	djnz OBJETOS_LADO_BUCLE		;925a   ; la ficha siguiente, 0x38 bytes mas alla
 	pop ix		;925c
 	xor a			;925e
 	ld (0e315h),a		;925f
 	ret			;9262
 CARGA_PISTA_REPETICION:		; p00 0x44F3; lista 0x927E[E25B] (p04) y p04 0x6D00 (CARGA_LISTA_TILES); escena p00 0x5778; p00 0x49E0
-	call 044f3h		;9263
+	call 044f3h		;9263   ; la repeticion trae sus propios tiles: por eso hay que recargar los del circuito al salir
 	ld hl,0927eh		;9266
 	ld a,(0e25bh)		;9269
 	call 04a44h		;926c
@@ -2546,7 +2554,7 @@ DATA_tabla_927E:
 
 
 FIN_DE_CARRERA_P00:		; para la musica (0x869A), guarda el tiempo de los dos coches (0x8D70) y E250 = 0x0E (desde p00 0x5AFF)
-	call PARA_MUSICA		;928a
+	call PARA_MUSICA		;928a   ; al acabar la carrera se para la musica y se guarda el tiempo de los dos coches
 	ld ix,0e2c0h		;928d
 	call GUARDA_TIEMPO		;9291
 	ld ix,0e380h		;9294
@@ -2560,7 +2568,7 @@ FIN_DE_CARRERA_P00:		; para la musica (0x869A), guarda el tiempo de los dos coch
 ; crece 2 por fotograma con izquierda/derecha (tope 16) y baja sola.
 ; ----------------------------------------------------------------------
 VOLANTE:		; repeticion -> 0x93DD; rampa (0x9335) si hay direccion; izquierda/derecha (bits 2/3): (ix+13) = +-tabla; nada: 0x931C; y el aviso de los ultimos (0x92F9: (ix+7E) < 2, F1, cada 64 fotogramas, rampa < 2, y < 0x10 -> bit 7 de ix+1)
-	ld a,(0e244h)		;92a0
+	ld a,(0e244h)		;92a0   ; el volante es una rampa: cuanto mas tiempo se mantiene la direccion, mas gira
 	cp 002h		;92a3
 	jp z,VOLANTE_REPETICION		;92a5
 	ld c,(ix+058h)		;92a8
@@ -2569,18 +2577,18 @@ VOLANTE:		; repeticion -> 0x93DD; rampa (0x9335) si hay direccion; izquierda/der
 	jr z,VOLANTE_MANDO		;92b2
 	ld hl,0e1c8h		;92b4
 VOLANTE_MANDO:		; el mando del jugador
-	ld a,(hl)			;92b7
+	ld a,(hl)			;92b7   ; los cuatro bits de abajo del mando -cualquier direccion- hacen crecer la rampa
 	inc hl			;92b8
 	and 00fh		;92b9
 	call nz,VOLANTE_RAMPA		;92bb
 	ld a,(hl)			;92be
-	and 00ch		;92bf
+	and 00ch		;92bf   ; y los bits 2 y 3 son izquierda y derecha
 	rrca			;92c1
 	rrca			;92c2
 	ld c,a			;92c3
 	jr z,VOLANTE_CENTRA		;92c4
 	ld de,09344h		;92c6
-	ld a,(ix+076h)		;92c9
+	ld a,(ix+076h)		;92c9   ; el indice mezcla los neumaticos elegidos (ix+76)...
 	add a,a			;92cc
 	add a,a			;92cd
 	add a,a			;92ce
@@ -2588,12 +2596,12 @@ VOLANTE_MANDO:		; el mando del jugador
 	ld h,000h		;92d0
 	add hl,hl			;92d2
 	add hl,de			;92d3
-	ld a,(ix+011h)		;92d4
+	ld a,(ix+011h)		;92d4   ; ...la velocidad, dos bits de ella...
 	and 00ch		;92d7
 	ld e,a			;92d9
 	ld d,000h		;92da
 	add hl,de			;92dc
-	ld a,(ix+058h)		;92dd
+	ld a,(ix+058h)		;92dd   ; ...y el escalon de rampa en el que va
 	dec a			;92e0
 	jr z,VOLANTE_TABLA		;92e1
 	ld (ix+058h),a		;92e3
@@ -2604,13 +2612,13 @@ VOLANTE_TABLA:		; A = tabla; negativo con izquierda (bit 1 de C)
 	ld e,a			;92ea
 	add hl,de			;92eb
 	ld a,(hl)			;92ec
-	bit 1,c		;92ed
+	bit 1,c		;92ed   ; el bit 1 de C dice izquierda: el mismo valor cambiado de signo
 	jr z,VOLANTE_GUARDA		;92ef
 	neg		;92f1
 VOLANTE_GUARDA:		; (ix+13) = A; neumatico 0 (0x8F19)
-	ld (ix+013h),a		;92f3
+	ld (ix+013h),a		;92f3   ; y a lo que salga se le aplica el neumatico 0, que puede dejarlo a cero
 	call NEUMATICO_0		;92f6
-	ld a,(ix+07eh)		;92f9
+	ld a,(ix+07eh)		;92f9   ; el aviso de los ultimos: solo en F1, entre los dos primeros, con el volante casi centrado y muy arriba en la pantalla
 	cp 002h		;92fc
 	ret nc			;92fe
 	ld a,(0e25bh)		;92ff
@@ -2628,7 +2636,7 @@ VOLANTE_GUARDA:		; (ix+13) = A; neumatico 0 (0x8F19)
 	set 7,(ix+001h)		;9317
 	ret			;931b
 VOLANTE_CENTRA:		; sin direccion: si el angulo no es 0, (ix+13) = -+ tabla 0x93D4[(ix+76)] hacia el centro
-	ld a,(ix+00ch)		;931c
+	ld a,(ix+00ch)		;931c   ; soltando el volante el coche se endereza solo, con la tabla de 0x93D4
 	or a			;931f
 	jr z,VOLANTE_GUARDA_B		;9320
 	ld hl,093d4h		;9322
@@ -2642,7 +2650,7 @@ VOLANTE_GUARDA_B:		; (ix+13) = A
 	ld (ix+013h),a		;9331
 	ret			;9334
 VOLANTE_RAMPA:		; (ix+58) += 2 (tope 0x10)
-	ld a,(ix+058h)		;9335
+	ld a,(ix+058h)		;9335   ; la rampa sube de dos en dos hasta 16
 	add a,002h		;9338
 	cp 010h		;933a
 	jr c,VOLANTE_RAMPA_GUARDA		;933c
@@ -2679,14 +2687,14 @@ DATA_tabla_volante_centra:
 
 
 VOLANTE_REPETICION:		; (ix+1) &= 0x3F, volante 0, angulo 0
-	ld a,(ix+001h)		;93dd
+	ld a,(ix+001h)		;93dd   ; en la repeticion el volante no vale: ni gira ni derrapa
 	and 03fh		;93e0
 	ld (ix+001h),a		;93e2
 	ld (ix+013h),000h		;93e5
 	ld (ix+00ch),000h		;93e9
 	ret			;93ed
 L_93EE:
-	ld a,(0e1c9h)		;93ee
+	ld a,(0e1c9h)		;93ee   ; este trozo no lo llama nadie: mira los bits 2 y 3 del mando del jugador 1
 	bit 2,a		;93f1
 	jr nz,L_93FE		;93f3
 	bit 3,a		;93f5
@@ -2694,24 +2702,24 @@ L_93EE:
 	ld (ix+00ch),000h		;93f9
 	ret			;93fd
 L_93FE:
-	ld (ix+00ch),006h		;93fe
+	ld (ix+00ch),006h		;93fe   ; ni este ni el de abajo: ponen el angulo a 6 y a -6
 	ret			;9402
 L_9403:
 	ld (ix+00ch),0fah		;9403
 	ret			;9407
 FISICA_COCHE_JUGADOR:		; terreno (0x9510); terreno 14 -> sin sprite (0x9465); RALLY (E25B = 0): charcos (0x943B); angulo (0x96DB); velocidad (0x9744); fotograma (0x9A01)
-	call TERRENO_Y_DERRAPE		;9408
+	call TERRENO_Y_DERRAPE		;9408   ; la fisica del coche del jugador y la de los rivales son dos rutinas gemelas: cambia el angulo, la velocidad y el fotograma
 	ld a,(ix+022h)		;940b
-	cp 00eh		;940e
+	cp 00eh		;940e   ; el terreno 14 esconde el coche: es el tunel
 	call z,SIN_SPRITE		;9410
-	ld a,(0e25bh)		;9413
+	ld a,(0e25bh)		;9413   ; los charcos son cosa del RALLY y solo de el
 	or a			;9416
 	call z,EFECTO_TERRENO		;9417
 	call ANGULO_COCHE		;941a
 	call VELOCIDAD_COCHE		;941d
 	jp FOTOGRAMA_COCHE		;9420
 FISICA_OBJETO:		; terreno 14 -> sin sprite; RALLY: 0x943B; angulo (0x96BE); velocidad (0x9776); fotograma (0x9962)
-	ld a,(ix+022h)		;9423
+	ld a,(ix+022h)		;9423   ; la version de los rivales, sin volante ni mando
 	cp 00eh		;9426
 	call z,SIN_SPRITE		;9428
 	ld a,(0e25bh)		;942b
@@ -2724,13 +2732,13 @@ EFECTO_TERRENO:		; 0x9441 y 0x9473
 	call EFECTO_TERRENO_ARRANCA		;943b
 	jp EFECTO_TERRENO_PASO		;943e
 EFECTO_TERRENO_ARRANCA:		; sin choque y sin efecto: terreno 11/12 -> (ix+2B) = 10, (ix+2C) = 0x81; terreno 8/9 -> (ix+2C) = 1, (ix+2B) = 3
-	bit 3,(ix+001h)		;9441
+	bit 3,(ix+001h)		;9441   ; el efecto del terreno arranca solo si no se esta chocando y no hay otro en marcha
 	ret nz			;9445
 	ld a,(ix+02ch)		;9446
 	or a			;9449
 	jr nz,EFECTO_8X		;944a
 	ld a,(ix+022h)		;944c
-	cp 00bh		;944f
+	cp 00bh		;944f   ; los terrenos 11 y 12 dan un efecto largo (0x81) y los 8 y 9 uno corto
 	jr z,EFECTO_81		;9451
 	cp 00ch		;9453
 	jr z,EFECTO_81		;9455
@@ -2741,14 +2749,14 @@ EFECTO_TERRENO_ARRANCA:		; sin choque y sin efecto: terreno 11/12 -> (ix+2B) = 1
 	ld (ix+02bh),003h		;9460
 	ret			;9464
 SIN_SPRITE:		; bit 7 de (ix+31)
-	set 7,(ix+031h)		;9465
+	set 7,(ix+031h)		;9465   ; el bit 7 de (ix+31) esconde el sprite
 	ret			;9469
 EFECTO_81:		; (ix+2B) = 10, (ix+2C) = 0x81
 	ld (ix+02bh),00ah		;946a
 	ld (ix+02ch),081h		;946e
 	ret			;9472
 EFECTO_TERRENO_PASO:		; (ix+2C) = 1: sprite extra 1 (salpicadura, hipotesis) y bit 6; (ix+2B)-- a cero: (ix+2C) = 0
-	ld a,(ix+02ch)		;9473
+	ld a,(ix+02ch)		;9473   ; con el efecto en 1 sale la salpicadura, que es el sprite extra 1
 	or a			;9476
 	ret z			;9477
 	cp 001h		;9478
@@ -2756,12 +2764,12 @@ EFECTO_TERRENO_PASO:		; (ix+2C) = 1: sprite extra 1 (salpicadura, hipotesis) y b
 	ld (ix+02fh),001h		;947c
 	set 6,(ix+031h)		;9480
 EFECTO_CUENTA:		; (ix+2B)--
-	dec (ix+02bh)		;9484
+	dec (ix+02bh)		;9484   ; y el efecto dura lo que diga (ix+2B)
 	ret nz			;9487
 	ld (ix+02ch),000h		;9488
 	ret			;948c
 EFECTO_8X:		; 0x81: a los 10 pasa a 0x82 con 10 y sonido 0x19 si es el coche; 0x82: a cero
-	bit 7,a		;948d
+	bit 7,a		;948d   ; el 0x81 pasa a 0x82 a los diez pasos, y ahi es donde suena el chapoteo
 	ret z			;948f
 	and 07fh		;9490
 	dec a			;9492
@@ -2770,7 +2778,7 @@ EFECTO_8X:		; 0x81: a los 10 pasa a 0x82 con 10 y sonido 0x19 si es el coche; 0x
 	ret nz			;9498
 	ld (ix+02ch),082h		;9499
 	ld (ix+02bh),00ah		;949d
-	ld a,(ix+000h)		;94a1
+	ld a,(ix+000h)		;94a1   ; solo suena si es el coche del jugador, no un rival
 	or a			;94a4
 	ret nz			;94a5
 	ld a,019h		;94a6
@@ -2781,7 +2789,7 @@ EFECTO_82_CUENTA:		; (ix+2B)-- a cero: (ix+2C) = 0
 	ld (ix+02ch),000h		;94af
 	ret			;94b3
 FRENADA_CATEGORIA:		; si (ix+13) != 0 y E25B - 1 < 6: despacha (tabla 0x94C3): velocidad -= v/256 (0x94CF), v/512 (0x94E2), v/1024 (0x94F8) o nada (0x950F)
-	ld a,(ix+013h)		;94b4
+	ld a,(ix+013h)		;94b4   ; girando, cada categoria frena distinto: es lo que hace que un F1 no se conduzca como un rally
 	or a			;94b7
 	ret z			;94b8
 	ld a,(0e25bh)		;94b9
@@ -2808,7 +2816,7 @@ DATA_tabla_94C0:
 
 
 FRENADA_1_256:		; (ix+10,11) -= H
-	ld l,(ix+010h)		;94cf
+	ld l,(ix+010h)		;94cf   ; la 1: se le quita a la velocidad su byte alto, o sea una 256 parte
 	ld h,(ix+011h)		;94d2
 	ld e,h			;94d5
 	ld d,000h		;94d6
@@ -2818,9 +2826,9 @@ FRENADA_1_256:		; (ix+10,11) -= H
 	ld (ix+011h),h		;94de
 	ret			;94e1
 FRENADA_1_512:		; (ix+10,11) -= H/2
-	ld l,(ix+010h)		;94e2
+	ld l,(ix+010h)		;94e2   ; la 2: la mitad de eso
 	ld h,(ix+011h)		;94e5
-	ld a,h			;94e8
+	ld a,h			;94e8   ; el byte alto entre dos
 	srl a		;94e9
 	ld e,a			;94eb
 	ld d,000h		;94ec
@@ -2830,9 +2838,9 @@ FRENADA_1_512:		; (ix+10,11) -= H/2
 	ld (ix+011h),h		;94f4
 	ret			;94f7
 FRENADA_1_1024:		; (ix+10,11) -= H/4
-	ld l,(ix+010h)		;94f8
+	ld l,(ix+010h)		;94f8   ; y la 3, 4 y 6: la cuarta parte. La 5 no frena nada
 	ld h,(ix+011h)		;94fb
-	ld a,h			;94fe
+	ld a,h			;94fe   ; y aqui entre cuatro
 	srl a		;94ff
 	srl a		;9501
 	ld e,a			;9503
@@ -2844,22 +2852,22 @@ FRENADA_1_1024:		; (ix+10,11) -= H/4
 NADA_950F:		; ret
 	ret			;950f
 TERRENO_Y_DERRAPE:		; bit 0 de (ix+1) = 0; sin choque: (ix+22) = terreno bajo el coche (0x9550); < 3 -> borde (0x9563); si no (ix+28) = 0 y, con terreno < 9, velocidad -= v/32
-	res 0,(ix+001h)		;9510
+	res 0,(ix+001h)		;9510   ; el terreno se mira una vez por fotograma, salvo que se este chocando
 	bit 3,(ix+001h)		;9514
 	ret nz			;9518
 	call TERRENO_BAJO_COCHE		;9519
 	ld (ix+022h),a		;951c
-	cp 003h		;951f
+	cp 003h		;951f   ; los terrenos 0, 1 y 2 son el borde de la pista
 	jr c,BORDE		;9521
 	call SIN_REPETIR_BORDE		;9523
 	ld a,(ix+022h)		;9526
-	cp 009h		;9529
+	cp 009h		;9529   ; y por debajo de 9 -o sea fuera del asfalto- la velocidad pierde una 32 parte en cada fotograma
 	ret nc			;952b
 	ld l,(ix+010h)		;952c
 	ld h,(ix+011h)		;952f
 	ld d,h			;9532
 	ld e,l			;9533
-	add hl,hl			;9534
+	add hl,hl			;9534   ; tres veces doblado y quedarse con el byte alto: eso es dividir por 32
 	add hl,hl			;9535
 	add hl,hl			;9536
 	ld l,h			;9537
@@ -2869,7 +2877,7 @@ TERRENO_Y_DERRAPE:		; bit 0 de (ix+1) = 0; sin choque: (ix+22) = terreno bajo el
 	ret m			;953d
 	ld (ix+010h),l		;953e
 	ld (ix+011h),h		;9541
-	ld a,(0e1c3h)		;9544
+	ld a,(0e1c3h)		;9544   ; este trozo no llega a nada: mira el contador y el tipo de objeto y luego sale igual
 	and 003h		;9547
 	ret nz			;9549
 	ld a,(ix+000h)		;954a
@@ -2877,7 +2885,7 @@ TERRENO_Y_DERRAPE:		; bit 0 de (ix+1) = 0; sin choque: (ix+22) = terreno bajo el
 	ret nz			;954e
 	ret			;954f
 TERRENO_BAJO_COCHE:		; tile del buffer de nombres en (x, y-4) (p00 0x4A9D) -> clase 0..15 (0x9641); HL = la casilla
-	ld a,(ix+006h)		;9550
+	ld a,(ix+006h)		;9550   ; el terreno se lee del tile que hay CUATRO pixeles por delante del coche
 	sub 004h		;9553
 	ld d,a			;9555
 	ld e,(ix+004h)		;9556
@@ -2888,21 +2896,21 @@ TERRENO_BAJO_COCHE:		; tile del buffer de nombres en (x, y-4) (p00 0x4A9D) -> cl
 	pop hl			;9561
 	ret			;9562
 BORDE:		; terreno 1 -> rebote con vx (0x95B7); 2 -> con -vx (0x95AA); 0: si vy < 6 y no se repite ((ix+28)): mira la casilla de abajo, la de la izquierda y la derecha para elegir el lado; si no 0x9628 (choque)
-	dec a			;9563
+	dec a			;9563   ; el terreno 1 rebota hacia un lado y el 2 hacia el otro; el 0 hay que averiguarlo mirando alrededor
 	jr z,REBOTE_DERECHA		;9564
 	dec a			;9566
 	jr z,REBOTE_IZQUIERDA		;9567
-	ld a,(ix+028h)		;9569
+	ld a,(ix+028h)		;9569   ; (ix+28) evita que el mismo borde se cobre dos veces seguidas
 	or a			;956c
 	jp nz,CHOQUE		;956d
 	inc a			;9570
 	ld (ix+028h),a		;9571
-	ld a,(ix+00bh)		;9574
+	ld a,(ix+00bh)		;9574   ; con la velocidad de lado alta -por encima de 6- no hay rebote que valga: es choque
 	add a,006h		;9577
 	cp 00ch		;9579
 	jp nc,CHOQUE		;957b
 	push hl			;957e
-	ld de,00020h		;957f
+	ld de,00020h		;957f   ; se mira la casilla de ABAJO, la de la izquierda y la de la derecha para saber por que lado esta el borde
 	res 2,h		;9582
 	add hl,de			;9584
 	set 2,h		;9585
@@ -2927,9 +2935,9 @@ BORDE:		; terreno 1 -> rebote con vx (0x95B7); 2 -> con -vx (0x95AA); 0: si vy <
 	call CLASE_DE_TILE		;95a1
 	or a			;95a4
 	jr nz,REBOTE_DERECHA		;95a5
-	jp CHOQUE		;95a7
+	jp CHOQUE		;95a7   ; y si ninguna lo aclara, choque
 REBOTE_IZQUIERDA:		; HL = -vx
-	ld a,(ix+008h)		;95aa
+	ld a,(ix+008h)		;95aa   ; rebotar a la izquierda es rebotar con la velocidad cambiada de signo
 	cpl			;95ad
 	ld h,a			;95ae
 	ld a,(ix+007h)		;95af
@@ -2942,7 +2950,7 @@ REBOTE_DERECHA:		; HL = vx
 	ld l,(ix+007h)		;95ba
 REBOTE:		; vy += HL/2; 0x95D0
 	push hl			;95bd
-	sra h		;95be
+	sra h		;95be   ; la mitad de vx se le suma a vy: el coche sale rebotado en diagonal
 	rr l		;95c0
 	ld d,(ix+00bh)		;95c2
 	ld e,(ix+00ah)		;95c5
@@ -2952,26 +2960,26 @@ REBOTE:		; vy += HL/2; 0x95D0
 	pop hl			;95cf
 REBOTE_GIRA:		; bit 0 de (ix+1); angulo += 8 (o -8 si vy < 0); vy = -vy/2; bits 7 y 0; avanza dos veces (0x9AFE); para el coche: (ix+64) += |H|/2 (desgaste); en RALLY, |H| >= 3 -> choque (0x9628)
 	set 0,(ix+001h)		;95d0
-	bit 7,(ix+00bh)		;95d4
+	bit 7,(ix+00bh)		;95d4   ; el angulo se corrige ocho grados hacia el lado que toque
 	ld a,008h		;95d8
 	jr z,REBOTE_ANGULO		;95da
 	neg		;95dc
 REBOTE_ANGULO:		; angulo += A
 	add a,(ix+00ch)		;95de
 	ld (ix+00ch),a		;95e1
-	ld e,(ix+00ah)		;95e4
+	ld e,(ix+00ah)		;95e4   ; la velocidad de lado, dos bytes
 	ld d,(ix+00bh)		;95e7
-	ld hl,00000h		;95ea
+	ld hl,00000h		;95ea   ; el cero menos la velocidad: eso es cambiarla de signo
 	or a			;95ed
-	sbc hl,de		;95ee
+	sbc hl,de		;95ee   ; y la velocidad de lado se invierte y se parte por dos: el rebote pierde la mitad
 	sra h		;95f0
 	rr l		;95f2
 	ld (ix+00ah),l		;95f4
 	ld (ix+00bh),h		;95f7
-	set 7,(ix+001h)		;95fa
+	set 7,(ix+001h)		;95fa   ; los dos bits altos de las banderas quedan puestos: derrape y golpe
 	set 0,(ix+001h)		;95fe
 	push hl			;9602
-	call AVANZA_Y		;9603
+	call AVANZA_Y		;9603   ; dos pasos de avance de golpe para despegar el coche del borde
 	call AVANZA_Y		;9606
 	pop hl			;9609
 	ld a,(ix+000h)		;960a
@@ -2983,17 +2991,17 @@ REBOTE_ANGULO:		; angulo += A
 	neg		;9614
 REBOTE_DESGASTE:		; (ix+64) += H/2
 	ld h,a			;9616
-	srl a		;9617
+	srl a		;9617   ; el golpe desgasta: la mitad de la velocidad de lado se le suma a (ix+64)
 	add a,(ix+064h)		;9619
 	ld (ix+064h),a		;961c
-	ld a,(0e25bh)		;961f
+	ld a,(0e25bh)		;961f   ; y en RALLY, si el golpe fue fuerte (3 o mas), no es rebote sino choque
 	or a			;9622
 	ret nz			;9623
 	ld a,h			;9624
 	cp 003h		;9625
 	ret c			;9627
 CHOQUE:		; bit 3 de (ix+1); objeto -> p03 0xB559; coche: (ix+2C) = 0, (ix+2B) = 1
-	set 3,(ix+001h)		;9628
+	set 3,(ix+001h)		;9628   ; el choque de un rival lo resuelve p03
 	ld a,(ix+000h)		;962c
 	or a			;962f
 	jp nz,0b559h		;9630
@@ -3001,12 +3009,12 @@ CHOQUE:		; bit 3 de (ix+1); objeto -> p03 0xB559; coche: (ix+2C) = 0, (ix+2B) = 
 	ld (ix+02bh),001h		;9637
 	ret			;963b
 SIN_REPETIR_BORDE:		; (ix+28) = 0
-	ld (ix+028h),000h		;963c
+	ld (ix+028h),000h		;963c   ; se limpia la marca para que el borde siguiente si cuente
 	ret			;9640
 CLASE_DE_TILE:		; A = tile -> clase 0..15 por los 15 umbrales E264..E272 (arbol de comparaciones): clase par si < umbral, impar si >= (E264: 0/1, E265: 2.., E26B: 8.., E26F: 12..)
-	ld h,0e2h		;9641
+	ld h,0e2h		;9641   ; el tile se clasifica con un ARBOL de comparaciones contra los quince umbrales de E264 a E272: cuatro o cinco comparaciones por tile, en vez de una tabla de 256 bytes
 	ld l,06bh		;9643
-	cp (hl)			;9645
+	cp (hl)			;9645   ; la primera comparacion parte en dos mitades, 0-7 y 8-15
 	jr nc,CLASE_8_15		;9646
 	ld l,067h		;9648
 	cp (hl)			;964a
@@ -3028,7 +3036,7 @@ CLASE_2_3:		; E266
 CLASE_4_7:		; E268/E269
 	ld l,069h		;9662
 	cp (hl)			;9664
-	jr nc,CLASE_6_7		;9665
+	jr nc,CLASE_6_7		;9665   ; la comparacion que parte 4-5 de 6-7
 	ld l,068h		;9667
 	cp (hl)			;9669
 	jr nc,CLASE_5		;966a
@@ -3044,10 +3052,10 @@ CLASE_8_15:		; E26F
 	ld l,06fh		;9677
 	cp (hl)			;9679
 	jr nc,CLASE_12_15		;967a
-	ld l,06dh		;967c
+	ld l,06dh		;967c   ; la comparacion que parte 8-9 de 10-11
 	cp (hl)			;967e
 	jr nc,CLASE_10_11		;967f
-	ld l,06ch		;9681
+	ld l,06ch		;9681   ; la comparacion que parte 8-11 de 12-15
 	cp (hl)			;9683
 	jr nc,CLASE_9		;9684
 	ld a,008h		;9686
@@ -3061,7 +3069,7 @@ CLASE_10_11:		; E26E
 CLASE_12_15:		; E271/E270
 	ld l,071h		;9691
 	cp (hl)			;9693
-	jr nc,CLASE_14_15		;9694
+	jr nc,CLASE_14_15		;9694   ; y esta la de 12-13 de 14-15
 	ld l,070h		;9696
 	cp (hl)			;9698
 	jr nc,CLASE_13		;9699
@@ -3098,10 +3106,10 @@ CLASE_15:		; A = 15
 	ld a,00fh		;96bb
 	ret			;96bd
 ANGULO_OBJETO:		; angulo += (ix+13); si sale de -0x20..0x20 se queda en +-0x20
-	ld a,(ix+013h)		;96be
+	ld a,(ix+013h)		;96be   ; los rivales giran de golpe y con tope: el angulo no pasa de un cuarto de vuelta a cada lado
 	add a,(ix+00ch)		;96c1
 	ld (ix+00ch),a		;96c4
-	add a,020h		;96c7
+	add a,020h		;96c7   ; la prueba de "esta entre -0x20 y 0x20"
 	cp 041h		;96c9
 	ret c			;96cb
 	ld a,(ix+00ch)		;96cc
@@ -3113,14 +3121,14 @@ ANGULO_OBJETO_TOPE:		; (ix+C) = +-0x20
 	ld (ix+00ch),a		;96d7
 	ret			;96da
 ANGULO_COCHE:		; (ix+C,D) += (ix+13)/8 (fraccion en ix+D); fuera de -0x20..0x20 y sin derrape: tope +-0x20 y, si venia con bit 7 (exceso de velocidad), fuera de RALLY, (ix+53) >= 10 y girando al mismo lado: (ix+39) = angulo y bit 6 (derrape)
-	ld a,(ix+02ch)		;96db
+	ld a,(ix+02ch)		;96db   ; el coche del jugador gira con fraccion: (ix+D) es el octavo de grado que se acumula
 	or (ix+010h)		;96de
 	or (ix+011h)		;96e1
 	ld h,(ix+00ch)		;96e4
 	ld l,(ix+00dh)		;96e7
 	ld d,(ix+013h)		;96ea
 	ld e,000h		;96ed
-	sra d		;96ef
+	sra d		;96ef   ; tres corrimientos con signo: el volante entre ocho, con lo que sobra guardado
 	rr e		;96f1
 	sra d		;96f3
 	rr e		;96f5
@@ -3128,7 +3136,7 @@ ANGULO_COCHE:		; (ix+C,D) += (ix+13)/8 (fraccion en ix+D); fuera de -0x20..0x20 
 	rr e		;96f9
 	add hl,de			;96fb
 	ld a,h			;96fc
-	add a,020h		;96fd
+	add a,020h		;96fd   ; la prueba de "esta el angulo entre -0x20 y 0x20", que aqui no se usa: se repite tres lineas mas abajo
 	cp 041h		;96ff
 	ld (ix+00ch),h		;9701
 	ld (ix+00dh),l		;9704
@@ -3136,7 +3144,7 @@ ANGULO_COCHE:		; (ix+C,D) += (ix+13)/8 (fraccion en ix+D); fuera de -0x20..0x20 
 	add a,020h		;9708
 	cp 041h		;970a
 	ret c			;970c
-	bit 6,(ix+001h)		;970d
+	bit 6,(ix+001h)		;970d   ; en pleno derrape el angulo no se recorta
 	ret nz			;9711
 	ld a,(ix+00ch)		;9712
 	or a			;9715
@@ -3145,7 +3153,7 @@ ANGULO_COCHE:		; (ix+C,D) += (ix+13)/8 (fraccion en ix+D); fuera de -0x20..0x20 
 	ld a,0e0h		;971b
 ANGULO_COCHE_TOPE:		; (ix+C) = +-0x20
 	ld (ix+00ch),a		;971d
-	bit 7,(ix+001h)		;9720
+	bit 7,(ix+001h)		;9720   ; y el derrape solo empieza si venia marcado el exceso de velocidad, fuera de RALLY, con el contador por encima de 10 y girando hacia el mismo lado
 	ret z			;9724
 	ld a,(0e25bh)		;9725
 	or a			;9728
@@ -3158,23 +3166,23 @@ ANGULO_COCHE_TOPE:		; (ix+C) = +-0x20
 	ret z			;9734
 	xor (ix+00ch)		;9735
 	ret m			;9738
-	ld a,(ix+00ch)		;9739
+	ld a,(ix+00ch)		;9739   ; el angulo con el que se entra al derrape es el que se guarda como giro por fotograma
 	ld (ix+039h),a		;973c
 	set 6,(ix+001h)		;973f
 	ret			;9743
 VELOCIDAD_COCHE:		; tope por el angulo (0x980D: C si se paso); acelera (0x97AB); vy = sin(angulo) * v, vx = cos(angulo) * v (0x9B12)
-	call EXCESO_COCHE		;9744
+	call EXCESO_COCHE		;9744   ; la velocidad se convierte en vx y vy con el seno y el coseno del angulo
 	ret c			;9747
 	call ACELERA_COCHE		;9748
 	ld a,(ix+00ch)		;974b
-	call SENO		;974e
+	call SENO		;974e   ; vy es el seno por la velocidad...
 	ld e,(ix+010h)		;9751
 	ld d,(ix+011h)		;9754
 	call PRODUCTO_8_8		;9757
 	ld (ix+00bh),h		;975a
 	ld (ix+00ah),l		;975d
 	ld a,(ix+00ch)		;9760
-	call COSENO		;9763
+	call COSENO		;9763   ; ...y vx el coseno: el coche va donde apunta
 	ld e,(ix+010h)		;9766
 	ld d,(ix+011h)		;9769
 	call PRODUCTO_8_8		;976c
@@ -3182,18 +3190,18 @@ VELOCIDAD_COCHE:		; tope por el angulo (0x980D: C si se paso); acelera (0x97AB);
 	ld (ix+007h),l		;9772
 	ret			;9775
 VELOCIDAD_OBJETO:		; exceso del coche guia (0x97FF); acelera (0x97DC); vy, vx como arriba
-	bit 7,(ix+001h)		;9776
+	bit 7,(ix+001h)		;9776   ; los rivales hacen lo mismo, con su propio control de exceso
 	call nz,EXCESO_OBJETO		;977a
 	call ACELERA_OBJETO		;977d
 	ld a,(ix+00ch)		;9780
-	call SENO		;9783
+	call SENO		;9783   ; vy es el seno por la velocidad
 	ld e,(ix+010h)		;9786
 	ld d,(ix+011h)		;9789
 	call PRODUCTO_8_8		;978c
 	ld (ix+00bh),h		;978f
 	ld (ix+00ah),l		;9792
 	ld a,(ix+00ch)		;9795
-	call COSENO		;9798
+	call COSENO		;9798   ; y vx el coseno
 	ld e,(ix+010h)		;979b
 	ld d,(ix+011h)		;979e
 	call PRODUCTO_8_8		;97a1
@@ -3201,23 +3209,23 @@ VELOCIDAD_OBJETO:		; exceso del coche guia (0x97FF); acelera (0x97DC); vy, vx co
 	ld (ix+007h),l		;97a7
 	ret			;97aa
 ACELERA_COCHE:		; v += (ix+12) con signo (minimo 0); tope (ix-20,-1F) (menos 0x100 con el neumatico bit 2); p00 0x4A4F
-	ld a,(ix+012h)		;97ab
+	ld a,(ix+012h)		;97ab   ; acelerar es sumarle a la velocidad la aceleracion con signo, y no bajar de cero
 	ld l,a			;97ae
 	rla			;97af
 	sbc a,a			;97b0
 	ld h,a			;97b1
-	ld e,(ix+010h)		;97b2
+	ld e,(ix+010h)		;97b2   ; la velocidad de ahora
 	ld d,(ix+011h)		;97b5
-	add hl,de			;97b8
+	add hl,de			;97b8   ; y la suma
 	ex de,hl			;97b9
 	ld a,d			;97ba
 	or a			;97bb
 	jp p,ACELERA_TOPE		;97bc
 	ld de,00000h		;97bf
 ACELERA_TOPE:		; HL = velocidad maxima del motor
-	ld h,(ix-01fh)		;97c2
+	ld h,(ix-01fh)		;97c2   ; el tope lo pone el motor elegido, dos bytes
 	ld l,(ix-020h)		;97c5
-	bit 2,(ix+068h)		;97c8
+	bit 2,(ix+068h)		;97c8   ; y con el neumatico 2 roto se le quita 0x100 al tope
 	jr z,ACELERA_COMPARA		;97cc
 	dec h			;97ce
 ACELERA_COMPARA:		; p00 0x4A4F: HL - DE
@@ -3229,16 +3237,16 @@ ACELERA_GUARDA:		; (ix+10,11) = DE
 	ld (ix+011h),d		;97d8
 	ret			;97db
 ACELERA_OBJETO:		; v += (ix+12) con signo, sin pasar de 0 ni de 0xFFFF
-	ld a,(ix+012h)		;97dc
+	ld a,(ix+012h)		;97dc   ; los rivales no tienen tope de motor: solo no dar la vuelta ni por arriba ni por abajo
 	ld l,a			;97df
 	rla			;97e0
 	sbc a,a			;97e1
 	ld h,a			;97e2
 	or a			;97e3
-	ld e,(ix+010h)		;97e4
+	ld e,(ix+010h)		;97e4   ; la velocidad actual
 	ld d,(ix+011h)		;97e7
 	jp m,ACELERA_OBJETO_NEG		;97ea
-	add hl,de			;97ed
+	add hl,de			;97ed   ; con la aceleracion positiva no se puede pasar de 0xFFFF
 	ret c			;97ee
 	ld (ix+010h),l		;97ef
 	ld (ix+011h),h		;97f2
@@ -3250,17 +3258,17 @@ ACELERA_OBJETO_NEG:		; resta
 	ld (ix+011h),h		;97fb
 	ret			;97fe
 EXCESO_OBJETO:		; si el coche guia (IY) tiene el bit 7: 0x9814 y bit 7 del objeto
-	bit 7,(iy+001h)		;97ff
+	bit 7,(iy+001h)		;97ff   ; el rival se pasa de velocidad cuando se pasa el coche al que sigue
 	jr z,EXCESO_CORRIGE		;9803
 	call EXCESO_CORRIGE		;9805
 	set 7,(ix+001h)		;9808
 	ret			;980c
 EXCESO_COCHE:		; bit 7 de (ix+1) -> 0x9814; si no 0x9893
-	bit 7,(ix+001h)		;980d
+	bit 7,(ix+001h)		;980d   ; el exceso se mira de dos maneras: si ya estaba marcado se corrige, y si no se prueba a entrar
 	jp z,EXCESO_ENTRA		;9811
 EXCESO_CORRIGE:		; 0x98CF; desvio entre vy real y la que toca (|H - (ix+B)|, tope 8) -> C; (ix+53)++; tope = tabla 0x988B[C] (RALLY: 0x986B[terreno] -> 0x988B) comparado con v alta: si la pasa -> bit 7 fuera, v = -vx (invierte?), (ix+53) = 0, C
 	call ARRASTRE		;9814
-	ld hl,(0ea50h)		;9817
+	ld hl,(0ea50h)		;9817   ; la vy que TOCARIA con este angulo y esta velocidad, contra la que se lleva de verdad
 	ld e,(ix+010h)		;981a
 	ld d,(ix+011h)		;981d
 	call PRODUCTO_8_8		;9820
@@ -3269,14 +3277,14 @@ EXCESO_CORRIGE:		; 0x98CF; desvio entre vy real y la que toca (|H - (ix+B)|, top
 	jp p,EXCESO_TOPE_8		;9827
 	neg		;982a
 EXCESO_TOPE_8:		; C = min(desvio, 8)
-	cp 008h		;982c
+	cp 008h		;982c   ; el desvio se recorta a 8: es el indice de la tabla
 	jr c,EXCESO_TABLA		;982e
 	ld a,008h		;9830
 EXCESO_TABLA:		; la tabla por categoria
 	ld c,a			;9832
 	ld b,000h		;9833
-	inc (ix+053h)		;9835
-	ld a,(0e25bh)		;9838
+	inc (ix+053h)		;9835   ; (ix+53) cuenta cuanto tiempo se lleva pasado de vueltas
+	ld a,(0e25bh)		;9838   ; en RALLY el umbral depende ademas del terreno
 	or a			;983b
 	ld hl,0988bh		;983c
 	jr nz,EXCESO_COMPARA		;983f
@@ -3288,8 +3296,8 @@ EXCESO_COMPARA:		; tabla[C] < v alta -> corrige
 	ld a,(hl)			;984b
 	cp (ix+011h)		;984c
 	ret c			;984f
-	res 7,(ix+001h)		;9850
-	ld a,(ix+008h)		;9854
+	res 7,(ix+001h)		;9850   ; se le quita la marca de exceso: ya se ha cobrado
+	ld a,(ix+008h)		;9854   ; pasarse de vueltas cuesta caro: la velocidad se cambia por menos vx, o sea que el coche sale disparado hacia atras
 	cpl			;9857
 	ld h,a			;9858
 	ld a,(ix+007h)		;9859
@@ -3305,6 +3313,10 @@ EXCESO_COMPARA:		; tabla[C] < v alta -> corrige
 ; ----------------------------------------------------------------------
 ; DATOS tabla_exceso_rally: 16 punteros (terreno) a 0x988B
 ;   0x986b..0x988b  (32 bytes)
+
+; ----------------------------------------------------------------------
+; las dieciseis entradas apuntan todas al mismo sitio: el terreno no cambia el umbral, y la tabla esta ahi por si acaso
+; ----------------------------------------------------------------------
 DATA_tabla_exceso_rally:
 	defw 0988bh,0988bh,0988bh,0988bh,0988bh,0988bh,0988bh,0988bh	; 986b
 	defw 0988bh,0988bh,0988bh,0988bh,0988bh,0988bh,0988bh,0988bh	; 987b
@@ -3322,26 +3334,26 @@ DATA_tabla_exceso:
 
 
 EXCESO_ENTRA:		; RALLY: v alta < 15: umbral = 0x994E[v alta] * |volante| * 8 + (aceleracion & 0x70) >> 4; si pasa de 0x993E[terreno] -> bit 7 (derrape por exceso) y 0x98CF
-	ld a,(0e25bh)		;9893
+	ld a,(0e25bh)		;9893   ; entrar en exceso solo pasa en RALLY y por debajo de cierta velocidad
 	or a			;9896
 	ret nz			;9897
 	ld a,(ix+011h)		;9898
 	cp 00fh		;989b
 	ret nc			;989d
-	ld hl,0994eh		;989e
+	ld hl,0994eh		;989e   ; la tabla de 0x994E son los cuadrados: el umbral crece con el cuadrado de la velocidad
 	call 040d0h		;98a1
 	ld h,(hl)			;98a4
-	ld a,(ix+013h)		;98a5
+	ld a,(ix+013h)		;98a5   ; por el volante en valor absoluto: cuanto mas se gira, antes se pierde el coche
 	or a			;98a8
 	jp p,EXCESO_PRODUCTO		;98a9
 	neg		;98ac
 EXCESO_PRODUCTO:		; HL = cuadrado * |volante|
 	ld e,a			;98ae
 	call MULTIPLICA_H_E		;98af
-	add hl,hl			;98b2
+	add hl,hl			;98b2   ; y por ocho
 	add hl,hl			;98b3
 	add hl,hl			;98b4
-	ld a,(ix+012h)		;98b5
+	ld a,(ix+012h)		;98b5   ; la aceleracion tambien suma, cuatro bits de ella
 	and 070h		;98b8
 	rrca			;98ba
 	rrca			;98bb
@@ -3350,15 +3362,15 @@ EXCESO_PRODUCTO:		; HL = cuadrado * |volante|
 	add a,h			;98be
 	ld l,(ix+022h)		;98bf
 	ld h,000h		;98c2
-	ld de,0993eh		;98c4
+	ld de,0993eh		;98c4   ; el umbral final sale de la tabla por terreno, que es 0x37 en todos menos en el 10
 	add hl,de			;98c7
 	cp (hl)			;98c8
 	ccf			;98c9
 	ret nc			;98ca
 	set 7,(ix+001h)		;98cb
 ARRASTRE:		; B = min(aceleracion, 0x10); vy -= (sin * B * 2 + vy)/64, vx idem con cos; v -= v/64 (p00 0x4A7E divide por 64, no por 8); C
-	ld a,(ix+012h)		;98cf
-	cp 080h		;98d2
+	ld a,(ix+012h)		;98cf   ; el arrastre: se le quita a vx y a vy una 64 parte, y de paso se les suma el empuje del motor en la direccion del morro
+	cp 080h		;98d2   ; la aceleracion negativa se toma como 0x10: frenando el arrastre es el mismo que acelerando poco
 	jr c,ARRASTRE_TOPE		;98d4
 	ld a,010h		;98d6
 ARRASTRE_TOPE:		; B = min(A, 0x10)
@@ -3368,15 +3380,15 @@ ARRASTRE_TOPE:		; B = min(A, 0x10)
 ARRASTRE_VA:		; el calculo
 	ld b,a			;98de
 	ld a,(ix+00ch)		;98df
-	call SENO		;98e2
+	call SENO		;98e2   ; el seno del angulo se guarda en EA50: hace falta luego, para el exceso
 	ld (0ea50h),hl		;98e5
 	ld e,b			;98e8
 	ld d,000h		;98e9
 	call PRODUCTO_8_8		;98eb
-	add hl,hl			;98ee
+	add hl,hl			;98ee   ; por dos: el empuje pesa el doble que lo que se arrastra
 	ld d,(ix+00bh)		;98ef
 	ld e,(ix+00ah)		;98f2
-	add hl,de			;98f5
+	add hl,de			;98f5   ; y el empuje se le suma a la velocidad de lado antes de arrastrar
 	ld d,h			;98f6
 	ld e,l			;98f7
 	call 04a7eh		;98f8
@@ -3384,9 +3396,9 @@ ARRASTRE_VA:		; el calculo
 	or a			;98fc
 	sbc hl,de		;98fd
 	ld (ix+00bh),h		;98ff
-	ld (ix+00ah),l		;9902
+	ld (ix+00ah),l		;9902   ; vy ya arrastrada
 	ld a,(ix+00ch)		;9905
-	call COSENO		;9908
+	call COSENO		;9908   ; y ahora lo mismo con el coseno para vx
 	ld e,b			;990b
 	ld d,000h		;990c
 	call PRODUCTO_8_8		;990e
@@ -3401,8 +3413,8 @@ ARRASTRE_VA:		; el calculo
 	or a			;991f
 	sbc hl,de		;9920
 	ld (ix+008h),h		;9922
-	ld (ix+007h),l		;9925
-	ld l,(ix+010h)		;9928
+	ld (ix+007h),l		;9925   ; vx ya arrastrada
+	ld l,(ix+010h)		;9928   ; y por ultimo la velocidad propia, que tambien pierde su 64 parte
 	ld h,(ix+011h)		;992b
 	ld d,h			;992e
 	ld e,l			;992f
@@ -3433,12 +3445,12 @@ DATA_tabla_cuadrados:
 
 
 FOTOGRAMA_OBJETO:		; un fotograma de cada dos por jugador; 0x996A
-	ld a,(0e1c3h)		;9962
+	ld a,(0e1c3h)		;9962   ; los fotogramas del coche se calculan un fotograma de cada dos, y a cada jugador le toca uno
 	xor (ix+009h)		;9965
 	rrca			;9968
 	ret c			;9969
 FOTOGRAMA_OBJETO_VA:		; efecto 0x8X -> tablas 0x99E1/0x99F1 (0x99BE); si no fotograma = 0x9AA3[angulo] (+5 cada 2 fotogramas en F3/F3000/F1: ruedas); (ix+33) = patron EB40[(ix+18)&3] + fotograma*8 (o el fotograma si >= 0x80)
-	ld a,(ix+02ch)		;996a
+	ld a,(ix+02ch)		;996a   ; el angulo se convierte en uno de los dieciseis sectores, redondeado con el +8
 	bit 7,a		;996d
 	jr nz,FOTOGRAMA_EFECTO		;996f
 	ld a,(ix+00ch)		;9971
@@ -3448,7 +3460,7 @@ FOTOGRAMA_OBJETO_VA:		; efecto 0x8X -> tablas 0x99E1/0x99F1 (0x99BE); si no foto
 	rrca			;9978
 	rrca			;9979
 	and 00fh		;997a
-	neg		;997c
+	neg		;997c   ; y se le da la vuelta al indice: la tabla esta escrita al reves
 	add a,010h		;997e
 	and 00fh		;9980
 	ld de,09aa3h		;9982
@@ -3456,7 +3468,7 @@ FOTOGRAMA_OBJETO_VA:		; efecto 0x8X -> tablas 0x99E1/0x99F1 (0x99BE); si no foto
 	ld h,000h		;9986
 	add hl,de			;9988
 	ld a,(0e25bh)		;9989
-	cp 003h		;998c
+	cp 003h		;998c   ; de F3 para arriba (categoria 3 o mas) los coches llevan cinco fotogramas mas, que son las ruedas girando
 	ld a,000h		;998e
 	jr c,FOTOGRAMA_SUMA		;9990
 	ld a,(0e1c3h)		;9992
@@ -3467,10 +3479,10 @@ FOTOGRAMA_OBJETO_VA:		; efecto 0x8X -> tablas 0x99E1/0x99F1 (0x99BE); si no foto
 FOTOGRAMA_SUMA:		; + tabla
 	add a,(hl)			;999d
 FOTOGRAMA_GUARDA:		; si cambia: (ix+E) = A y el patron (ix+33) desde EB40+0x40+(ix+18)&3
-	cp (ix+00eh)		;999e
+	cp (ix+00eh)		;999e   ; si el fotograma no ha cambiado no hay patron que recalcular
 	ret z			;99a1
 	ld (ix+00eh),a		;99a2
-	ld a,(ix+018h)		;99a5
+	ld a,(ix+018h)		;99a5   ; el patron base sale de EB40+0x40 con los dos bits bajos de la carroceria: cuatro juegos de sprites
 	and 003h		;99a8
 	add a,040h		;99aa
 	ld l,a			;99ac
@@ -3478,7 +3490,7 @@ FOTOGRAMA_GUARDA:		; si cambia: (ix+E) = A y el patron (ix+33) desde EB40+0x40+(
 	ld a,(ix+00eh)		;99af
 	cp 080h		;99b2
 	jr nc,PATRON_GUARDA		;99b4
-	add a,a			;99b6
+	add a,a			;99b6   ; por ocho, que cada fotograma son ocho patrones de sprite
 	add a,a			;99b7
 	add a,a			;99b8
 	add a,(hl)			;99b9
@@ -3492,16 +3504,16 @@ FOTOGRAMA_EFECTO:		; tabla 0x99E1 (0x81) o 0x99F1 (0x82) por angulo
 	jr z,FOTOGRAMA_EFECTO_ANGULO		;99c4
 	ld de,099f1h		;99c6
 FOTOGRAMA_EFECTO_ANGULO:		; indice = (-(angulo+8) >> 4) & 0x0F
-	ld a,(ix+00ch)		;99c9
+	ld a,(ix+00ch)		;99c9   ; el mismo reparto del angulo en dieciseis sectores, con su vuelta
 	add a,008h		;99cc
-	rrca			;99ce
+	rrca			;99ce   ; cuatro rotaciones: el angulo en dieciseis sectores
 	rrca			;99cf
 	rrca			;99d0
 	rrca			;99d1
 	and 00fh		;99d2
 	neg		;99d4
 	add a,010h		;99d6
-	and 00fh		;99d8
+	and 00fh		;99d8   ; y la vuelta al indice, que la tabla va al reves
 	ld l,a			;99da
 	ld h,000h		;99db
 	add hl,de			;99dd
@@ -3512,6 +3524,10 @@ FOTOGRAMA_EFECTO_ANGULO:		; indice = (-(angulo+8) >> 4) & 0x0F
 ; DATOS tablas_fotograma_efecto: 2 x 16 fotogramas por angulo para los efectos
 ;   0x81 y 0x82 de los objetos
 ;   0x99e1..0x9a01  (32 bytes)
+
+; ----------------------------------------------------------------------
+; en las dos tablas los sectores 7, 8 y 9 valen 0xFF: mirando hacia atras no hay dibujo
+; ----------------------------------------------------------------------
 DATA_tablas_fotograma_efecto:
 	defb 006h,006h,006h,007h,007h,007h,007h,0ffh,0ffh,0ffh,005h,005h,005h,005h,006h,006h	; 99e1  ................
 	defb 009h,009h,009h,00ah,00ah,00ah,00ah,0ffh,0ffh,0ffh,008h,008h,008h,008h,009h,009h	; 99f1  ................
@@ -3522,7 +3538,7 @@ DATA_tablas_fotograma_efecto:
 
 
 FOTOGRAMA_COCHE:		; choque (bit 3) -> explosion (0x9AB3); efecto 0x8X -> 0x9A83/0x9A93; si no 0x9AA3[angulo] + 5 cada 2 fotogramas si se mueve (no RALLY/STOCK/ENDURANCE, no carroceria 0x13) salvo bit 6 de la tabla; (ix+E) = A si cambia
-	bit 3,(ix+001h)		;9a01
+	bit 3,(ix+001h)		;9a01   ; chocando no hay fotograma que calcular: es la explosion
 	jp nz,EXPLOSION		;9a05
 	ld a,(ix+02ch)		;9a08
 	bit 7,a		;9a0b
@@ -3541,25 +3557,25 @@ FOTOGRAMA_COCHE:		; choque (bit 3) -> explosion (0x9AB3); efecto 0x8X -> 0x9A83/
 	ld l,a			;9a23
 	ld h,000h		;9a24
 	add hl,de			;9a26
-	ld a,(ix+010h)		;9a27
+	ld a,(ix+010h)		;9a27   ; el coche parado no anima las ruedas
 	or (ix+011h)		;9a2a
 	ld a,000h		;9a2d
 	jr z,FOTOGRAMA_COCHE_FIJO		;9a2f
 	ld a,(0e25bh)		;9a31
-	cp 003h		;9a34
+	cp 003h		;9a34   ; y en RALLY, STOCK y ENDURANCE tampoco: esos coches no ensenan las ruedas
 	ld a,000h		;9a36
 	jr c,FOTOGRAMA_COCHE_FIJO		;9a38
 	ld a,(ix+018h)		;9a3a
-	cp 013h		;9a3d
+	cp 013h		;9a3d   ; la carroceria 0x13 es la unica que se queda quieta dentro de las categorias que si animan
 	ld a,000h		;9a3f
 	jr z,FOTOGRAMA_COCHE_FIJO		;9a41
-	ld a,(0e1c3h)		;9a43
+	ld a,(0e1c3h)		;9a43   ; y aun asi, la animacion va a mitad de ritmo
 	and 002h		;9a46
 	ld a,000h		;9a48
 	jr nz,FOTOGRAMA_COCHE_FIJO		;9a4a
 	ld a,005h		;9a4c
 FOTOGRAMA_COCHE_FIJO:		; bit 6 de la tabla: sin animar
-	bit 6,(hl)		;9a4e
+	bit 6,(hl)		;9a4e   ; el bit 6 en la tabla marca los sectores que NO se animan
 	jr nz,FOTOGRAMA_COCHE_TABLA		;9a50
 	add a,(hl)			;9a52
 	jr FOTOGRAMA_COCHE_GUARDA		;9a53
@@ -3578,7 +3594,7 @@ FOTOGRAMA_COCHE_EFECTO:		; tablas 0x9A83/0x9A93
 	ld de,09a93h		;9a66
 FOTOGRAMA_COCHE_EFECTO_ANGULO:		; por angulo
 	ld a,(ix+00ch)		;9a69
-	add a,008h		;9a6c
+	add a,008h		;9a6c   ; el mismo reparto en dieciseis sectores
 	rrca			;9a6e
 	rrca			;9a6f
 	rrca			;9a70
@@ -3591,7 +3607,7 @@ FOTOGRAMA_COCHE_EFECTO_ANGULO:		; por angulo
 	ld h,000h		;9a7b
 	add hl,de			;9a7d
 	ld a,(hl)			;9a7e
-	ld (ix+00eh),a		;9a7f
+	ld (ix+00eh),a		;9a7f   ; y aqui el fotograma se escribe sin comparar: el efecto manda
 	ret			;9a82
 
 ; ----------------------------------------------------------------------
@@ -3606,6 +3622,10 @@ DATA_tablas_fotograma_coche_efecto:
 ; DATOS tabla_fotograma_angulo: 16 fotogramas por angulo (indice (-(angulo+8)
 ;   >> 4) & 0x0F): 2 3 4 4 40 40 41 41 42 42 43 44 44 0 0 1 (bit 6 = fijo)
 ;   0x9aa3..0x9ab3  (16 bytes)
+
+; ----------------------------------------------------------------------
+; los cuatro valores con el bit 6 puesto (0x40..0x44) son los nueve angulos de en medio, que no animan; los otros siete si
+; ----------------------------------------------------------------------
 DATA_tabla_fotograma_angulo:
 	defb 002h,003h,004h,004h,040h,040h,041h,041h,042h,042h,043h,044h,044h,000h,000h,001h	; 9aa3  ....@@AABBCDD...
 
@@ -3615,12 +3635,12 @@ DATA_tabla_fotograma_angulo:
 
 
 EXPLOSION:		; cada 5 fotogramas (ix+2C)++ hasta 10: fotograma = 0x9AD1[(ix+2C)]
-	dec (ix+02bh)		;9ab3
+	dec (ix+02bh)		;9ab3   ; la explosion pasa de fotograma cada cinco, y se planta a los diez
 	ret nz			;9ab6
-	ld (ix+02bh),005h		;9ab7
+	ld (ix+02bh),005h		;9ab7   ; cinco fotogramas por dibujo de la explosion
 	ld a,(ix+02ch)		;9abb
 	cp 00ah		;9abe
-	jr nc,$+35		;9ac0
+	jr nc,$+35		;9ac0   ; y a los diez dibujos se para
 	inc a			;9ac2
 	ld (ix+02ch),a		;9ac3
 	ld e,a			;9ac6
@@ -3633,6 +3653,10 @@ EXPLOSION:		; cada 5 fotogramas (ix+2C)++ hasta 10: fotograma = 0x9AD1[(ix+2C)]
 ; ----------------------------------------------------------------------
 ; DATOS tabla_explosion: 18 fotogramas 0x80..0x85 (0x82..0x85 repetidos)
 ;   0x9ad1..0x9ae3  (18 bytes)
+
+; ----------------------------------------------------------------------
+; los fotogramas 0x82 a 0x85 se repiten cuatro veces: la explosion parpadea
+; ----------------------------------------------------------------------
 DATA_tabla_explosion:
 	defb 080h,081h,082h,083h,084h,085h,082h,083h,084h,085h,082h,083h,084h,085h,082h,083h,084h,085h	; 9ad1  ..................
 
@@ -3642,12 +3666,12 @@ DATA_tabla_explosion:
 
 
 OBJETO_QUITA_SI_TIPO:		; si (ix+0) != 0 -> 0x9E2D
-	ld a,(ix+000h)		;9ae3
+	ld a,(ix+000h)		;9ae3   ; los objetos se quitan; el coche del jugador no
 	or a			;9ae6
 	jp nz,QUITA_OBJETO		;9ae7
 	ret			;9aea
 L_9AEB:
-	ld d,(ix+004h)		;9aeb
+	ld d,(ix+004h)		;9aeb   ; este trozo no lo llama nadie: avanza en las dos direcciones, y la de Y cae en la rutina de abajo
 	ld e,(ix+003h)		;9aee
 	ld h,(ix+008h)		;9af1
 	ld l,(ix+007h)		;9af4
@@ -3655,7 +3679,7 @@ L_9AEB:
 	ld (ix+004h),h		;9af8
 	ld (ix+003h),l		;9afb
 AVANZA_Y:		; (ix+5,6) += vy (ix+A,B)
-	ld h,(ix+006h)		;9afe
+	ld h,(ix+006h)		;9afe   ; la posicion lleva su fraccion: (ix+5) son los pixeles de mas
 	ld l,(ix+005h)		;9b01
 	ld d,(ix+00bh)		;9b04
 	ld e,(ix+00ah)		;9b07
@@ -3664,7 +3688,7 @@ AVANZA_Y:		; (ix+5,6) += vy (ix+A,B)
 	ld (ix+005h),l		;9b0e
 	ret			;9b11
 PRODUCTO_8_8:		; HL (seno/coseno con signo, -0x100..0xFF) * DE (velocidad) / 256 con signo: 0xFFxx = -1 -> -DE; 0x00xx = 1 -> DE; si no (L*16 * DE) / 2 por 0x9B4F y p00 0x4A8A
-	ld a,l			;9b12
+	ld a,l			;9b12   ; el producto de un seno por una velocidad, con dos atajos: si el seno es exactamente -1 o 1 no hay nada que multiplicar
 	inc a			;9b13
 	jr nz,PRODUCTO_FRACCION		;9b14
 	ld a,h			;9b16
@@ -3679,7 +3703,7 @@ PRODUCTO_UNO:		; HL = DE
 PRODUCTO_FRACCION:		; el producto por 0x9B4F
 	ld a,h			;9b23
 	ex de,hl			;9b24
-	add hl,hl			;9b25
+	add hl,hl			;9b25   ; por 16: el seno viene con cuatro bits de fraccion
 	add hl,hl			;9b26
 	add hl,hl			;9b27
 	add hl,hl			;9b28
@@ -3692,24 +3716,24 @@ PRODUCTO_FRACCION:		; el producto por 0x9B4F
 	xor a			;9b35
 	ld h,a			;9b36
 	ld l,a			;9b37
-	sbc hl,de		;9b38
+	sbc hl,de		;9b38   ; el resultado se niega: el seno era negativo
 	jp 04a8ah		;9b3a
 PRODUCTO_POSITIVO:		; sin signo
-	call MULTIPLICA_H_E		;9b3d
+	call MULTIPLICA_H_E		;9b3d   ; y aqui no hace falta, que era positivo
 	srl h		;9b40
 	rr l		;9b42
 	jp 04a8ah		;9b44
 L_9B47:
-	call MULT_BIT_3		;9b47
+	call MULT_BIT_3		;9b47   ; este trozo no lo llama nadie: entra por la mitad de la multiplicacion y luego dobla cuatro veces
 	add hl,hl			;9b4a
 	add hl,hl			;9b4b
 	add hl,hl			;9b4c
 	add hl,hl			;9b4d
 	ret			;9b4e
 MULTIPLICA_H_E:		; HL = H * E (8 x 8 bits, sin signo)
-	ld d,000h		;9b4f
+	ld d,000h		;9b4f   ; la multiplicacion es la clasica de ocho pasos: doblar y sumar si el bit sale
 	ld l,d			;9b51
-	add hl,hl			;9b52
+	add hl,hl			;9b52   ; los ocho bits de H, del 7 al 0, cada uno con su `add hl,de`
 	jr nc,MULT_BIT_6		;9b53
 	add hl,de			;9b55
 MULT_BIT_6:		; bit 6
@@ -3743,13 +3767,13 @@ MULT_BIT_0:		; bit 0
 MULT_FIN:		; ret
 	ret			;9b72
 SENO:		; A = angulo - 0x40 y coseno: HL = sen(angulo) (0x9B75 con A - 0x40)
-	sub 040h		;9b73
+	sub 040h		;9b73   ; el seno es el coseno un cuarto de vuelta antes: por eso son la misma rutina con una resta de mas
 COSENO:		; A -= 0x40: HL = tabla 0x9B97[A] (0..0x80: 0..0xFF..0), negativo -> H = 0xFF y -A
 	sub 040h		;9b75
 	jp p,SENO_POSITIVO		;9b77
-	cp 080h		;9b7a
+	cp 080h		;9b7a   ; media vuelta justa (0x80) se trata como positiva
 	jr z,SENO_POSITIVO		;9b7c
-	neg		;9b7e
+	neg		;9b7e   ; el angulo se refleja y el resultado se marca negativo con H = 0xFF
 	call TABLA_SENO		;9b80
 	ld h,0ffh		;9b83
 	ld l,a			;9b85
@@ -3760,7 +3784,7 @@ SENO_POSITIVO:		; H = 0, L = tabla[A]
 	ld l,a			;9b8c
 	ret			;9b8d
 TABLA_SENO:		; A = 0x9B97[A]
-	ld hl,09b97h		;9b8e
+	ld hl,09b97h		;9b8e   ; la tabla tiene 129 bytes: medio seno de 0 a 0xFF y vuelta a 0
 	ld e,a			;9b91
 	ld d,000h		;9b92
 	add hl,de			;9b94
@@ -3788,27 +3812,27 @@ DATA_tabla_seno:
 
 
 PAR_MOTOR:		; revoluciones (0x9C45); A = (revs & 0xF8) / 8 (>= 16 -> 0xFF); HL = p09 0xB72E + (ix+74)*16 + A; pagina 9 en A000, lee, 1/2/3
-	call REVOLUCIONES		;9c18
+	call REVOLUCIONES		;9c18   ; el par del motor sale de una tabla de la pagina 9, indexada por el motor y por las revoluciones
 	ld a,h			;9c1b
 	ld l,(ix+074h)		;9c1c
 PAR_MOTOR_INDICE:		; HL = L*16 (tambien entra 0x89BA con L = motor)
-	ld h,000h		;9c1f
+	ld h,000h		;9c1f   ; por dieciseis: cada motor tiene dieciseis escalones de par
 	add hl,hl			;9c21
 	add hl,hl			;9c22
 	add hl,hl			;9c23
 	add hl,hl			;9c24
-	and 0f8h		;9c25
+	and 0f8h		;9c25   ; y las revoluciones se recortan a esos dieciseis
 	rrca			;9c27
 	rrca			;9c28
 	rrca			;9c29
 	cp 010h		;9c2a
-	jr nc,PAR_FF		;9c2c
+	jr nc,PAR_FF		;9c2c   ; de dieciseis en adelante no hay par: el motor se ahoga
 	ld de,0b72eh		;9c2e
 	add hl,de			;9c31
 	ld e,a			;9c32
 	ld d,000h		;9c33
 	add hl,de			;9c35
-	ld a,009h		;9c36
+	ld a,009h		;9c36   ; la tabla vive en la pagina 9 y hay que mapearla y devolverla
 	call 04457h		;9c38
 	ld a,(hl)			;9c3b
 	push af			;9c3c
@@ -3819,7 +3843,7 @@ PAR_FF:		; A = 0xFF
 	ld a,0ffh		;9c42
 	ret			;9c44
 REVOLUCIONES:		; marcha 0: si la velocidad da < 0x14, (ix+59) = 0x1B (ralenti); si no 0x9C59
-	ld a,(ix+069h)		;9c45
+	ld a,(ix+069h)		;9c45   ; en punto muerto -marcha 0- y despacio, el motor se queda al ralenti, 0x1B
 	or a			;9c48
 	jr nz,REVOLUCIONES_MARCHA		;9c49
 	call REVOLUCIONES_MARCHA		;9c4b
@@ -3830,14 +3854,14 @@ REVOLUCIONES:		; marcha 0: si la velocidad da < 0x14, (ix+59) = 0x1B (ralenti); 
 	ld (ix+059h),h		;9c55
 	ret			;9c58
 REVOLUCIONES_MARCHA:		; (ix+59) = H de 0x9C69 con L = caja (ix+75), A = marcha, BC = velocidad
-	ld l,(ix+075h)		;9c59
+	ld l,(ix+075h)		;9c59   ; las revoluciones salen de la velocidad por la relacion de la marcha
 	ld c,(ix+010h)		;9c5c
 	ld b,(ix+011h)		;9c5f
 	call RELACION_POR_VELOCIDAD		;9c62
 	ld (ix+059h),h		;9c65
 	ret			;9c68
 RELACION_POR_VELOCIDAD:		; (EA50) = caja*4 + marcha; E = 0x9C84[eso]; HL = velocidad*16 * E (0x9B4F: H*E con H = byte alto de v*16)
-	ld h,000h		;9c69
+	ld h,000h		;9c69   ; el indice mezcla la caja de cambios elegida y la marcha: nueve cajas por cuatro marchas
 	ld d,h			;9c6b
 	ld e,l			;9c6c
 	add hl,hl			;9c6d
@@ -3851,7 +3875,7 @@ RELACION_POR_VELOCIDAD:		; (EA50) = caja*4 + marcha; E = 0x9C84[eso]; HL = veloc
 	ld e,(hl)			;9c7a
 	ld h,b			;9c7b
 	ld l,c			;9c7c
-	add hl,hl			;9c7d
+	add hl,hl			;9c7d   ; la velocidad por dieciseis antes de multiplicar, para no perder precision
 	add hl,hl			;9c7e
 	add hl,hl			;9c7f
 	add hl,hl			;9c80
@@ -3878,7 +3902,7 @@ DATA_tabla_relaciones:
 
 
 ACELERACION_MOTOR:		; (ix+5F) != 0: cuenta atras y aceleracion 0; si no par (0x9C18): 0xFF -> 0 (0x9CC5); si no (ix+12) = par * relacion (0x9CCF)
-	ld a,(ix+05fh)		;9ca8
+	ld a,(ix+05fh)		;9ca8   ; (ix+5F) es una cuenta atras en la que el motor no da nada: el tiron de despues de cambiar
 	or a			;9cab
 	jr z,ACELERACION_PAR		;9cac
 	dec a			;9cae
@@ -3887,26 +3911,26 @@ ACELERACION_MOTOR:		; (ix+5F) != 0: cuenta atras y aceleracion 0; si no par (0x9
 	ret			;9cb6
 ACELERACION_PAR:		; par y relacion
 	call PAR_MOTOR		;9cb7
-	cp 0ffh		;9cba
+	cp 0ffh		;9cba   ; un par de 0xFF es el motor ahogado: aceleracion cero
 	jr z,ACELERACION_E0		;9cbc
 	call PAR_POR_RELACION		;9cbe
 	ld (ix+012h),a		;9cc1
 	ret			;9cc4
 L_9CC5:
-	ld (ix+012h),000h		;9cc5
+	ld (ix+012h),000h		;9cc5   ; este trozo no lo llama nadie: la aceleracion a cero
 	ret			;9cc9
 ACELERACION_E0:		; (ix+12) = 0xE0 (sin referencia en p02)
-	ld (ix+012h),0e0h		;9cca
+	ld (ix+012h),0e0h		;9cca   ; y este tampoco: la aceleracion a 0xE0
 	ret			;9cce
 PAR_POR_RELACION:		; H = 0x9CE2[(EA50)]; A = (A * H) >> 8, tope 0x7F
-	ld hl,(0ea50h)		;9ccf
+	ld hl,(0ea50h)		;9ccf   ; el par se multiplica por la relacion de la marcha, y por eso en marcha corta el coche empuja mas
 	ld bc,09ce2h		;9cd2
 	add hl,bc			;9cd5
 	ld h,(hl)			;9cd6
 	ld e,a			;9cd7
 	call MULTIPLICA_H_E		;9cd8
 	ld a,h			;9cdb
-	cp 080h		;9cdc
+	cp 080h		;9cdc   ; y se recorta a 0x7F: la aceleracion es de un byte con signo
 	ret c			;9cde
 	ld a,07fh		;9cdf
 	ret			;9ce1
@@ -3915,6 +3939,10 @@ PAR_POR_RELACION:		; H = 0x9CE2[(EA50)]; A = (A * H) >> 8, tope 0x7F
 ; DATOS tabla_relaciones_b: 9 cajas x 4 marchas: factor de aceleracion (copia
 ;   de 0x9C84)
 ;   0x9ce2..0x9d06  (36 bytes)
+
+; ----------------------------------------------------------------------
+; esta tabla es una copia byte a byte de la de 0x9C84, y la usa el otro sentido de la cuenta
+; ----------------------------------------------------------------------
 DATA_tabla_relaciones_b:
 	defb 0ffh,0b6h,079h,05bh	; 9ce2
 	defb 0fch,0b1h,073h,05bh	; 9ce6
@@ -3932,9 +3960,9 @@ DATA_tabla_relaciones_b:
 
 
 OBJETOS:		; los 5 de E800 con IY = E2C0 (0x9D28) y p03 0xB5B6; con dos jugadores los de E928 con E380
-	ld ix,0e800h		;9d06
+	ld ix,0e800h		;9d06   ; cinco objetos por jugador, cada uno con su coche de referencia
 	ld iy,0e2c0h		;9d0a
-	call OBJETOS_5		;9d0e
+	call OBJETOS_5		;9d0e   ; los cinco del jugador 1
 	call 0b5b6h		;9d11
 	ld a,(0e1c2h)		;9d14
 	bit 5,a		;9d17
@@ -3946,7 +3974,7 @@ OBJETOS:		; los 5 de E800 con IY = E2C0 (0x9D28) y p03 0xB5B6; con dos jugadores
 OBJETOS_5:		; B = 5
 	ld b,005h		;9d28
 OBJETO_PASO:		; tipo 0 o bit 4 o (ix+23) -> nada; tipo < 11 -> fisica (0x9D5C); rutina del tipo (0x9F47); mueve (0x9D70); x >= 0xB8 -> fuera (0x9E31)
-	ld a,(ix+000h)		;9d2a
+	ld a,(ix+000h)		;9d2a   ; el tipo 0 es ficha libre; el bit 4 y (ix+23) la dejan quieta
 	ld c,a			;9d2d
 	and a			;9d2e
 	jr z,OBJETO_SIGUIENTE		;9d2f
@@ -3957,12 +3985,12 @@ OBJETO_PASO:		; tipo 0 o bit 4 o (ix+23) -> nada; tipo < 11 -> fisica (0x9D5C); 
 	push ix		;9d39
 	ld a,c			;9d3b
 	and 00fh		;9d3c
-	cp 00bh		;9d3e
+	cp 00bh		;9d3e   ; los tipos por debajo de 11 llevan fisica; los demas no
 	call c,FISICA_OBJETO_PASO		;9d40
 	call RUTINA_DEL_TIPO		;9d43
 	call MUEVE_OBJETO		;9d46
 	pop ix		;9d49
-	ld a,(ix+004h)		;9d4b
+	ld a,(ix+004h)		;9d4b   ; y en cuanto un objeto pasa de x = 0xB8 se retira: ya ha quedado atras
 	cp 0b8h		;9d4e
 	call nc,QUITA_OBJETO_FUERA		;9d50
 	pop bc			;9d53
@@ -3972,15 +4000,15 @@ OBJETO_SIGUIENTE:		; IX += 0x38
 	djnz OBJETO_PASO		;9d59
 	ret			;9d5b
 FISICA_OBJETO_PASO:		; carrera parada ((iy+66) = 0) -> velocidades a cero (0x9DA4); si no: terreno (0x9510) salvo bit 5, 0x9423 y p03 0xA8A1
-	ld a,(iy+066h)		;9d5c
+	ld a,(iy+066h)		;9d5c   ; con la carrera parada los objetos se congelan
 	or a			;9d5f
 	jp z,OBJETO_PARADO		;9d60
-	bit 5,(ix+000h)		;9d63
+	bit 5,(ix+000h)		;9d63   ; el bit 5 del tipo se salta el terreno: son los que no tocan el suelo
 	call z,TERRENO_Y_DERRAPE		;9d67
 	call FISICA_OBJETO		;9d6a
 	jp 0a8a1h		;9d6d
 MUEVE_OBJETO:		; y += vy; bit 5 -> espera (0x9DB2); si no x (0x9D89)
-	ld h,(ix+006h)		;9d70
+	ld h,(ix+006h)		;9d70   ; mover un objeto es sumar vy a la Y...
 	ld l,(ix+005h)		;9d73
 	ld d,(ix+00bh)		;9d76
 	ld e,(ix+00ah)		;9d79
@@ -3990,11 +4018,11 @@ MUEVE_OBJETO:		; y += vy; bit 5 -> espera (0x9DB2); si no x (0x9D89)
 	bit 5,(ix+000h)		;9d83
 	jr nz,OBJETO_ESPERA		;9d87
 MUEVE_X:		; x (ix+3,4) += vx + avance de la pista del coche guia (iy+43,44)
-	ld h,(ix+004h)		;9d89
+	ld h,(ix+004h)		;9d89   ; ...y a la X, ademas de vx, EL AVANCE DE LA PISTA del coche guia: por eso los rivales se quedan atras cuando aprietas
 	ld l,(ix+003h)		;9d8c
 	ld d,(ix+008h)		;9d8f
 	ld e,(ix+007h)		;9d92
-	add hl,de			;9d95
+	add hl,de			;9d95   ; vx sumada a la posicion
 	ld e,(iy+043h)		;9d96
 	ld d,(iy+044h)		;9d99
 	add hl,de			;9d9c
@@ -4002,40 +4030,40 @@ MUEVE_X:		; x (ix+3,4) += vx + avance de la pista del coche guia (iy+43,44)
 	ld (ix+003h),l		;9da0
 	ret			;9da3
 OBJETO_PARADO:		; vx = vy = 0
-	xor a			;9da4
+	xor a			;9da4   ; parados de verdad: las dos velocidades a cero
 	ld (ix+00bh),a		;9da5
 	ld (ix+00ah),a		;9da8
 	ld (ix+008h),a		;9dab
 	ld (ix+007h),a		;9dae
 	ret			;9db1
 OBJETO_ESPERA:		; (ix+20)-- a cero: bit 5 fuera; p03 0xA17C y 0xA4C2 (C -> fuera, 0x9E2D); bit 2 de (ix+1) fuera; velocidad; con el bit 7 guarda (ix+19..1C)
-	dec (ix+020h)		;9db2
+	dec (ix+020h)		;9db2   ; el bit 5 es una espera: el objeto no aparece hasta que (ix+20) llega a cero
 	ret nz			;9db5
 	res 5,(ix+000h)		;9db6
 	call 0a17ch		;9dba
 	jp c,QUITA_OBJETO		;9dbd
 	ld a,(ix+000h)		;9dc0
-	call 0a4c2h		;9dc3
+	call 0a4c2h		;9dc3   ; y al aparecer, p03 puede decir que no cabe y quitarlo
 	jp c,QUITA_OBJETO		;9dc6
 	res 2,(ix+001h)		;9dc9
 	ld e,(ix+010h)		;9dcd
 	ld d,(ix+011h)		;9dd0
-	ld (ix+010h),e		;9dd3
+	ld (ix+010h),e		;9dd3   ; este par de instrucciones lee y escribe lo mismo: (ix+10,11) se queda como estaba
 	ld (ix+011h),d		;9dd6
 	bit 7,(ix+000h)		;9dd9
 	ret z			;9ddd
-	ld (ix+01bh),e		;9dde
+	ld (ix+01bh),e		;9dde   ; con el bit 7, la velocidad se copia ademas a los cuatro bytes de (ix+19)
 	ld (ix+01ch),d		;9de1
 	ld (ix+019h),e		;9de4
 	ld (ix+01ah),d		;9de7
 	ret			;9dea
 L_9DEB:
-	ld h,b			;9deb
+	ld h,b			;9deb   ; este trozo no lo llama nadie: acerca DE a BC de tres maneras segun lo lejos que esten
 	ld l,c			;9dec
 	or a			;9ded
 	bit 7,(ix+000h)		;9dee
 	jr nz,L_9E13		;9df2
-	sbc hl,de		;9df4
+	sbc hl,de		;9df4   ; la resta dice quien va por delante
 	jr c,L_9E08		;9df6
 	ld a,h			;9df8
 	cp 002h		;9df9
@@ -4044,7 +4072,7 @@ L_9DEB:
 	ret c			;9dff
 	ex de,hl			;9e00
 	add hl,bc			;9e01
-	sra h		;9e02
+	sra h		;9e02   ; y lo que se devuelve es el punto medio de los dos
 	rr l		;9e04
 	ex de,hl			;9e06
 	ret			;9e07
@@ -4059,12 +4087,12 @@ L_9E11:
 L_9E13:
 	sbc hl,de		;9e13
 	jr nc,L_9E27		;9e15
-	ld a,h			;9e17
+	ld a,h			;9e17   ; la resta al reves, para el otro sentido
 	cp 0ffh		;9e18
 	jr nc,L_9E27		;9e1a
 	cp 0fch		;9e1c
 	ret nc			;9e1e
-	ex de,hl			;9e1f
+	ex de,hl			;9e1f   ; el punto medio otra vez
 	add hl,bc			;9e20
 	sra h		;9e21
 	rr l		;9e23
@@ -4076,7 +4104,7 @@ L_9E27:
 	ex de,hl			;9e2b
 	ret			;9e2c
 QUITA_OBJETO:		; 0x9E35 (desde 0x9AE3, 0x9DB2)
-	jr QUITA_OBJETO_VA		;9e2d
+	jr QUITA_OBJETO_VA		;9e2d   ; cuatro puertas seguidas al mismo sitio, cada una con su llamador
 QUITA_OBJETO_B:		; idem (entrada de la tabla de jr)
 	jr QUITA_OBJETO_VA		;9e2f
 QUITA_OBJETO_FUERA:		; idem (x >= 0xB8)
@@ -4084,14 +4112,14 @@ QUITA_OBJETO_FUERA:		; idem (x >= 0xB8)
 QUITA_OBJETO_D:		; idem
 	jr QUITA_OBJETO_VA		;9e33
 QUITA_OBJETO_VA:		; tipo 8/9 -> p01 0x7FFC (E208); E91C-- y el contador del jugador (E91D/E91E); B = tipo*2; tipo = 0; EA67 = (x >= 0xE0); p03 0xA531; x = 0xE0; con dos jugadores: la pareja (ix+24,25) se libera (y cambia de jugador si (ix+23) = 0); luego si queda sitio (E919/E918) mete un objeto nuevo del mismo tipo (0x9F00)
-	ld a,(ix+000h)		;9e35
+	ld a,(ix+000h)		;9e35   ; quitar un objeto es mas que poner el tipo a cero: hay que devolver el hueco y avisar al que lo lleva
 	or a			;9e38
 	ret z			;9e39
 	and 00fh		;9e3a
 	sub 008h		;9e3c
 	cp 002h		;9e3e
-	call c,07ffch		;9e40
-	ld hl,0e91ch		;9e43
+	call c,07ffch		;9e40   ; los tipos 8 y 9 avisan a p01, que es quien decide el rival siguiente
+	ld hl,0e91ch		;9e43   ; E91C es el total de objetos vivos y E91D/E91E los de cada jugador
 	dec (hl)			;9e46
 	ld a,(ix+009h)		;9e47
 	dec a			;9e4a
@@ -4104,25 +4132,25 @@ QUITA_CUENTA:		; (HL)-- (E91D o E91E)
 	add a,a			;9e55
 	ld b,a			;9e56
 	ld (ix+000h),000h		;9e57
-	ld a,(ix+004h)		;9e5b
+	ld a,(ix+004h)		;9e5b   ; EA67 dice si el objeto se fue por delante o por detras: de eso depende por donde entra el siguiente
 	cp 0e0h		;9e5e
 	ld a,000h		;9e60
 	jr c,QUITA_EA67		;9e62
 	inc a			;9e64
 QUITA_EA67:		; EA67 = A
 	ld (0ea67h),a		;9e65
-	call 0a531h		;9e68
-	ld (ix+004h),0e0h		;9e6b
+	call 0a531h		;9e68   ; p03 0xA531 se entera de que el sitio ha quedado libre
+	ld (ix+004h),0e0h		;9e6b   ; el objeto se aparca en x = 0xE0, fuera de la pantalla
 	ld hl,0e1c2h		;9e6f
 	bit 5,(hl)		;9e72
 	ret z			;9e74
-	ld e,(ix+024h)		;9e75
+	ld e,(ix+024h)		;9e75   ; con dos jugadores los objetos van de dos en dos, uno en cada pantalla, y al quitar uno hay que soltar a su pareja
 	ld d,(ix+025h)		;9e78
 	ld a,d			;9e7b
 	or e			;9e7c
 	jr z,QUITA_NUEVO		;9e7d
 	ld a,(ix+023h)		;9e7f
-	ld (ix+024h),000h		;9e82
+	ld (ix+024h),000h		;9e82   ; la pareja se suelta por los dos lados: cada ficha borra el puntero a la otra
 	ld (ix+025h),000h		;9e86
 	push ix		;9e8a
 	push de			;9e8c
@@ -4133,9 +4161,9 @@ QUITA_EA67:		; EA67 = A
 	and a			;9e9b
 	jr nz,QUITA_PAREJA_FIN		;9e9c
 	ld a,(ix+009h)		;9e9e
-	xor 003h		;9ea1
+	xor 003h		;9ea1   ; el `xor 3` cambia el 1 por el 2: la pareja que sobrevive cambia de jugador
 	ld (ix+009h),a		;9ea3
-	ld hl,0e91ch		;9ea6
+	ld hl,0e91ch		;9ea6   ; y el que se queda cuenta como objeto nuevo del otro jugador
 	inc (hl)			;9ea9
 	ld a,(ix+009h)		;9eaa
 	dec a			;9ead
@@ -4149,7 +4177,7 @@ QUITA_PAREJA_FIN:		; pop ix
 QUITA_NUEVO:		; EA68 = B; si E919 = 0 y E918 < 0xB8 ret; si (E919-1) < 2 ret; por jugador y EA67 decide si entra uno nuevo
 	ld a,b			;9eb7
 	ld (0ea68h),a		;9eb8
-	ld hl,(0e919h)		;9ebb
+	ld hl,(0e919h)		;9ebb   ; E919 y E918 dicen cuanta pista queda: si no queda, no entran mas rivales
 	ld a,h			;9ebe
 	or l			;9ebf
 	jr nz,QUITA_NUEVO_E919		;9ec0
@@ -4164,8 +4192,8 @@ QUITA_NUEVO_E919:		; E919 - 1 - 2
 	sbc hl,de		;9ecf
 	ret nc			;9ed1
 QUITA_NUEVO_JUGADOR_1:		; jugador 1: E91B = 1 -> lista E928 si EA67 = 1; si no E800
-	ld a,(ix+009h)		;9ed2
-	dec a			;9ed5
+	ld a,(ix+009h)		;9ed2   ; y el jugador al que le entra el rival nuevo es el CONTRARIO al que lo perdio, cruzado con EA67
+	dec a			;9ed5   ; el jugador 1 mete su rival en la lista del 2 y al reves
 	jr nz,QUITA_NUEVO_JUGADOR_2		;9ed6
 	ld a,(0e91bh)		;9ed8
 	dec a			;9edb
@@ -4182,7 +4210,7 @@ QUITA_NUEVO_J1_B:		; EA67 = 0
 QUITA_NUEVO_JUGADOR_2:		; jugador 2: idem cruzado
 	ld a,(0e91bh)		;9eed
 	dec a			;9ef0
-	ld a,(0ea67h)		;9ef1
+	ld a,(0ea67h)		;9ef1   ; lo mismo pero para el jugador 2
 	ld hl,0e800h		;9ef4
 	jr z,QUITA_NUEVO_J2_B		;9ef7
 	cp 001h		;9ef9
@@ -4197,7 +4225,7 @@ NUEVO_OBJETO:		; 0x9F08 con IX guardado
 	pop ix		;9f05
 	ret			;9f07
 NUEVO_OBJETO_VA:		; EA68 = (EA68 >> 1) con el carry; busca sitio (p03 0xA440: NZ no hay); tipo = EA68 | 0x10; (ix+1D,1E) = (E918 - 0xB0) / 4 + 1; E91C++ y el contador del jugador
-	rra			;9f08
+	rra			;9f08   ; el tipo del objeto nuevo sale del que se acaba de quitar, corrido un bit
 	ld a,(0ea68h)		;9f09
 	rra			;9f0c
 	ld (0ea68h),a		;9f0d
@@ -4206,9 +4234,9 @@ NUEVO_OBJETO_VA:		; EA68 = (EA68 >> 1) con el carry; busca sitio (p03 0xA440: NZ
 	push hl			;9f14
 	pop ix		;9f15
 	ld a,(0ea68h)		;9f17
-	or 010h		;9f1a
+	or 010h		;9f1a   ; el bit 4 puesto: el objeto entra en espera
 	ld (ix+000h),a		;9f1c
-	ld hl,(0e918h)		;9f1f
+	ld hl,(0e918h)		;9f1f   ; la distancia hasta el final de la pista, dividida por cuatro, es lo que tarda en aparecer
 	ld de,000b0h		;9f22
 	or a			;9f25
 	sbc hl,de		;9f26
@@ -4230,7 +4258,7 @@ NUEVO_OBJETO_CUENTA:		; (HL)++
 	inc (hl)			;9f45
 	ret			;9f46
 RUTINA_DEL_TIPO:		; despacha por tipo - 1 (< 15) con la tabla 0x9F53
-	ld a,(ix+000h)		;9f47
+	ld a,(ix+000h)		;9f47   ; quince tipos de objeto, y las nueve primeras rutinas viven en la pagina 3
 	and 00fh		;9f4a
 	dec a			;9f4c
 	cp 00fh		;9f4d
@@ -4267,16 +4295,16 @@ DATA_tabla_9F50:
 NADA_9F71:		; ret (tipos 11..14)
 	ret			;9f71
 L_9F72:
-	jr L_9F72		;9f72
+	jr L_9F72		;9f72   ; un `jr $` que no ejecuta nadie: si se llegase aqui, la maquina se quedaria clavada
 COLORES_CATEGORIA:		; copia los 8 bytes de 0x9F8F[min(E25B,5)] a E1F4..E1FB (desde p00 0x5A07)
-	ld a,(0e25bh)		;9f74
+	ld a,(0e25bh)		;9f74   ; cada categoria pinta sus objetos de otro color: ocho colores por categoria
 	cp 005h		;9f77
 	jr c,COLORES_CATEGORIA_INDICE		;9f79
 	ld a,005h		;9f7b
 COLORES_CATEGORIA_INDICE:		; A*8
 	add a,a			;9f7d
 	add a,a			;9f7e
-	add a,a			;9f7f
+	add a,a			;9f7f   ; por ocho: cada categoria son ocho colores
 	ld hl,09f8fh		;9f80
 	call 040d0h		;9f83
 	ld de,0e1f4h		;9f86
@@ -4302,7 +4330,7 @@ DATA_tabla_colores_categoria:
 
 
 COLOR_OBJETO:		; (ix+F) = E1F3[A] (A se conserva)
-	ld b,a			;9fbf
+	ld b,a			;9fbf   ; el color del objeto sale de la tabla que dejo puesta 0x9F74
 	ld hl,0e1f3h		;9fc0
 	call 040d0h		;9fc3
 	ld a,(hl)			;9fc6
@@ -4310,7 +4338,7 @@ COLOR_OBJETO:		; (ix+F) = E1F3[A] (A se conserva)
 	ld a,b			;9fca
 	ret			;9fcb
 CREA_OBJETO_EN:		; A = tipo, DE = (x, y): sitio libre (p03 0xA433; NZ no), IX = el sitio, p03 0xA3AB, (ix+0) = tipo y sigue en 0x9FCC+0x68+.. (jr $+104 -> p03 0xA049)
-	push de			;9fcc
+	push de			;9fcc   ; crear un objeto es buscarle sitio en la lista de cinco: si no lo hay, no se crea
 	push af			;9fcd
 	call 0a433h		;9fce
 	pop bc			;9fd1
@@ -4324,20 +4352,20 @@ CREA_OBJETO_EN:		; A = tipo, DE = (x, y): sitio libre (p03 0xA433; NZ no), IX = 
 	pop bc			;9fdc
 	pop de			;9fdd
 	ld (ix+000h),b		;9fde
-	jr $+104		;9fe1
+	jr $+104		;9fe1   ; el `jr $+104` sale de esta pagina y cae en p03 0xA049: las dos paginas estan pegadas y la rutina sigue alli
 OBJETO_LIBRE:		; (ix+0) = 0 y C (desde p03 0xA15C)
-	ld (ix+000h),000h		;9fe3
+	ld (ix+000h),000h		;9fe3   ; marcar el sitio como libre y avisar con el acarreo
 	scf			;9fe7
 	ret			;9fe8
 MISMA_POSICION_INICIAL:		; Z si (iy+10,11) = (ix+19,1A) (desde p03 0xA1B1)
-	ld a,(iy+011h)		;9fe9
+	ld a,(iy+011h)		;9fe9   ; se comparan las dos velocidades enteras, byte alto primero
 	cp (ix+01ah)		;9fec
 	ret nz			;9fef
 	ld a,(iy+010h)		;9ff0
 	cp (ix+019h)		;9ff3
 	ret			;9ff6
 OBJETO_DESDE_A292:		; push af; p03 0xA412 (busca sitio); pop bc; ret nz; IX = HL y sigue en p03 0xA000 (cruza la frontera; desde p03 0xA292)
-	push af			;9ff7
+	push af			;9ff7   ; y esta tambien acaba cruzando a la pagina 3
 	call 0a412h		;9ff8
 	pop bc			;9ffb
 	ret nz			;9ffc
