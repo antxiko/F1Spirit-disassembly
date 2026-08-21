@@ -1047,3 +1047,85 @@ C 0x4CEB un 0x1x en el byte de flags no es un registro: es una orden para el pro
 C 0x4CF5 los bits 5, 6 y 7 dicen a que tercios va el registro -el 7 el de arriba, el 6 el de en medio y el 5 el de abajo-, y cada tercio se carga por separado
 C 0x4D13 seis bytes por registro: flags, tile, puntero a los patrones y puntero a los colores
 C 0x4A94 la escalera sale con el acarreo puesto a lo ultimo que salio por abajo, y hay quien se lo come sin querer: el `sbc hl,de` de p02 0x9934 no lleva `or a` delante y le resta un 1 de mas a la velocidad
+
+# =============================================================================
+# EL CARGADOR DE TILES POR DENTRO: EL REGISTRO, EL RLE Y LAS ORDENES (0x4D19-0x4F6D)
+# =============================================================================
+B 0x4D19 Un registro de lista son seis bytes: flags, tile, puntero a los
+B 0x4D19 patrones y puntero a los colores. Los dos punteros van a un grupo
+B 0x4D19 de paginas que dicen los flags, y lo que hay al otro lado no son
+B 0x4D19 bytes sueltos sino un RLE que se descomprime DIRECTAMENTE a la
+B 0x4D19 VRAM, de ocho en ocho bytes, con el tile de paso por EA50.
+B 0x4D19
+B 0x4D19 Los flags del registro (copiados a EA6E antes de descomprimir):
+B 0x4D19   bits 2-1  grupo de paginas: 4, 7, 0x0A o 0x0D en 0x6000
+B 0x4D19   bit 3     voltea el tile de arriba abajo
+B 0x4D19   bit 4     lo espeja de izquierda a derecha
+B 0x4D19   bits 7-6-5  a que tercios de pantalla va (arriba, medio, abajo)
+B 0x4D19 Y EA6F.7 dice si lo que se esta pasando son patrones (0) o colores
+B 0x4D19 (1), que es lo unico que distingue las dos mitades del registro.
+C 0x4D19 primero los patrones, asi que EA6F.7 a 0: es la marca que mira 0x4DFF para no espejar los colores
+C 0x4D1E el tile por ocho es su sitio en la tabla, y el tercio se suma encima
+C 0x4D27 esa direccion, sin el 0x2000, es la de los COLORES: se guarda para la segunda mitad
+C 0x4D2B los patrones viven 0x2000 mas arriba que los colores
+C 0x4D2C el puntero a los patrones son los bytes 2 y 3 del registro
+C 0x4D32 dos `rlca` dejan en el acarreo el bit 6 de E1D4: si esta puesto el modo es "solo colores" y toda esta mitad se salta
+C 0x4D3A ahora si, los colores
+C 0x4D40 sumar cero no hace nada: es la simetria con el `ld de,0x2000` de la otra mitad, que quedo escrita
+C 0x4D44 y el puntero a los colores son los bytes 4 y 5
+C 0x4D4C los flags viajan por EA6E porque quien los mira, 0x4D97, esta cuatro llamadas mas abajo y con los registros llenos
+C 0x4D52 los bits 2 y 1 valen grupo * 2; el `rrca` los baja a grupo y el `add a,c` los deja en grupo * 3
+C 0x4D57 mas cuatro: los cuatro grupos son las paginas 4, 7, 0x0A y 0x0D, y cada una arrastra a las dos siguientes
+C 0x4D61 y se vuelve a 4/5/6, que es donde vive la lista que se esta recorriendo
+C 0x4D66 el destino se guarda tambien en E1D2 porque en el modo por filas hace falta saber donde iba cada tile
+C 0x4D6D HL' es el tile que se va montando, ocho bytes en EA50: el RLE no escribe en la VRAM byte a byte, sino tile a tile
+C 0x4D73 el codigo manda: 0x00 acaba, 0x01-0x7F repite, 0x80 no hace nada y 0x81-0xFF copia n & 0x7F bytes
+C 0x4D78 el `and 0x7f` y el `cp b` juntos son "estaba el bit 7 apagado", sin gastar una comparacion aparte
+C 0x4D7E el 0x80 pelado: cero bytes que copiar
+C 0x4D97 el byte al tile de paso...
+C 0x4D99 ...y hasta que no se llenan los ocho (EA50 a EA57, o sea que L pase a tener el bit 3) no se escribe nada en la VRAM
+C 0x4DA0 el espejo y el volteo se hacen aqui, con el tile ya montado y antes de soltarlo: por eso salen gratis
+C 0x4DAD con E1D4 a cero se vuelca el tile entero; si no, solo la fila que toque
+C 0x4DB6 B vale 16 y no 8 porque `outi` ya resta uno por su cuenta y el `djnz` resta otro: ocho vueltas, ocho bytes
+C 0x4DC2 el modo por filas escribe UN byte por tile, y va apuntando en E1D2 por donde iba
+C 0x4DC7 el siguiente tile son ocho bytes mas alla, se escriba lo que se escriba de este
+C 0x4DCE los tres bits de abajo de E1D4 son la fila
+C 0x4DD8 aqui hay que preparar la VRAM en cada byte, que no son consecutivos
+C 0x4DE0 y de EA50 se saca justo la fila que se pide
+C 0x4DEB el volteo vertical se hace cambiando la fila 0 por la 7, la 1 por la 6, la 2 por la 5 y la 3 por la 4: cuatro parejas
+C 0x4DF3 una pareja por vuelta, un puntero subiendo y otro bajando
+C 0x4DFF los colores no se espejan: en el modo 2 el byte de color de una fila no tiene izquierda ni derecha, son el color de la tinta y el del fondo
+C 0x4E0B ocho filas...
+C 0x4E0D ...y ocho bits por fila: `rr (hl)` va soltando el bit de abajo y `rla` lo va recogiendo por arriba, que es dar la vuelta al byte
+C 0x4E19 el tile 0 se deja siempre en blanco, patrones y colores, porque es el que 0x465B usa para borrar la pantalla
+C 0x4E2E la orden entera se guarda en D' antes de quedarse con los dos bits de abajo: las variantes (bit 2, bits 3-4) las mira cada rama por su cuenta
+C 0x4E3F la orden 0x10 lleva pegados 16 bytes que van tal cual a E263...
+C 0x4E4B ...y por eso ocupa 17 bytes de lista, uno mas que los datos
+C 0x4E52 la orden 0x11 y sus variantes 0x15, 0x19 y 0x1D: el `rrca` y el `and 6` las convierten en 0, 2, 4 y 6, o sea en cuatro palabras seguidas desde E276
+C 0x4E5F la palabra viene detras de la orden, en la propia lista
+C 0x4E69 tres bytes: la orden y su palabra
+C 0x4E6F sin `add ix,de`: si alguna lista trajese un 0x12, el recorrido se quedaria dando vueltas sobre el mismo byte
+C 0x4E70 la orden 0x13 mete una lista dentro de otra; la 0x17, que es la misma con el bit 2, es otra cosa
+C 0x4E78 el puntero a la sublista viene detras de la orden
+C 0x4E81 y se recorre con la misma rutina: una lista puede llamar a otra
+C 0x4E8E la orden 0x17: el recurso [1] de la tabla de 85 cargado en el tile [2]
+C 0x4E9F EA60 es un registro de seis bytes montado a mano, para poder pasarle al cargador algo que en la lista no estaba escrito
+C 0x4EAB el recurso por cinco: las entradas de la tabla p04 0x6000 son de cinco bytes
+C 0x4EB3 el primer byte del recurso son los flags, que en un registro van los primeros...
+C 0x4EB8 ...y los otros cuatro son los dos punteros, que van a EA62
+C 0x4EC0 el 0x00 de detras cierra la lista de un solo registro
+C 0x4EC7 la lista comun de sprites primero: la traen todas las carreras
+C 0x4ED6 E25B es la categoria; su entrada en la tabla p04 0x7481 ocupa tres palabras y aqui solo se usa la primera
+C 0x4EE5 lo que la categoria no haya puesto se rellena con lo que puso la lista comun
+C 0x4EEB en la categoria 0 hay ademas dos ranuras que se igualan a mano a la primera
+C 0x4EF9 quince en BC, pero se borran dieciseis: RELLENA_RAM siembra el primer byte y el `ldir` copia otros BC
+C 0x4F02 EB40 es el patron por defecto: el que se queda en las ranuras que nadie lleno
+C 0x4F09 una ranura por vuelta, las dieciseis
+C 0x4F11 el par mapear / cargar / desmapear, para quien tenga la lista a mano
+C 0x4F1A la lista de sprites es mas simple que la de tiles: parejas de recurso y patron, y un 0xFF al final
+C 0x4F28 el recurso por seis: las entradas de la tabla p04 0x7505 son de seis bytes
+C 0x4F34 el primer byte del recurso no es un dato, es un indice: dice en que ranura de EB40 se apunta el patron con el que se acaba de cargar
+C 0x4F3E el patron por ocho es su sitio en la tabla de patrones de sprites, que empieza en la VRAM 0x1800
+C 0x4F4C y el segundo byte es el tipo: 0xFF y 1 no cargan nada, 0 viene comprimido y 2 se copia tal cual
+C 0x4F58 el tipo 0 pasa el origen por el descompresor
+C 0x4F61 el tipo 2 trae ademas su longitud, en los bytes 4 y 5

@@ -2159,65 +2159,81 @@ REGISTRO_DE_LISTA:		; 0x1x = orden (0x4E2D); si no, por cada tercio marcado en l
 	ld de,00006h		;4d13   ; seis bytes por registro: flags, tile, puntero a los patrones y puntero a los colores
 	add ix,de		;4d16
 	ret			;4d18
+
+; ----------------------------------------------------------------------
+; Un registro de lista son seis bytes: flags, tile, puntero a los
+; patrones y puntero a los colores. Los dos punteros van a un grupo
+; de paginas que dicen los flags, y lo que hay al otro lado no son
+; bytes sueltos sino un RLE que se descomprime DIRECTAMENTE a la
+; VRAM, de ocho en ocho bytes, con el tile de paso por EA50.
+;
+; Los flags del registro (copiados a EA6E antes de descomprimir):
+; bits 2-1  grupo de paginas: 4, 7, 0x0A o 0x0D en 0x6000
+; bit 3     voltea el tile de arriba abajo
+; bit 4     lo espeja de izquierda a derecha
+; bits 7-6-5  a que tercios de pantalla va (arriba, medio, abajo)
+; Y EA6F.7 dice si lo que se esta pasando son patrones (0) o colores
+; (1), que es lo unico que distingue las dos mitades del registro.
+; ----------------------------------------------------------------------
 CARGA_REGISTRO_TERCIO:		; el registro IX al tercio DE: patrones (tile*8 + tercio + 0x2000) salvo con el bit 6 de E1D4, y colores (tile*8 + tercio); EA6F.7 = 0 patrones, 1 colores
-	ld hl,0ea6fh		;4d19
+	ld hl,0ea6fh		;4d19   ; primero los patrones, asi que EA6F.7 a 0: es la marca que mira 0x4DFF para no espejar los colores
 	res 7,(hl)		;4d1c
-	ld l,(ix+001h)		;4d1e
+	ld l,(ix+001h)		;4d1e   ; el tile por ocho es su sitio en la tabla, y el tercio se suma encima
 	ld h,000h		;4d21
 	add hl,hl			;4d23
 	add hl,hl			;4d24
 	add hl,hl			;4d25
 	add hl,de			;4d26
-	push hl			;4d27
+	push hl			;4d27   ; esa direccion, sin el 0x2000, es la de los COLORES: se guarda para la segunda mitad
 	ld de,02000h		;4d28
-	add hl,de			;4d2b
-	ld e,(ix+002h)		;4d2c
+	add hl,de			;4d2b   ; los patrones viven 0x2000 mas arriba que los colores
+	ld e,(ix+002h)		;4d2c   ; el puntero a los patrones son los bytes 2 y 3 del registro
 	ld d,(ix+003h)		;4d2f
-	ld a,(0e1d4h)		;4d32
+	ld a,(0e1d4h)		;4d32   ; dos `rlca` dejan en el acarreo el bit 6 de E1D4: si esta puesto el modo es "solo colores" y toda esta mitad se salta
 	rlca			;4d35
 	rlca			;4d36
 	call nc,RLE_DESDE_GRUPO		;4d37
-	ld hl,0ea6fh		;4d3a
+	ld hl,0ea6fh		;4d3a   ; ahora si, los colores
 	set 7,(hl)		;4d3d
 	pop hl			;4d3f
-	ld de,00000h		;4d40
+	ld de,00000h		;4d40   ; sumar cero no hace nada: es la simetria con el `ld de,0x2000` de la otra mitad, que quedo escrita
 	add hl,de			;4d43
-	ld e,(ix+004h)		;4d44
+	ld e,(ix+004h)		;4d44   ; y el puntero a los colores son los bytes 4 y 5
 	ld d,(ix+005h)		;4d47
 RLE_DESDE_GRUPO:		; mapea el grupo de los bits 2..1 de los flags (4, 7, A o D en 0x6000), descomprime DE en VRAM HL y vuelve a 4/5/6
 	push ix		;4d4a
-	ld a,(ix+000h)		;4d4c
+	ld a,(ix+000h)		;4d4c   ; los flags viajan por EA6E porque quien los mira, 0x4D97, esta cuatro llamadas mas abajo y con los registros llenos
 	ld (0ea6eh),a		;4d4f
-	and 006h		;4d52
+	and 006h		;4d52   ; los bits 2 y 1 valen grupo * 2; el `rrca` los baja a grupo y el `add a,c` los deja en grupo * 3
 	ld c,a			;4d54
 	rrca			;4d55
 	add a,c			;4d56
-	add a,004h		;4d57
+	add a,004h		;4d57   ; mas cuatro: los cuatro grupos son las paginas 4, 7, 0x0A y 0x0D, y cada una arrastra a las dos siguientes
 	call MAPEA_DESDE_A		;4d59
 	call RLE_TILES		;4d5c
 	pop ix		;4d5f
-	jp MAPEA_4_5_6		;4d61
+	jp MAPEA_4_5_6		;4d61   ; y se vuelve a 4/5/6, que es donde vive la lista que se esta recorriendo
 RLE_TILES:		; el descompresor de los tiles: (DE) -> VRAM HL por bloques de 8 bytes (EA50). Codigos: 00 fin, 01..7F repetir el byte siguiente n veces, 80 nada, 81..FF copiar n&0x7F bytes
 	push hl			;4d64
 	push de			;4d65
-	ld (0e1d2h),hl		;4d66
+	ld (0e1d2h),hl		;4d66   ; el destino se guarda tambien en E1D2 porque en el modo por filas hace falta saber donde iba cada tile
 	call PREPARA_ESCRITURA_VRAM		;4d69
 	exx			;4d6c
-	ld hl,0ea50h		;4d6d
+	ld hl,0ea50h		;4d6d   ; HL' es el tile que se va montando, ocho bytes en EA50: el RLE no escribe en la VRAM byte a byte, sino tile a tile
 	exx			;4d70
 	pop de			;4d71
 	pop hl			;4d72
 RLE_TILES_BUCLE:		; un codigo por vuelta
-	ld a,(de)			;4d73
+	ld a,(de)			;4d73   ; el codigo manda: 0x00 acaba, 0x01-0x7F repite, 0x80 no hace nada y 0x81-0xFF copia n & 0x7F bytes
 	inc de			;4d74
 	or a			;4d75
 	ret z			;4d76
 	ld b,a			;4d77
-	and 07fh		;4d78
+	and 07fh		;4d78   ; el `and 0x7f` y el `cp b` juntos son "estaba el bit 7 apagado", sin gastar una comparacion aparte
 	cp b			;4d7a
 	jr z,RLE_TILES_REPITE		;4d7b
 	or a			;4d7d
-	jr z,RLE_TILES_BUCLE		;4d7e
+	jr z,RLE_TILES_BUCLE		;4d7e   ; el 0x80 pelado: cero bytes que copiar
 	ld b,a			;4d80
 RLE_TILES_COPIA:		; n bytes tal cual, uno a uno por 0x4D97
 	ld a,(de)			;4d81
@@ -2237,22 +2253,22 @@ RLE_TILES_REPITE_BUCLE:		; una copia por vuelta
 	djnz RLE_TILES_REPITE_BUCLE		;4d93
 	jr RLE_TILES_BUCLE		;4d95
 RLE_TILES_BYTE:		; acumula el byte en EA50..EA57; al octavo: espejo (bit 4 de EA6E), volteo (bit 3) y vuelca el tile al VDP (8 OUTI), o solo la fila E1D4&7 si E1D4 != 0
-	ld (hl),a			;4d97
+	ld (hl),a			;4d97   ; el byte al tile de paso...
 	inc l			;4d98
-	bit 3,l		;4d99
+	bit 3,l		;4d99   ; ...y hasta que no se llenan los ocho (EA50 a EA57, o sea que L pase a tener el bit 3) no se escribe nada en la VRAM
 	ret z			;4d9b
 	push af			;4d9c
 	ld hl,0ea6eh		;4d9d
-	bit 4,(hl)		;4da0
+	bit 4,(hl)		;4da0   ; el espejo y el volteo se hacen aqui, con el tile ya montado y antes de soltarlo: por eso salen gratis
 	call nz,ESPEJA_TILE		;4da2
 	ld hl,0ea6eh		;4da5
 	bit 3,(hl)		;4da8
 	call nz,VOLTEA_TILE		;4daa
-	ld a,(0e1d4h)		;4dad
+	ld a,(0e1d4h)		;4dad   ; con E1D4 a cero se vuelca el tile entero; si no, solo la fila que toque
 	or a			;4db0
 	jr nz,RLE_TILES_SOLO_FILA		;4db1
 	ld hl,0ea50h		;4db3
-	ld b,010h		;4db6
+	ld b,010h		;4db6   ; B vale 16 y no 8 porque `outi` ya resta uno por su cuenta y el `djnz` resta otro: ocho vueltas, ocho bytes
 VUELCA_TILE_BUCLE:		; los 8 bytes del tile al VDP (B = 16, pero outi ya resta uno: 8 vueltas)
 	outi		;4db8
 	djnz VUELCA_TILE_BUCLE		;4dba
@@ -2261,13 +2277,13 @@ VUELCA_TILE_BUCLE:		; los 8 bytes del tile al VDP (B = 16, pero outi ya resta un
 	ret			;4dc0
 RLE_TILES_SOLO_FILA:		; modo por filas: escribe solo el byte (E1D4&7) del tile en (E1D2) + fila, y E1D2 += 8
 	push bc			;4dc1
-	ld hl,(0e1d2h)		;4dc2
+	ld hl,(0e1d2h)		;4dc2   ; el modo por filas escribe UN byte por tile, y va apuntando en E1D2 por donde iba
 	ld e,l			;4dc5
 	ld d,h			;4dc6
-	ld bc,00008h		;4dc7
+	ld bc,00008h		;4dc7   ; el siguiente tile son ocho bytes mas alla, se escriba lo que se escriba de este
 	add hl,bc			;4dca
 	ld (0e1d2h),hl		;4dcb
-	and 007h		;4dce
+	and 007h		;4dce   ; los tres bits de abajo de E1D4 son la fila
 	ld l,a			;4dd0
 	ld h,000h		;4dd1
 	ex de,hl			;4dd3
@@ -2275,11 +2291,11 @@ RLE_TILES_SOLO_FILA:		; modo por filas: escribe solo el byte (E1D4&7) del tile e
 	push hl			;4dd5
 	exx			;4dd6
 	ex (sp),hl			;4dd7
-	call PREPARA_ESCRITURA_VRAM		;4dd8
+	call PREPARA_ESCRITURA_VRAM		;4dd8   ; aqui hay que preparar la VRAM en cada byte, que no son consecutivos
 	pop hl			;4ddb
 	exx			;4ddc
 	ld hl,0ea50h		;4ddd
-	add hl,de			;4de0
+	add hl,de			;4de0   ; y de EA50 se saca justo la fila que se pide
 	ld a,(hl)			;4de1
 	out (c),a		;4de2
 	ld hl,0ea50h		;4de4
@@ -2288,11 +2304,11 @@ RLE_TILES_SOLO_FILA:		; modo por filas: escribe solo el byte (E1D4&7) del tile e
 	ret			;4de9
 VOLTEA_TILE:		; volteo vertical: intercambia las filas 0-7, 1-6, 2-5, 3-4 de EA50
 	push bc			;4dea
-	ld hl,0ea50h		;4deb
+	ld hl,0ea50h		;4deb   ; el volteo vertical se hace cambiando la fila 0 por la 7, la 1 por la 6, la 2 por la 5 y la 3 por la 4: cuatro parejas
 	ld de,0ea57h		;4dee
 	ld b,004h		;4df1
 VOLTEA_TILE_BUCLE:		; una pareja de filas por vuelta
-	ld c,(hl)			;4df3
+	ld c,(hl)			;4df3   ; una pareja por vuelta, un puntero subiendo y otro bajando
 	ld a,(de)			;4df4
 	ex de,hl			;4df5
 	ld (hl),c			;4df6
@@ -2304,16 +2320,16 @@ VOLTEA_TILE_BUCLE:		; una pareja de filas por vuelta
 	pop bc			;4dfd
 	ret			;4dfe
 ESPEJA_TILE:		; espejo horizontal: invierte los 8 bits de cada fila (no con los colores: bit 7 de EA6F)
-	ld hl,0ea6fh		;4dff
+	ld hl,0ea6fh		;4dff   ; los colores no se espejan: en el modo 2 el byte de color de una fila no tiene izquierda ni derecha, son el color de la tinta y el del fondo
 	bit 7,(hl)		;4e02
 	ret nz			;4e04
 	push bc			;4e05
 	ld hl,0ea50h		;4e06
 	ld c,008h		;4e09
 ESPEJA_TILE_FILA:		; una fila por vuelta
-	ld b,008h		;4e0b
+	ld b,008h		;4e0b   ; ocho filas...
 ESPEJA_TILE_BIT:		; un bit por vuelta (rr (hl) / rla)
-	rr (hl)		;4e0d
+	rr (hl)		;4e0d   ; ...y ocho bits por fila: `rr (hl)` va soltando el bit de abajo y `rla` lo va recogiendo por arriba, que es dar la vuelta al byte
 	rla			;4e0f
 	djnz ESPEJA_TILE_BIT		;4e10
 	ld (hl),a			;4e12
@@ -2323,7 +2339,7 @@ ESPEJA_TILE_BIT:		; un bit por vuelta (rr (hl) / rla)
 	pop bc			;4e17
 	ret			;4e18
 TILE_0_A_CERO:		; patrones y colores del tile 0 a cero en los 3 tercios
-	ld hl,02000h		;4e19
+	ld hl,02000h		;4e19   ; el tile 0 se deja siempre en blanco, patrones y colores, porque es el que 0x465B usa para borrar la pantalla
 	ld bc,00008h		;4e1c
 	xor a			;4e1f
 	call LLENA_VRAM_3_TERCIOS		;4e20
@@ -2333,7 +2349,7 @@ TILE_0_A_CERO:		; patrones y colores del tile 0 a cero en los 3 tercios
 	jp LLENA_VRAM_3_TERCIOS		;4e2a
 ORDEN_DE_LISTA:		; despacha por los bits 1..0 de la orden (tabla 0x4E37)
 	exx			;4e2d
-	ld a,(ix+000h)		;4e2e
+	ld a,(ix+000h)		;4e2e   ; la orden entera se guarda en D' antes de quedarse con los dos bits de abajo: las variantes (bit 2, bits 3-4) las mira cada rama por su cuenta
 	ld d,a			;4e31
 	and 003h		;4e32
 	call DESPACHA		;4e34
@@ -2353,18 +2369,18 @@ DATA_tabla_4E34:
 
 
 ORDEN_COPIA_E263:		; 0x10: los 16 bytes que siguen a E263 (17 bytes de lista)
-	push ix		;4e3f
+	push ix		;4e3f   ; la orden 0x10 lleva pegados 16 bytes que van tal cual a E263...
 	pop hl			;4e41
 	inc hl			;4e42
 	ld de,0e263h		;4e43
 	ld bc,00010h		;4e46
 	ldir		;4e49
-	ld de,00011h		;4e4b
+	ld de,00011h		;4e4b   ; ...y por eso ocupa 17 bytes de lista, uno mas que los datos
 	add ix,de		;4e4e
 	ret			;4e50
 ORDEN_PALABRA_E276:		; 0x11/15/19/1D: la palabra que sigue a E276 + ((orden>>1)&6) (3 bytes de lista)
 	exx			;4e51
-	ld a,(ix+000h)		;4e52
+	ld a,(ix+000h)		;4e52   ; la orden 0x11 y sus variantes 0x15, 0x19 y 0x1D: el `rrca` y el `and 6` las convierten en 0, 2, 4 y 6, o sea en cuatro palabras seguidas desde E276
 	rrca			;4e55
 	and 006h		;4e56
 	ld e,a			;4e58
@@ -2372,7 +2388,7 @@ ORDEN_PALABRA_E276:		; 0x11/15/19/1D: la palabra que sigue a E276 + ((orden>>1)&
 	push ix		;4e5b
 	pop hl			;4e5d
 	inc hl			;4e5e
-	ld c,(hl)			;4e5f
+	ld c,(hl)			;4e5f   ; la palabra viene detras de la orden, en la propia lista
 	inc hl			;4e60
 	ld b,(hl)			;4e61
 	ld hl,0e276h		;4e62
@@ -2380,27 +2396,27 @@ ORDEN_PALABRA_E276:		; 0x11/15/19/1D: la palabra que sigue a E276 + ((orden>>1)&
 	ld (hl),c			;4e66
 	inc hl			;4e67
 	ld (hl),b			;4e68
-	ld de,00003h		;4e69
+	ld de,00003h		;4e69   ; tres bytes: la orden y su palabra
 	add ix,de		;4e6c
 	ret			;4e6e
 ORDEN_NADA:		; 0x12: ret sin avanzar IX (se quedaria en bucle: ninguna lista la usa)
-	ret			;4e6f
+	ret			;4e6f   ; sin `add ix,de`: si alguna lista trajese un 0x12, el recorrido se quedaria dando vueltas sobre el mismo byte
 ORDEN_SUBLISTA:		; 0x13: recorre la lista que sigue (puntero) y sigue con esta; 0x17 (bit 2) -> 0x4E8C
-	bit 2,(ix+000h)		;4e70
+	bit 2,(ix+000h)		;4e70   ; la orden 0x13 mete una lista dentro de otra; la 0x17, que es la misma con el bit 2, es otra cosa
 	jr nz,ORDEN_RECURSO		;4e74
 	push ix		;4e76
-	ld l,(ix+001h)		;4e78
+	ld l,(ix+001h)		;4e78   ; el puntero a la sublista viene detras de la orden
 	ld h,(ix+002h)		;4e7b
 	push hl			;4e7e
 	pop ix		;4e7f
-	call RECORRE_LISTA		;4e81
+	call RECORRE_LISTA		;4e81   ; y se recorre con la misma rutina: una lista puede llamar a otra
 	pop ix		;4e84
 	ld de,00003h		;4e86
 	add ix,de		;4e89
 	ret			;4e8b
 ORDEN_RECURSO:		; 0x17: el recurso [1] de la tabla de 85 en el tile [2] (0x4E9F)
 	push ix		;4e8c
-	ld a,(ix+001h)		;4e8e
+	ld a,(ix+001h)		;4e8e   ; la orden 0x17: el recurso [1] de la tabla de 85 cargado en el tile [2]
 	ld c,(ix+002h)		;4e91
 	call CARGA_RECURSO_85		;4e94
 	pop ix		;4e97
@@ -2408,42 +2424,42 @@ ORDEN_RECURSO:		; 0x17: el recurso [1] de la tabla de 85 en el tile [2] (0x4E9F)
 	add ix,de		;4e9c
 	ret			;4e9e
 CARGA_RECURSO_85:		; A = recurso de la TABLA DE 85 de p04 0x6000 (5 bytes), C = tile: monta el registro de 6 bytes en EA60 y lo carga con 0x4CE0
-	ld ix,0ea60h		;4e9f
+	ld ix,0ea60h		;4e9f   ; EA60 es un registro de seis bytes montado a mano, para poder pasarle al cargador algo que en la lista no estaba escrito
 	ld (ix+001h),c		;4ea3
 	ld l,a			;4ea6
 	ld h,000h		;4ea7
 	ld d,h			;4ea9
 	ld e,l			;4eaa
-	add hl,hl			;4eab
+	add hl,hl			;4eab   ; el recurso por cinco: las entradas de la tabla p04 0x6000 son de cinco bytes
 	add hl,hl			;4eac
 	add hl,de			;4ead
 	add a,b			;4eae   ; suma que no se usa (A se pierde en el ld a,(hl) de 0x4EB3)
 	ld de,06000h		;4eaf
 	add hl,de			;4eb2
-	ld a,(hl)			;4eb3
+	ld a,(hl)			;4eb3   ; el primer byte del recurso son los flags, que en un registro van los primeros...
 	inc hl			;4eb4
 	ld (ix+000h),a		;4eb5
-	ld de,0ea62h		;4eb8
+	ld de,0ea62h		;4eb8   ; ...y los otros cuatro son los dos punteros, que van a EA62
 	ld bc,00004h		;4ebb
 	ldir		;4ebe
-	ld (ix+006h),000h		;4ec0
+	ld (ix+006h),000h		;4ec0   ; el 0x00 de detras cierra la lista de un solo registro
 	jp RECORRE_LISTA		;4ec4
 CARGA_SPRITES_CARRERA:		; 4/5/6: la lista p04 0x74A5, EB40 a cero, la lista de la categoria (E25B) de la tabla p04 0x7481 (la primera palabra de cada tres), rellena EB40 (0x4F02), 1/2/3; con E25B = 0, EB41 = EB42 = EB40
-	call MAPEA_4_5_6		;4ec7
+	call MAPEA_4_5_6		;4ec7   ; la lista comun de sprites primero: la traen todas las carreras
 	ld hl,074a5h		;4eca
 	call LISTA_SPRITES		;4ecd
 	call BORRA_EB40		;4ed0
 	call MAPEA_4_5_6		;4ed3
-	ld a,(0e25bh)		;4ed6
+	ld a,(0e25bh)		;4ed6   ; E25B es la categoria; su entrada en la tabla p04 0x7481 ocupa tres palabras y aqui solo se usa la primera
 	ld b,a			;4ed9
 	add a,a			;4eda
 	add a,b			;4edb
 	ld hl,07481h		;4edc
 	call HL_PALABRA_A		;4edf
 	call LISTA_SPRITES		;4ee2
-	call RELLENA_EB40		;4ee5
+	call RELLENA_EB40		;4ee5   ; lo que la categoria no haya puesto se rellena con lo que puso la lista comun
 	call MAPEA_1_2_3		;4ee8
-	ld a,(0e25bh)		;4eeb
+	ld a,(0e25bh)		;4eeb   ; en la categoria 0 hay ademas dos ranuras que se igualan a mano a la primera
 	or a			;4eee
 	ret nz			;4eef
 	ld hl,0eb40h		;4ef0
@@ -2454,16 +2470,16 @@ CARGA_SPRITES_CARRERA:		; 4/5/6: la lista p04 0x74A5, EB40 a cero, la lista de l
 	ld (hl),a			;4ef7
 	ret			;4ef8
 BORRA_EB40:		; EB40..EB4E a cero (15 bytes)
-	ld hl,0eb40h		;4ef9
+	ld hl,0eb40h		;4ef9   ; quince en BC, pero se borran dieciseis: RELLENA_RAM siembra el primer byte y el `ldir` copia otros BC
 	ld bc,0000fh		;4efc
 	jp RELLENA_RAM_CERO		;4eff
 RELLENA_EB40:		; las entradas a cero de EB40..EB4F toman el valor de EB40
-	ld hl,0eb40h		;4f02
+	ld hl,0eb40h		;4f02   ; EB40 es el patron por defecto: el que se queda en las ranuras que nadie lleno
 	ld c,(hl)			;4f05
 	ld b,010h		;4f06
 	xor a			;4f08
 RELLENA_EB40_BUCLE:		; una entrada por vuelta
-	cp (hl)			;4f09
+	cp (hl)			;4f09   ; una ranura por vuelta, las dieciseis
 	jr nz,L_4F0D		;4f0a
 	ld (hl),c			;4f0c
 L_4F0D:
@@ -2471,11 +2487,11 @@ L_4F0D:
 	djnz RELLENA_EB40_BUCLE		;4f0e
 	ret			;4f10
 CARGA_LISTA_SPRITES:		; mapea 4/5/6, carga la lista HL (0x4F1A) y vuelve a 1/2/3
-	call MAPEA_4_5_6		;4f11
+	call MAPEA_4_5_6		;4f11   ; el par mapear / cargar / desmapear, para quien tenga la lista a mano
 	call LISTA_SPRITES		;4f14
 	jp MAPEA_1_2_3		;4f17
 LISTA_SPRITES:		; un par (recurso, patron) por vuelta hasta 0xFF
-	ld a,(hl)			;4f1a
+	ld a,(hl)			;4f1a   ; la lista de sprites es mas simple que la de tiles: parejas de recurso y patron, y un 0xFF al final
 	cp 0ffh		;4f1b
 	ret z			;4f1d
 	inc hl			;4f1e
@@ -2486,7 +2502,7 @@ LISTA_SPRITES:		; un par (recurso, patron) por vuelta hasta 0xFF
 	pop hl			;4f25
 	jr LISTA_SPRITES		;4f26
 CARGA_RECURSO_SPRITE:		; el registro A de la tabla p04 0x7505; EB40+clase = patron B; IX = VRAM 0x1800 + B*8; tipo 0 -> RLE_A_VRAM, 1 -> nada, 2 -> LDIRVM de [4..5] bytes, FF -> nada
-	ld l,a			;4f28
+	ld l,a			;4f28   ; el recurso por seis: las entradas de la tabla p04 0x7505 son de seis bytes
 	ld h,000h		;4f29
 	add hl,hl			;4f2b
 	ld d,h			;4f2c
@@ -2495,7 +2511,7 @@ CARGA_RECURSO_SPRITE:		; el registro A de la tabla p04 0x7505; EB40+clase = patr
 	add hl,de			;4f2f
 	ld de,07505h		;4f30
 	add hl,de			;4f33
-	ld a,040h		;4f34
+	ld a,040h		;4f34   ; el primer byte del recurso no es un dato, es un indice: dice en que ranura de EB40 se apunta el patron con el que se acaba de cargar
 	add a,(hl)			;4f36
 	ld e,a			;4f37
 	inc hl			;4f38
@@ -2503,7 +2519,7 @@ CARGA_RECURSO_SPRITE:		; el registro A de la tabla p04 0x7505; EB40+clase = patr
 	ld a,b			;4f3b
 	ld (de),a			;4f3c
 	push hl			;4f3d
-	ld l,a			;4f3e
+	ld l,a			;4f3e   ; el patron por ocho es su sitio en la tabla de patrones de sprites, que empieza en la VRAM 0x1800
 	ld h,000h		;4f3f
 	add hl,hl			;4f41
 	add hl,hl			;4f42
@@ -2513,7 +2529,7 @@ CARGA_RECURSO_SPRITE:		; el registro A de la tabla p04 0x7505; EB40+clase = patr
 	push hl			;4f48
 	pop ix		;4f49
 	pop hl			;4f4b
-	ld a,(hl)			;4f4c
+	ld a,(hl)			;4f4c   ; y el segundo byte es el tipo: 0xFF y 1 no cargan nada, 0 viene comprimido y 2 se copia tal cual
 	inc hl			;4f4d
 	inc a			;4f4e
 	ret z			;4f4f
@@ -2524,14 +2540,14 @@ CARGA_RECURSO_SPRITE:		; el registro A de la tabla p04 0x7505; EB40+clase = patr
 	ret z			;4f55
 	jr RECURSO_SPRITE_COPIA		;4f56
 RECURSO_SPRITE_RLE:		; tipo 0: descomprime el origen en los patrones de sprites
-	ld e,(hl)			;4f58
+	ld e,(hl)			;4f58   ; el tipo 0 pasa el origen por el descompresor
 	inc hl			;4f59
 	ld d,(hl)			;4f5a
 	push ix		;4f5b
 	pop hl			;4f5d
 	jp RLE_A_VRAM		;4f5e
 RECURSO_SPRITE_COPIA:		; tipo 2: copia [4..5] bytes tal cual
-	ld e,(hl)			;4f61
+	ld e,(hl)			;4f61   ; el tipo 2 trae ademas su longitud, en los bytes 4 y 5
 	inc hl			;4f62
 	ld d,(hl)			;4f63
 	inc hl			;4f64
