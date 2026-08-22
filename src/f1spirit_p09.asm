@@ -714,154 +714,154 @@ DATA_objetos_pista_20:
 ;   p01 0x6950
 ;   0xa6de..0xa806  (296 bytes)
 DATA_tabla_textos:
-	defw 0a806h	; a6de  -> DATA_textos
-	defw 0a80dh	; a6e0
-	defw 0a814h	; a6e2
-	defw 0a81ah	; a6e4
-	defw 0a81dh	; a6e6
-	defw 0a821h	; a6e8
-	defw 0a824h	; a6ea
-	defw 0a827h	; a6ec
-	defw 0a82bh	; a6ee
-	defw 0a82fh	; a6f0
-	defw 0a833h	; a6f2
-	defw 0a836h	; a6f4
-	defw 0a83ah	; a6f6
-	defw 0a842h	; a6f8
-	defw 0a845h	; a6fa
-	defw 0a850h	; a6fc
-	defw 0a858h	; a6fe
-	defw 0a85eh	; a700
-	defw 0a861h	; a702
-	defw 0a866h	; a704
-	defw 0a86bh	; a706
-	defw 0a86eh	; a708
-	defw 0a871h	; a70a
-	defw 0a874h	; a70c
-	defw 0a87ah	; a70e
-	defw 0a87dh	; a710
-	defw 0a880h	; a712
-	defw 0a883h	; a714
-	defw 0a887h	; a716
-	defw 0a88ah	; a718
-	defw 0a88dh	; a71a
-	defw 0a891h	; a71c
-	defw 0a895h	; a71e
-	defw 0a89ah	; a720
-	defw 0a89dh	; a722
-	defw 0a8a0h	; a724
-	defw 0a8a3h	; a726
-	defw 0a8aah	; a728
-	defw 0a8adh	; a72a
-	defw 0a8b3h	; a72c
-	defw 0a8b6h	; a72e
-	defw 0a8bbh	; a730
-	defw 0a8c0h	; a732
-	defw 0a8c3h	; a734
-	defw 0a8c6h	; a736
-	defw 0a8d2h	; a738
-	defw 0a8d5h	; a73a
-	defw 0a8dbh	; a73c
-	defw 0a8e2h	; a73e
-	defw 0a8e5h	; a740
-	defw 0a8f0h	; a742
-	defw 0a8feh	; a744
-	defw 0a906h	; a746
-	defw 0a90eh	; a748
-	defw 0a912h	; a74a
-	defw 0a916h	; a74c
-	defw 0a91ah	; a74e
-	defw 0a926h	; a750
-	defw 0a929h	; a752
-	defw 0a92dh	; a754
-	defw 0a930h	; a756
-	defw 0a933h	; a758
-	defw 0a936h	; a75a
-	defw 0a939h	; a75c
-	defw 0a93ch	; a75e
-	defw 0a93fh	; a760
-	defw 0a944h	; a762
-	defw 0a948h	; a764
-	defw 0a948h	; a766
-	defw 0a948h	; a768
-	defw 0a948h	; a76a
-	defw 0a948h	; a76c
-	defw 0a948h	; a76e
-	defw 0a948h	; a770
-	defw 0a948h	; a772
-	defw 0a954h	; a774
-	defw 0a95ah	; a776
-	defw 0a964h	; a778
-	defw 0a96ah	; a77a
-	defw 0a96dh	; a77c
-	defw 0a973h	; a77e
-	defw 0a97bh	; a780
-	defw 0a980h	; a782
-	defw 0a988h	; a784
-	defw 0a98dh	; a786
-	defw 0a992h	; a788
-	defw 0a998h	; a78a
-	defw 0a99fh	; a78c
-	defw 0a9a5h	; a78e
-	defw 0a9abh	; a790
-	defw 0a9b1h	; a792
-	defw 0a9b5h	; a794
-	defw 0a9b9h	; a796
-	defw 0a9beh	; a798
-	defw 0a9c2h	; a79a
-	defw 0a9c7h	; a79c
-	defw 0a9cch	; a79e
-	defw 0a9d1h	; a7a0
-	defw 0a9d6h	; a7a2
-	defw 0a9dbh	; a7a4
-	defw 0a9dfh	; a7a6
-	defw 0a9e4h	; a7a8
-	defw 0a9e9h	; a7aa
-	defw 0a9f0h	; a7ac
-	defw 0a9f5h	; a7ae
-	defw 0a9fbh	; a7b0
-	defw 0aa02h	; a7b2
-	defw 0aa06h	; a7b4
-	defw 0aa0ch	; a7b6
-	defw 0aa12h	; a7b8
-	defw 0aa18h	; a7ba
-	defw 0aa1eh	; a7bc
-	defw 0aa26h	; a7be
-	defw 0aa2dh	; a7c0
-	defw 0aa33h	; a7c2
-	defw 0aa38h	; a7c4
-	defw 0aa3fh	; a7c6
-	defw 0aa42h	; a7c8
-	defw 0aa46h	; a7ca
-	defw 0aa4dh	; a7cc
-	defw 0aa56h	; a7ce
-	defw 0aa5dh	; a7d0
-	defw 0aa66h	; a7d2
-	defw 0aa6dh	; a7d4
-	defw 0aa72h	; a7d6
-	defw 0aa78h	; a7d8
-	defw 0aa83h	; a7da
-	defw 0aa8bh	; a7dc
-	defw 0aa92h	; a7de
-	defw 0aa95h	; a7e0
-	defw 0aa98h	; a7e2
-	defw 0aaa8h	; a7e4
-	defw 0aaadh	; a7e6
-	defw 0aab2h	; a7e8
-	defw 0aac0h	; a7ea
-	defw 0aad0h	; a7ec
-	defw 0aae6h	; a7ee
-	defw 0aaf6h	; a7f0
-	defw 0ab14h	; a7f2
-	defw 0aab7h	; a7f4
-	defw 0aac6h	; a7f6
-	defw 0aad5h	; a7f8
-	defw 0aaebh	; a7fa
-	defw 0aafbh	; a7fc
-	defw 0ab19h	; a7fe
-	defw 0ab37h	; a800
-	defw 0ab41h	; a802
-	defw 0ab4ah	; a804
+	defw 0a806h	; a6de  -> DATA_textos	--> "VALVE\n"
+	defw 0a80dh	; a6e0	--> "TURBO\n"
+	defw 0a814h	; a6e2	--> "SUPER"
+	defw 0a81ah	; a6e4	--> "26"
+	defw 0a81dh	; a6e6	--> "16VALVE\n"
+	defw 0a821h	; a6e8	--> "SOHC\n"
+	defw 0a824h	; a6ea	--> "DOHC\n"
+	defw 0a827h	; a6ec	--> "V12 "
+	defw 0a82bh	; a6ee	--> "V8  "
+	defw 0a82fh	; a6f0	--> "PS\n"
+	defw 0a833h	; a6f2	--> "KG"
+	defw 0a836h	; a6f4	--> "4R  "
+	defw 0a83ah	; a6f6	--> "DOHC-\nTURBO\n"
+	defw 0a842h	; a6f8	--> "   540KG"
+	defw 0a845h	; a6fa	--> "FRONT\n    DISK\nTYPE-"
+	defw 0a850h	; a6fc	--> "REAR\n    "
+	defw 0a858h	; a6fe	--> "DISK\n"
+	defw 0a85eh	; a700	--> "DOHC\n16VALVE\n"
+	defw 0a861h	; a702	--> "TWIN"
+	defw 0a866h	; a704	--> "V8  3000\n"
+	defw 0a86bh	; a706	--> "50"
+	defw 0a86eh	; a708	--> "80"
+	defw 0a871h	; a70a	--> "29"
+	defw 0a874h	; a70c	--> "   560PS\n"
+	defw 0a87ah	; a70e	--> "000"
+	defw 0a87dh	; a710	--> "TYPE-"
+	defw 0a880h	; a712	--> "SUPER-\nCHARGER\n\n"
+	defw 0a883h	; a714	--> "=21"
+	defw 0a887h	; a716	--> "\n\n"
+	defw 0a88ah	; a718	--> "\n\n\n"
+	defw 0a88dh	; a71a	--> "4- "
+	defw 0a891h	; a71c	--> "V6  "
+	defw 0a895h	; a71e	--> "TYPE"
+	defw 0a89ah	; a720	--> "10"
+	defw 0a89dh	; a722	--> "59"
+	defw 0a8a0h	; a724	--> "DOHC\n\n"
+	defw 0a8a3h	; a726	--> "4R  1998\n"
+	defw 0a8aah	; a728	--> "   "
+	defw 0a8adh	; a72a	--> "FRAME"
+	defw 0a8b3h	; a72c	--> "00"
+	defw 0a8b6h	; a72e	--> "OHC\n"
+	defw 0a8bbh	; a730	--> "   540"
+	defw 0a8c0h	; a732	--> "12"
+	defw 0a8c3h	; a734	--> "15"
+	defw 0a8c6h	; a736	--> "AUTO\nMATIC\n"
+	defw 0a8d2h	; a738	--> "  "
+	defw 0a8d5h	; a73a	--> "TUBE\n"
+	defw 0a8dbh	; a73c	--> "SHOCK\n"
+	defw 0a8e2h	; a73e	--> "TYPE\n\n"
+	defw 0a8e5h	; a740	--> "-\nSETTING\n"
+	defw 0a8f0h	; a742	--> "CARBON\nFIBER\n"
+	defw 0a8feh	; a744	--> "4SPEED\n"
+	defw 0a906h	; a746	--> "MANUAL\n\n"
+	defw 0a90eh	; a748	--> "1- "
+	defw 0a912h	; a74a	--> "2- "
+	defw 0a916h	; a74c	--> "3- "
+	defw 0a91ah	; a74e	--> "SUPER-\nCHARGER\n"
+	defw 0a926h	; a750	--> "MA"
+	defw 0a929h	; a752	--> "ER\n\n"
+	defw 0a92dh	; a754	--> "    "
+	defw 0a930h	; a756	--> "      "
+	defw 0a933h	; a758	--> "        "
+	defw 0a936h	; a75a	--> "         "
+	defw 0a939h	; a75c	--> "          "
+	defw 0a93ch	; a75e	--> "             "
+	defw 0a93fh	; a760	--> "SUB "
+	defw 0a944h	; a762	--> "---"
+	defw 0a948h	; a764	--> "F1 GRAMPLIX"
+	defw 0a948h	; a766	--> "F1 GRAMPLIX"
+	defw 0a948h	; a768	--> "F1 GRAMPLIX"
+	defw 0a948h	; a76a	--> "F1 GRAMPLIX"
+	defw 0a948h	; a76c	--> "F1 GRAMPLIX"
+	defw 0a948h	; a76e	--> "F1 GRAMPLIX"
+	defw 0a948h	; a770	--> "F1 GRAMPLIX"
+	defw 0a948h	; a772	--> "F1 GRAMPLIX"
+	defw 0a954h	; a774	--> "STOCK"
+	defw 0a95ah	; a776	--> "ENDURANCE"
+	defw 0a964h	; a778	--> "RALLY"
+	defw 0a96ah	; a77a	--> "F3"
+	defw 0a96dh	; a77c	--> "F3000"
+	defw 0a973h	; a77e	--> "QUALIFY"
+	defw 0a97bh	; a780	--> "LUCK"
+	defw 0a980h	; a782	--> "CHANCE "
+	defw 0a988h	; a784	--> "BOY "
+	defw 0a98dh	; a786	--> "GOD "
+	defw 0a992h	; a788	--> "RACE "
+	defw 0a998h	; a78a	--> "SPEED "
+	defw 0a99fh	; a78c	--> "FIGHT"
+	defw 0a9a5h	; a78e	--> "HAVE "
+	defw 0a9abh	; a790	--> "MIND "
+	defw 0a9b1h	; a792	--> "MY "
+	defw 0a9b5h	; a794	--> "YOU"
+	defw 0a9b9h	; a796	--> "THE "
+	defw 0a9beh	; a798	--> "OH "
+	defw 0a9c2h	; a79a	--> "TRY "
+	defw 0a9c7h	; a79c	--> "GOT "
+	defw 0a9cch	; a79e	--> "BUT "
+	defw 0a9d1h	; a7a0	--> "MAY "
+	defw 0a9d6h	; a7a2	--> "HARD"
+	defw 0a9dbh	; a7a4	--> "GO "
+	defw 0a9dfh	; a7a6	--> "DRIV"
+	defw 0a9e4h	; a7a8	--> "ARE "
+	defw 0a9e9h	; a7aa	--> "NEVER "
+	defw 0a9f0h	; a7ac	--> "WIN "
+	defw 0a9f5h	; a7ae	--> "NEXT "
+	defw 0a9fbh	; a7b0	--> "AGAIN "
+	defw 0aa02h	; a7b2	--> "TO "
+	defw 0aa06h	; a7b4	--> "GREAT"
+	defw 0aa0ch	; a7b6	--> "BEST "
+	defw 0aa12h	; a7b8	--> "NICE "
+	defw 0aa18h	; a7ba	--> "GAME "
+	defw 0aa1eh	; a7bc	--> "COMMAND"
+	defw 0aa26h	; a7be	--> "MUSIC "
+	defw 0aa2dh	; a7c0	--> "MODE "
+	defw 0aa33h	; a7c2	--> "PLAY"
+	defw 0aa38h	; a7c4	--> "BATTLE"
+	defw 0aa3fh	; a7c6	--> "F1"
+	defw 0aa42h	; a7c8	--> "CAR"
+	defw 0aa46h	; a7ca	--> "SELECT"
+	defw 0aa4dh	; a7cc	--> "PERSONAL"
+	defw 0aa56h	; a7ce	--> "DESIGN"
+	defw 0aa5dh	; a7d0	--> "ORIGINAL"
+	defw 0aa66h	; a7d2	--> "ENGINE"
+	defw 0aa6dh	; a7d4	--> "BODY"
+	defw 0aa72h	; a7d6	--> "BRAKE"
+	defw 0aa78h	; a7d8	--> "SUSPENSION"
+	defw 0aa83h	; a7da	--> "MISSION"
+	defw 0aa8bh	; a7dc	--> " POINT"
+	defw 0aa92h	; a7de	--> "OK"
+	defw 0aa95h	; a7e0	--> "NO"
+	defw 0aa98h	; a7e2	--> "CONGRATULATIONS"
+	defw 0aaa8h	; a7e4	--> "      1P\n"
+	defw 0aaadh	; a7e6	--> "      2P\n\n"
+	defw 0aab2h	; a7e8	--> "V6  1500\nDOHC\nSUPER-\nCHARGER\nLOW-\nCOMPRESS\n"
+	defw 0aac0h	; a7ea	--> "V6  1490\nDOHC\nSUPER-\nCHARGER\nWIDE-\nTORUQUE\n"
+	defw 0aad0h	; a7ec	--> "V8  1200\nDOHC-\nTURBO\n\nEASY-\nCONTROL\n"
+	defw 0aae6h	; a7ee	--> "V6  1500\nDOHC-\nTURBO\n\n2BAND-\nTORUQUE\n"
+	defw 0aaf6h	; a7f0	--> "V8  1500\nTURBO\nSUPER-\nCHARGER\nHIGH-\nCOMPRESS\n"
+	defw 0ab14h	; a7f2	--> "V6  1400\nDOHC\nSUPER-\nCHARGER\nPEEKY-\nPOWER\n"
+	defw 0aab7h	; a7f4	--> "DOHC\nSUPER-\nCHARGER\nLOW-\nCOMPRESS\n"
+	defw 0aac6h	; a7f6	--> "DOHC\nSUPER-\nCHARGER\nWIDE-\nTORUQUE\n"
+	defw 0aad5h	; a7f8	--> "DOHC-\nTURBO\n\nEASY-\nCONTROL\n"
+	defw 0aaebh	; a7fa	--> "DOHC-\nTURBO\n\n2BAND-\nTORUQUE\n"
+	defw 0aafbh	; a7fc	--> "TURBO\nSUPER-\nCHARGER\nHIGH-\nCOMPRESS\n"
+	defw 0ab19h	; a7fe	--> "DOHC\nSUPER-\nCHARGER\nPEEKY-\nPOWER\n"
+	defw 0ab37h	; a800	--> "COMPRESS\n"
+	defw 0ab41h	; a802	--> "TORUQUE\n"
+	defw 0ab4ah	; a804	--> "KONAMI"
 
 ; ----------------------------------------------------------------------
 ; DATOS textos: 236 textos terminados en 0x5F (ASCII en 0x20-0x5E, macros
@@ -896,7 +896,7 @@ DATA_textos:
 	defb 020h,05fh,042h,04fh,059h,020h,05fh,047h,04fh,044h,020h,05fh,052h,041h,043h,045h	; a986   _BOY _GOD _RACE
 	defb 020h,05fh,053h,050h,045h,045h,044h,020h,05fh,046h,049h,047h,048h,054h,05fh,048h	; a996   _SPEED _FIGHT_H
 	defb 041h,056h,045h,020h,05fh,04dh,049h,04eh,044h,020h,05fh,04dh,059h,020h,05fh,059h	; a9a6  AVE _MIND _MY _Y
-	defb 04fh,055h,05fh,054h,048h,045h,020h,05fh,04fh,048h,020h,05fh,054h,052h,059h,020h	; a9b6  OU_THE _OH _TRY 
+	defb 04fh,055h,05fh,054h,048h,045h,020h,05fh,04fh,048h,020h,05fh,054h,052h,059h,020h	; a9b6  OU_THE _OH _TRY
 	defb 05fh,047h,04fh,054h,020h,05fh,042h,055h,054h,020h,05fh,04dh,041h,059h,020h,05fh	; a9c6  _GOT _BUT _MAY _
 	defb 048h,041h,052h,044h,05fh,047h,04fh,020h,05fh,044h,052h,049h,056h,05fh,041h,052h	; a9d6  HARD_GO _DRIV_AR
 	defb 045h,020h,05fh,04eh,045h,056h,045h,052h,020h,05fh,057h,049h,04eh,020h,05fh,04eh	; a9e6  E _NEVER _WIN _N
@@ -921,84 +921,190 @@ DATA_textos:
 	defb 034h,087h,001h,044h,04fh,048h,043h,001h,062h,040h,001h,043h,048h,041h,052h,047h	; ab16  4..DOHC.b@.CHARG
 	defb 045h,052h,001h,050h,045h,045h,04bh,059h,040h,001h,050h,04fh,057h,045h,052h,001h	; ab26  ER.PEEKY@.POWER.
 	defb 05fh,043h,04fh,04dh,050h,052h,045h,053h,053h,001h,05fh,054h,04fh,052h,055h,051h	; ab36  _COMPRESS._TORUQ
-	defb 055h,045h,001h,05fh,04bh,04fh,04eh,041h,04dh,049h,05fh,014h,00ah,0ceh,002h,015h	; ab46  UE._KONAMI_.....
-	defb 00ah,0cfh,05fh,013h,00ah,0beh,0c9h,05fh,013h,00ah,031h,0d2h,045h,052h,020h,002h	; ab56  .._...._..1.ER .
-	defb 015h,00ah,032h,0d2h,045h,052h,020h,002h,017h,00ah,0d3h,020h,0d1h,05fh,012h,002h	; ab66  ..2.ER .... ._..
-	defb 0abh,020h,0b5h,002h,013h,002h,0adh,002h,014h,002h,0aeh,020h,020h,020h,020h,0b5h	; ab76  . .........    .
-	defb 05fh,015h,002h,0afh,020h,0b5h,002h,016h,002h,0ach,020h,0b5h,05fh,012h,012h,0d4h	; ab86  _... ..... ._...
-	defb 020h,0b5h,0d6h,002h,013h,013h,052h,04fh,055h,04eh,044h,020h,031h,040h,002h,016h	; ab96   .....ROUND 1@..
-	defb 016h,052h,04fh,055h,04eh,044h,05fh,001h,003h,0d5h,020h,0d6h,002h,003h,008h,031h	; aba6  .ROUND_... ....1
-	defb 020h,052h,045h,041h,044h,059h,020h,04dh,041h,044h,045h,002h,005h,008h,032h,020h	; abb6   READY MADE...2 
-	defb 0d9h,020h,0d8h,05fh,001h,003h,052h,045h,041h,044h,059h,020h,04dh,041h,044h,045h	; abc6  . ._..READY MADE
-	defb 020h,0d6h,05fh,001h,003h,0d9h,020h,0d5h,020h,0d8h,020h,0d1h,002h,005h,008h,0dah	; abd6   ._... . . .....
-	defb 020h,0d6h,05fh,005h,008h,0dbh,020h,0d6h,05fh,005h,008h,0dch,020h,0d6h,05fh,005h	; abe6   ._... ._... ._.
-	defb 008h,0ddh,020h,0d6h,05fh,005h,008h,0deh,020h,0d6h,05fh,003h,005h,0d2h,045h,052h	; abf6  .. ._... ._...ER
-	defb 05fh,003h,01ah,0e0h,002h,005h,01ah,0e1h,05fh,042h,045h,053h,054h,0dfh,001h,0e3h	; ac06  _......._BEST...
-	defb 0e4h,054h,04fh,054h,041h,04ch,0dfh,0e3h,0e4h,05fh,002h,004h,031h,020h,04dh,055h	; ac16  .TOTAL..._..1 MU
-	defb 053h,049h,043h,020h,04dh,04fh,044h,045h,002h,009h,004h,032h,020h,053h,043h,043h	; ac26  SIC MODE...2 SCC
-	defb 020h,042h,041h,04ch,041h,04eh,043h,045h,002h,010h,004h,033h,020h,053h,045h,04ch	; ac36   BALANCE...3 SEL
-	defb 045h,043h,054h,020h,04dh,041h,049h,04eh,05fh,004h,008h,04fh,049h,04bh,04fh,053h	; ac46  ECT MAIN_..OIKOS
-	defb 048h,049h,05fh,004h,008h,053h,050h,049h,04eh,05fh,004h,008h,0dch,05fh,004h,008h	; ac56  HI_..SPIN_..._..
-	defb 041h,042h,04eh,04fh,052h,04dh,041h,04ch,05fh,004h,008h,054h,045h,04bh,049h,020h	; ac66  ABNORMAL_..TEKI 
-	defb 04fh,055h,054h,05fh,068h,033h,078h,001h,066h,08ch,001h,085h,038h,036h,035h,069h	; ac76  OUT_h3x.f...865i
-	defb 085h,038h,074h,06ah,05fh,067h,082h,039h,033h,001h,065h,032h,034h,060h,07ch,085h	; ac86  .8tj_g.93.e24`|.
-	defb 037h,075h,069h,085h,037h,087h,06ah,05fh,07fh,076h,036h,030h,001h,066h,054h,057h	; ac96  7ui.7.j_.v60.fTW
-	defb 049h,04eh,001h,061h,001h,085h,039h,087h,069h,085h,037h,035h,036h,06ah,05fh,07fh	; aca6  IN.a..9.i.756j_.
-	defb 032h,078h,001h,06ch,08ch,077h,08dh,081h,032h,030h,06ah,05fh,07fh,076h,039h,036h	; acb6  2x.l.w..20j_.v96
-	defb 001h,066h,07ah,085h,034h,075h,069h,085h,039h,038h,035h,06ah,05fh,068h,035h,078h	; acc6  .fz.4ui.985j_h5x
-	defb 001h,065h,061h,098h,085h,035h,075h,069h,08dh,081h,087h,06ah,05fh,068h,032h,039h	; acd6  .ea..5ui...j_h29
-	defb 087h,001h,06ch,08ch,085h,082h,035h,069h,08dh,08bh,087h,06ah,05fh,067h,032h,038h	; ace6  ..l...5i...j_g28
-	defb 030h,030h,001h,083h,07ch,077h,08dh,08ah,087h,06ah,05fh,068h,033h,078h,001h,071h	; acf6  00..|w...j_h3x.q
-	defb 061h,001h,085h,036h,075h,069h,08dh,081h,08bh,06ah,05fh,07fh,08bh,087h,001h,06ch	; ad06  a..6ui...j_....l
-	defb 08ch,08dh,031h,033h,087h,069h,06dh,05fh,068h,031h,034h,087h,001h,06ch,064h,001h	; ad16  ..13.im_h14..ld.
-	defb 020h,020h,031h,030h,036h,030h,069h,06dh,05fh,07fh,031h,035h,087h,001h,06ch,07ch	; ad26    1060im_.15..l|
-	defb 08dh,08ah,087h,069h,06dh,05fh,073h,071h,08ch,085h,034h,074h,069h,06dh,05fh,073h	; ad36  ...im_sq..4tim_s
-	defb 071h,07ch,085h,034h,036h,035h,069h,06dh,05fh,073h,066h,07dh,085h,034h,075h,069h	; ad46  q|.465im_sf}.4ui
-	defb 06dh,05fh,084h,071h,08ch,085h,031h,075h,069h,085h,034h,036h,030h,06ah,05fh,084h	; ad56  m_.q..1ui.460j_.
-	defb 071h,07ch,085h,031h,036h,035h,069h,085h,034h,074h,06ah,05fh,06bh,032h,078h,001h	; ad66  q|.165i.4tj_k2x.
-	defb 071h,07ch,085h,031h,037h,030h,069h,085h,034h,035h,035h,06ah,05fh,0e5h,085h,035h	; ad76  q|.170i.455j_..5
-	defb 038h,030h,069h,05fh,0e6h,085h,036h,087h,069h,05fh,0e7h,085h,037h,087h,069h,05fh	; ad86  80i_..6.i_..7.i_
-	defb 0e8h,085h,036h,038h,030h,069h,05fh,0e9h,085h,038h,087h,069h,05fh,0eah,085h,037h	; ad96  ..680i_..8.i_..7
-	defb 032h,030h,069h,05fh,07fh,032h,078h,001h,0ebh,085h,037h,075h,069h,05fh,07fh,032h	; ada6  20i_.2x...7ui_.2
-	defb 078h,001h,0ebh,085h,031h,037h,035h,069h,05fh,07fh,031h,038h,087h,001h,0ech,085h	; adb6  x...175i_.18....
-	defb 031h,036h,035h,069h,05fh,07fh,032h,038h,087h,001h,0ech,085h,038h,037h,030h,069h	; adc6  165i_.28....870i
-	defb 05fh,068h,032h,078h,001h,0edh,085h,031h,037h,035h,069h,05fh,068h,033h,032h,087h	; add6  _h2x...175i_h32.
-	defb 001h,0edh,085h,039h,087h,069h,05fh,07fh,032h,078h,001h,0eeh,085h,031h,075h,069h	; ade6  ...9.i_.2x...1ui
-	defb 05fh,07fh,033h,078h,001h,0eeh,085h,038h,075h,069h,05fh,068h,032h,030h,087h,001h	; adf6  _.3x...8ui_h20..
-	defb 0efh,085h,031h,039h,030h,069h,05fh,068h,033h,032h,087h,001h,0efh,085h,039h,039h	; ae06  ..190i_h32....99
-	defb 030h,069h,05fh,07fh,032h,030h,087h,001h,0f0h,085h,031h,038h,035h,069h,05fh,07fh	; ae16  0i_.20....185i_.
-	defb 032h,034h,087h,001h,0f0h,085h,039h,032h,030h,069h,05fh,0e5h,085h,034h,087h,069h	; ae26  24....920i_..4.i
-	defb 05fh,0e6h,085h,034h,074h,069h,05fh,0e7h,085h,034h,037h,030h,069h,05fh,0e8h,085h	; ae36  _..4ti_..470i_..
-	defb 034h,038h,030h,069h,05fh,0e9h,085h,034h,039h,038h,069h,05fh,0eah,085h,034h,038h	; ae46  480i_..498i_..48
-	defb 037h,069h,05fh,0e5h,08dh,031h,031h,075h,069h,05fh,0e6h,08dh,031h,031h,087h,069h	; ae56  7i_..11ui_..11.i
-	defb 05fh,0e7h,08dh,08ah,087h,069h,05fh,0e8h,08dh,031h,035h,087h,069h,05fh,0e9h,08dh	; ae66  _....i_..15.i_..
-	defb 031h,033h,087h,069h,05fh,0eah,08dh,031h,030h,033h,030h,069h,05fh,053h,054h,052h	; ae76  13.i_..1030i_STR
-	defb 04fh,04eh,047h,040h,001h,042h,04fh,044h,059h,001h,001h,092h,086h,05fh,042h,041h	; ae86  ONG@.BODY...._BA
-	defb 04ch,041h,04eh,043h,045h,044h,040h,053h,045h,054h,054h,049h,04eh,047h,001h,001h	; ae96  LANCED@SETTING..
-	defb 092h,086h,05fh,04ch,049h,047h,048h,054h,040h,001h,057h,045h,049h,047h,048h,054h	; aea6  .._LIGHT@.WEIGHT
-	defb 001h,001h,092h,086h,05fh,093h,08ch,001h,04eh,045h,057h,020h,090h,05fh,093h,094h	; aeb6  ...._...NEW ._..
-	defb 095h,031h,033h,03dh,063h,001h,096h,031h,038h,03dh,063h,001h,097h,032h,034h,03dh	; aec6  .13=c..18=c..24=
-	defb 032h,035h,001h,07eh,032h,037h,07bh,05fh,093h,04dh,041h,04eh,055h,041h,04ch,001h	; aed6  25.~27{_.MANUAL.
-	defb 048h,049h,040h,047h,045h,041h,052h,044h,001h,095h,031h,034h,03dh,076h,001h,096h	; aee6  HI@GEARD..14=v..
-	defb 032h,032h,03dh,076h,001h,097h,032h,033h,03dh,032h,034h,001h,07eh,063h,07bh,05fh	; aef6  22=v..23=24.~c{_
-	defb 04dh,04fh,04eh,04fh,08eh,04fh,049h,04ch,08fh,090h,048h,041h,052h,044h,091h,05fh	; af06  MONO.OIL..HARD._
-	defb 072h,08eh,041h,044h,04ah,055h,053h,054h,041h,042h,001h,04ch,045h,020h,090h,04dh	; af16  r.ADJUSTAB.LE .M
-	defb 045h,044h,049h,055h,04dh,091h,05fh,072h,08eh,047h,041h,053h,08fh,090h,053h,04fh	; af26  EDIUM._r.GAS..SO
-	defb 046h,054h,091h,05fh,06eh,041h,001h,06fh,070h,079h,041h,05fh,06eh,042h,001h,06fh	; af36  FT._nA.opyA_nB.o
-	defb 044h,052h,055h,04dh,05fh,06eh,042h,001h,06fh,070h,079h,042h,05fh,09fh,0a2h,053h	; af46  DRUM_nB.opyB_..S
-	defb 054h,041h,046h,046h,0a2h,05fh,0a0h,0a4h,09bh,0a9h,05fh,09eh,0a5h,0a7h,09eh,055h	; af56  TAFF._...._....U
-	defb 04ch,054h,052h,041h,099h,04eh,020h,041h,044h,041h,043h,048h,049h,05fh,09eh,0a1h	; af66  LTRA.N ADACHI_..
-	defb 0a7h,09ch,099h,053h,041h,0a3h,040h,099h,049h,040h,020h,04fh,05ah,041h,057h,041h	; af76  ...SA.@.I@ OZAWA
-	defb 05fh,09dh,047h,052h,041h,050h,048h,049h,043h,020h,0a6h,09bh,0a9h,09dh,0a8h,020h	; af86  _.GRAPHIC ..... 
-	defb 099h,04bh,049h,054h,041h,04eh,049h,05fh,09fh,053h,04fh,055h,04eh,044h,020h,0a4h	; af96  .KITANI_.SOUND .
-	defb 09dh,04bh,041h,05ah,055h,0a3h,055h,045h,048h,041h,052h,041h,05fh,0a0h,045h,04eh	; afa6  .KAZU.UEHARA_.EN
-	defb 044h,05fh,0a0h,045h,04eh,044h,05fh,0a0h,045h,04eh,044h,05fh,0a0h,045h,04eh,044h	; afb6  D_.END_.END_.END
-	defb 05fh,0a0h,045h,04eh,044h,05fh,0e2h,08dh,05fh,054h,048h,045h,01eh,04dh,045h,04dh	; afc6  _.END_.._THE.MEM
-	defb 04fh,052h,049h,041h,04ch,01eh,04fh,046h,001h,01eh,046h,04fh,052h,04dh,055h,04ch	; afd6  ORIAL.OF..FORMUL
-	defb 041h,040h,031h,05fh,00bh,008h,0b1h,059h,05fh,00bh,008h,055h,04eh,0b1h,059h,05fh	; afe6  A@1_...Y_..UN.Y_
-	defb 010h,00ah,03ah,0f3h,020h,031h,039h,038h,037h,05fh,014h,009h,050h,055h,053h,048h	; aff6  ..:. 1987_..PUSH
-	defb 020h,053h,050h,041h,043h,045h,020h,04bh,045h,059h,05fh,014h,00ah,020h,020h,0d2h	; b006   SPACE KEY_..  .
-	defb 020h,053h,054h,041h,052h,054h,085h,05fh,00fh,00fh,046h,049h,04eh,05fh	; b016   START._..FIN_
+	defb 055h,045h,001h,05fh,04bh,04fh,04eh,041h,04dh,049h,05fh	; ab46  UE._KONAMI_
+
+; ----------------------------------------------------------------------
+; ab51 = "(20)(10)GAME (2)(21)(10)COMMAND"
+; ab59 = "(19)(10)TRY AGAIN "
+; ab5e = "(19)(10)1PLAYER (2)(21)(10)2PLAYER (2)(23)(10)BATTLE MODE "
+; ab74 = "(18)(2)STOCK RACE (2)(19)(2)RALLY(2)(20)(2)F3    RACE "
+; ab87 = "(21)(2)F3000 RACE (2)(22)(2)ENDURANCE RACE "
+; ab93 = "(18)(18)F1 RACE SELECT(2)(19)(19)ROUND 1-(2)(22)(22)ROUND"
+; abad = "\n(3)CAR SELECT(2)(3)(8)1 READY MADE(2)(5)(8)2 ORIGINAL DESIGN"
+; abca = "\n(3)READY MADE SELECT"
+; abd9 = "\n(3)ORIGINAL CAR DESIGN MODE (2)(5)(8)ENGINE SELECT"
+; abe9 = "(5)(8)BODY SELECT"
+; abef = "(5)(8)BRAKE SELECT"
+; abf5 = "(5)(8)SUSPENSION SELECT"
+; abfb = "(5)(8)MISSION SELECT"
+; ac01 = "(3)(5)PLAYER"
+; ac07 = "(3)(26)OK(2)(5)(26)NO"
+; ac0f = "BEST POINT\n      1P\n      2P\n\nTOTAL POINT      1P\n      2P\n\n"
+; ac20 = "(2)(4)1 MUSIC MODE(2)(9)(4)2 SCC BALANCE(2)(16)(4)3 SELECT MAIN" (*)
+; ac4f = "(4)(8)OIKOSHI" (*)
+; ac59 = "(4)(8)SPIN" (*)
+; ac60 = "(4)(8)BRAKE" (*)
+; ac64 = "(4)(8)ABNORMAL" (*)
+; ac6f = "(4)(8)TEKI OUT" (*)
+; ac7a = "V8  3000\nDOHC\nAUTO\nMATIC\n\n   865PS\n   850KG"
+; ac8b = "V12 5993\nSOHC\n24VALVE\n\n\n   780PS\n   700KG"
+; ac9e = "V6  2960\nDOHC\nTWIN\nTURBO\n\n   900PS\n   756KG"
+; acb5 = "V6  2000\nDOHC-\nTURBO\nAUTO\nMATIC\n   560PS\n  1020KG"
+; acc2 = "V6  2996\nDOHC\nSUPER-\nCHARGER\n\n   480PS\n   985KG"
+; acd3 = "V8  5000\nSOHC\nTURBO\nSUPER-\nCHARGER\n   580PS\n  1000KG"
+; ace3 = "V8  2900\nDOHC-\nTURBO\nAUTO\nMATIC\n   595PS\n  1500KG"
+; acf3 = "V12 2800\nDOHC\n\n\n\n   560PS\n  1200KG"
+; ad01 = "V8  3000\nDOHC\n16VALVE\nTURBO\n\n   680PS\n  1015KG"
+; ad11 = "V6  1500\nDOHC-\nTURBO\nAUTO\nMATIC\n  1300PS\n   540KG"
+; ad1e = "V8  1400\nDOHC-\nTURBO\n16VALVE\n\n  1060PS\n   540KG"
+; ad2f = "V6  1500\nDOHC-\nTURBO\n\n\n  1200PS\n   540KG"
+; ad3c = "V8  3000\nDOHC\n16VALVE\nAUTO\nMATIC\n   450PS\n   540KG"
+; ad45 = "V8  3000\nDOHC\n16VALVE\n\n\n   465PS\n   540KG"
+; ad4f = "V8  3000\nDOHC\n\n\n\n   480PS\n   540KG"
+; ad58 = "4R  1998\nDOHC\n16VALVE\nAUTO\nMATIC\n   180PS\n   460KG"
+; ad65 = "4R  1998\nDOHC\n16VALVE\n\n\n   165PS\n   450KG"
+; ad72 = "4R  2000\nDOHC\n16VALVE\n\n\n   170PS\n   455KG"
+; ad83 = "V6  1500\nDOHC\nSUPER-\nCHARGER\nLOW-\nCOMPRESS\n   580PS\n"
+; ad8a = "V6  1490\nDOHC\nSUPER-\nCHARGER\nWIDE-\nTORUQUE\n   600PS\n"
+; ad90 = "V8  1200\nDOHC-\nTURBO\n\nEASY-\nCONTROL\n   700PS\n"
+; ad96 = "V6  1500\nDOHC-\nTURBO\n\n2BAND-\nTORUQUE\n   680PS\n"
+; ad9d = "V8  1500\nTURBO\nSUPER-\nCHARGER\nHIGH-\nCOMPRESS\n   800PS\n"
+; ada3 = "V6  1400\nDOHC\nSUPER-\nCHARGER\nPEEKY-\nPOWER\n   720PS\n"
+; adaa = "V6  2000\nDOHC\nSUPER-\nCHARGER\nLOW-\nCOMPRESS\n   780PS\n"
+; adb4 = "V6  2000\nDOHC\nSUPER-\nCHARGER\nLOW-\nCOMPRESS\n   175PS\n"
+; adbf = "V6  1800\nDOHC\nSUPER-\nCHARGER\nWIDE-\nTORUQUE\n   165PS\n"
+; adcb = "V6  2800\nDOHC\nSUPER-\nCHARGER\nWIDE-\nTORUQUE\n   870PS\n"
+; add7 = "V8  2000\nDOHC-\nTURBO\n\nEASY-\nCONTROL\n   175PS\n"
+; ade2 = "V8  3200\nDOHC-\nTURBO\n\nEASY-\nCONTROL\n   900PS\n"
+; aded = "V6  2000\nDOHC-\nTURBO\n\n2BAND-\nTORUQUE\n   180PS\n"
+; adf7 = "V6  3000\nDOHC-\nTURBO\n\n2BAND-\nTORUQUE\n   880PS\n"
+; ae01 = "V8  2000\nTURBO\nSUPER-\nCHARGER\nHIGH-\nCOMPRESS\n   190PS\n"
+; ae0d = "V8  3200\nTURBO\nSUPER-\nCHARGER\nHIGH-\nCOMPRESS\n   990PS\n"
+; ae19 = "V6  2000\nDOHC\nSUPER-\nCHARGER\nPEEKY-\nPOWER\n   185PS\n"
+; ae25 = "V6  2400\nDOHC\nSUPER-\nCHARGER\nPEEKY-\nPOWER\n   920PS\n"
+; ae31 = "V6  1500\nDOHC\nSUPER-\nCHARGER\nLOW-\nCOMPRESS\n   400PS\n"
+; ae37 = "V6  1490\nDOHC\nSUPER-\nCHARGER\nWIDE-\nTORUQUE\n   450PS\n"
+; ae3d = "V8  1200\nDOHC-\nTURBO\n\nEASY-\nCONTROL\n   470PS\n"
+; ae44 = "V6  1500\nDOHC-\nTURBO\n\n2BAND-\nTORUQUE\n   480PS\n"
+; ae4b = "V8  1500\nTURBO\nSUPER-\nCHARGER\nHIGH-\nCOMPRESS\n   498PS\n"
+; ae52 = "V6  1400\nDOHC\nSUPER-\nCHARGER\nPEEKY-\nPOWER\n   487PS\n"
+; ae59 = "V6  1500\nDOHC\nSUPER-\nCHARGER\nLOW-\nCOMPRESS\n  1180PS\n"
+; ae60 = "V6  1490\nDOHC\nSUPER-\nCHARGER\nWIDE-\nTORUQUE\n  1100PS\n"
+; ae67 = "V8  1200\nDOHC-\nTURBO\n\nEASY-\nCONTROL\n  1200PS\n"
+; ae6d = "V6  1500\nDOHC-\nTURBO\n\n2BAND-\nTORUQUE\n  1500PS\n"
+; ae74 = "V8  1500\nTURBO\nSUPER-\nCHARGER\nHIGH-\nCOMPRESS\n  1300PS\n"
+; ae7b = "V6  1400\nDOHC\nSUPER-\nCHARGER\nPEEKY-\nPOWER\n  1030PS\n"
+; ae83 = "STRONG-\nBODY\n\nCARBON\nFIBER\nFRAME"
+; ae94 = "BALANCED-SETTING\n\nCARBON\nFIBER\nFRAME"
+; aea9 = "LIGHT-\nWEIGHT\n\nCARBON\nFIBER\nFRAME"
+; aebb = "4SPEED\nAUTO\nMATIC\n\nNEW TYPE\n\n"
+; aec4 = "4SPEED\nMANUAL\n\n1- 13=26\n2- 18=26\n3- 24=25\n4- 27=21"
+; aede = "4SPEED\nMANUAL\nHI-GEARD\n1- 14=29\n2- 22=29\n3- 23=24\n4- 26=21"
+; af06 = "MONOTUBE\nOILSHOCK\nTYPE\n\nHARD-\nSETTING\n"
+; af16 = "TWINTUBE\nADJUSTAB\nLE TYPE\n\nMEDIUM-\nSETTING\n"
+; af2d = "TWINTUBE\nGASSHOCK\nTYPE\n\nSOFT-\nSETTING\n"
+; af3a = "FRONT\n    DISK\nTYPE-A\nREAR\n    DISK\nTYPE-A"
+; af42 = "FRONT\n    DISK\nTYPE-B\nREAR\n    DRUM"
+; af4b = "FRONT\n    DISK\nTYPE-B\nREAR\n    DISK\nTYPE-B"
+; af53 = "          ---STAFF---" (*)
+; af5c = "             F1 GRAMPLIX    F1 GRAMPLIX" (*)
+; af61 = "         F1 GRAMPLIXF1 GRAMPLIX         ULTRAMAN ADACHI" (*)
+; af74 = "         SUB F1 GRAMPLIX      MASAF1 GRAMPLIX-MAI- OZAWA" (*)
+; af87 = "        GRAPHIC F1 GRAMPLIX    F1 GRAMPLIX        F1 GRAMPLIX MAKITANI" (*)
+; af9e = "          SOUND F1 GRAMPLIX        KAZUF1 GRAMPLIXUEHARA" (*)
+; afb3 = "             END" (*)
+; afb8 = "             END" (*)
+; afbd = "             END" (*)
+; afc2 = "             END" (*)
+; afc7 = "             END" (*)
+; afcc = "CONGRATULATIONS  " (*)
+; afcf = "THE(30)MEMORIAL(30)OF\n(30)FORMULA-1"
+; afea = "(11)(8)LUCKY" (*)
+; afef = "(11)(8)UNLUCKY" (*)
+; aff6 = "(16)(10):KONAMI 1987"
+; b000 = "(20)(9)PUSH SPACE KEY"
+; b011 = "(20)(10)  PLAY START   "
+; b01e = "(15)(15)FIN" (*)
+; (*) = no references
+; ----------------------------------------------------------------------
+	defb 014h,00ah,0ceh,002h,015h,00ah,0cfh,05fh,013h,00ah,0beh,0c9h,05fh,013h,00ah,031h	; ab51  ......._...._..1
+	defb 0d2h,045h,052h,020h,002h,015h,00ah,032h,0d2h,045h,052h,020h,002h,017h,00ah,0d3h	; ab61  .ER ...2.ER ....
+	defb 020h,0d1h,05fh,012h,002h,0abh,020h,0b5h,002h,013h,002h,0adh,002h,014h,002h,0aeh	; ab71   ._... .........
+	defb 020h,020h,020h,020h,0b5h,05fh,015h,002h,0afh,020h,0b5h,002h,016h,002h,0ach,020h	; ab81      ._... .....
+	defb 0b5h,05fh,012h,012h,0d4h,020h,0b5h,0d6h,002h,013h,013h,052h,04fh,055h,04eh,044h	; ab91  ._... .....ROUND
+	defb 020h,031h,040h,002h,016h,016h,052h,04fh,055h,04eh,044h,05fh,001h,003h,0d5h,020h	; aba1   1@...ROUND_...
+	defb 0d6h,002h,003h,008h,031h,020h,052h,045h,041h,044h,059h,020h,04dh,041h,044h,045h	; abb1  ....1 READY MADE
+	defb 002h,005h,008h,032h,020h,0d9h,020h,0d8h,05fh,001h,003h,052h,045h,041h,044h,059h	; abc1  ...2 . ._..READY
+	defb 020h,04dh,041h,044h,045h,020h,0d6h,05fh,001h,003h,0d9h,020h,0d5h,020h,0d8h,020h	; abd1   MADE ._... . .
+	defb 0d1h,002h,005h,008h,0dah,020h,0d6h,05fh,005h,008h,0dbh,020h,0d6h,05fh,005h,008h	; abe1  ..... ._... ._..
+	defb 0dch,020h,0d6h,05fh,005h,008h,0ddh,020h,0d6h,05fh,005h,008h,0deh,020h,0d6h,05fh	; abf1  . ._... ._... ._
+	defb 003h,005h,0d2h,045h,052h,05fh,003h,01ah,0e0h,002h,005h,01ah,0e1h,05fh,042h,045h	; ac01  ...ER_......._BE
+	defb 053h,054h,0dfh,001h,0e3h,0e4h,054h,04fh,054h,041h,04ch,0dfh,0e3h,0e4h,05fh,002h	; ac11  ST....TOTAL..._.
+	defb 004h,031h,020h,04dh,055h,053h,049h,043h,020h,04dh,04fh,044h,045h,002h,009h,004h	; ac21  .1 MUSIC MODE...
+	defb 032h,020h,053h,043h,043h,020h,042h,041h,04ch,041h,04eh,043h,045h,002h,010h,004h	; ac31  2 SCC BALANCE...
+	defb 033h,020h,053h,045h,04ch,045h,043h,054h,020h,04dh,041h,049h,04eh,05fh,004h,008h	; ac41  3 SELECT MAIN_..
+	defb 04fh,049h,04bh,04fh,053h,048h,049h,05fh,004h,008h,053h,050h,049h,04eh,05fh,004h	; ac51  OIKOSHI_..SPIN_.
+	defb 008h,0dch,05fh,004h,008h,041h,042h,04eh,04fh,052h,04dh,041h,04ch,05fh,004h,008h	; ac61  .._..ABNORMAL_..
+	defb 054h,045h,04bh,049h,020h,04fh,055h,054h,05fh,068h,033h,078h,001h,066h,08ch,001h	; ac71  TEKI OUT_h3x.f..
+	defb 085h,038h,036h,035h,069h,085h,038h,074h,06ah,05fh,067h,082h,039h,033h,001h,065h	; ac81  .865i.8tj_g.93.e
+	defb 032h,034h,060h,07ch,085h,037h,075h,069h,085h,037h,087h,06ah,05fh,07fh,076h,036h	; ac91  24`|.7ui.7.j_.v6
+	defb 030h,001h,066h,054h,057h,049h,04eh,001h,061h,001h,085h,039h,087h,069h,085h,037h	; aca1  0.fTWIN.a..9.i.7
+	defb 035h,036h,06ah,05fh,07fh,032h,078h,001h,06ch,08ch,077h,08dh,081h,032h,030h,06ah	; acb1  56j_.2x.l.w..20j
+	defb 05fh,07fh,076h,039h,036h,001h,066h,07ah,085h,034h,075h,069h,085h,039h,038h,035h	; acc1  _.v96.fz.4ui.985
+	defb 06ah,05fh,068h,035h,078h,001h,065h,061h,098h,085h,035h,075h,069h,08dh,081h,087h	; acd1  j_h5x.ea..5ui...
+	defb 06ah,05fh,068h,032h,039h,087h,001h,06ch,08ch,085h,082h,035h,069h,08dh,08bh,087h	; ace1  j_h29..l...5i...
+	defb 06ah,05fh,067h,032h,038h,030h,030h,001h,083h,07ch,077h,08dh,08ah,087h,06ah,05fh	; acf1  j_g2800..|w...j_
+	defb 068h,033h,078h,001h,071h,061h,001h,085h,036h,075h,069h,08dh,081h,08bh,06ah,05fh	; ad01  h3x.qa..6ui...j_
+	defb 07fh,08bh,087h,001h,06ch,08ch,08dh,031h,033h,087h,069h,06dh,05fh,068h,031h,034h	; ad11  ....l..13.im_h14
+	defb 087h,001h,06ch,064h,001h,020h,020h,031h,030h,036h,030h,069h,06dh,05fh,07fh,031h	; ad21  ..ld.  1060im_.1
+	defb 035h,087h,001h,06ch,07ch,08dh,08ah,087h,069h,06dh,05fh,073h,071h,08ch,085h,034h	; ad31  5..l|...im_sq..4
+	defb 074h,069h,06dh,05fh,073h,071h,07ch,085h,034h,036h,035h,069h,06dh,05fh,073h,066h	; ad41  tim_sq|.465im_sf
+	defb 07dh,085h,034h,075h,069h,06dh,05fh,084h,071h,08ch,085h,031h,075h,069h,085h,034h	; ad51  }.4uim_.q..1ui.4
+	defb 036h,030h,06ah,05fh,084h,071h,07ch,085h,031h,036h,035h,069h,085h,034h,074h,06ah	; ad61  60j_.q|.165i.4tj
+	defb 05fh,06bh,032h,078h,001h,071h,07ch,085h,031h,037h,030h,069h,085h,034h,035h,035h	; ad71  _k2x.q|.170i.455
+	defb 06ah,05fh,0e5h,085h,035h,038h,030h,069h,05fh,0e6h,085h,036h,087h,069h,05fh,0e7h	; ad81  j_..580i_..6.i_.
+	defb 085h,037h,087h,069h,05fh,0e8h,085h,036h,038h,030h,069h,05fh,0e9h,085h,038h,087h	; ad91  .7.i_..680i_..8.
+	defb 069h,05fh,0eah,085h,037h,032h,030h,069h,05fh,07fh,032h,078h,001h,0ebh,085h,037h	; ada1  i_..720i_.2x...7
+	defb 075h,069h,05fh,07fh,032h,078h,001h,0ebh,085h,031h,037h,035h,069h,05fh,07fh,031h	; adb1  ui_.2x...175i_.1
+	defb 038h,087h,001h,0ech,085h,031h,036h,035h,069h,05fh,07fh,032h,038h,087h,001h,0ech	; adc1  8....165i_.28...
+	defb 085h,038h,037h,030h,069h,05fh,068h,032h,078h,001h,0edh,085h,031h,037h,035h,069h	; add1  .870i_h2x...175i
+	defb 05fh,068h,033h,032h,087h,001h,0edh,085h,039h,087h,069h,05fh,07fh,032h,078h,001h	; ade1  _h32....9.i_.2x.
+	defb 0eeh,085h,031h,075h,069h,05fh,07fh,033h,078h,001h,0eeh,085h,038h,075h,069h,05fh	; adf1  ..1ui_.3x...8ui_
+	defb 068h,032h,030h,087h,001h,0efh,085h,031h,039h,030h,069h,05fh,068h,033h,032h,087h	; ae01  h20....190i_h32.
+	defb 001h,0efh,085h,039h,039h,030h,069h,05fh,07fh,032h,030h,087h,001h,0f0h,085h,031h	; ae11  ...990i_.20....1
+	defb 038h,035h,069h,05fh,07fh,032h,034h,087h,001h,0f0h,085h,039h,032h,030h,069h,05fh	; ae21  85i_.24....920i_
+	defb 0e5h,085h,034h,087h,069h,05fh,0e6h,085h,034h,074h,069h,05fh,0e7h,085h,034h,037h	; ae31  ..4.i_..4ti_..47
+	defb 030h,069h,05fh,0e8h,085h,034h,038h,030h,069h,05fh,0e9h,085h,034h,039h,038h,069h	; ae41  0i_..480i_..498i
+	defb 05fh,0eah,085h,034h,038h,037h,069h,05fh,0e5h,08dh,031h,031h,075h,069h,05fh,0e6h	; ae51  _..487i_..11ui_.
+	defb 08dh,031h,031h,087h,069h,05fh,0e7h,08dh,08ah,087h,069h,05fh,0e8h,08dh,031h,035h	; ae61  .11.i_....i_..15
+	defb 087h,069h,05fh,0e9h,08dh,031h,033h,087h,069h,05fh,0eah,08dh,031h,030h,033h,030h	; ae71  .i_..13.i_..1030
+	defb 069h,05fh,053h,054h,052h,04fh,04eh,047h,040h,001h,042h,04fh,044h,059h,001h,001h	; ae81  i_STRONG@.BODY..
+	defb 092h,086h,05fh,042h,041h,04ch,041h,04eh,043h,045h,044h,040h,053h,045h,054h,054h	; ae91  .._BALANCED@SETT
+	defb 049h,04eh,047h,001h,001h,092h,086h,05fh,04ch,049h,047h,048h,054h,040h,001h,057h	; aea1  ING...._LIGHT@.W
+	defb 045h,049h,047h,048h,054h,001h,001h,092h,086h,05fh,093h,08ch,001h,04eh,045h,057h	; aeb1  EIGHT...._...NEW
+	defb 020h,090h,05fh,093h,094h,095h,031h,033h,03dh,063h,001h,096h,031h,038h,03dh,063h	; aec1   ._...13=c..18=c
+	defb 001h,097h,032h,034h,03dh,032h,035h,001h,07eh,032h,037h,07bh,05fh,093h,04dh,041h	; aed1  ..24=25.~27{_.MA
+	defb 04eh,055h,041h,04ch,001h,048h,049h,040h,047h,045h,041h,052h,044h,001h,095h,031h	; aee1  NUAL.HI@GEARD..1
+	defb 034h,03dh,076h,001h,096h,032h,032h,03dh,076h,001h,097h,032h,033h,03dh,032h,034h	; aef1  4=v..22=v..23=24
+	defb 001h,07eh,063h,07bh,05fh,04dh,04fh,04eh,04fh,08eh,04fh,049h,04ch,08fh,090h,048h	; af01  .~c{_MONO.OIL..H
+	defb 041h,052h,044h,091h,05fh,072h,08eh,041h,044h,04ah,055h,053h,054h,041h,042h,001h	; af11  ARD._r.ADJUSTAB.
+	defb 04ch,045h,020h,090h,04dh,045h,044h,049h,055h,04dh,091h,05fh,072h,08eh,047h,041h	; af21  LE .MEDIUM._r.GA
+	defb 053h,08fh,090h,053h,04fh,046h,054h,091h,05fh,06eh,041h,001h,06fh,070h,079h,041h	; af31  S..SOFT._nA.opyA
+	defb 05fh,06eh,042h,001h,06fh,044h,052h,055h,04dh,05fh,06eh,042h,001h,06fh,070h,079h	; af41  _nB.oDRUM_nB.opy
+	defb 042h,05fh,09fh,0a2h,053h,054h,041h,046h,046h,0a2h,05fh,0a0h,0a4h,09bh,0a9h,05fh	; af51  B_..STAFF._...._
+	defb 09eh,0a5h,0a7h,09eh,055h,04ch,054h,052h,041h,099h,04eh,020h,041h,044h,041h,043h	; af61  ....ULTRA.N ADAC
+	defb 048h,049h,05fh,09eh,0a1h,0a7h,09ch,099h,053h,041h,0a3h,040h,099h,049h,040h,020h	; af71  HI_.....SA.@.I@
+	defb 04fh,05ah,041h,057h,041h,05fh,09dh,047h,052h,041h,050h,048h,049h,043h,020h,0a6h	; af81  OZAWA_.GRAPHIC .
+	defb 09bh,0a9h,09dh,0a8h,020h,099h,04bh,049h,054h,041h,04eh,049h,05fh,09fh,053h,04fh	; af91  .... .KITANI_.SO
+	defb 055h,04eh,044h,020h,0a4h,09dh,04bh,041h,05ah,055h,0a3h,055h,045h,048h,041h,052h	; afa1  UND ..KAZU.UEHAR
+	defb 041h,05fh,0a0h,045h,04eh,044h,05fh,0a0h,045h,04eh,044h,05fh,0a0h,045h,04eh,044h	; afb1  A_.END_.END_.END
+	defb 05fh,0a0h,045h,04eh,044h,05fh,0a0h,045h,04eh,044h,05fh,0e2h,08dh,05fh,054h,048h	; afc1  _.END_.END_.._TH
+	defb 045h,01eh,04dh,045h,04dh,04fh,052h,049h,041h,04ch,01eh,04fh,046h,001h,01eh,046h	; afd1  E.MEMORIAL.OF..F
+	defb 04fh,052h,04dh,055h,04ch,041h,040h,031h,05fh,00bh,008h,0b1h,059h,05fh,00bh,008h	; afe1  ORMULA@1_...Y_..
+	defb 055h,04eh,0b1h,059h,05fh,010h,00ah,03ah,0f3h,020h,031h,039h,038h,037h,05fh,014h	; aff1  UN.Y_..:. 1987_.
+	defb 009h,050h,055h,053h,048h,020h,053h,050h,041h,043h,045h,020h,04bh,045h,059h,05fh	; b001  .PUSH SPACE KEY_
+	defb 014h,00ah,020h,020h,0d2h,020h,053h,054h,041h,052h,054h,085h,05fh,00fh,00fh,046h	; b011  ..  . START._..F
+	defb 049h,04eh,05fh	; b021
 
 ; ----------------------------------------------------------------------
 ; DATOS ficha_rle_b024: dibujo de ficha comprimido (RLE_A_BUFFER de p01
@@ -1564,7 +1670,7 @@ DATA_rle_pat_BBA1:
 ; DATOS rle_pat_BBCB: patrones RLE: 3 tiles desde el 92 (tabla85[69])
 ;   0xbbcb..0xbbe5  (26 bytes)
 DATA_rle_pat_BBCB:
-	defb 08ah,0efh,004h,040h,002h,020h,0f7h,002h,020h,000h,040h,003h,002h,08bh,0f7h,020h	; bbcb  ...@. .. .@.... 
+	defb 08ah,0efh,004h,040h,002h,020h,0f7h,002h,020h,000h,040h,003h,002h,08bh,0f7h,020h	; bbcb  ...@. .. .@....
 	defb 000h,000h,008h,000h,000h,040h,002h,000h,000h,000h	; bbdb  .....@....
 
 ; ----------------------------------------------------------------------

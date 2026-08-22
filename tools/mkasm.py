@@ -355,7 +355,7 @@ def emit_data_range(data, org, a, b, nm, desc, notes, names, rango=None):
                       or x in notes.blocks), None)
         if corte:
             fin = corte
-        out += fila_datos(data, org, i, fin, palabras, names)
+        out += fila_datos(data, org, i, fin, palabras, names, notes)
         i = fin
         if i < b:
             out += banner(notes.blocks.get(i), i)
@@ -366,8 +366,15 @@ def emit_data_range(data, org, a, b, nm, desc, notes, names, rango=None):
     return out
 
 
-def fila_datos(data, org, i, fin, palabras, names):
-    """Una fila del volcado. En defw se anota a donde apunta, si se sabe."""
+def fila_datos(data, org, i, fin, palabras, names, notes=None):
+    """Una fila del volcado. En defw se anota a donde apunta, si se sabe.
+
+    Una fila tambien puede llevar comentario propio, con la directiva C anclada
+    a su primer byte: es la unica forma de anotar una tabla de datos entrada a
+    entrada -por ejemplo, poner al lado de cada puntero de texto lo que ese
+    texto dice- y que la anotacion sobreviva a un retrazado.
+    """
+    propio = notes.line.get(i, "") if notes else ""
     row = data[i - org:fin - org]
     if palabras and len(row) >= 2:
         vals = [row[2 * k] | (row[2 * k + 1] << 8) for k in range(len(row) // 2)]
@@ -376,13 +383,17 @@ def fila_datos(data, org, i, fin, palabras, names):
         if len(vals) <= 4 and any(dest):
             cmt += "  -> " + " ".join(d or f"{v:#06x}"
                                      for v, d in zip(vals, dest))
-        out = [f"\tdefw {','.join(f'0{v:04x}h' for v in vals)}\t{cmt}"]
+        if propio:
+            cmt = cmt.rstrip() + "\t" + propio
+        out = [f"\tdefw {','.join(f'0{v:04x}h' for v in vals)}\t{cmt}".rstrip()]
         if len(row) % 2:                 # byte suelto al final del rango
             out.append(f"\tdefb 0{row[-1]:02x}h\t; {i + len(vals) * 2:04x}")
         return out
     txt = "".join(chr(c) if 32 <= c < 127 else "." for c in row)
     cmt = f"; {i:04x}" + (f"  {txt}" if len(row) >= 8 else "")
-    return [f"\tdefb {','.join(f'0{c:02x}h' for c in row)}\t{cmt}"]
+    if propio:
+        cmt = cmt.rstrip() + "\t" + propio
+    return [f"\tdefb {','.join(f'0{c:02x}h' for c in row)}\t{cmt}".rstrip()]
 
 
 def emit_code(data, org, a, b, names, notes):

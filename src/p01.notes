@@ -387,7 +387,7 @@ L 0x6FF4 SPRITES_OBJETO_SIGUIENTE  IX += 0x38
 L 0x6FFC SPRITE_FUERA        fuera de la vista: exx y vuelve
 L 0x6FFE SPRITE_OBJETO       E = (ix+4) x; A = (ix+6) - (iy+4B) - 8 (y relativa a la camara)
 L 0x7009 SPRITE_OBJETO_XY    bit 0 de (ix+31) = 0; fuera si y >= B' o x >= C'; suma D'E'; bit 0 = 1 (visible); si bit 7 no hay sprite; si no dos sprites (y, x, patron, color) y (y, x, patron+4, color 1); con el bit 6: sprite extra por (ix+2F) si E216 < 4
-C 0x702A E1DE = 1: patron 0 en vez de (ix+33)
+C 0x702A E1DE = 1: patron 0 en vez de (ix+33). Pero E1DE es la deteccion de cartucho Konami, que vale 2 cuando lo hay y NUNCA vale 1
 C 0x704A el segundo sprite del par: patron+4, color 1
 C 0x7050 bit 6 consumido: el sprite extra (ix+2F): 1 -> tabla 0x7091 por fotograma (ix+0E), 2 -> 0x70AF, mas -> 0x70BE
 L 0x7088 ESCRIBE_SPRITE      (HL) = y, x, patron B, color C
@@ -497,7 +497,7 @@ D 0x74A3 0x74AC password_maxpoint "MAXPOINT", 0xFF
 F 0x74A3 9
 L 0x74AC CODIGO_MAXPOINT     E1DF = 1 (0x6227 deja de comparar los puntos: todo desbloqueado)
 L 0x74B2 PUNTOS_200          E295 = E355 = 0xC8 (desde p00 0x57F4)
-D 0x74BB 0x74C4 password_ujm3edc " UJM3EDC", 0xFF (dos columnas del teclado)
+D 0x74BB 0x74C4 password_ujm3edc "7UJM3EDC", 0xFF (dos columnas del teclado), pero el primer caracter esta TACHADO con un espacio en blanco (" UJM3EDC") para que este password no se pueda teclear
 F 0x74BB 9
 L 0x74C4 CODIGO_UJM3EDC      si F0FE != 0 y E1DE != 2: F006 = 1, E25B = 0xFF, E29D = 0 y p00 0x58A0
 D 0x74E2 0x74F1 password_enddemo "MITAIYOENDDEMO" y 0xFF (0x74F0); el codigo del truco sigue en 0x74F1
@@ -761,7 +761,7 @@ C 0x6003 con el `dec` la opcion 1 sale por Z y las de mas arriba por el signo
 C 0x601F E240 a cero, que la eleccion de jugadores empieza de nuevo
 C 0x6024 tres opciones: uno, dos, y la tercera
 C 0x602D los cuatro bytes del cursor son un atributo de sprite entero (Y, X, patron y color) que se copia de p03
-C 0x6035 se borran los dos rotulos de la pantalla anterior antes de pintar el de esta
+C 0x6035 se borran los dos rotulos de la pantalla anterior antes de pintar el de esta  --> "(20)(10)GAME (2)(21)(10)COMMAND"
 C 0x604D los tres a cero: paso, subpaso y opcion marcada
 C 0x605A el cursor se mueve con la tabla de p03 0xBBCB, que dice donde va cada opcion
 C 0x6061 la opcion 0 es un jugador y las otras dos son dos
@@ -1401,10 +1401,16 @@ C 0x6729 se guarda el destino: la columna nueva se busca aparte
 
 C 0x6027 y se pasa al paso siguiente del menu
 C 0x6038 0x4B99 es el borrado de rotulo de p00
+C 0x603B --> "(19)(10)TRY AGAIN "
+C 0x6041 --> "(19)(10)1PLAYER (2)(21)(10)2PLAYER (2)(23)(10)BATTLE MODE "
 C 0x6044 y 0x4B8F el que lo escribe
 C 0x6060 sin boton no hay nada que hacer
 C 0x6068 el bit 5 se apaga y solo se enciende si toca
 C 0x608D tres opciones tambien en este menu
+C 0x609B --> "(19)(10)1PLAYER (2)(21)(10)2PLAYER (2)(23)(10)BATTLE MODE "
+C 0x60A1 --> "(18)(2)STOCK RACE (2)(19)(2)RALLY(2)(20)(2)F3    RACE "
+C 0x60B0 --> "(21)(2)F3000 RACE (2)(22)(2)ENDURANCE RACE "
+C 0x60BE --> "(18)(18)F1 RACE SELECT(2)(19)(19)ROUND 1-(2)(22)(22)ROUND"
 
 C 0x60CE dos cifras: los puntos que hacen falta
 C 0x60E1 dos cifras: el numero del GP
@@ -1431,6 +1437,7 @@ C 0x6291 0x40D0 es el SUMA_A_HL de p00
 C 0x62A4 0x4174 es el que pide sonido en p00
 C 0x62BD el 0x26 es el sonido de elegir
 C 0x62C2 y se vuelve con A distinto de cero: hay boton
+C 0x62D9 --> "BEST POINT\n      1P\n      2P\n\nTOTAL POINT      1P\n      2P\n\n"
 C 0x62DC el texto va comprimido con el 0x5F por delante
 C 0x62FC B es la fuente que se usa para los digitos
 C 0x6339 0x4B28 pasa el binario a decimal
@@ -1446,19 +1453,26 @@ C 0x63D0 tantos tiles como diga la cuenta
 
 C 0x63E4 y el tile baja de uno en uno
 C 0x63E5 tantos tiles como diga la cuenta
+C 0x6405 --> "\n(3)CAR SELECT(2)(3)(8)1 READY MADE(2)(5)(8)2 ORIGINAL DESIGN"
 C 0x6408 0x4B8F escribe el rotulo
 C 0x641D cuatro bytes: el atributo entero del cursor
 C 0x6425 0x4B87 es el borrado de memoria de p00
 
 C 0x6478 el 0x26 es el sonido de elegir
 C 0x6492 y el valor elegido se guarda
+C 0x64AC --> "(3)(26)OK(2)(5)(26)NO"
 C 0x64C8 cuatro bytes: el atributo entero del cursor
 C 0x64CF una sola opcion mas: si o no
 C 0x64E2 y le toca al otro jugador
 C 0x64FC sin boton no hay respuesta
+C 0x6503 --> "(3)(26)OK(2)(5)(26)NO"
 C 0x6506 el rotulo se borra antes de volver a empezar
 
 C 0x6534 sin boton no hay eleccion
+C 0x653B --> "\n(3)CAR SELECT(2)(3)(8)1 READY MADE(2)(5)(8)2 ORIGINAL DESIGN"
+C 0x653E --> "\n(3)ORIGINAL CAR DESIGN MODE (2)(5)(8)ENGINE SELECT"
+C 0x6547 --> "\n(3)CAR SELECT(2)(3)(8)1 READY MADE(2)(5)(8)2 ORIGINAL DESIGN"
+C 0x654D --> "\n(3)READY MADE SELECT"
 C 0x655C cuatro bytes: el atributo entero
 C 0x657A cinco bytes: el coche entero
 C 0x65B1 0x50 es lo que avanza el cursor de una ficha a la siguiente
@@ -1487,6 +1501,12 @@ C 0x6741 y se recupera el destino
 C 0x674B diecisiete filas
 C 0x6751 0x40D0 es el SUMA_A_HL de p00
 C 0x675F y la opcion vuelve a la primera
+C 0x67D9 --> "(3)(5)PLAYER"
+C 0x67E6 --> "(5)(8)ENGINE SELECT"
+C 0x67E8 --> "(5)(8)BODY SELECT"
+C 0x67EA --> "(5)(8)BRAKE SELECT"
+C 0x67EC --> "(5)(8)SUSPENSION SELECT"
+C 0x67EE --> "(5)(8)MISSION SELECT"
 
 C 0x6918 0x43FE vuelca el buffer a la VRAM
 C 0x6933 y si no era macro, el byte se copia tal cual
@@ -1543,6 +1563,7 @@ C 0x6FF4 0x38 bytes por ficha de objeto
 C 0x6FF9 cinco objetos
 C 0x7007 los ocho pixeles de mas son el alto del sprite
 C 0x7009 el bit 0 se apaga: por defecto el objeto no se pinta
+C 0x702F este codigo era parte del truco de los sprites de pinguinos, y en esta version esta a medias: aplicaria los mismos patrones a todos los sprites, sin definir esos patrones especiales
 C 0x7031 el patron 0 es el que no se ve
 C 0x703B los cuatro bytes van seguidos
 
@@ -1590,6 +1611,7 @@ C 0x73CC y se pasa al paso siguiente
 C 0x73EA y los 21 valores descifrados vuelven al bloque del jugador
 C 0x73F8 el 0x26 es el sonido de acertar
 C 0x741A y se vuelve al estado 4, que es el menu
+C 0x74CC con cartucho Konami enchufado (E1DE = 2) el codigo no hace nada
 
 C 0x77F7 el coche 1 primero
 C 0x7807 el bit 0 de (ix+6F) es el aviso de pieza nueva

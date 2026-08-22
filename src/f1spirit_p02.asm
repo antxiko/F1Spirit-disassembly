@@ -542,7 +542,7 @@ TEXTO_FINAL:		; E62C.. 16x3 de tile 0xFE; pagina 9 en A000; texto p09 0xAFCF exp
 	call 04b6ch		;8378
 	ld a,009h		;837b
 	call 04457h		;837d
-	ld hl,0afcfh		;8380
+	ld hl,0afcfh		;8380   ; --> "THE(30)MEMORIAL(30)OF\n(30)FORMULA-1"
 	call 0691bh		;8383
 	ld hl,0e62ch		;8386
 	ld bc,00310h		;8389

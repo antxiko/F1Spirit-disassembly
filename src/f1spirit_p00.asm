@@ -377,7 +377,7 @@ ESTADO_3:		; la partida ya esta empezando: borra "PUSH SPACE KEY" y hace parpade
 	ld hl,0e1c4h		;4223
 	dec (hl)			;4226
 	jr z,L_421C		;4227   ; llegada a cero, subestado 2
-	ld de,0b011h		;4229   ; p09 0xB011, que expandido es "  PLAY START   " en la fila 20
+	ld de,0b011h		;4229   ; p09 0xB011, que expandido es "  PLAY START   " en la fila 20  --> "(20)(10)  PLAY START   "
 	bit 2,(hl)		;422c   ; el bit 2 de la cuenta lo enciende y lo apaga cada cuatro fotogramas: cinco parpadeos en 0x28
 	jp z,PINTA_ROTULO		;422e   ; 0x4B8F lo pinta (tile = letra - 0x20) y 0x4B99 lo borra (tile 0) en los mismos huecos
 	jp BORRA_ROTULO		;4231
@@ -389,7 +389,7 @@ L_423B:
 	ld a,(0e1ddh)		;423b   ; subestado 0
 	cp 005h		;423e
 	call c,PINTA_LOGOTIPO		;4240   ; si la ronda de presentacion se corto pronto (E1DD < 5), 0x5DD5 pinta antes la linea de p09 0xAFF6 (el logotipo y "1987")
-	ld de,0b000h		;4243   ; borra "PUSH SPACE KEY" (p09 0xB000) del sitio donde va a parpadear el otro rotulo
+	ld de,0b000h		;4243   ; borra "PUSH SPACE KEY" (p09 0xB000) del sitio donde va a parpadear el otro rotulo  --> "(20)(9)PUSH SPACE KEY"
 	call BORRA_ROTULO		;4246
 	ld a,034h		;4249
 	call 0884ch		;424b   ; p02 0x884C: la musica 0x34
@@ -1541,7 +1541,7 @@ L_497A:
 	ld a,(0f0feh)		;499c   ; F0FE con un 1 viene del reinicio de 0x5B90: entonces ademas se limpia el bloque de E280
 	dec a			;499f
 	call z,L_49AF		;49a0
-	ld a,(0e1deh)		;49a3   ; E1DE = 2 es el desbloqueo, y deja E1DF a 1
+	ld a,(0e1deh)		;49a3   ; E1DE es la deteccion de cartucho Konami enchufado, y vale 2 si lo hay; con 2 es el desbloqueo, y deja E1DF a 1
 	cp 002h		;49a6
 	ret nz			;49a8
 	ld a,001h		;49a9
@@ -3941,7 +3941,7 @@ L_58A0:
 L_58A1:
 	ret			;58a1
 GRABA_MANDO:		; graba el mando: una pareja (cuadros, mascara) cada vez que cambia
-	ld a,(0e1deh)		;58a2   ; con E1DE = 2 no se graba
+	ld a,(0e1deh)		;58a2   ; E1DE = 2, o sea con cartucho Konami enchufado, no se graba
 	cp 002h		;58a5
 	ret z			;58a7
 	ld a,(0f001h)		;58a8   ; F001 cuenta cuantos fotogramas lleva sin cambiar la mascara
@@ -4632,7 +4632,7 @@ BAJA_E1C4:		; E1C4 baja uno de cada cuatro fotogramas
 	dec (hl)			;5d8b
 	ret			;5d8c
 PRESENTACION_5:		; pinta el rotulo p09 0xAFF6 (el logotipo y el 1987) y espera
-	ld de,0aff6h		;5d8d
+	ld de,0aff6h		;5d8d   ; --> "(16)(10):KONAMI 1987"
 	call PINTA_ROTULO		;5d90
 	ld a,014h		;5d93
 	jr PRESENTACION_SIGUIENTE		;5d95
@@ -4650,7 +4650,7 @@ PRESENTACION_7:		; hace parpadear "PUSH SPACE KEY" mientras espera
 	ld a,001h		;5daa
 	jr PRESENTACION_SIGUIENTE		;5dac
 PARPADEA_PUSH_SPACE:		; el rotulo p09 0xB000, cuatro fotogramas si y cuatro no
-	ld de,0b000h		;5dae
+	ld de,0b000h		;5dae   ; --> "(20)(9)PUSH SPACE KEY"
 	ld a,(0e1c3h)		;5db1   ; el bit 2 del contador de fotogramas: cuatro encendido y cuatro apagado
 	and 004h		;5db4
 	jp z,PINTA_ROTULO		;5db6
@@ -4667,7 +4667,7 @@ PRESENTACION_9:		; apaga el dibujo: colores del tile 0 y la tabla de nombres ent
 	jr nz,PRESENTACION_9		;5dd0
 	jp PRESENTACION_SIGUIENTE		;5dd2
 PINTA_LOGOTIPO:		; el rotulo p09 0xAFF6 y el desvanecido entero de una vez
-	ld de,0aff6h		;5dd5
+	ld de,0aff6h		;5dd5   ; --> "(16)(10):KONAMI 1987"
 	call PINTA_ROTULO		;5dd8
 	call DESVANECIDO_EMPIEZA		;5ddb
 DESVANECE_TODO:		; tramo tras tramo hasta acabar la lista
@@ -4992,12 +4992,12 @@ L_5FB0:
 	ld de,0ea88h		;5fb7
 	ld bc,00004h		;5fba
 	ldir		;5fbd   ; cuatro bytes: un atributo de sprite entero, el del cursor
-	ld de,0ab51h		;5fbf
+	ld de,0ab51h		;5fbf   ; --> "(20)(10)GAME (2)(21)(10)COMMAND"
 	call PINTA_ROTULO		;5fc2
 	ld a,(0e25bh)		;5fc5   ; el segundo rotulo solo sale si ya hay categoria
 	inc a			;5fc8
 	ret z			;5fc9
-	ld de,0ab59h		;5fca
+	ld de,0ab59h		;5fca   ; --> "(19)(10)TRY AGAIN "
 	jp PINTA_ROTULO		;5fcd
 DESCOMPRIME_20_COLUMNAS:		; C' = 0x20 y a 0x637F
 	exx			;5fd0

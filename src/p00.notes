@@ -172,14 +172,14 @@ C 0x421C ...y un subestado mas
 L 0x4221 ESTADO_3          la partida ya esta empezando: borra "PUSH SPACE KEY" y hace parpadear "PLAY START" mientras cuenta 0x28 fotogramas
 C 0x4221 subestado 1: la cuenta atras del parpadeo
 C 0x4227 llegada a cero, subestado 2
-C 0x4229 p09 0xB011, que expandido es "  PLAY START   " en la fila 20
+C 0x4229 p09 0xB011, que expandido es "  PLAY START   " en la fila 20  --> "(20)(10)  PLAY START   "
 C 0x422C el bit 2 de la cuenta lo enciende y lo apaga cada cuatro fotogramas: cinco parpadeos en 0x28
 C 0x422E 0x4B8F lo pinta (tile = letra - 0x20) y 0x4B99 lo borra (tile 0) en los mismos huecos
 C 0x4236 subestado 2: 0x497A limpia la RAM de la partida y aplica el desbloqueo (E1DE = 2 -> E1DF = 1)
 C 0x4239 y al estado 4
 C 0x423B subestado 0
 C 0x4240 si la ronda de presentacion se corto pronto (E1DD < 5), 0x5DD5 pinta antes la linea de p09 0xAFF6 (el logotipo y "1987")
-C 0x4243 borra "PUSH SPACE KEY" (p09 0xB000) del sitio donde va a parpadear el otro rotulo
+C 0x4243 borra "PUSH SPACE KEY" (p09 0xB000) del sitio donde va a parpadear el otro rotulo  --> "(20)(9)PUSH SPACE KEY"
 C 0x424B p02 0x884C: la musica 0x34
 C 0x424E 0x28 fotogramas de parpadeo y subestado 1
 L 0x4252 ESTADO_4          numera los dos bloques de coche y pasa al 5; no tiene subestados
@@ -1389,7 +1389,7 @@ C 0x5882 F006 distinto de cero corta la reproduccion
 C 0x5888 la grabacion vive en la pagina que diga F0F6, que cambia con la escena
 C 0x5894 F004 y F005 hacen de puerto de mando: los flancos se calculan igual que con un mando de verdad
 L 0x58A2 GRABA_MANDO        graba el mando: una pareja (cuadros, mascara) cada vez que cambia
-C 0x58A2 con E1DE = 2 no se graba
+C 0x58A2 E1DE = 2, o sea con cartucho Konami enchufado, no se graba
 C 0x58A8 F001 cuenta cuantos fotogramas lleva sin cambiar la mascara
 C 0x58B2 el puntero tiene que estar entre 0xC000 y 0xDEFF: fuera de ahi se estaria escribiendo en la ROM o pisando otra cosa
 C 0x58C5 con dos jugadores tambien se graba el segundo, y su mascara se marca con el bit 7 (el 0x80 de D')
@@ -1595,7 +1595,7 @@ C 0x497A la RAM de la partida: 0xE13 bytes desde E1EB a cero, y de ahi cuelga to
 C 0x4983 el trocito de 0x49C4 son tres bytes de arranque que no pueden quedarse a cero
 C 0x4999 E25B a 0xFF es "todavia no hay categoria elegida"
 C 0x499C F0FE con un 1 viene del reinicio de 0x5B90: entonces ademas se limpia el bloque de E280
-C 0x49A3 E1DE = 2 es el desbloqueo, y deja E1DF a 1
+C 0x49A3 E1DE es la deteccion de cartucho Konami enchufado, y vale 2 si lo hay; con 2 es el desbloqueo, y deja E1DF a 1
 C 0x49AF con E1C0 = 2 no se toca nada
 C 0x49B9 0x15 bytes de E280 a 9: no es un borrado, es un valor de arranque
 C 0x5C62 en la repeticion la pista se mueve sola: el mando no pinta nada
@@ -1666,3 +1666,8 @@ C 0x5F10 de tres en tres columnas: se prueban diez sitios de la fila y no las 32
 C 0x5FF5 con Z se sale: la eleccion no ha cambiado
 C 0x5419 el byte de en medio va con `sbc`: la resta de 32 bits se encadena por el acarreo
 C 0x52FC el separador de en medio, el mismo que el otro
+C 0x5D8D --> "(16)(10):KONAMI 1987"
+C 0x5DAE --> "(20)(9)PUSH SPACE KEY"
+C 0x5DD5 --> "(16)(10):KONAMI 1987"
+C 0x5FBF --> "(20)(10)GAME (2)(21)(10)COMMAND"
+C 0x5FCA --> "(19)(10)TRY AGAIN "

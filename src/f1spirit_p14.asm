@@ -37,7 +37,7 @@ DATA_pista_8072:
 	defb 0fbh,004h,094h,080h,0a4h,088h,0a5h,0bch,0a7h,042h,0a9h,02fh,0a3h,010h,0a3h,0e0h	; 80b2  .........B./....
 	defb 0a4h,0e7h,0a6h,035h,0a2h,0f0h,0a3h,0b7h,0a4h,0b4h,0a5h,0f4h,0a3h,020h,0a5h,001h	; 80c2  ...5......... ..
 	defb 000h,000h,0fbh,002h,0b6h,080h,084h,088h,085h,0bch,087h,042h,089h,02fh,083h,010h	; 80d2  ...........B./..
-	defb 083h,0e0h,084h,0e7h,086h,035h,082h,0f0h,083h,0b7h,084h,0b4h,085h,0f4h,083h,020h	; 80e2  .....5......... 
+	defb 083h,0e0h,084h,0e7h,086h,035h,082h,0f0h,083h,0b7h,084h,0b4h,085h,0f4h,083h,020h	; 80e2  .....5.........
 	defb 085h,001h,000h,000h,0fbh,002h,0d8h,080h,064h,088h,065h,0bch,067h,042h,069h,02fh	; 80f2  ........d.e.gBi/
 	defb 063h,010h,063h,0e0h,064h,0e7h,066h,035h,062h,0f0h,063h,0b7h,064h,0b4h,065h,0f4h	; 8102  c.c.d.f5b.c.d.e.
 	defb 063h,020h,065h,001h,000h,000h,0fbh,002h,0fah,080h,054h,088h,055h,0bch,057h,042h	; 8112  c e.......T.U.WB
@@ -159,7 +159,7 @@ DATA_pista_8294:
 DATA_pista_82AB:
 	defb 0feh,001h,0e9h,006h,0eah,00bh,0ebh,007h,033h,0f1h,052h,0f2h,00fh,0c2h,0d2h,070h	; 82ab  ........3.R....p
 	defb 0d1h,000h,070h,0e9h,009h,04dh,0e9h,006h,040h,050h,070h,0e9h,009h,03bh,0e9h,006h	; 82bb  ..p..M..@Pp..;..
-	defb 031h,0d2h,0a0h,0d1h,031h,0e9h,009h,00dh,0e9h,002h,0eah,009h,0ech,000h,010h,020h	; 82cb  1...1.......... 
+	defb 031h,0d2h,0a0h,0d1h,031h,0e9h,009h,00dh,0e9h,002h,0eah,009h,0ech,000h,010h,020h	; 82cb  1...1..........
 	defb 030h,040h,050h,060h,070h,080h,090h,0a0h,0b0h,0d0h,000h,0e9h,009h,0eah,00ch,0ebh	; 82db  0@P`p...........
 	defb 007h,033h,0f1h,051h,0f2h,00ah,009h,0e9h,006h,0ebh,009h,035h,0d2h,030h,050h,070h	; 82eb  .3.Q.......5.0Pp
 	defb 0ech,0f3h,0f1h,034h,0d1h,000h,0e9h,001h,0eah,00ah,0b0h,0a0h,090h,0eah,008h,070h	; 82fb  ...4...........p
@@ -355,7 +355,7 @@ DATA_pista_86FC:
 	defb 050h,0c0h,0d1h,050h,0c0h,050h,0c0h,0d0h,050h,050h,0c0h,0d1h,050h,0c0h,050h,0fbh	; 870c  P..P.P..PP..P.P.
 	defb 004h,008h,087h,0f8h,015h,0eah,00fh,0ebh,023h,035h,0d2h,0f9h,02eh,087h,034h,0fdh	; 871c  ........#5....4.
 	defb 0fch,086h,079h,0a0h,090h,0a0h,0d1h,000h,0d2h,050h,030h,090h,050h,040h,038h,0c0h	; 872c  ..y......P0.P@8.
-	defb 0d1h,030h,0c0h,054h,0c0h,040h,030h,0d2h,0b0h,0d1h,020h,030h,0d2h,0b0h,0d1h,020h	; 873c  .0.T.@0... 0... 
+	defb 0d1h,030h,0c0h,054h,0c0h,040h,030h,0d2h,0b0h,0d1h,020h,030h,0d2h,0b0h,0d1h,020h	; 873c  .0.T.@0... 0...
 	defb 000h,0d2h,070h,0b0h,070h,0a0h,060h,070h,090h,0a0h,0b0h,0d1h,000h,050h,0d2h,0a0h	; 874c  ..p.p.`p.....P..
 	defb 090h,050h,0fah	; 875c
 
@@ -519,8 +519,8 @@ DATA_pista_8CB1:
 	defb 040h,0c0h,040h,0c0h,042h,0f9h,06ch,08dh,027h,020h,020h,0c0h,020h,0c0h,022h,017h	; 8d01  @.@.B.l.'  . .".
 	defb 010h,011h,014h,017h,010h,011h,014h,007h,000h,000h,0c0h,004h,027h,020h,020h,0c0h	; 8d11  ............'  .
 	defb 020h,0c0h,022h,0ebh,003h,053h,0eah,00bh,0d1h,0c3h,042h,020h,0c1h,022h,000h,0c1h	; 8d21   ."..S....B ."..
-	defb 002h,0d2h,0b0h,0c1h,0b2h,090h,0c1h,091h,071h,0eah,00ah,0eeh,001h,0c2h,0d3h,020h	; 8d31  ........q...... 
-	defb 030h,050h,070h,0a0h,0d2h,020h,030h,050h,070h,0a0h,0d1h,020h,030h,070h,030h,020h	; 8d41  0Pp.. 0Pp.. 0p0 
+	defb 002h,0d2h,0b0h,0c1h,0b2h,090h,0c1h,091h,071h,0eah,00ah,0eeh,001h,0c2h,0d3h,020h	; 8d31  ........q......
+	defb 030h,050h,070h,0a0h,0d2h,020h,030h,050h,070h,0a0h,0d1h,020h,030h,070h,030h,020h	; 8d41  0Pp.. 0Pp.. 0p0
 	defb 0d2h,0a0h,0d1h,050h,020h,030h,000h,020h,0d2h,0a0h,0efh,0d1h,000h,0d2h,090h,0a0h	; 8d51  ...P 0. ........
 	defb 070h,090h,050h,070h,0fbh,002h,027h,08dh,0fdh,0b9h,08ch,0d0h,027h,027h,027h,027h	; 8d61  p.Pp..'.....''''
 	defb 0d1h,027h,020h,020h,0c0h,024h,0fah	; 8d71
@@ -568,7 +568,7 @@ DATA_pista_8EA5:
 	defb 0ebh,081h,0bbh,043h,001h,0d3h,070h,0d2h,008h,027h,0f0h,0eah,00ah,0ebh,01ah,033h	; 8f25  ...C..p..'.....3
 	defb 0d3h,020h,021h,021h,0ebh,013h,052h,022h,0f0h,0f8h,015h,0eah,00dh,0ebh,001h,066h	; 8f35  . !!..R".......f
 	defb 0d2h,0c3h,092h,070h,0c1h,072h,050h,0c1h,052h,040h,0c1h,042h,020h,0c1h,021h,001h	; 8f45  ...p.rP.R@.B .!.
-	defb 0eeh,001h,0d3h,020h,030h,050h,070h,0a0h,0d2h,020h,030h,050h,070h,0a0h,0d1h,020h	; 8f55  ... 0Pp.. 0Pp.. 
+	defb 0eeh,001h,0d3h,020h,030h,050h,070h,0a0h,0d2h,020h,030h,050h,070h,0a0h,0d1h,020h	; 8f55  ... 0Pp.. 0Pp..
 	defb 030h,070h,030h,020h,0d2h,0a0h,0d1h,050h,020h,030h,000h,020h,0d2h,0a0h,0d1h,000h	; 8f65  0p0 ...P 0. ....
 	defb 0d2h,090h,0efh,070h,030h,050h,020h,030h,000h,020h,0d3h,0a0h,0fbh,002h,045h,08fh	; 8f75  ...p0P 0. ....E.
 	defb 0fdh,0a9h,08eh,0f8h,014h,0d2h,0c3h,043h,042h,062h,042h,0c0h,090h,080h,0c0h,040h	; 8f85  .......CBbB....@
@@ -850,7 +850,7 @@ DATA_pista_9A15:
 	defb 0feh,001h,0f8h,022h,0e9h,004h,0eah,00fh,0ebh,009h,035h,0d4h,001h,001h,041h,001h	; 9a15  ..."......5...A.
 	defb 051h,001h,071h,0ebh,003h,01ah,053h,0ebh,009h,035h,051h,091h,051h,0a1h,051h,0b1h	; 9a25  Q.q...S..5Q.Q.Q.
 	defb 0ebh,009h,01ah,033h,0ebh,009h,035h,031h,071h,031h,081h,031h,0a1h,0ebh,009h,01ah	; 9a35  ...3..51q1.1....
-	defb 073h,0ebh,009h,035h,071h,0b1h,0d3h,001h,011h,021h,0d4h,0b1h,071h,0fbh,002h,020h	; 9a45  s..5q....!..q.. 
+	defb 073h,0ebh,009h,035h,071h,0b1h,0d3h,001h,011h,021h,0d4h,0b1h,071h,0fbh,002h,020h	; 9a45  s..5q....!..q..
 	defb 09ah,021h,031h,0fbh,006h,057h,09ah,0ebh,009h,01ah,053h,0ebh,009h,035h,051h,0fbh	; 9a55  .!1..W....S..5Q.
 	defb 007h,063h,09ah,0f8h,026h,0c1h,001h,001h,0fbh,004h,06ah,09ah,0c1h,0d3h,001h,001h	; 9a65  .c..&.....j.....
 	defb 001h,0f8h,022h,0d4h,021h,031h,0fbh,006h,07ah,09ah,0ebh,009h,01ah,053h,0ebh,009h	; 9a75  ..".!1..z....S..
@@ -880,10 +880,10 @@ DATA_pista_9B24:
 	defb 051h,061h,071h,0d2h,0a5h,0c1h,0d1h,031h,031h,0eah,009h,031h,0eah,00fh,031h,031h	; 9b84  Qaq....11..1..11
 	defb 0eah,009h,031h,0eah,00fh,031h,031h,0eah,009h,031h,0eah,00fh,031h,031h,0eah,009h	; 9b94  ..1..11..1..11..
 	defb 031h,0eah,00fh,031h,031h,031h,0d1h,033h,021h,001h,0d2h,0a1h,0d1h,001h,0c1h,053h	; 9ba4  1..111.3!......S
-	defb 051h,051h,061h,071h,0d2h,0a5h,0f8h,015h,0d3h,070h,0b0h,020h,0b0h,020h,050h,020h	; 9bb4  QQaq.....p. . P 
+	defb 051h,051h,061h,071h,0d2h,0a5h,0f8h,015h,0d3h,070h,0b0h,020h,0b0h,020h,050h,020h	; 9bb4  QQaq.....p. . P
 	defb 050h,070h,050h,060h,0b0h,070h,0b0h,0d2h,020h,0d3h,0b0h,0d2h,020h,050h,020h,050h	; 9bc4  PpP`.p.. ... P P
 	defb 070h,050h,070h,0b0h,070h,0b0h,0d1h,020h,0d2h,0b0h,0d1h,020h,050h,070h,050h,0d2h	; 9bd4  pPp.p.. ... PpP.
-	defb 070h,0b0h,020h,0b0h,020h,050h,020h,050h,070h,050h,060h,0b0h,070h,0b0h,0d1h,020h	; 9be4  p. . P PpP`.p.. 
+	defb 070h,0b0h,020h,0b0h,020h,050h,020h,050h,070h,050h,060h,0b0h,070h,0b0h,0d1h,020h	; 9be4  p. . P PpP`.p..
 	defb 0d2h,0b0h,0d1h,020h,050h,020h,050h,070h,050h,070h,0b0h,070h,0b0h,0d0h,020h,0d1h	; 9bf4  ... P PpPp.p.. .
 	defb 0b0h,0d0h,020h,050h,070h,050h,0f8h,00dh,0e9h,004h,0ebh,04fh,0f5h,0f2h,00ah,0f1h	; 9c04  .. PpP.....O....
 	defb 052h,0d4h,001h,001h,0f8h,013h,0ebh,051h,015h,0d2h,041h,043h,053h,073h,09dh,0c7h	; 9c14  R......Q..ACSs..
@@ -905,9 +905,9 @@ DATA_pista_9C42:
 	defb 001h,011h,021h,0d2h,055h,0c1h,0a1h,0a1h,0eah,008h,0a1h,0eah,00eh,0a1h,0a1h,0eah	; 9ca2  ..!.U...........
 	defb 008h,0a1h,0eah,00eh,0a1h,0a1h,0eah,008h,0a1h,0eah,00eh,0a1h,0a1h,0eah,008h,0a1h	; 9cb2  ................
 	defb 0eah,00eh,0a1h,031h,031h,0d2h,0a3h,091h,071h,051h,071h,0c1h,0d1h,003h,001h,001h	; 9cc2  ...11...qQq.....
-	defb 011h,021h,0d2h,055h,0eah,00ah,0ebh,051h,010h,0eeh,001h,0d3h,0c1h,070h,0b0h,020h	; 9cd2  .!.U...Q.....p. 
+	defb 011h,021h,0d2h,055h,0eah,00ah,0ebh,051h,010h,0eeh,001h,0d3h,0c1h,070h,0b0h,020h	; 9cd2  .!.U...Q.....p.
 	defb 0b0h,020h,050h,020h,050h,070h,050h,060h,0b0h,070h,0b0h,0d2h,020h,0d3h,0b0h,0d2h	; 9ce2  . P PpP`.p.. ...
-	defb 020h,050h,020h,050h,070h,050h,070h,0b0h,070h,0b0h,0d1h,020h,0d2h,0b0h,0d1h,020h	; 9cf2   P PpPp.p.. ... 
+	defb 020h,050h,020h,050h,070h,050h,070h,0b0h,070h,0b0h,0d1h,020h,0d2h,0b0h,0d1h,020h	; 9cf2   P PpPp.p.. ...
 	defb 050h,070h,050h,0d2h,070h,0b0h,020h,0b0h,020h,050h,020h,050h,070h,050h,060h,0b0h	; 9d02  PpP.p. . P PpP`.
 	defb 070h,0b0h,0d1h,020h,0d2h,0b0h,0d1h,020h,050h,020h,050h,070h,050h,070h,0b0h,070h	; 9d12  p.. ... P PpPp.p
 	defb 0b0h,0d0h,020h,0d1h,0b0h,0d0h,020h,050h,0eah,00eh,0e9h,004h,0ebh,051h,015h,0f2h	; 9d22  .. ... P.....Q..

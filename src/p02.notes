@@ -1417,6 +1417,7 @@ C 0x86B2 al chocar se le quitan los canales al jugador
 C 0x925A la ficha siguiente, 0x38 bytes mas alla
 C 0x9CBA un par de 0xFF es el motor ahogado: aceleracion cero
 C 0x8373 el hueco del texto empieza en E62C
+C 0x8380 --> "THE(30)MEMORIAL(30)OF\n(30)FORMULA-1"
 C 0x8DD4 y la parte baja
 C 0x85E3 por dos: la tabla son punteros
 C 0x967C la comparacion que parte 8-9 de 10-11
