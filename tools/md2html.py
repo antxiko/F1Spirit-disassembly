@@ -19,16 +19,18 @@ from estilo_web import ESTILO  # noqa: E402
 
 
 # Un menu por idioma. La web se publica en ingles en la raiz de docs/ y en
-# castellano bajo docs/es/. Son seis paginas por idioma: aqui se desensambla
-# un solo volcado, asi que no hay pagina de versiones.
+# castellano bajo docs/es/. Son siete paginas por idioma; la septima es el
+# editor de circuitos, que aqui no lo tiene ningun otro proyecto.
 NAV_EN = [("index.html", "Home"), ("GETTING-STARTED.html", "Start"),
           ("THE-GAME.html", "The game"), ("THE-CARTRIDGE.html", "The cartridge"),
           ("THE-CODE.html", "The code"), ("FINDINGS.html", "Findings"),
-          ("OPEN-QUESTIONS.html", "Open questions")]
+          ("OPEN-QUESTIONS.html", "Open questions"),
+          ("THE-EDITOR.html", "The editor")]
 NAV_ES = [("index.html", "Portada"), ("EMPEZAR.html", "Empezar"),
           ("EL-JUEGO.html", "El juego"), ("EL-CARTUCHO.html", "El cartucho"),
           ("EL-CODIGO.html", "El código"), ("HALLAZGOS.html", "Hallazgos"),
-          ("PREGUNTAS-ABIERTAS.html", "Preguntas abiertas")]
+          ("PREGUNTAS-ABIERTAS.html", "Preguntas abiertas"),
+          ("EL-EDITOR.html", "El editor")]
 
 # Cada documento se llama distinto en cada idioma, asi que el selector de idioma
 # necesita saber cual es la pareja de cada pagina. Sin esto, cambiar de idioma te
@@ -38,7 +40,8 @@ _PAREJAS = [("GETTING-STARTED.html", "EMPEZAR.html"),
             ("THE-CARTRIDGE.html", "EL-CARTUCHO.html"),
             ("THE-CODE.html", "EL-CODIGO.html"),
             ("FINDINGS.html", "HALLAZGOS.html"),
-            ("OPEN-QUESTIONS.html", "PREGUNTAS-ABIERTAS.html")]
+            ("OPEN-QUESTIONS.html", "PREGUNTAS-ABIERTAS.html"),
+            ("THE-EDITOR.html", "EL-EDITOR.html")]
 PAREJA = {}
 for _en, _es in _PAREJAS:
     PAREJA[_en] = _es
@@ -74,8 +77,8 @@ def enlinea(t):
 # La web se sirve desde docs/, asi que lo que este fuera de esa carpeta no
 # existe para el navegador: esos enlaces se mandan al repositorio. Se puede
 # cambiar sin tocar el codigo con la variable de entorno.
-REPO = os.environ.get("MONKEY_REPO",
-                      "https://github.com/antxiko/MonkeyAcademy-disassembly")
+REPO = os.environ.get("F1SPIRIT_REPO",
+                      "https://github.com/antxiko/F1Spirit-disassembly")
 
 
 def ruta(href):

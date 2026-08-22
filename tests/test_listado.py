@@ -408,3 +408,86 @@ class TestEditorPortable(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestWeb(unittest.TestCase):
+    """La web es bilingue y se genera: lo que se vigila es que no se separe
+    de los listados ni del otro idioma.
+
+    Estas comprobaciones existen en el resto de la serie y aqui faltaban: la
+    web de este proyecto se escribio despues que las demas y se quedo sin
+    red. Sin ellas, una direccion inventada en una pagina no la caza nadie,
+    porque el reensamblado no mira la documentacion.
+    """
+
+    DOCS = os.path.join(RAIZ, "docs")
+
+    PAGINAS = [("GETTING-STARTED.md", "EMPEZAR.md"),
+               ("THE-GAME.md", "EL-JUEGO.md"),
+               ("THE-CARTRIDGE.md", "EL-CARTUCHO.md"),
+               ("THE-CODE.md", "EL-CODIGO.md"),
+               ("FINDINGS.md", "HALLAZGOS.md"),
+               ("OPEN-QUESTIONS.md", "PREGUNTAS-ABIERTAS.md"),
+               ("THE-EDITOR.md", "EL-EDITOR.md")]
+
+    def paginas_md(self):
+        for raiz, _, ficheros in os.walk(self.DOCS):
+            for fn in sorted(ficheros):
+                if fn.endswith(".md"):
+                    with open(os.path.join(raiz, fn), encoding="utf-8") as f:
+                        yield fn, f.read()
+
+    def test_cada_pagina_tiene_su_pareja_en_el_otro_idioma(self):
+        for en, es in self.PAGINAS:
+            self.assertTrue(os.path.exists(os.path.join(self.DOCS, en)),
+                            "falta docs/%s" % en)
+            self.assertTrue(os.path.exists(os.path.join(self.DOCS, "es", es)),
+                            "falta docs/es/%s" % es)
+
+    def test_no_hay_paginas_sueltas_sin_pareja(self):
+        """Una pagina nueva en un idioma y no en el otro: la web se separa."""
+        declaradas = {en for en, _ in self.PAGINAS}
+        declaradas |= {es for _, es in self.PAGINAS}
+        for fn, _ in self.paginas_md():
+            self.assertIn(fn, declaradas,
+                          "docs/%s no esta en la lista de parejas" % fn)
+
+    def test_las_paginas_no_hablan_de_otro_juego(self):
+        otros = ("Monkey", "Athletic", "Pitfall", "Antarctic", "Stardust",
+                 "Temptations", "Ale Hop", "Colt 36", "Middle Earth",
+                 "Time Pilot", "Frogger", "Pippols")
+        for fn, texto in self.paginas_md():
+            for o in otros:
+                self.assertNotIn(o, texto, "docs/%s nombra %s" % (fn, o))
+
+    def test_las_herramientas_de_la_web_no_hablan_de_otro_juego(self):
+        otros = ("Monkey", "Athletic", "Pitfall", "Antarctic", "Stardust",
+                 "Temptations", "Ale Hop", "Colt 36", "Middle Earth",
+                 "Time Pilot", "Frogger", "Pippols")
+        for fn in ("make_web.py", "md2html.py"):
+            with open(os.path.join(RAIZ, "tools", fn), encoding="utf-8") as f:
+                texto = f.read()
+            for o in otros:
+                self.assertNotIn(o, texto, "tools/%s nombra %s" % (fn, o))
+
+    def test_las_paginas_no_inventan_direcciones(self):
+        """Cada 0xNNNN que se cite tiene que existir en algun listado.
+
+        Las dieciseis paginas comparten el espacio de direcciones, asi que
+        aqui se juntan todas: lo que se caza es una direccion que no exista
+        en NINGUNA, que es lo que pasa cuando se escribe de memoria.
+        """
+        vivas = set()
+        for p in range(N_PAGINAS):
+            texto = asm(p)
+            vivas |= set(re.findall(r";([0-9a-f]{4})(?:\s|$)", texto, re.M))
+            vivas |= set(re.findall(
+                r"^\s*(?:defb|defw).*?;\s*([0-9a-f]{4})", texto, re.M))
+            vivas |= {d.lower() for d in
+                      re.findall(r"0x([0-9A-Fa-f]{4})", "\n".join(notas(p)))}
+        for fn, pagina in self.paginas_md():
+            for d in set(re.findall(r"0x([0-9A-Fa-f]{4})", pagina)):
+                if 0x4000 <= int(d, 16) < 0xC000:
+                    self.assertIn(d.lower(), vivas,
+                                  "docs/%s nombra 0x%s y no existe en "
+                                  "ningun listado" % (fn, d.upper()))
