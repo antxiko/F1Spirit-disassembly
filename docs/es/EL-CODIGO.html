@@ -1,0 +1,119 @@
+<title>El código — F-1 Spirit (1987)</title>
+<style>
+:root{--tinta:#cfd0d4;--suave:#83868f;--fondo:#000;--panel:#0c0e13;--linea:#23262e;
+  --rojo:#ff897d;--cyan:#65dbef;--verde:#3eb849;--oro:#ded087}
+@media (prefers-color-scheme:light){:root{--tinta:#191a1e;--suave:#5a5d66;--fondo:#e9e7e1;
+  --panel:#f7f6f2;--linea:#d0cdc5;--rojo:#b23f34;--cyan:#1c6b7c;--verde:#2b7734;--oro:#8a7420}}
+:root[data-theme="dark"]{--tinta:#cfd0d4;--suave:#83868f;--fondo:#000;--panel:#0c0e13;
+  --linea:#23262e;--rojo:#ff897d;--cyan:#65dbef;--verde:#3eb849;--oro:#ded087}
+:root[data-theme="light"]{--tinta:#191a1e;--suave:#5a5d66;--fondo:#e9e7e1;--panel:#f7f6f2;
+  --linea:#d0cdc5;--rojo:#b23f34;--cyan:#1c6b7c;--verde:#2b7734;--oro:#8a7420}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--tinta);padding:0 1.25rem 6rem;
+  font:15px/1.7 ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+.w{max-width:1120px;margin:0 auto}
+.n{max-width:68ch}
+h1,h2,h3,h4{font-weight:400;text-wrap:balance}
+a{color:var(--cyan)}
+img{image-rendering:pixelated;max-width:100%;height:auto;display:block}
+header.top{display:flex;flex-direction:column;align-items:center;gap:1.5rem;
+  padding:4rem 0 2rem;text-align:center}
+header.top img{width:min(100%,642px)}
+.claim{max-width:60ch;color:var(--suave);font-size:1.05rem}
+.claim b{color:var(--tinta);font-weight:400}
+.ficha{display:flex;flex-wrap:wrap;justify-content:center;gap:0 1.5rem;width:100%;
+  font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--suave);
+  border-top:1px solid var(--linea);border-bottom:1px solid var(--linea);padding:.85rem 0}
+.ficha b{color:var(--rojo);font-weight:400}
+nav{display:flex;flex-wrap:wrap;gap:1.25rem;justify-content:center;padding:1.25rem 0;
+  font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+nav a{color:var(--suave);text-decoration:none;border-bottom:1px solid transparent}
+nav a:hover,nav a:focus{color:var(--tinta);border-bottom-color:var(--rojo)}
+nav.docs{border-top:1px solid var(--linea);border-bottom:1px solid var(--linea);
+  margin-bottom:1rem}
+section{margin-top:4.5rem;scroll-margin-top:1rem}
+section>h2{font-size:1rem;letter-spacing:.1em;text-transform:uppercase;
+  border-left:3px solid var(--rojo);padding-left:.9rem;margin:0 0 1.5rem}
+.cifras{display:grid;gap:1px;background:var(--linea);border:1px solid var(--linea);
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.cifra{background:var(--panel);padding:1.1rem}
+.cifra b{display:block;font-size:1.7rem;color:var(--oro);font-weight:400;
+  font-variant-numeric:tabular-nums;line-height:1.2}
+.cifra span{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--suave)}
+.hall{border-top:1px solid var(--linea);padding-top:1.75rem;margin-top:2.5rem}
+.hall:first-of-type{border-top:0;padding-top:0;margin-top:0}
+.hall h3{margin:0 0 .75rem;font-size:1.15rem;color:var(--rojo)}
+.hall h4{color:var(--oro);margin:1.5rem 0 .5rem;font-size:.95rem}
+.hall p{margin:0 0 1rem}
+pre.asm{background:var(--panel);border-left:2px solid var(--verde);margin:1.25rem 0;
+  padding:1rem 1.1rem;overflow-x:auto;font-size:13px;line-height:1.6;color:var(--tinta)}
+.par{display:grid;gap:1.25rem;grid-template-columns:1fr}
+@media(min-width:820px){.par{grid-template-columns:1fr 1fr}}
+.par figure{margin:0}
+table{border-collapse:collapse;width:100%;margin:1.25rem 0;font-size:13px;display:block;
+  overflow-x:auto}
+th,td{text-align:left;padding:.5rem .75rem;border-bottom:1px solid var(--linea)}
+th{color:var(--suave);font-weight:400;font-size:11px;letter-spacing:.07em;text-transform:uppercase}
+td.num{font-variant-numeric:tabular-nums;color:var(--oro)}
+.nivel{margin-top:2rem}
+.nivel h3{margin:0 0 .9rem;font-size:.95rem;letter-spacing:.06em;text-transform:uppercase}
+.nivel em{color:var(--cyan);font-style:normal}
+.sep{color:var(--suave);margin:0 .6rem}
+.rejilla{display:grid;gap:.9rem;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.rejilla figure{margin:0;background:var(--panel);box-shadow:0 0 0 1px var(--linea)}
+.rejilla figcaption{display:flex;justify-content:space-between;padding:.45rem .65rem;
+  font-size:11px;color:var(--suave);border-top:1px solid var(--linea)}
+.dir{font-variant-numeric:tabular-nums;color:var(--verde)}
+footer{margin-top:5rem;padding-top:1.5rem;border-top:1px solid var(--linea);
+  color:var(--suave);font-size:12px}
+
+/* Aviso de trabajo en curso: tiene que verse antes que las cifras, porque un
+   100% mal leido hace mas dano que no ponerlo. */
+.aviso{background:#3a2a10;border-left:3px solid var(--oro);margin:1.5rem auto;
+  padding:1rem 1.2rem;max-width:900px;border-radius:4px}
+.aviso p{margin:0;color:var(--tinta);font-size:15px;line-height:1.65}
+.galeria{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:1.5rem;margin:1.5rem 0}
+.galeria figure{margin:0}
+.galeria img{width:100%;height:auto;image-rendering:pixelated;
+  border:1px solid var(--linea);border-radius:3px}
+.galeria figcaption{color:var(--suave);font-size:13px;margin-top:.5rem}
+audio{display:block;width:100%;max-width:640px;margin:.75rem 0 1.5rem}
+</style>
+<div class="w"><nav class="top"><a href="index.html">Portada</a><a href="EMPEZAR.html">Empezar</a><a href="EL-JUEGO.html">El juego</a><a href="EL-CARTUCHO.html">El cartucho</a><a href="EL-CODIGO.html" style=color:var(--tinta)>El código</a><a href="HALLAZGOS.html">Hallazgos</a><a href="PREGUNTAS-ABIERTAS.html">Preguntas abiertas</a><a href="../THE-CODE.html" style="margin-left:auto;color:var(--oro)">English</a></nav>
+<h1 id="el-codigo">El código</h1>
+<h2 id="que-hay-en-cada-pagina">Qué hay en cada página</h2>
+<p>De las dieciséis páginas, seis llevan código y diez son datos:</p>
+<table><tr><th>página</th><th>qué es</th></tr><tr><td>0</td><td>fija en 0x4000: cabecera, interrupción, mapper, mandos, cargador de tiles, pista, boxes, presentación</td></tr><tr><td>1</td><td>menús, fichas de coche, ranking, HUD, salida, contraseña</td></tr><tr><td>2</td><td>física del coche, estados, sonido del motor, objetos, final</td></tr><tr><td>3</td><td>los rivales: parrilla, adelantamientos, choques, tipos</td></tr><tr><td>4</td><td>listas de tiles y de sprites</td></tr><tr><td>5, 7, 10, 11, 14</td><td>gráficos y metatiles</td></tr><tr><td>6, 8, 9, 12</td><td>dibujos, textos y tablas</td></tr><tr><td>13</td><td>el reproductor de sonido</td></tr><tr><td>15</td><td>flujos de la presentación y una partida grabada</td></tr></table>
+<p>El desensamblado saca <b>un listado por página</b>, cada uno con su <code>org</code>, y <code>make verify</code> reensambla las dieciséis y las concatena: tiene que salir la ROM entera, byte a byte.</p>
+<h2 id="la-pista">La pista</h2>
+<p>La pista de cada circuito es una <b>secuencia de piezas</b>. Cada entrada de la secuencia son dos bytes —el número de pieza y unos flags— y un 0xFF cierra la vuelta.</p>
+<p>Una pieza son <b>24 bytes</b>: tres filas de ocho metatiles. Cada metatile son 4 × 4 tiles, o sea 16 bytes, así que una pieza mide doce filas de tiles de alto y ocupa el ancho entero de la pantalla.</p>
+<p>La posición en la pista es un contador de <b>32 bits que baja</b> —la pista viene hacia el jugador—, y cada 0x800 es una fila de ocho píxeles. A las doce filas se agota la pieza y se pasa a la siguiente.</p>
+<p>Dos detalles que se ven al leer el código:</p>
+<ul><li>la fila del metatile se lee <b>al revés</b> (3 menos la fila), porque el dibujo avanza hacia abajo mientras la pista sube;</li><li>la columna por la que se empieza a leer la fila de metatiles <b>gira módulo 8</b>, y eso es lo que hace que la pista se desplace de lado: el bit 6 del segundo byte de la pieza dice que hay desplazamiento y los seis de abajo, cuánto.</li></ul>
+<p>Los carteles y adornos del borde no van en el dibujo de las piezas: van en una lista aparte por circuito, ordenada por posición, con tres bytes por entrada —la pieza en los doce bits altos, la fila en los cuatro bajos, y el dibujo—. Como está ordenada, basta un índice que avanza y no vuelve.</p>
+<h2 id="el-cargador-de-tiles">El cargador de tiles</h2>
+<p>Nada se copia a la VRAM tal cual. Todos los gráficos pasan por un cargador que recorre listas de la página 4. Un registro de lista son <b>seis bytes</b>:</p>
+<pre><code>flags | tile | puntero a los patrones | puntero a los colores</code></pre>
+<p>y los flags dicen de dónde sale el dibujo y qué hacer con él:</p>
+<table><tr><th>bits</th><th>qué dicen</th></tr><tr><td>2-1</td><td>grupo de páginas donde está el dibujo: 4, 7, 0x0A o 0x0D</td></tr><tr><td>3</td><td>voltear el tile de arriba abajo</td></tr><tr><td>4</td><td>espejarlo de izquierda a derecha</td></tr><tr><td>5, 6, 7</td><td>a qué tercios de pantalla va</td></tr></table>
+<p>Al otro lado de los punteros no hay bytes sueltos: hay un <b>RLE que se descomprime directamente a la VRAM</b>, de ocho en ocho bytes, con el tile de paso en RAM. Los códigos son 00 acaba, 01-7F repite el byte siguiente n veces, 80 no hace nada y 81-FF copia n bytes tal cual. El espejo y el volteo se hacen ahí, con el tile ya montado y antes de soltarlo: salen gratis.</p>
+<p>Además de registros, una lista puede traer <b>órdenes</b>:</p>
+<table><tr><th>orden</th><th>qué hace</th></tr><tr><td>0x10</td><td>copia los 16 bytes que van detrás a una variable</td></tr><tr><td>0x11, 0x15, 0x19, 0x1D</td><td>escriben una palabra en una de cuatro ranuras</td></tr><tr><td>0x12</td><td>nada (y sin avanzar el puntero: ninguna lista la usa)</td></tr><tr><td>0x13</td><td>mete una lista dentro de otra</td></tr><tr><td>0x17</td><td>carga un recurso de la tabla de 85</td></tr></table>
+<p>Y hay un modo por filas: cargando <b>una fila de píxeles de cada tile por vez</b>, con una espera en medio, el dibujo aparece de arriba abajo en vez de salir de golpe. Eso es el efecto de entrada del panel.</p>
+<h2 id="los-sprites">Los sprites</h2>
+<p>Los atributos no se escriben directos: hay una copia en RAM de 32 sprites × 4 bytes que se vuelca al VDP en cada repintado. En los fotogramas impares se vuelca <b>al revés</b>, del 29 al 0, con los dos últimos aparte: es la rotación de prioridad que hace parpadear a los sprites que sobran de los cuatro por línea en vez de borrarlos.</p>
+<p>Cada coche son dos sprites en la misma posición: el patrón y el patrón más cuatro, con colores distintos. En un TMS9918 esa es la manera de tener una figura de dos tintas.</p>
+<p>El fotograma del coche sale del ángulo, repartido en dieciséis sectores. De F3 para arriba los coches llevan cinco fotogramas más —las ruedas girando— y en las categorías de abajo no: esos coches no las enseñan.</p>
+<h2 id="los-rivales">Los rivales</h2>
+<p>Cada jugador lleva cinco rivales, fichas de 0x38 bytes, y <b>cada uno se atiende un fotograma de cada ocho</b>: su turno está escrito en su propia ficha, así que los cinco no caen nunca en el mismo fotograma.</p>
+<p>Un rival mira la pista que tiene por delante —a 0xE8 y a 0x98 píxeles— leyendo tres casillas de la fila, y de ahí saca dos cosas: si viene curva, y por dónde hay hueco. Si viene curva, a su velocidad base se le resta lo que diga una de tres listas, de la frenada más suave a la más dura.</p>
+<p>Los choques entre coches se reparten como un choque elástico a medias: la velocidad nueva de cada uno es la media de las dos, más o menos la cuarta parte de la diferencia por el eje largo y la octava por el corto.</p>
+<p>En la parrilla el jugador 1 sale <b>tercero</b> y el 2 <b>cuarto</b>, pero la clasificación es más larga que los seis coches que se ven: a la plaza se le suma el número de coches que en esa carrera van por delante sin verse, que en la primera son 20. De ahí que se empiece el 23.</p>
+<h2 id="el-sonido">El sonido</h2>
+<p>El reproductor de la página 13 corre una vez por interrupción y atiende dos aparatos: el PSG de la máquina y el SCC del cartucho.</p>
+<p>Del PSG escribe los tres canales con su periodo y su volumen, el periodo del ruido, los tres registros de envolvente y el mezclador. Del SCC, los cinco canales, sus formas de onda de 32 bytes y su propio mezclador.</p>
+<p>Lo caro del SCC es llegar a él: hay que mapear la página 0x3F en 0x8000, escribir y devolver la 2. Por eso el reproductor lleva una <b>copia en RAM de los quince valores</b> y compara uno a uno; solo los que han cambiado se marcan y solo esos se escriben. Son quince trozos calcados de siete instrucciones, escritos a mano y sin bucle: más largos, pero sin cuentas de índices.</p>
+<p>Los efectos de las partituras son envolventes por software: dos fases de volumen, un vibrato de cuatro tramos y un deslizamiento de nota, todo escrito en la propia partitura como órdenes.</p>
+<footer><p><em>F-1 Spirit</em> lo publico Konami en 1987 para MSX; es un MegaROM de 128 KB con mapper Konami SCC y su numero de catalogo es RC-752. El cartucho lleva sus creditos escritos en claro, en la pagina 2: <b>PROGRAM</b> T.ADACHI, M.OZAWA y R.SAGISAKA; <b>GRAPHIC</b> H.MAKITANI, T.SHIMIZU y B.KINOSHITA; <b>SOUND</b> K.UEHARA, M.SASAKI y M.FURUKAWA. Todos los derechos sobre el juego siguen siendo de sus titulares. Este trabajo es de preservacion, estudio y documentacion.</p></footer></div>

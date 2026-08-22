@@ -1,0 +1,124 @@
+<title>Findings — F-1 Spirit (1987)</title>
+<style>
+:root{--tinta:#cfd0d4;--suave:#83868f;--fondo:#000;--panel:#0c0e13;--linea:#23262e;
+  --rojo:#ff897d;--cyan:#65dbef;--verde:#3eb849;--oro:#ded087}
+@media (prefers-color-scheme:light){:root{--tinta:#191a1e;--suave:#5a5d66;--fondo:#e9e7e1;
+  --panel:#f7f6f2;--linea:#d0cdc5;--rojo:#b23f34;--cyan:#1c6b7c;--verde:#2b7734;--oro:#8a7420}}
+:root[data-theme="dark"]{--tinta:#cfd0d4;--suave:#83868f;--fondo:#000;--panel:#0c0e13;
+  --linea:#23262e;--rojo:#ff897d;--cyan:#65dbef;--verde:#3eb849;--oro:#ded087}
+:root[data-theme="light"]{--tinta:#191a1e;--suave:#5a5d66;--fondo:#e9e7e1;--panel:#f7f6f2;
+  --linea:#d0cdc5;--rojo:#b23f34;--cyan:#1c6b7c;--verde:#2b7734;--oro:#8a7420}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--tinta);padding:0 1.25rem 6rem;
+  font:15px/1.7 ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+.w{max-width:1120px;margin:0 auto}
+.n{max-width:68ch}
+h1,h2,h3,h4{font-weight:400;text-wrap:balance}
+a{color:var(--cyan)}
+img{image-rendering:pixelated;max-width:100%;height:auto;display:block}
+header.top{display:flex;flex-direction:column;align-items:center;gap:1.5rem;
+  padding:4rem 0 2rem;text-align:center}
+header.top img{width:min(100%,642px)}
+.claim{max-width:60ch;color:var(--suave);font-size:1.05rem}
+.claim b{color:var(--tinta);font-weight:400}
+.ficha{display:flex;flex-wrap:wrap;justify-content:center;gap:0 1.5rem;width:100%;
+  font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--suave);
+  border-top:1px solid var(--linea);border-bottom:1px solid var(--linea);padding:.85rem 0}
+.ficha b{color:var(--rojo);font-weight:400}
+nav{display:flex;flex-wrap:wrap;gap:1.25rem;justify-content:center;padding:1.25rem 0;
+  font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+nav a{color:var(--suave);text-decoration:none;border-bottom:1px solid transparent}
+nav a:hover,nav a:focus{color:var(--tinta);border-bottom-color:var(--rojo)}
+nav.docs{border-top:1px solid var(--linea);border-bottom:1px solid var(--linea);
+  margin-bottom:1rem}
+section{margin-top:4.5rem;scroll-margin-top:1rem}
+section>h2{font-size:1rem;letter-spacing:.1em;text-transform:uppercase;
+  border-left:3px solid var(--rojo);padding-left:.9rem;margin:0 0 1.5rem}
+.cifras{display:grid;gap:1px;background:var(--linea);border:1px solid var(--linea);
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.cifra{background:var(--panel);padding:1.1rem}
+.cifra b{display:block;font-size:1.7rem;color:var(--oro);font-weight:400;
+  font-variant-numeric:tabular-nums;line-height:1.2}
+.cifra span{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--suave)}
+.hall{border-top:1px solid var(--linea);padding-top:1.75rem;margin-top:2.5rem}
+.hall:first-of-type{border-top:0;padding-top:0;margin-top:0}
+.hall h3{margin:0 0 .75rem;font-size:1.15rem;color:var(--rojo)}
+.hall h4{color:var(--oro);margin:1.5rem 0 .5rem;font-size:.95rem}
+.hall p{margin:0 0 1rem}
+pre.asm{background:var(--panel);border-left:2px solid var(--verde);margin:1.25rem 0;
+  padding:1rem 1.1rem;overflow-x:auto;font-size:13px;line-height:1.6;color:var(--tinta)}
+.par{display:grid;gap:1.25rem;grid-template-columns:1fr}
+@media(min-width:820px){.par{grid-template-columns:1fr 1fr}}
+.par figure{margin:0}
+table{border-collapse:collapse;width:100%;margin:1.25rem 0;font-size:13px;display:block;
+  overflow-x:auto}
+th,td{text-align:left;padding:.5rem .75rem;border-bottom:1px solid var(--linea)}
+th{color:var(--suave);font-weight:400;font-size:11px;letter-spacing:.07em;text-transform:uppercase}
+td.num{font-variant-numeric:tabular-nums;color:var(--oro)}
+.nivel{margin-top:2rem}
+.nivel h3{margin:0 0 .9rem;font-size:.95rem;letter-spacing:.06em;text-transform:uppercase}
+.nivel em{color:var(--cyan);font-style:normal}
+.sep{color:var(--suave);margin:0 .6rem}
+.rejilla{display:grid;gap:.9rem;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.rejilla figure{margin:0;background:var(--panel);box-shadow:0 0 0 1px var(--linea)}
+.rejilla figcaption{display:flex;justify-content:space-between;padding:.45rem .65rem;
+  font-size:11px;color:var(--suave);border-top:1px solid var(--linea)}
+.dir{font-variant-numeric:tabular-nums;color:var(--verde)}
+footer{margin-top:5rem;padding-top:1.5rem;border-top:1px solid var(--linea);
+  color:var(--suave);font-size:12px}
+
+/* Aviso de trabajo en curso: tiene que verse antes que las cifras, porque un
+   100% mal leido hace mas dano que no ponerlo. */
+.aviso{background:#3a2a10;border-left:3px solid var(--oro);margin:1.5rem auto;
+  padding:1rem 1.2rem;max-width:900px;border-radius:4px}
+.aviso p{margin:0;color:var(--tinta);font-size:15px;line-height:1.65}
+.galeria{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:1.5rem;margin:1.5rem 0}
+.galeria figure{margin:0}
+.galeria img{width:100%;height:auto;image-rendering:pixelated;
+  border:1px solid var(--linea);border-radius:3px}
+.galeria figcaption{color:var(--suave);font-size:13px;margin-top:.5rem}
+audio{display:block;width:100%;max-width:640px;margin:.75rem 0 1.5rem}
+</style>
+<div class="w"><nav class="top"><a href="index.html">Home</a><a href="GETTING-STARTED.html">Start</a><a href="THE-GAME.html">The game</a><a href="THE-CARTRIDGE.html">The cartridge</a><a href="THE-CODE.html">The code</a><a href="FINDINGS.html" style=color:var(--tinta)>Findings</a><a href="OPEN-QUESTIONS.html">Open questions</a><a href="es/HALLAZGOS.html" style="margin-left:auto;color:var(--oro)">Castellano</a></nav>
+<h1 id="findings">Findings</h1>
+<p>What turned up while reading the cartridge instruction by instruction. Everything here is measured against the binary; where something is a hypothesis, it says so.</p>
+<h2 id="the-clock-is-made-for-60-hz">The clock is made for 60 Hz</h2>
+<p>The arithmetic has three parts: the clock goes up one per logic step, the interrupt takes a step every <b>three</b>, and the on-screen clock divides by <b>20</b> to get seconds. 3 × 20 = 60.</p>
+<p>On an NTSC machine the clock is exact. On a PAL one, with 50 interrupts per second, that gives 16.67 steps, so the clock shows <b>five seconds for every six real ones</b>. It is the clock that counts wrong, not the game that runs slow: the three-interrupts-per-step split keeps the race advancing at the same relative pace either way.</p>
+<h2 id="the-replay-branch-is-disabled-by-an-scf">The replay branch is disabled by an <code>scf</code></h2>
+<p>The car&#x27;s normal state starts like this:</p>
+<pre><code>8C70  B7        or a          ; clears the carry
+8C71  37        scf           ; and sets it again
+8C72  D2 D3 89  jp nc,0x89D3  ; ...so this jump is NEVER taken</code></pre>
+<p>Those are the bytes, checked in the ROM. The <code>scf</code> always leaves the carry set, so the <code>jp nc</code> never jumps. And with it falls the routine at 0x89D3, the one that would make the car follow the recorded object during the replay: <b>its two bytes D3 89 appear exactly once in the cartridge&#x27;s 128 KB</b>, and it is that jump&#x27;s operand.</p>
+<p>The replay still works —it has its own path elsewhere— but that particular branch is dead.</p>
+<h2 id="a-ladder-of-divisions-that-was-eating-a-factor-of-eight">A ladder of divisions that was eating a factor of eight</h2>
+<p>Page 0 has a ladder of eight <code>sra h / rr l</code> pairs in a row followed by a <code>ret</code>. Each entry point divides by two as many times as it has pairs ahead of it: entering at 0x4A76 is eight (÷256), at 0x4A7E six (÷64), at 0x4A86 four (÷16) and at 0x4A8A three (÷8).</p>
+<p>While reading them it turned out the note on the car&#x27;s braking said &quot;vy -= vy/8&quot; citing 0x4A7E, and <b>0x4A7E divides by 64</b>. That is six pairs, not three; the bytes are <code>CB 2C CB 1D</code> repeated. The car&#x27;s drag is eight times gentler than what was written.</p>
+<p>Another one came out of it: the third <code>sbc hl,de</code> of the drag code (0x9934) is the only one of the three <b>without an or a in front</b>, so it swallows the carry left by the ladder&#x27;s last <code>rr l</code> and subtracts one extra from the speed whenever the bit that fell off the bottom was a one.</p>
+<h2 id="the-rivals-cost-you-places-two-ways">The rivals cost you places two ways</h2>
+<p>While you are <b>stopped in the pits</b>, every rival that crosses the screen adds one place to your position, up to a cap of 99. The gap between cars is drawn at random: in category 0 the addend is 30 and in the others 5, so in RALLY they go past far less often.</p>
+<p>And a rival that <b>crosses the finish line</b> after you also adds one place, with the same cap. Each rival collects it only once: it is marked with a bit in its own flags.</p>
+<h2 id="the-roadside-prop-lands-in-the-middle-of-the-gap">The roadside prop lands in the middle of the gap</h2>
+<p>The signs at the edge are not placed where the list says: the list says which row they go in, and the code finds them a spot. It walks ten positions along the row, three columns apart, looking for <b>five consecutive cells</b> whose tile is background, and plants the prop in the middle of the gap.</p>
+<p>With one curiosity: of the four cells it checks besides the first one, if the one that fails is the <b>fourth</b>, the gap is accepted anyway. In practice only the first three count.</p>
+<h2 id="eight-doors-with-no-caller">Eight doors with no caller</h2>
+<p>Page 0 has eight routine entry points whose two bytes <b>do not appear once in the 128 KB</b> —neither as a <code>call</code> operand nor inside a jump table— and which are not reached by falling through from the instruction before: 0x4A55, 0x4A76, 0x4A97, 0x4B48, 0x4BA3, 0x4C8C, 0x4C9A and 0x4CAF.</p>
+<p>With 0x4B48 everything hanging off it falls too: the whole rectangle copier is dead code.</p>
+<h2 id="one-instruction-that-straddles-a-page-boundary">One instruction that straddles a page boundary</h2>
+<p>At 0x7FFF, the last byte of page 1, there is a <code>sub</code> (0xD6). Its operand is the first byte of page 2 (0xD4), and the routine carries on at 0x8001. It is <b>the only instruction in the cartridge that crosses a page boundary</b>, and it works because the two windows are contiguous in the Z80&#x27;s map.</p>
+<p>There is more code that leaves its page —the routine at 0x5FD7 ends up jumping to 0x6057 and 0x60F3, already in page 1— but those are jumps: legal, because page 0 is fixed, even if the listing cannot follow them.</p>
+<h2 id="the-credits-are-in-plain-text">The credits are in plain text</h2>
+<p>In page 2, at 0x848A, there is a text stream with the full credits, neither enciphered nor compressed:</p>
+<blockquote>STAFF — PROGRAM: T.ADACHI, M.OZAWA, R.SAGISAKA — GRAPHIC: H.MAKITANI, T.SHIMIZU, B.KINOSHITA — SOUND: K.UEHARA, M.SASAKI, M.FURUKAWA</blockquote>
+<h2 id="two-sibling-slips-in-the-cartridge">Two sibling slips in the cartridge</h2>
+<p>Both are the same oversight, and both make a second pass repeat player 1&#x27;s work instead of doing player 2&#x27;s.</p>
+<ul><li>At p03 0xA779 the bytes are <code>FD 21 28 E9 FD 21 80 E3</code>, that is <code>ld iy,0E928h</code> followed by <code>ld iy,0E380h</code>: the first load does nothing, because the next one overwrites it. Going by the pattern of the two instructions above, the prefix should have been DD —<code>ld ix</code>— and not FD.</li><li>At p02 0x8025 the rival setup calls the same routine twice, once per car, but <b>IY is not changed in between</b>: it stays on car 1. An <code>ld iy,0E380h</code> is missing.</li></ul>
+<p>That the load is overwritten is read off the bytes; what was meant instead is inference. Neither shows while playing: in p02, the only thing that reads what that second pass would leave is a routine that redoes the calculation right before, every time.</p>
+<h2 id="the-axis-the-notes-call-x-is-the-vertical-one">The axis the notes call &quot;x&quot; is the vertical one</h2>
+<p>Each car&#x27;s record has two coordinates, and the disassembly had been calling them x and y. Reading the sprite writer shows the first one is what ends up in the <b>Y byte of the attribute</b>, which on the TMS9918 is the vertical one. The rival entry confirms it: the slow one comes in at 0 —top of the screen, ahead of you— and the fast one at 0xB7 —bottom, behind you—.</p>
+<p>So the game&#x27;s &quot;x&quot; is the along-the-track axis, which on screen runs vertically.</p>
+<h2 id="only-one-of-the-three-ending-sprites-rises">Only one of the three ending sprites rises</h2>
+<p>The ending scene has three sprites moving at once. All three advance to the right, but only the first one rises: the loop shifts the value one bit before subtracting it, so the second gets half and the third a quarter, and both are zero.</p>
+<footer><p><em>F-1 Spirit</em> was published by Konami in 1987 for the MSX; it is a 128 KB MegaROM with a Konami SCC mapper and its catalogue number is RC-752. The cartridge carries its credits in plain text, in page 2: <b>PROGRAM</b> T.ADACHI, M.OZAWA and R.SAGISAKA; <b>GRAPHIC</b> H.MAKITANI, T.SHIMIZU and B.KINOSHITA; <b>SOUND</b> K.UEHARA, M.SASAKI and M.FURUKAWA. All rights in the game remain with their holders. This is preservation, study and documentation work.</p></footer></div>

@@ -57,6 +57,7 @@ def main(argv):
     if portable:
         html = plantilla.replace(MARCADOR, "null").replace(MARCADOR_ROM, "null")
         html = html.replace(MARCADOR_LECTOR, open(LECTOR, encoding="utf-8").read())
+        html = html.replace("../../docs/es/", "es/").replace("../../docs/", "")
         os.makedirs(os.path.dirname(os.path.abspath(salida)), exist_ok=True)
         open(salida, "w", encoding="utf-8", newline=chr(10)).write(html)
         print("%s: %d KB, PORTABLE (sin ROM ni datos dentro: los lee del fichero "
@@ -64,6 +65,10 @@ def main(argv):
         return 0
 
     html = plantilla.replace(MARCADOR, datos).replace(MARCADOR_LECTOR, "")
+    # La plantilla vive en tools/editor/, asi que sus enlaces al manual van con
+    # ../../docs/. El editor publicado vive EN docs/, y desde ahi esa ruta se
+    # sale del sitio: hay que dejarla relativa a docs/.
+    html = html.replace("../../docs/es/", "es/").replace("../../docs/", "")
     if MARCADOR_ROM in html:
         # la ROM entera en base64 (175 KB): sin ella el editor no puede
         # ofrecer la ROM parcheada, que es lo que se lleva al emulador

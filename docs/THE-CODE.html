@@ -1,0 +1,119 @@
+<title>The code — F-1 Spirit (1987)</title>
+<style>
+:root{--tinta:#cfd0d4;--suave:#83868f;--fondo:#000;--panel:#0c0e13;--linea:#23262e;
+  --rojo:#ff897d;--cyan:#65dbef;--verde:#3eb849;--oro:#ded087}
+@media (prefers-color-scheme:light){:root{--tinta:#191a1e;--suave:#5a5d66;--fondo:#e9e7e1;
+  --panel:#f7f6f2;--linea:#d0cdc5;--rojo:#b23f34;--cyan:#1c6b7c;--verde:#2b7734;--oro:#8a7420}}
+:root[data-theme="dark"]{--tinta:#cfd0d4;--suave:#83868f;--fondo:#000;--panel:#0c0e13;
+  --linea:#23262e;--rojo:#ff897d;--cyan:#65dbef;--verde:#3eb849;--oro:#ded087}
+:root[data-theme="light"]{--tinta:#191a1e;--suave:#5a5d66;--fondo:#e9e7e1;--panel:#f7f6f2;
+  --linea:#d0cdc5;--rojo:#b23f34;--cyan:#1c6b7c;--verde:#2b7734;--oro:#8a7420}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--tinta);padding:0 1.25rem 6rem;
+  font:15px/1.7 ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+.w{max-width:1120px;margin:0 auto}
+.n{max-width:68ch}
+h1,h2,h3,h4{font-weight:400;text-wrap:balance}
+a{color:var(--cyan)}
+img{image-rendering:pixelated;max-width:100%;height:auto;display:block}
+header.top{display:flex;flex-direction:column;align-items:center;gap:1.5rem;
+  padding:4rem 0 2rem;text-align:center}
+header.top img{width:min(100%,642px)}
+.claim{max-width:60ch;color:var(--suave);font-size:1.05rem}
+.claim b{color:var(--tinta);font-weight:400}
+.ficha{display:flex;flex-wrap:wrap;justify-content:center;gap:0 1.5rem;width:100%;
+  font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--suave);
+  border-top:1px solid var(--linea);border-bottom:1px solid var(--linea);padding:.85rem 0}
+.ficha b{color:var(--rojo);font-weight:400}
+nav{display:flex;flex-wrap:wrap;gap:1.25rem;justify-content:center;padding:1.25rem 0;
+  font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+nav a{color:var(--suave);text-decoration:none;border-bottom:1px solid transparent}
+nav a:hover,nav a:focus{color:var(--tinta);border-bottom-color:var(--rojo)}
+nav.docs{border-top:1px solid var(--linea);border-bottom:1px solid var(--linea);
+  margin-bottom:1rem}
+section{margin-top:4.5rem;scroll-margin-top:1rem}
+section>h2{font-size:1rem;letter-spacing:.1em;text-transform:uppercase;
+  border-left:3px solid var(--rojo);padding-left:.9rem;margin:0 0 1.5rem}
+.cifras{display:grid;gap:1px;background:var(--linea);border:1px solid var(--linea);
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.cifra{background:var(--panel);padding:1.1rem}
+.cifra b{display:block;font-size:1.7rem;color:var(--oro);font-weight:400;
+  font-variant-numeric:tabular-nums;line-height:1.2}
+.cifra span{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--suave)}
+.hall{border-top:1px solid var(--linea);padding-top:1.75rem;margin-top:2.5rem}
+.hall:first-of-type{border-top:0;padding-top:0;margin-top:0}
+.hall h3{margin:0 0 .75rem;font-size:1.15rem;color:var(--rojo)}
+.hall h4{color:var(--oro);margin:1.5rem 0 .5rem;font-size:.95rem}
+.hall p{margin:0 0 1rem}
+pre.asm{background:var(--panel);border-left:2px solid var(--verde);margin:1.25rem 0;
+  padding:1rem 1.1rem;overflow-x:auto;font-size:13px;line-height:1.6;color:var(--tinta)}
+.par{display:grid;gap:1.25rem;grid-template-columns:1fr}
+@media(min-width:820px){.par{grid-template-columns:1fr 1fr}}
+.par figure{margin:0}
+table{border-collapse:collapse;width:100%;margin:1.25rem 0;font-size:13px;display:block;
+  overflow-x:auto}
+th,td{text-align:left;padding:.5rem .75rem;border-bottom:1px solid var(--linea)}
+th{color:var(--suave);font-weight:400;font-size:11px;letter-spacing:.07em;text-transform:uppercase}
+td.num{font-variant-numeric:tabular-nums;color:var(--oro)}
+.nivel{margin-top:2rem}
+.nivel h3{margin:0 0 .9rem;font-size:.95rem;letter-spacing:.06em;text-transform:uppercase}
+.nivel em{color:var(--cyan);font-style:normal}
+.sep{color:var(--suave);margin:0 .6rem}
+.rejilla{display:grid;gap:.9rem;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.rejilla figure{margin:0;background:var(--panel);box-shadow:0 0 0 1px var(--linea)}
+.rejilla figcaption{display:flex;justify-content:space-between;padding:.45rem .65rem;
+  font-size:11px;color:var(--suave);border-top:1px solid var(--linea)}
+.dir{font-variant-numeric:tabular-nums;color:var(--verde)}
+footer{margin-top:5rem;padding-top:1.5rem;border-top:1px solid var(--linea);
+  color:var(--suave);font-size:12px}
+
+/* Aviso de trabajo en curso: tiene que verse antes que las cifras, porque un
+   100% mal leido hace mas dano que no ponerlo. */
+.aviso{background:#3a2a10;border-left:3px solid var(--oro);margin:1.5rem auto;
+  padding:1rem 1.2rem;max-width:900px;border-radius:4px}
+.aviso p{margin:0;color:var(--tinta);font-size:15px;line-height:1.65}
+.galeria{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:1.5rem;margin:1.5rem 0}
+.galeria figure{margin:0}
+.galeria img{width:100%;height:auto;image-rendering:pixelated;
+  border:1px solid var(--linea);border-radius:3px}
+.galeria figcaption{color:var(--suave);font-size:13px;margin-top:.5rem}
+audio{display:block;width:100%;max-width:640px;margin:.75rem 0 1.5rem}
+</style>
+<div class="w"><nav class="top"><a href="index.html">Home</a><a href="GETTING-STARTED.html">Start</a><a href="THE-GAME.html">The game</a><a href="THE-CARTRIDGE.html">The cartridge</a><a href="THE-CODE.html" style=color:var(--tinta)>The code</a><a href="FINDINGS.html">Findings</a><a href="OPEN-QUESTIONS.html">Open questions</a><a href="es/EL-CODIGO.html" style="margin-left:auto;color:var(--oro)">Castellano</a></nav>
+<h1 id="the-code">The code</h1>
+<h2 id="what-is-in-each-page">What is in each page</h2>
+<p>Of the sixteen pages, six carry code and ten are data:</p>
+<table><tr><th>page</th><th>what it is</th></tr><tr><td>0</td><td>fixed at 0x4000: header, interrupt, mapper, joysticks, tile loader, track, pits, title screen</td></tr><tr><td>1</td><td>menus, car cards, ranking, HUD, starting grid, password</td></tr><tr><td>2</td><td>car physics, states, engine sound, objects, ending</td></tr><tr><td>3</td><td>the rivals: grid, overtakes, collisions, types</td></tr><tr><td>4</td><td>tile and sprite lists</td></tr><tr><td>5, 7, 10, 11, 14</td><td>graphics and metatiles</td></tr><tr><td>6, 8, 9, 12</td><td>drawings, texts and tables</td></tr><tr><td>13</td><td>the sound player</td></tr><tr><td>15</td><td>title-screen streams and one recorded game</td></tr></table>
+<p>The disassembly produces <b>one listing per page</b>, each with its own <code>org</code>, and <code>make verify</code> reassembles all sixteen and concatenates them: the whole ROM has to come out, byte for byte.</p>
+<h2 id="the-track">The track</h2>
+<p>Each circuit&#x27;s track is a <b>sequence of pieces</b>. Each entry in the sequence is two bytes —the piece number and some flags— and a 0xFF closes the lap.</p>
+<p>A piece is <b>24 bytes</b>: three rows of eight metatiles. Each metatile is 4 × 4 tiles, i.e. 16 bytes, so a piece is twelve tile rows tall and takes the full width of the screen.</p>
+<p>The position along the track is a <b>32-bit counter that goes down</b> —the track comes towards the player— and every 0x800 is one eight-pixel row. After twelve rows the piece runs out and the next one begins.</p>
+<p>Two details that show up on reading the code:</p>
+<ul><li>the metatile row is read <b>backwards</b> (3 minus the row), because the drawing moves down while the track moves up;</li><li>the column the metatile row starts being read from <b>wraps modulo 8</b>, and that is what makes the track drift sideways: bit 6 of the piece&#x27;s second byte says there is a shift and the low six say how much.</li></ul>
+<p>The signs and roadside props are not part of the pieces&#x27; drawing: they live in a separate per-circuit list, ordered by position, three bytes per entry —the piece in the top twelve bits, the row in the low four, and the drawing—. Because it is ordered, a single index that moves forward and never back is enough.</p>
+<h2 id="the-tile-loader">The tile loader</h2>
+<p>Nothing is copied to VRAM as-is. All the graphics go through a loader that walks lists in page 4. A list record is <b>six bytes</b>:</p>
+<pre><code>flags | tile | pointer to the patterns | pointer to the colours</code></pre>
+<p>and the flags say where the drawing comes from and what to do with it:</p>
+<table><tr><th>bits</th><th>what they say</th></tr><tr><td>2-1</td><td>page group where the drawing lives: 4, 7, 0x0A or 0x0D</td></tr><tr><td>3</td><td>flip the tile vertically</td></tr><tr><td>4</td><td>mirror it horizontally</td></tr><tr><td>5, 6, 7</td><td>which screen thirds it goes to</td></tr></table>
+<p>On the other side of the pointers there are no loose bytes: there is an <b>RLE decompressed straight into VRAM</b>, eight bytes at a time, with the working tile in RAM. The codes are 00 ends, 01-7F repeats the next byte n times, 80 does nothing and 81-FF copies n bytes verbatim. Mirroring and flipping happen there, with the tile already assembled and before letting it go: they come for free.</p>
+<p>Besides records, a list can carry <b>orders</b>:</p>
+<table><tr><th>order</th><th>what it does</th></tr><tr><td>0x10</td><td>copies the 16 bytes behind it into a variable</td></tr><tr><td>0x11, 0x15, 0x19, 0x1D</td><td>write a word into one of four slots</td></tr><tr><td>0x12</td><td>nothing (and without advancing the pointer: no list uses it)</td></tr><tr><td>0x13</td><td>nests one list inside another</td></tr><tr><td>0x17</td><td>loads a resource from the table of 85</td></tr></table>
+<p>And there is a row mode: loading <b>one pixel row of each tile at a time</b>, with a wait in between, makes the drawing appear top to bottom instead of all at once. That is the panel&#x27;s entrance effect.</p>
+<h2 id="the-sprites">The sprites</h2>
+<p>Attributes are not written directly: there is a RAM copy of 32 sprites × 4 bytes dumped to the VDP on every repaint. On odd frames it is dumped <b>backwards</b>, from 29 to 0, with the last two apart: that is the priority rotation that makes the sprites beyond the four-per-line limit flicker instead of vanish.</p>
+<p>Each car is two sprites in the same place: the pattern and the pattern plus four, in different colours. On a TMS9918 that is how you get a two-ink figure.</p>
+<p>The car&#x27;s frame comes from the angle, split into sixteen sectors. From F3 upwards the cars carry five extra frames —the wheels turning— and the lower categories do not: those cars never show them.</p>
+<h2 id="the-rivals">The rivals</h2>
+<p>Each player has five rivals, 0x38-byte records, and <b>each one is served one frame in eight</b>: its turn is written in its own record, so the five never fall on the same frame.</p>
+<p>A rival looks at the track ahead —at 0xE8 and at 0x98 pixels— reading three cells of the row, and gets two things from it: whether a corner is coming, and where there is room. If a corner is coming, one of three lists is subtracted from its base speed, from the gentlest braking to the hardest.</p>
+<p>Car-to-car collisions are resolved as a half-elastic impact: each car&#x27;s new speed is the average of the two, plus or minus a quarter of the difference along the long axis and an eighth along the short one.</p>
+<p>On the grid player 1 starts <b>third</b> and player 2 <b>fourth</b>, but the classification is longer than the six cars you can see: the number of cars that are ahead unseen in that race is added to the grid slot — 20 in the first race. That is why you start 23rd.</p>
+<h2 id="the-sound">The sound</h2>
+<p>The page 13 player runs once per interrupt and serves two chips: the machine&#x27;s PSG and the cartridge&#x27;s SCC.</p>
+<p>From the PSG it writes the three channels with their period and volume, the noise period, the three envelope registers and the mixer. From the SCC, the five channels, their 32-byte waveforms and its own mixer.</p>
+<p>The expensive part of the SCC is reaching it: map page 0x3F at 0x8000, write, put page 2 back. That is why the player keeps a <b>RAM copy of the fifteen values</b> and compares them one by one; only the changed ones are flagged and only those get written. It is fifteen near-identical seven-instruction blocks, written out by hand with no loop: longer, but with no index arithmetic.</p>
+<p>The effects in the scores are software envelopes: two volume phases, a four-stage vibrato and a note slide, all written into the score itself as orders.</p>
+<footer><p><em>F-1 Spirit</em> was published by Konami in 1987 for the MSX; it is a 128 KB MegaROM with a Konami SCC mapper and its catalogue number is RC-752. The cartridge carries its credits in plain text, in page 2: <b>PROGRAM</b> T.ADACHI, M.OZAWA and R.SAGISAKA; <b>GRAPHIC</b> H.MAKITANI, T.SHIMIZU and B.KINOSHITA; <b>SOUND</b> K.UEHARA, M.SASAKI and M.FURUKAWA. All rights in the game remain with their holders. This is preservation, study and documentation work.</p></footer></div>

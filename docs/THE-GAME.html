@@ -1,0 +1,122 @@
+<title>The game — F-1 Spirit (1987)</title>
+<style>
+:root{--tinta:#cfd0d4;--suave:#83868f;--fondo:#000;--panel:#0c0e13;--linea:#23262e;
+  --rojo:#ff897d;--cyan:#65dbef;--verde:#3eb849;--oro:#ded087}
+@media (prefers-color-scheme:light){:root{--tinta:#191a1e;--suave:#5a5d66;--fondo:#e9e7e1;
+  --panel:#f7f6f2;--linea:#d0cdc5;--rojo:#b23f34;--cyan:#1c6b7c;--verde:#2b7734;--oro:#8a7420}}
+:root[data-theme="dark"]{--tinta:#cfd0d4;--suave:#83868f;--fondo:#000;--panel:#0c0e13;
+  --linea:#23262e;--rojo:#ff897d;--cyan:#65dbef;--verde:#3eb849;--oro:#ded087}
+:root[data-theme="light"]{--tinta:#191a1e;--suave:#5a5d66;--fondo:#e9e7e1;--panel:#f7f6f2;
+  --linea:#d0cdc5;--rojo:#b23f34;--cyan:#1c6b7c;--verde:#2b7734;--oro:#8a7420}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--tinta);padding:0 1.25rem 6rem;
+  font:15px/1.7 ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+.w{max-width:1120px;margin:0 auto}
+.n{max-width:68ch}
+h1,h2,h3,h4{font-weight:400;text-wrap:balance}
+a{color:var(--cyan)}
+img{image-rendering:pixelated;max-width:100%;height:auto;display:block}
+header.top{display:flex;flex-direction:column;align-items:center;gap:1.5rem;
+  padding:4rem 0 2rem;text-align:center}
+header.top img{width:min(100%,642px)}
+.claim{max-width:60ch;color:var(--suave);font-size:1.05rem}
+.claim b{color:var(--tinta);font-weight:400}
+.ficha{display:flex;flex-wrap:wrap;justify-content:center;gap:0 1.5rem;width:100%;
+  font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--suave);
+  border-top:1px solid var(--linea);border-bottom:1px solid var(--linea);padding:.85rem 0}
+.ficha b{color:var(--rojo);font-weight:400}
+nav{display:flex;flex-wrap:wrap;gap:1.25rem;justify-content:center;padding:1.25rem 0;
+  font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+nav a{color:var(--suave);text-decoration:none;border-bottom:1px solid transparent}
+nav a:hover,nav a:focus{color:var(--tinta);border-bottom-color:var(--rojo)}
+nav.docs{border-top:1px solid var(--linea);border-bottom:1px solid var(--linea);
+  margin-bottom:1rem}
+section{margin-top:4.5rem;scroll-margin-top:1rem}
+section>h2{font-size:1rem;letter-spacing:.1em;text-transform:uppercase;
+  border-left:3px solid var(--rojo);padding-left:.9rem;margin:0 0 1.5rem}
+.cifras{display:grid;gap:1px;background:var(--linea);border:1px solid var(--linea);
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.cifra{background:var(--panel);padding:1.1rem}
+.cifra b{display:block;font-size:1.7rem;color:var(--oro);font-weight:400;
+  font-variant-numeric:tabular-nums;line-height:1.2}
+.cifra span{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--suave)}
+.hall{border-top:1px solid var(--linea);padding-top:1.75rem;margin-top:2.5rem}
+.hall:first-of-type{border-top:0;padding-top:0;margin-top:0}
+.hall h3{margin:0 0 .75rem;font-size:1.15rem;color:var(--rojo)}
+.hall h4{color:var(--oro);margin:1.5rem 0 .5rem;font-size:.95rem}
+.hall p{margin:0 0 1rem}
+pre.asm{background:var(--panel);border-left:2px solid var(--verde);margin:1.25rem 0;
+  padding:1rem 1.1rem;overflow-x:auto;font-size:13px;line-height:1.6;color:var(--tinta)}
+.par{display:grid;gap:1.25rem;grid-template-columns:1fr}
+@media(min-width:820px){.par{grid-template-columns:1fr 1fr}}
+.par figure{margin:0}
+table{border-collapse:collapse;width:100%;margin:1.25rem 0;font-size:13px;display:block;
+  overflow-x:auto}
+th,td{text-align:left;padding:.5rem .75rem;border-bottom:1px solid var(--linea)}
+th{color:var(--suave);font-weight:400;font-size:11px;letter-spacing:.07em;text-transform:uppercase}
+td.num{font-variant-numeric:tabular-nums;color:var(--oro)}
+.nivel{margin-top:2rem}
+.nivel h3{margin:0 0 .9rem;font-size:.95rem;letter-spacing:.06em;text-transform:uppercase}
+.nivel em{color:var(--cyan);font-style:normal}
+.sep{color:var(--suave);margin:0 .6rem}
+.rejilla{display:grid;gap:.9rem;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.rejilla figure{margin:0;background:var(--panel);box-shadow:0 0 0 1px var(--linea)}
+.rejilla figcaption{display:flex;justify-content:space-between;padding:.45rem .65rem;
+  font-size:11px;color:var(--suave);border-top:1px solid var(--linea)}
+.dir{font-variant-numeric:tabular-nums;color:var(--verde)}
+footer{margin-top:5rem;padding-top:1.5rem;border-top:1px solid var(--linea);
+  color:var(--suave);font-size:12px}
+
+/* Aviso de trabajo en curso: tiene que verse antes que las cifras, porque un
+   100% mal leido hace mas dano que no ponerlo. */
+.aviso{background:#3a2a10;border-left:3px solid var(--oro);margin:1.5rem auto;
+  padding:1rem 1.2rem;max-width:900px;border-radius:4px}
+.aviso p{margin:0;color:var(--tinta);font-size:15px;line-height:1.65}
+.galeria{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:1.5rem;margin:1.5rem 0}
+.galeria figure{margin:0}
+.galeria img{width:100%;height:auto;image-rendering:pixelated;
+  border:1px solid var(--linea);border-radius:3px}
+.galeria figcaption{color:var(--suave);font-size:13px;margin-top:.5rem}
+audio{display:block;width:100%;max-width:640px;margin:.75rem 0 1.5rem}
+</style>
+<div class="w"><nav class="top"><a href="index.html">Home</a><a href="GETTING-STARTED.html">Start</a><a href="THE-GAME.html" style=color:var(--tinta)>The game</a><a href="THE-CARTRIDGE.html">The cartridge</a><a href="THE-CODE.html">The code</a><a href="FINDINGS.html">Findings</a><a href="OPEN-QUESTIONS.html">Open questions</a><a href="es/EL-JUEGO.html" style="margin-left:auto;color:var(--oro)">Castellano</a></nav>
+<h1 id="the-game">The game</h1>
+<h2 id="six-categories-and-twenty-one-races">Six categories and twenty-one races</h2>
+<p>The menu offers six categories. The game numbers them in one order and the menu shows them in another, and that is what the five-byte table at p01 0x6135 is for:</p>
+<table><tr><th>value of E25B</th><th>category</th></tr><tr><td>0</td><td>RALLY</td></tr><tr><td>1</td><td>STOCK</td></tr><tr><td>2</td><td>ENDURANCE</td></tr><tr><td>3</td><td>F3</td></tr><tr><td>4</td><td>F3000</td></tr><tr><td>5</td><td>F1</td></tr></table>
+<p>Races run from 0 to 20. The first five are the lower categories; from 5 onwards they are the <b>sixteen Formula 1 Grands Prix</b>, and the race number is 5 plus the chosen GP. The names are in the cartridge: BRAZIL, SAN MARINO, BELGIUM, MONACO, U.S.A., FRANCE, GREAT BRITAIN, WEST GERMANY, HUNGARY, AUSTRIA, ITALY, PORTUGAL, SPAIN, MEXICO, JAPAN and AUSTRALIA.</p>
+<p>How many laps a race has depends on the category: <b>three or four</b>, from the table at p02 0x91DB.</p>
+<h2 id="what-points-unlock">What points unlock</h2>
+<p>You cannot pick everything from the start. The category screen keeps adding options as points come in, and the thresholds are written as a ladder of comparisons:</p>
+<ul><li>at <b>0x0C</b> points two more options appear,</li><li>at <b>0x19</b>, one more,</li><li>and from there a ladder of eight thresholds —0x21, 0x30, 0x41, 0x54, 0x69, 0x80, 0x99 and 0xB4— each opening <b>two Grands Prix</b>, plus one more past the last: sixteen in all.</li></ul>
+<p>It is enough for <b>one of the two players</b> to reach the threshold.</p>
+<h2 id="the-car-is-built-piece-by-piece">The car is built piece by piece</h2>
+<p>Before racing you choose a car, and there are two ways: take one of the eighteen presets —five bytes, ready made— or build it in five steps: engine, body, two more parts and gearbox. Those five bytes are then translated into the numbers the car actually races with:</p>
+<ul><li>the <b>engine</b> gives the top speed and the torque table;</li><li>the <b>body</b> gives the sprite colour and, multiplied by four, <b>how much the tyres take</b> before blowing;</li><li>the <b>gearbox</b> gives the ratios: how much the engine revs per unit of speed, and how hard it pushes in each gear.</li></ul>
+<p>There are four gears, 0 to 3, and the change can be manual or automatic —bit 7 of the fifth byte of the car says which—. In automatic it decides every 30 frames: below 32 revs it shifts down and above 56 it shifts up.</p>
+<h2 id="driving">Driving</h2>
+<p>The steering is not a switch: it is a <b>ramp</b>. While the direction is held, a counter climbs by two up to 16, and the turn per frame comes out of a table crossing three things: the tyres chosen, the speed and the ramp step you are on. Let go and the car straightens itself.</p>
+<p>Speed becomes movement through the sine and cosine of the angle, so the car goes where the nose points, not where the stick points. And every category brakes differently while turning: speed loses a 256th, half of that or a quarter, depending on the category — and category 5 loses nothing.</p>
+<p>Going off the tarmac costs a <b>32nd of the speed per frame</b>. The edge of the track bounces you back: half the sideways speed is added to the other axis, the angle is corrected by eight degrees and the sideways speed is inverted and halved. If the hit is hard —in RALLY, 3 or more— it is not a bounce: it is a crash.</p>
+<h2 id="the-tyres">The tyres</h2>
+<p>The four tyres live in four bits, and each blown one does something different:</p>
+<table><tr><th>bit</th><th>what happens</th></tr><tr><td>0</td><td>the steering freezes one frame in four</td></tr><tr><td>1</td><td>the car tugs at random above a certain speed</td></tr><tr><td>2</td><td>accelerating counts half</td></tr><tr><td>3</td><td>braking counts half</td></tr></table>
+<p>They blow in two ways: by <b>wear</b>, when the counter reaches four times the body byte, and 90 frames after a <b>crash</b>. Which of the four blows is drawn from an eight-entry table, each tyre twice, so all four are equally likely.</p>
+<h2 id="the-pit-stop">The pit stop</h2>
+<p>With a single player, entering the pits changes the state of the whole game and you get a separate scene. Two mechanics —two six-byte records— climb from the bottom two pixels at a time, with eight poses and four sprites each: they are 16 × 32 pixel figures in two inks, made of two overlaid sprite pairs.</p>
+<p>While you refuel, <b>the rivals overtake you</b>: three records that come down eight pixels at a time, and each one that crosses the middle of the screen adds one place to your position, up to a cap of 99. The gap between cars is drawn at random, and in category 0 they are far rarer.</p>
+<p>The stop can be cut short with the button; down refuels. And when you leave, the tank is full and all four tyres are sound.</p>
+<h2 id="the-clock-runs-slow-on-pal">The clock runs slow on PAL</h2>
+<p>The clock is 24 bits and goes up one per logic step. The interrupt takes a step every three, and the on-screen clock divides by 20 to get seconds: <b>3 × 20 = 60</b>. The arithmetic is made for a 60 Hz machine.</p>
+<p>On a PAL machine, with 50 interrupts per second, that gives 16.67 steps, so the clock shows <b>five seconds for every six real ones</b>. It is not that the game runs slower: it is the clock that counts wrong.</p>
+<p>What you read on screen is minutes, seconds and hundredths. The hundredths come from multiplying the remainder by 100 and dividing by 2 — that is, the game works in twentieths of a second, and its thousandths always end in 0 or 5.</p>
+<h2 id="the-password">The password</h2>
+<p>The saved game is a code of letters. Inside it is 21 values —what you achieved in each of the 21 races, clipped to one nibble each—, two check values (the XOR of all of them and their sum) and, in front, <b>a nibble taken from the Z80&#x27;s R register</b>, the memory refresh counter, which is the closest thing to a die within reach.</p>
+<p>The 24 symbols are enciphered with a stream of nibbles taken <b>from the ROM itself</b>: the bytes of page 0 from 0x5000 onwards, starting wherever the random nibble says. Only then are they turned into letters by adding 0x41.</p>
+<p>There are also <b>six special passwords</b>, each with its code sitting right behind it:</p>
+<table><tr><th>password</th><th>what it does</th></tr><tr><td><code>MAXPOINT</code></td><td>stops checking the thresholds: everything unlocked</td></tr><tr><td><code> UJM3EDC</code></td><td>starts with a space, and the letters are two keyboard columns</td></tr><tr><td><code>MITAIYOENDDEMO</code></td><td>jumps to the ending sequence</td></tr><tr><td><code>HYPEROFF</code></td><td>sets the variable that puts the pit mechanics to work</td></tr><tr><td><code>ESCON</code> / <code>ESCOFF</code></td><td>turn on and off the permission to cut the replay short</td></tr></table>
+<h2 id="the-demo-plays-itself">The demo plays itself</h2>
+<p>The demo is not a recorded film: it is <b>the game running with the joystick wired to a recording</b>. The recorder writes down pairs of (frames, mask) every time the input changes, and the player feeds them in where the joystick port would normally be.</p>
+<p>There are five recordings and only the first one lives in RAM: that is why the recorder gives up if the pointer leaves 0xC000-0xDEFF.</p>
+<footer><p><em>F-1 Spirit</em> was published by Konami in 1987 for the MSX; it is a 128 KB MegaROM with a Konami SCC mapper and its catalogue number is RC-752. The cartridge carries its credits in plain text, in page 2: <b>PROGRAM</b> T.ADACHI, M.OZAWA and R.SAGISAKA; <b>GRAPHIC</b> H.MAKITANI, T.SHIMIZU and B.KINOSHITA; <b>SOUND</b> K.UEHARA, M.SASAKI and M.FURUKAWA. All rights in the game remain with their holders. This is preservation, study and documentation work.</p></footer></div>

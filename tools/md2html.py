@@ -44,26 +44,12 @@ for _en, _es in _PAREJAS:
     PAREJA[_en] = _es
     PAREJA[_es] = _en
 
-# El pie va en el idioma de la pagina, y dice lo que el cartucho firma. De
-# donde sale: de leer los tiles. El KONAMI grande son los tiles 0x16-0x2F
-# (0x6C42 lo sube al arrancar), y el "©Konami 1984" pequeno los 0x3A-0x3F,
-# escrito dos veces por lista (0x6B8B bajo el titulo, 0x66DB en el panel).
-# No hay creditos ni iniciales en el binario.
+# El pie va en el idioma de la pagina. Los creditos NO son una suposicion: son
+# el flujo de texto de p02 0x848A, en ASCII y sin comprimir, que la secuencia
+# final pinta en pantalla.
 PIE = {
-    "es": "<em>F-1 Spirit</em> lo publico Konami en 1984 para MSX; su "
-          "numero de catalogo es RC-702. El cartucho firma tres veces, y las "
-          "tres en tiles corrientes: el <b>KONAMI</b> que sube al arrancar, "
-          "el <b>©Konami 1984</b> bajo el titulo y el del pie del marcador. "
-          "No hay creditos ni iniciales en ninguna parte del binario. Todos "
-          "los derechos sobre el juego siguen siendo de sus titulares. Este "
-          "trabajo es de preservacion, estudio y documentacion.",
-    "en": "<em>F-1 Spirit</em> was published by Konami in 1984 for the "
-          "MSX; its catalogue number is RC-702. The cartridge signs itself "
-          "three times, all in plain tiles: the <b>KONAMI</b> that rises at "
-          "boot, the <b>©Konami 1984</b> under the title and the one at the "
-          "foot of the scoreboard. There are no credits and no initials "
-          "anywhere in the binary. All rights in the game remain with their "
-          "holders. This is preservation, study and documentation work.",
+    "es": "<em>F-1 Spirit</em> lo publico Konami en 1987 para MSX; es un MegaROM de 128 KB con mapper Konami SCC y su numero de catalogo es RC-752. El cartucho lleva sus creditos escritos en claro, en la pagina 2: <b>PROGRAM</b> T.ADACHI, M.OZAWA y R.SAGISAKA; <b>GRAPHIC</b> H.MAKITANI, T.SHIMIZU y B.KINOSHITA; <b>SOUND</b> K.UEHARA, M.SASAKI y M.FURUKAWA. Todos los derechos sobre el juego siguen siendo de sus titulares. Este trabajo es de preservacion, estudio y documentacion.",
+    "en": "<em>F-1 Spirit</em> was published by Konami in 1987 for the MSX; it is a 128 KB MegaROM with a Konami SCC mapper and its catalogue number is RC-752. The cartridge carries its credits in plain text, in page 2: <b>PROGRAM</b> T.ADACHI, M.OZAWA and R.SAGISAKA; <b>GRAPHIC</b> H.MAKITANI, T.SHIMIZU and B.KINOSHITA; <b>SOUND</b> K.UEHARA, M.SASAKI and M.FURUKAWA. All rights in the game remain with their holders. This is preservation, study and documentation work.",
 }
 
 
