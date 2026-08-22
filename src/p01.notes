@@ -1551,3 +1551,49 @@ C 0x7084 el color 15, blanco
 C 0x70B9 0x10 pixeles mas abajo
 C 0x70C0 el 0xE0 y el 0xE4 son los dos patrones que se alternan
 C 0x70E3 0x4760 prepara el buffer de tiles
+
+C 0x79F8 0x4B28 pasa el binario a decimal
+C 0x79FB el juego alterno trae la casilla donde se pintan los digitos
+C 0x7B16 EA52 a uno: el indicador se pinta en vertical
+C 0x7B4C y con un solo jugador va en horizontal
+C 0x7C7A el bit que sale se dobla: cada pixel del original ocupa dos
+C 0x7CA0 0x40D0 es el SUMA_A_HL de p00
+C 0x7119 tantos tiles como diga C
+C 0x7127 tantas filas como diga B
+C 0x7853 cuatro `sra` seguidos: el nibble pasa a byte con signo
+C 0x7F89 A por tres: doblado y sumado
+
+C 0x71F2 0x477C prepara el volcado del buffer
+C 0x7201 siete bytes: el sprite entero
+C 0x721E el paso queda apuntado y la pantalla siguiente lo lee
+C 0x7230 el jugador 1 pasa a ser el 2 y al reves
+C 0x7252 hacia arriba, uno menos
+C 0x7264 y si se paso, se queda en cero
+
+C 0x7289 el 0x25 es el sonido de mover el cursor
+C 0x72A1 tantos bytes como diga C
+C 0x72A3 y tantas tandas como diga B
+C 0x72AE 0x4460 prepara la pantalla
+C 0x72CD 0x480D vuelca los tiles a la VRAM
+C 0x72D3 y queda apuntado que ya se genero
+C 0x72DB el 0x26 es el sonido de elegir
+C 0x72FE el nibble bajo del byte de la ROM
+
+C 0x7329 dos rotaciones y cuatro bits: el nibble del R
+C 0x733F las 21 carreras, una a una
+C 0x7366 0x2F bytes: el hueco entero de la contrasena
+C 0x736B 0x4B88 rellena memoria con A
+C 0x737E y se pasa al paso siguiente
+C 0x739C de 0x41 en adelante ya es letra
+
+C 0x73CC y se pasa al paso siguiente
+C 0x73EA y los 21 valores descifrados vuelven al bloque del jugador
+C 0x73F8 el 0x26 es el sonido de acertar
+C 0x741A y se vuelve al estado 4, que es el menu
+
+C 0x77F7 el coche 1 primero
+C 0x7807 el bit 0 de (ix+6F) es el aviso de pieza nueva
+C 0x7824 0x4447 mapea la pagina en 0x8000
+C 0x7846 tantos pasos como diga B
+C 0x784B y 0x43FE devuelve el mapeo 1/2/3
+C 0x788A (iy+5C) a uno: el coche entra en boxes

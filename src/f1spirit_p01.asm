@@ -2512,7 +2512,7 @@ OBJETO_TILES_SIGUIENTE:		; DE++, HL++
 	inc de			;7116
 	inc hl			;7117
 	dec c			;7118
-	jr nz,OBJETO_TILES_TILE		;7119
+	jr nz,OBJETO_TILES_TILE		;7119   ; tantos tiles como diga C
 	ex de,hl			;711b
 	push bc			;711c
 	ld bc,0001ch		;711d   ; 0x1C es lo que falta hasta la fila de abajo, y el bit 2 de H es la vuelta dentro del kilobyte
@@ -2521,7 +2521,7 @@ OBJETO_TILES_SIGUIENTE:		; DE++, HL++
 	set 2,h		;7123
 	ex de,hl			;7125
 	pop bc			;7126
-	djnz OBJETO_TILES_FILA		;7127
+	djnz OBJETO_TILES_FILA		;7127   ; tantas filas como diga B
 	pop hl			;7129
 	ld de,0001fh		;712a   ; 0x1F es lo que ocupa una entrada entera: tres bytes de cabecera mas los 28 del fondo guardado
 	add hl,de			;712d
@@ -2633,7 +2633,7 @@ DATA_tabla_71E1:
 
 
 CURSOR_MENU_PASSWORD:		; p00 0x477C; mueve EA72 (0x7241); sprite del cursor en EA80: y = EA72*8 + 0x88, x = 0x32, patron 0, color 7; con boton o espacio (E1C8 & 0x30): sonido 0x26 (si bit 6 de E1C2), E251 = EA72 + 1 y 0x7175
-	call 0477ch		;71f2
+	call 0477ch		;71f2   ; 0x477C prepara el volcado del buffer
 	call MUEVE_CURSOR_EA72		;71f5   ; el cursor de esta pantalla se mueve en dos ejes y vive en EA72/EA73
 	ld a,e			;71f8
 	add a,a			;71f9   ; la fila por ocho mas 0x88: cada opcion esta ocho pixeles por debajo de la anterior
@@ -2642,7 +2642,7 @@ CURSOR_MENU_PASSWORD:		; p00 0x477C; mueve EA72 (0x7241); sprite del cursor en E
 	add a,088h		;71fc
 	ld e,a			;71fe
 	ld d,032h		;71ff
-	ld bc,00007h		;7201
+	ld bc,00007h		;7201   ; siete bytes: el sprite entero
 	ld hl,0ea80h		;7204
 	call ESCRIBE_SPRITE_EDBC		;7207
 	ld a,(0e1c8h)		;720a
@@ -2654,14 +2654,14 @@ CURSOR_MENU_PASSWORD:		; p00 0x477C; mueve EA72 (0x7241); sprite del cursor en E
 	call nz,04174h		;7217
 	ld a,(0ea72h)		;721a   ; el paso es la opcion elegida mas uno, que el 0 es el propio cursor
 	inc a			;721d
-	ld (0e251h),a		;721e
+	ld (0e251h),a		;721e   ; el paso queda apuntado y la pantalla siguiente lo lee
 	jp BORRA_EA50		;7221
 EXCHANGE:		; intercambia los 0xC0 bytes de E280.. y E340.. (los datos de los dos jugadores), E2C9 = 1, E389 = 2, E25B = 0xFF y E250 = 4 (0x7418)
 	ld hl,0e280h		;7224   ; EXCHANGE cambia los datos de los dos jugadores de sitio, 0xC0 bytes cada uno
 	ld de,0e340h		;7227
 	ld bc,000c0h		;722a
 	call INTERCAMBIA_BLOQUES		;722d
-	ld a,001h		;7230
+	ld a,001h		;7230   ; el jugador 1 pasa a ser el 2 y al reves
 	ld (0e2c9h),a		;7232   ; y les deja marcado quien es quien: 1 y 2
 	inc a			;7235
 	ld (0e389h),a		;7236
@@ -2679,7 +2679,7 @@ MUEVE_CURSOR_HL:		; entrada con HL, B (tope x) y C (tope y)
 	ld d,(hl)			;724e
 	rrca			;724f   ; los cuatro flancos, uno por bit, en el orden arriba, abajo, izquierda, derecha
 	jr nc,CURSOR_HL_ABAJO		;7250
-	dec e			;7252
+	dec e			;7252   ; hacia arriba, uno menos
 CURSOR_HL_ABAJO:		; bit 1
 	rrca			;7253
 	jr nc,CURSOR_HL_IZQ		;7254
@@ -2696,7 +2696,7 @@ CURSOR_HL_TOPES:		; -1 -> 0; > tope -> tope
 	ld a,d			;725f
 	cp 0ffh		;7260   ; un 0xFF es que se ha pasado por abajo: se queda en 0
 	jr nz,CURSOR_HL_TOPE_X		;7262
-	xor a			;7264
+	xor a			;7264   ; y si se paso, se queda en cero
 	ld d,a			;7265
 CURSOR_HL_TOPE_X:		; D <= B
 	cp b			;7266   ; y por arriba el tope es B
@@ -2730,7 +2730,7 @@ CURSOR_HL_GUARDA_Y:		; (HL-1) = E; sonido 0x25 si cambio
 	ld a,c			;7286
 	or a			;7287
 	ret z			;7288
-	ld a,025h		;7289
+	ld a,025h		;7289   ; el 0x25 es el sonido de mover el cursor
 	jp 04174h		;728b
 ESCRIBE_SPRITE_EDBC:		; (HL) = E, D, B, C (y, x, patron, color)
 	ld (hl),e			;728e   ; los cuatro bytes del atributo, con el patron en B y el color en C
@@ -2754,8 +2754,8 @@ INTERCAMBIA_BYTE:		; un byte por vuelta
 	inc hl			;729e
 	inc de			;729f
 	dec c			;72a0
-	jr nz,INTERCAMBIA_BYTE		;72a1
-	djnz INTERCAMBIA_BYTE		;72a3
+	jr nz,INTERCAMBIA_BYTE		;72a1   ; tantos bytes como diga C
+	djnz INTERCAMBIA_BYTE		;72a3   ; y tantas tandas como diga B
 	jp A_ESTADO_4_B		;72a5
 
 ; ----------------------------------------------------------------------
@@ -2772,7 +2772,7 @@ PASSWORD:		; E252 = 0: limpia, genera la contrasena (0x7317), la descifra... la 
 	ld a,(0e252h)		;72a8
 	or a			;72ab   ; E252 = 0 es "todavia no se ha generado"
 	jr nz,PASSWORD_ESPERA		;72ac
-	call 04460h		;72ae
+	call 04460h		;72ae   ; 0x4460 prepara la pantalla
 	call BORRA_FILAS_16_23		;72b1
 	call GENERA_PASSWORD		;72b4
 	ld hl,0ea52h		;72b7   ; primero se genera en claro y luego se cifra encima
@@ -2782,15 +2782,15 @@ PASSWORD:		; E252 = 0: limpia, genera la contrasena (0x7317), la descifra... la 
 	ld de,0ea50h		;72c3
 	ld bc,03a43h		;72c6   ; 0x3A43 es la fila 18, columna 3
 	ld (0ea50h),bc		;72c9
-	call 0480dh		;72cd
+	call 0480dh		;72cd   ; 0x480D vuelca los tiles a la VRAM
 	ld hl,0e252h		;72d0
-	inc (hl)			;72d3
+	inc (hl)			;72d3   ; y queda apuntado que ya se genero
 	ret			;72d4
 PASSWORD_ESPERA:		; boton o espacio (E1C8 & 0x30) -> sonido 0x26 y E250 = 4
 	ld a,(0e1c8h)		;72d5   ; el boton o el espacio sacan de aqui
 	and 030h		;72d8
 	ret z			;72da
-	ld a,026h		;72db
+	ld a,026h		;72db   ; el 0x26 es el sonido de elegir
 	call 04174h		;72dd
 	ld a,004h		;72e0
 	ld (0e250h),a		;72e2
@@ -2816,7 +2816,7 @@ CIFRA_BYTE:		; un simbolo por vuelta
 	cp 0ffh		;72fa
 	ret z			;72fc
 	ld a,(de)			;72fd   ; la tirada de cifrado avanza a la vez que el texto
-	and 00fh		;72fe
+	and 00fh		;72fe   ; el nibble bajo del byte de la ROM
 	xor (hl)			;7300
 	and 01fh		;7301   ; y el resultado se recorta a cinco bits, que es lo que cabe en una letra
 	ld (hl),a			;7303
@@ -2844,7 +2844,7 @@ GENERA_PASSWORD:		; E280..E294 a EA60 (0x7565); EA50/51 = 0x3830; en EA52..: el 
 	ld (0ea50h),bc		;7320
 	ld bc,0ea52h		;7324
 	ld a,r		;7327   ; el nibble al azar sale del registro R, el contador de refresco: es lo mas parecido a un dado que hay a mano
-	rrca			;7329
+	rrca			;7329   ; dos rotaciones y cuatro bits: el nibble del R
 	rrca			;732a
 	and 00fh		;732b
 	call ANADE_SIMBOLO		;732d
@@ -2855,7 +2855,7 @@ GENERA_PASSWORD_BUCLE:		; un valor de EA60.. por vuelta (21)
 	inc ix		;7339
 	call ANADE_SIMBOLO		;733b
 	dec h			;733e
-	jr nz,GENERA_PASSWORD_BUCLE		;733f
+	jr nz,GENERA_PASSWORD_BUCLE		;733f   ; las 21 carreras, una a una
 	ld a,d			;7341   ; y detras van los dos controles, un nibble cada uno
 	and 00fh		;7342
 	call ANADE_SIMBOLO		;7344
@@ -2875,15 +2875,15 @@ INPUT_PASSWORD:		; E252 = 0: limpia, EA50..EA7E = 0xFF, (EA70) = EA52 (donde esc
 	call 04460h		;735d
 	call BORRA_FILAS_16_23		;7360
 	ld hl,0ea50h		;7363
-	ld bc,0002fh		;7366
+	ld bc,0002fh		;7366   ; 0x2F bytes: el hueco entero de la contrasena
 	ld a,0ffh		;7369   ; el hueco se rellena de 0xFF, que es lo que el pintador lee como final
-	call 04b88h		;736b
+	call 04b88h		;736b   ; 0x4B88 rellena memoria con A
 	ld de,0ea52h		;736e
 	ld (0ea70h),de		;7371   ; EA70 es por donde va escribiendo el jugador
 	ld hl,03a43h		;7375
 	ld (0ea50h),hl		;7378
 	ld hl,0e252h		;737b
-	inc (hl)			;737e
+	inc (hl)			;737e   ; y se pasa al paso siguiente
 	ret			;737f
 INPUT_PASSWORD_TECLA:		; pinta EA50 (0x480D) y lee una tecla de p03 0xB3A9 (C = ninguna): 8 borra (0x73B6), 0x0D acepta (0x73C9), '0'..'9' y 'A'..'Z' se guardan en (EA70)++ hasta EA6A
 	ld de,0ea50h		;7380
@@ -2900,7 +2900,7 @@ LEE_TECLA_PASSWORD:		; p03 0xB3A9: carry = sin tecla
 	cp 05bh		;7397
 	jr nc,LEE_TECLA_PASSWORD		;7399
 	ld c,a			;739b
-	cp 041h		;739c
+	cp 041h		;739c   ; de 0x41 en adelante ya es letra
 	jr nc,GUARDA_TECLA		;739e
 	cp 03ah		;73a0
 	jr nc,LEE_TECLA_PASSWORD		;73a2
@@ -2926,7 +2926,7 @@ BORRA_TECLA:		; si (EA70) > EA52: retrocede y pone '?' (0x3F)
 	jr INPUT_PASSWORD_TECLA		;73c7
 PASO_SIGUIENTE_E252:		; E252++
 	ld hl,0e252h		;73c9
-	inc (hl)			;73cc
+	inc (hl)			;73cc   ; y se pasa al paso siguiente
 	ret			;73cd
 COMPRUEBA_PASSWORD:		; borra filas 16-23; contrasena especial (0x7467) -> "CORRECT"; si no letras a valores (0x7522), descifra (0x72F4), verifica (0x7530): Z -> EA53.. a E280 y total (0x7571) y "CORRECT" (0x741E); NZ -> "WRONG PASSWORD" (0x7437); E1C4 = 0x3C y E252++
 	call BORRA_FILAS_16_23		;73ce
@@ -2939,13 +2939,13 @@ COMPRUEBA_PASSWORD:		; borra filas 16-23; contrasena especial (0x7467) -> "CORRE
 	ld hl,0ea52h		;73e2
 	call VERIFICA_PASSWORD		;73e5   ; y si no, se descifra y se comprueban los dos controles
 	jr nz,PASSWORD_WRONG		;73e8
-	call EA53_A_E280		;73ea
+	call EA53_A_E280		;73ea   ; y los 21 valores descifrados vuelven al bloque del jugador
 PASSWORD_CORRECT:		; pinta 0x741E en 0x3A43, E1C4 = 0x3C, sonido 0x26, E252++
 	ld de,0741eh		;73ed
 	call 0480dh		;73f0
 	ld a,03ch		;73f3   ; 0x3C fotogramas para leer el mensaje
 	ld (0e1c4h),a		;73f5
-	ld a,026h		;73f8
+	ld a,026h		;73f8   ; el 0x26 es el sonido de acertar
 	call 04174h		;73fa
 	jr PASO_SIGUIENTE_E252		;73fd
 PASSWORD_WRONG:		; pinta 0x7437, E1C4 = 0x3C, E252++
@@ -2964,7 +2964,7 @@ ESPERA_E1C4:		; E1C4--; a cero E250 = 4
 	ret nz			;7417
 A_ESTADO_4_B:		; E250 = 4
 	ld a,004h		;7418
-	ld (0e250h),a		;741a
+	ld (0e250h),a		;741a   ; y se vuelve al estado 4, que es el menu
 	ret			;741d
 
 ; ----------------------------------------------------------------------
@@ -3560,14 +3560,14 @@ AVANZA_MARCADOR_MAPA:		; por coche: dos jugadores -> contador de 16 bits (ix+6E,
 	ld a,(0e1c2h)		;77f0
 	bit 5,a		;77f3
 	jr z,AVANZA_MARCADOR_1J		;77f5
-	call AVANZA_CONTADOR_2J		;77f7
+	call AVANZA_CONTADOR_2J		;77f7   ; el coche 1 primero
 	ld a,(0e1c2h)		;77fa
 	bit 5,a		;77fd
 	ret z			;77ff
 	ld ix,0e380h		;7800
 AVANZA_CONTADOR_2J:		; (ix+6C:6E) += 2*(ix+6D) cuando el bit 0 de (ix+6F) esta puesto
 	ld a,(ix+06fh)		;7804   ; el bit 0 de (ix+6F) es "la pieza acaba de cambiar": solo entonces avanza
-	and 001h		;7807
+	and 001h		;7807   ; el bit 0 de (ix+6F) es el aviso de pieza nueva
 	ret z			;7809
 	ld l,(ix+06dh)		;780a   ; el paso por dos, sumado a un contador de 16 bits: la parte alta es por que punto del camino va
 	ld h,000h		;780d
@@ -3582,7 +3582,7 @@ AVANZA_MARCADOR_1J:		; si toca un paso (0x7867): paginas 5/6; por cada paso (B):
 	call TOCA_PASO_MAPA		;781e   ; el camino son deltas empaquetadas: cada byte lleva dos, una por nibble
 	ret c			;7821
 	ld a,005h		;7822   ; el camino vive en la pagina 5
-	call 04447h		;7824
+	call 04447h		;7824   ; 0x4447 mapea la pagina en 0x8000
 AVANZA_MARCADOR_PASO:		; un paso del camino por vuelta
 	ld a,(ix+06ch)		;7827   ; (ix+6C) es el indice dentro del camino
 	ld l,a			;782a
@@ -3597,16 +3597,16 @@ AVANZA_MARCADOR_PASO:		; un paso del camino por vuelta
 	add a,e			;783f
 	ld (ix-005h),a		;7840
 	inc (ix+06ch)		;7843   ; el indice sube por cada paso dado...
-	djnz AVANZA_MARCADOR_PASO		;7846
+	djnz AVANZA_MARCADOR_PASO		;7846   ; tantos pasos como diga B
 	dec (ix+06ch)		;7848   ; ...y al salir se deshace el ultimo, que se dio de mas
-	jp 043feh		;784b
+	jp 043feh		;784b   ; y 0x43FE devuelve el mapeo 1/2/3
 DELTAS_DEL_BYTE:		; los rrca x4 intercambian los nibbles ANTES de los sra: D = nibble BAJO con signo (va a la y) y E = nibble ALTO con signo (va a la x)
 	ld a,(hl)			;784e   ; las cuatro rotaciones no son una division: cambian los nibbles de sitio, y los `sra` de despues son los que extienden el signo
 	rrca			;784f
 	rrca			;7850
 	rrca			;7851
 	rrca			;7852
-	sra a		;7853
+	sra a		;7853   ; cuatro `sra` seguidos: el nibble pasa a byte con signo
 	sra a		;7855
 	sra a		;7857
 	sra a		;7859
@@ -3636,7 +3636,7 @@ TOCA_PASO_CUENTA:		; cuenta cuantos (ix+6D) caben
 	ret			;7885
 ENTRA_BOXES:		; (iy+63) = 0xA0 (tiempo de parada), (iy+5C) = 1 (desde p02 0x8C04)
 	ld (iy+063h),0a0h		;7886   ; 0xA0 es lo que dura la parada si no se corta
-	ld (iy+05ch),001h		;788a
+	ld (iy+05ch),001h		;788a   ; (iy+5C) a uno: el coche entra en boxes
 	ret			;788e
 EN_BOXES:		; mando del jugador (bit 0 de ix+9): boton -> C (sale); abajo -> (iy+63)-- (a cero: 0x78CB) y reposta (iy+50)++ hasta 0xFF; NC mientras sigue (desde p00 0x4FDA y p02 0x8D66)
 	ld hl,0e1cbh		;788f
@@ -3829,8 +3829,8 @@ HUD_VUELTAS_RESTANTES:		; C = E1FC - (ix-2); si cambia respecto a (ix-4): BCD y 
 	ret z			;79f4
 	ld l,c			;79f5
 	ld h,000h		;79f6
-	call 04b28h		;79f8
-	exx			;79fb
+	call 04b28h		;79f8   ; 0x4B28 pasa el binario a decimal
+	exx			;79fb   ; el juego alterno trae la casilla donde se pintan los digitos
 	ld a,h			;79fc
 	exx			;79fd
 	ld h,a			;79fe
@@ -3973,7 +3973,7 @@ HUD_INDICADOR_E19A:		; dos jugadores: E19A y E19F como nivel 0..7 (0x7B7C) con l
 	ld a,(0e1c2h)		;7b0f   ; este indicador se repinta cuatro veces de cada ocho: es el que mas se mueve
 	and 020h		;7b12
 	jr z,HUD_INDICADOR_1J		;7b14
-	ld a,001h		;7b16
+	ld a,001h		;7b16   ; EA52 a uno: el indicador se pinta en vertical
 	ld (0ea52h),a		;7b18
 	ld de,03856h		;7b1b
 	ld (0ea50h),de		;7b1e
@@ -3992,7 +3992,7 @@ HUD_INDICADOR_E19A:		; dos jugadores: E19A y E19F como nivel 0..7 (0x7B7C) con l
 HUD_INDICADOR_1J:		; el indicador de un jugador
 	ld iy,0e202h		;7b47
 	xor a			;7b4b
-	ld (0ea52h),a		;7b4c
+	ld (0ea52h),a		;7b4c   ; y con un solo jugador va en horizontal
 	ld de,03993h		;7b4f
 	ld (0ea50h),de		;7b52
 	ld a,(0e19ah)		;7b56
@@ -4193,7 +4193,7 @@ ESCALA_BIT:		; un bit por vuelta
 	rr e		;7c74
 	srl d		;7c76
 	rr e		;7c78
-	rra			;7c7a
+	rra			;7c7a   ; el bit que sale se dobla: cada pixel del original ocupa dos
 	ld c,000h		;7c7b
 	rr c		;7c7d
 	sra c		;7c7f
@@ -4224,7 +4224,7 @@ ESCALA_BIT:		; un bit por vuelta
 	cp 005h		;7c9a
 	jr nz,ESCALA_SIGUIENTE		;7c9c
 	ld a,008h		;7c9e
-	call 040d0h		;7ca0
+	call 040d0h		;7ca0   ; 0x40D0 es el SUMA_A_HL de p00
 ESCALA_SIGUIENTE:		; a la mitad (fila 4) salta a los tiles de abajo
 	djnz ESCALA_FILA		;7ca3
 	ret			;7ca5
@@ -4629,7 +4629,7 @@ RITMO_CARRERA:		; p02 0x800B; un jugador: 0x7F4C; E208 = 1 -> 0x7FDB; 0x7F85 por
 RITMO_COCHE:		; E, DE = p03 0xBDD5 + E25B*3; HL = DE - (iy+7E)*E (0x9B4F); HL *= E20F; compara con (iy+40..42) >> 2: menor -> (iy+7E)-- (minimo 1); si no ++ (hasta 99); 0x7FDB
 	ld a,(0e25bh)		;7f85   ; por tres: la tabla de p03 trae un byte y una palabra por categoria
 	ld l,a			;7f88
-	add a,a			;7f89
+	add a,a			;7f89   ; A por tres: doblado y sumado
 	add a,l			;7f8a
 	ld l,a			;7f8b
 	ld h,000h		;7f8c
