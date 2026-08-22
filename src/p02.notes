@@ -1420,3 +1420,60 @@ C 0x8373 el hueco del texto empieza en E62C
 C 0x8DD4 y la parte baja
 C 0x85E3 por dos: la tabla son punteros
 C 0x967C la comparacion que parte 8-9 de 10-11
+
+C 0x9F28 dos desplazamientos con acarreo: partido por cuatro
+C 0x9F3A y un objeto mas en la cuenta de los que hay en pista
+C 0x9308 los seis bits bajos: una vez cada 64 fotogramas
+C 0x9317 el bit 7 de (ix+01) es el aviso
+C 0x9C6D dos veces doblado: cuatro marchas por caja
+C 0x8881 el coche 1 es el jugador 1 y el 2 el jugador 2
+C 0x8889 (ix+61) a 0x50: la cuenta atras hasta el rival siguiente
+C 0x9735 el `xor` con el signo dice si los dos giros van al mismo lado
+C 0x9976 cuatro rotaciones: partido por dieciseis
+
+C 0x918A (ix-07) a 0x40: la vuelta nueva marca el cronometro para repintarlo
+C 0x91B3 0x78 bytes mas alla del bloque: donde se guarda el tiempo de vuelta
+C 0x9857 los dos bytes se invierten y se suma uno: el complemento a dos
+C 0x9865 y el contador del derrape vuelve a cero
+C 0x9869 y con carry, el que llama sabe que se ha cobrado
+C 0x9B30 un desplazamiento con acarreo: partido por dos
+C 0x9571 y el borde queda marcado como cobrado
+C 0x8963 el bloque del coche empieza en IX
+C 0x8994 0x40D0 es el SUMA_A_HL de p00
+C 0x89A1 0x4A44 lee la palabra de la tabla mapeada
+
+C 0x945C el efecto corto: (ix+2C) a 1 con tres pasos de cuenta
+C 0x9A6E cuatro rotaciones: partido por dieciseis
+C 0x9A74 el `neg` mas 0x10 da la vuelta al indice
+C 0x9701 y el angulo nuevo se guarda entero, con su fraccion
+C 0x9716 el tope es 0x20 hacia un lado y 0xE0 hacia el otro
+C 0x89F4 el coche 1 primero
+C 0x9FD3 sin sitio en la lista, no se crea nada
+C 0x9A14 cuatro rotaciones: partido por dieciseis
+C 0x9A1A el `neg` mas 0x10 da la vuelta al indice
+C 0x9A46 el bit 1 del contador de fotogramas: uno de cada dos
+C 0x9D3C los cuatro bits bajos son el tipo
+
+C 0x8B36 velocidad y aceleracion a cero: el coche reaparece parado
+C 0x8B57 hasta que se agotan no se sigue
+C 0x8B5F (ix+5D) a 9: el estado siguiente
+C 0x8BAD y el coche sigue escondido
+C 0x8BB9 (ix+5D) a cero: vuelve al estado de correr
+C 0x8BD4 y la camara se lleva por delante la X del coche
+C 0x8BF1 el bit 4 del mando es el boton
+
+C 0x8C17 (ix+5D) a cero: el coche vuelve a correr
+C 0x8C1C y con dos jugadores, al estado 2
+C 0x8C34 0x4A8A parte el avance por ocho
+C 0x8C4A (ix+5D) a 6: el coche queda aparcado
+C 0x8C5B y se manda fuera de la pantalla
+C 0x8C87 el acelerador a cero: frenada
+C 0x8CAB y la cuenta de la explosion vuelve a cero
+
+C 0x8CEE y el exceso queda marcado mientras dure el derrape
+C 0x8D08 los dos bits del derrape se apagan
+C 0x8D1C (ix-1C) a 0xFF: el motor queda al maximo
+C 0x8D21 0x80 es el centro de la pista
+C 0x8D33 0x4A86 hace el producto de p00
+C 0x8D69 (ix+5D) a cero: el coche vuelve a correr
+C 0x8D84 y la X con la que cruzo se guarda en (ix+16)
