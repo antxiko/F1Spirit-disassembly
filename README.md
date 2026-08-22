@@ -49,7 +49,7 @@ de pagina (openMSX detecta solo el mapper; 90 s de demo resolvieron 52):
 | de esos, todavia marcados `pendiente_de_trazar` | 504 (0,4 %) |
 | bytes sin asignar | **0** |
 | explicado de verdad | **99,6 %** |
-| paginas con codigo | 0, 1, 2, 3, 13, 15 (la 1 y la 2, comentadas enteras) |
+| paginas con codigo | 0, 1, 2, 3, 13, 15 (las seis, sin ninguna rutina por debajo del 10 % de comentarios) |
 | paginas de datos identificadas al 100 % | 5, 7, 10, 11, 14 |
 
 Las notas de cada pagina estan en `src/pNN.notes`; las semillas del trazador,

@@ -1398,3 +1398,156 @@ C 0x7920 la primera celda es la del neumatico delantero izquierdo
 C 0x7926 y el orden de los bits no es el de la pantalla: 0, 3, 2, 1
 C 0x6CC2 diecisiete columnas con un jugador
 C 0x6729 se guarda el destino: la columna nueva se busca aparte
+
+C 0x6027 y se pasa al paso siguiente del menu
+C 0x6038 0x4B99 es el borrado de rotulo de p00
+C 0x6044 y 0x4B8F el que lo escribe
+C 0x6060 sin boton no hay nada que hacer
+C 0x6068 el bit 5 se apaga y solo se enciende si toca
+C 0x608D tres opciones tambien en este menu
+
+C 0x60CE dos cifras: los puntos que hacen falta
+C 0x60E1 dos cifras: el numero del GP
+C 0x60EA 0x4A3B es el lector de palabras de tabla de p00
+C 0x610A sin boton no hay eleccion
+C 0x6114 y la categoria elegida se apunta en E25B
+C 0x612F 0x40D0 es el SUMA_A_HL de p00
+
+C 0x6183 0x4B28 es el paso de binario a decimal de p00
+C 0x6190 0x10 es el tile del cero
+C 0x619F la opcion vuelve a la primera
+C 0x61B8 0x4A44 lee la palabra de una tabla que esta en la pagina mapeada
+C 0x61C4 0x43FE vuelca el buffer a la VRAM
+C 0x61CA el primer umbral que no se pasa corta la escalera
+C 0x61F7 cada umbral tiene su puerta, y todas caen en la misma comparacion
+
+C 0x6234 con los puntos por encima del umbral, carry a cero: abierto
+C 0x6252 y si no, uno mas
+C 0x625A a la izquierda, uno menos
+C 0x6264 y suena el 0x25 al cambiar
+C 0x627C hacia abajo, uno mas
+C 0x6291 0x40D0 es el SUMA_A_HL de p00
+
+C 0x62A4 0x4174 es el que pide sonido en p00
+C 0x62BD el 0x26 es el sonido de elegir
+C 0x62C2 y se vuelve con A distinto de cero: hay boton
+C 0x62DC el texto va comprimido con el 0x5F por delante
+C 0x62FC B es la fuente que se usa para los digitos
+C 0x6339 0x4B28 pasa el binario a decimal
+
+C 0x634B 0x4CCD es el cargador de listas de tiles de p00
+C 0x6357 0x4F11 es el cargador de la lista de sprites
+C 0x639E tantos bytes como diga el codigo
+C 0x63A7 el bit 7 se quita: lo que queda es la cuenta
+C 0x63B7 tantas veces como diga la cuenta
+C 0x63C0 el `inc b` es porque la cuenta viene con uno menos
+C 0x63CF el tile sube de uno en uno
+C 0x63D0 tantos tiles como diga la cuenta
+
+C 0x63E4 y el tile baja de uno en uno
+C 0x63E5 tantos tiles como diga la cuenta
+C 0x6408 0x4B8F escribe el rotulo
+C 0x641D cuatro bytes: el atributo entero del cursor
+C 0x6425 0x4B87 es el borrado de memoria de p00
+
+C 0x6478 el 0x26 es el sonido de elegir
+C 0x6492 y el valor elegido se guarda
+C 0x64C8 cuatro bytes: el atributo entero del cursor
+C 0x64CF una sola opcion mas: si o no
+C 0x64E2 y le toca al otro jugador
+C 0x64FC sin boton no hay respuesta
+C 0x6506 el rotulo se borra antes de volver a empezar
+
+C 0x6534 sin boton no hay eleccion
+C 0x655C cuatro bytes: el atributo entero
+C 0x657A cinco bytes: el coche entero
+C 0x65B1 0x50 es lo que avanza el cursor de una ficha a la siguiente
+C 0x65BE diez pasos de deslizamiento
+C 0x65CC 0x4B87 es el borrado de memoria de p00
+
+C 0x65DC y suena el 0x25 al cambiar de ficha
+C 0x65FC hasta que se agoten los diez pasos
+C 0x660E el 0x25 es el sonido de mover el cursor
+C 0x662A 0x477C prepara el volcado del buffer
+C 0x663B 0x220 bytes: diecisiete filas
+C 0x6641 0x47CF es el volcado a la VRAM de p00
+C 0x664B 0x4A3B lee la palabra numero A de la tabla
+
+C 0x668C el espacio se convierte en el tile 0, que es el fondo
+C 0x66A2 0x40D0 es el SUMA_A_HL de p00
+C 0x66AD 0x43FE vuelca el buffer a la VRAM
+C 0x66C1 el 0x0B es el tile del lado vertical
+C 0x66D3 el 0x0E y el 0x0F son las dos esquinas
+C 0x66D7 y el 0x0A el tile horizontal
+C 0x66DE ocho tiles de ancho
+
+C 0x670A 0x40D0 es el SUMA_A_HL de p00
+C 0x6719 diecisiete filas
+C 0x6741 y se recupera el destino
+C 0x674B diecisiete filas
+C 0x6751 0x40D0 es el SUMA_A_HL de p00
+C 0x675F y la opcion vuelve a la primera
+
+C 0x6918 0x43FE vuelca el buffer a la VRAM
+C 0x6933 y si no era macro, el byte se copia tal cual
+C 0x6963 con carry puesto el que llama sabe que no se ha expandido
+C 0x6979 E252 a 0x10: la espera del ranking
+
+C 0x69B1 y se pasa al paso siguiente
+C 0x69B7 con un solo jugador aqui se acaba
+C 0x69D3 0x40D0 es el SUMA_A_HL de p00
+C 0x69FB 0x166 casillas: fila 11, columna 6
+C 0x6A13 0xEB casillas: fila 7, columna 11
+
+C 0x6A55 0x4B28 pasa el binario a decimal
+C 0x6A68 0x10B casillas: fila 8, columna 11
+C 0x6A80 0x1CB casillas: fila 14, columna 11
+C 0x6A97 doce tiles: el rotulo entero
+C 0x6AA8 0x20 bytes: los cuatro ultimos tiles
+C 0x6ACD y se pasa al paso siguiente
+C 0x6AF1 el bit 4 es el boton
+
+C 0x6B0A y se pasa al paso siguiente
+C 0x6B1E y si no, la cuenta baja un punto
+C 0x6B23 y se pasa al paso siguiente
+C 0x6B62 el `scf` deja carry puesto: no se cierra el campeonato
+C 0x6B69 el `ccf` da la vuelta al resultado
+C 0x6B83 el 5 es el tile del fondo
+C 0x6B85 32 tiles por fila
+C 0x6B8B 24 filas
+
+C 0x6BB4 cinco categorias
+C 0x6BBE 0x4B28 pasa el binario a decimal
+C 0x6BCF cinco categorias
+C 0x6BDA dieciseis GP
+C 0x6C04 21 carreras
+C 0x6C13 tantas carreras como diga B
+
+C 0x6C29 y con tiempo, uno mas
+C 0x6C74 tantos tiles como diga la cuenta
+C 0x6C77 y el texto siguiente
+C 0x6C95 0x4A44 lee la palabra de la tabla mapeada
+C 0x6CAD 0xA3 es la fila 5, columna 3
+
+C 0x6CCE 0x522D es el volcado por columnas de p00
+C 0x6CE4 0x4B87 es el borrado de memoria de p00
+C 0x6CF7 cuatro rotaciones para bajar el nibble alto
+C 0x6D28 0x4CCD es el cargador de listas de tiles
+
+C 0x6F20 el `rrca` es lo que pasa el bit 7 al 6: el estado de antes
+C 0x6F54 los ocho pixeles de mas son el alto del sprite
+C 0x6FA6 cuatro bytes por atributo
+C 0x6FB0 y solo si hay semaforo encendido
+
+C 0x6FF4 0x38 bytes por ficha de objeto
+C 0x6FF9 cinco objetos
+C 0x7007 los ocho pixeles de mas son el alto del sprite
+C 0x7009 el bit 0 se apaga: por defecto el objeto no se pinta
+C 0x7031 el patron 0 es el que no se ve
+C 0x703B los cuatro bytes van seguidos
+
+C 0x7072 por tres: dos veces sumado
+C 0x7084 el color 15, blanco
+C 0x70B9 0x10 pixeles mas abajo
+C 0x70C0 el 0xE0 y el 0xE4 son los dos patrones que se alternan
+C 0x70E3 0x4760 prepara el buffer de tiles

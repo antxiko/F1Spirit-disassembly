@@ -47,17 +47,17 @@ OPCION_1_ELEGIDA:		; E240 = 0, E27F = 2 (tres opciones), E27E = 0 y E251++ (0x60
 	ld (0e240h),a		;601f   ; E240 a cero, que la eleccion de jugadores empieza de nuevo
 	ld a,002h		;6022
 	ld (0e27fh),a		;6024   ; tres opciones: uno, dos, y la tercera
-	call SIGUIENTE_PASO_MENU		;6027
+	call SIGUIENTE_PASO_MENU		;6027   ; y se pasa al paso siguiente del menu
 	ld de,0ea88h		;602a
 	ld hl,0bbabh		;602d   ; los cuatro bytes del cursor son un atributo de sprite entero (Y, X, patron y color) que se copia de p03
 	ld bc,00004h		;6030
 	ldir		;6033
 	ld de,0ab51h		;6035   ; se borran los dos rotulos de la pantalla anterior antes de pintar el de esta
-	call 04b99h		;6038
+	call 04b99h		;6038   ; 0x4B99 es el borrado de rotulo de p00
 	ld de,0ab59h		;603b
 	call 04b99h		;603e
 	ld de,0ab5eh		;6041
-	jp 04b8fh		;6044
+	jp 04b8fh		;6044   ; y 0x4B8F el que lo escribe
 A_ESTADO_4:		; E250 = 4
 	ld a,004h		;6047
 PON_ESTADO:		; E250 = A; E251 = E252 = E27E = 0
@@ -78,11 +78,11 @@ MENU_JUGADORES:		; mueve el cursor por p03 0xBBCB (0x626C); con el boton (0x62AC
 	ld hl,0bbcbh		;6057
 	call MUEVE_CURSOR		;605a   ; el cursor se mueve con la tabla de p03 0xBBCB, que dice donde va cada opcion
 	call BOTON_PULSADO		;605d
-	ret z			;6060
+	ret z			;6060   ; sin boton no hay nada que hacer
 	ld a,(0e27eh)		;6061   ; la opcion 0 es un jugador y las otras dos son dos
 	and a			;6064
 	ld hl,0e1c2h		;6065   ; bit 5 de E1C2: dos jugadores
-	res 5,(hl)		;6068
+	res 5,(hl)		;6068   ; el bit 5 se apaga y solo se enciende si toca
 	jr z,L_6076		;606a
 	set 5,(hl)		;606c
 	dec a			;606e   ; la tercera opcion ademas enciende E240
@@ -102,7 +102,7 @@ PINTA_MENU_CATEGORIAS:		; la raya vertical (0x613A), E27E = 0 (0x619E), la lista
 	call CURSOR_A_CERO		;6085
 	call PINTA_TEXTOS_CATEGORIAS		;6088
 	ld a,002h		;608b
-	ld (0e27fh),a		;608d
+	ld (0e27fh),a		;608d   ; tres opciones tambien en este menu
 	ld de,0ea88h		;6090   ; el cursor cambia de sitio con el menu: otra tabla, otros cuatro bytes
 	ld hl,0bbafh		;6093
 	ld bc,00004h		;6096
@@ -128,7 +128,7 @@ PINTA_MENU_CATEGORIAS:		; la raya vertical (0x613A), E27E = 0 (0x619E), la lista
 	call GP_MAXIMO		;60c5   ; A = 2 * umbrales superados (0x21..0xB4) -> E35D
 	ld (0e35dh),a		;60c8
 	ld hl,03a7bh		;60cb   ; fila 19, columna 27 de la tabla de nombres
-	call PINTA_NUMERO_2_DIGITOS		;60ce
+	call PINTA_NUMERO_2_DIGITOS		;60ce   ; dos cifras: los puntos que hacen falta
 
 ; ----------------------------------------------------------------------
 ; La fila del GP elegido (E29D): borra 13 casillas en 0x3AB3 (fila
@@ -141,10 +141,10 @@ PINTA_GP_ELEGIDO:		; FILVRM 13 ceros en 0x3AB3; numero E29D+1 en 0x3ADC (0x617E)
 	call 00056h		;60d8   ; BIOS FILVRM - Fills VRAM with value
 	ld a,(0e29dh)		;60db
 	ld hl,03adch		;60de   ; fila 22, columna 28
-	call PINTA_NUMERO_2_DIGITOS		;60e1
+	call PINTA_NUMERO_2_DIGITOS		;60e1   ; dos cifras: el numero del GP
 	ld a,(0e29dh)		;60e4
 	ld de,0635ah		;60e7   ; tabla de 16 punteros a flujos de tiles (0x6E37..0x6ECC)
-	call 04a3bh		;60ea
+	call 04a3bh		;60ea   ; 0x4A3B es el lector de palabras de tabla de p00
 	ld hl,03ab3h		;60ed
 	jp 04807h		;60f0   ; p00 0x4807: PINTA_TILES con la direccion HL ya dada
 MENU_CATEGORIA:		; E251 = 2: cursor por p03 0xBBD1 (0x626C), textos (0x61A2, 0x62D4), si E27E = 5 mueve el GP (0x623C); con el boton: E25B = categoria de E27E (0x6128), E25C = E25B o 5 + E29D, E25F = 0 y E250 = 6
@@ -156,11 +156,11 @@ MENU_CATEGORIA:		; E251 = 2: cursor por p03 0xBBD1 (0x626C), textos (0x61A2, 0x6
 	cp 005h		;6102   ; la opcion 5 es la de F1, y ahi el mando ademas mueve el numero de GP
 	call z,MUEVE_GP		;6104
 	call BOTON_PULSADO		;6107
-	ret z			;610a
+	ret z			;610a   ; sin boton no hay eleccion
 	ld hl,0e29dh		;610b
 	ld a,(0e27eh)		;610e
 	call CATEGORIA_DE_OPCION		;6111   ; tabla 0x6135: opcion del menu -> categoria (1,0,3,4,2)
-	ld (0e25bh),a		;6114
+	ld (0e25bh),a		;6114   ; y la categoria elegida se apunta en E25B
 	cp 005h		;6117
 	jr c,PON_CARRERA		;6119
 	add a,(hl)			;611b   ; E25C = 5 + E29D: el GP (hipotesis: la carrera de F1 elegida)
@@ -175,7 +175,7 @@ CATEGORIA_DE_OPCION:		; si A < 5: A = tabla 0x6135[A]; si no A tal cual
 	ret nc			;612a   ; de la 5 en adelante no hay traduccion que hacer
 	push hl			;612b
 	ld hl,06135h		;612c
-	call 040d0h		;612f
+	call 040d0h		;612f   ; 0x40D0 es el SUMA_A_HL de p00
 	ld a,(hl)			;6132
 	pop hl			;6133
 	ret			;6134
@@ -229,7 +229,7 @@ PINTA_NUMERO_2_DIGITOS:		; A+1 a BCD (p00 0x4B28) y sus dos digitos en VRAM HL y
 	inc a			;617f   ; el +1 es porque los numeros del menu se ensenan desde 1 y por dentro cuentan desde 0
 	ld l,a			;6180
 	ld h,000h		;6181
-	call 04b28h		;6183
+	call 04b28h		;6183   ; 0x4B28 es el paso de binario a decimal de p00
 	pop hl			;6186
 	ld a,e			;6187
 	rra			;6188   ; las cuatro rotaciones bajan el nibble de arriba: la decena
@@ -238,7 +238,7 @@ PINTA_NUMERO_2_DIGITOS:		; A+1 a BCD (p00 0x4B28) y sus dos digitos en VRAM HL y
 	rra			;618b
 	and 00fh		;618c
 	jr z,PINTA_DIGITO_DECENA		;618e   ; una decena a cero no se pinta: se queda el tile 0, que es el fondo
-	add a,010h		;6190
+	add a,010h		;6190   ; 0x10 es el tile del cero
 PINTA_DIGITO_DECENA:		; WRTVRM de la decena y luego la unidad
 	call 0004dh		;6192   ; BIOS WRTVRM - Writes data in VRAM
 	inc hl			;6195
@@ -248,7 +248,7 @@ PINTA_DIGITO_DECENA:		; WRTVRM de la decena y luego la unidad
 	jp 0004dh		;619b   ; BIOS WRTVRM - Writes data in VRAM
 CURSOR_A_CERO:		; E27E = 0
 	xor a			;619e
-	ld (0e27eh),a		;619f
+	ld (0e27eh),a		;619f   ; la opcion vuelve a la primera
 PINTA_NOMBRE_CATEGORIA:		; paginas 5/6 en 8000/A000; HL = p06 0xBC6D[categoria de E27E (+E29D si >= 5)]; descomprime 11 columnas en E423 (0x637A) y vuelve a 1/2/3
 	ld a,005h		;61a2
 	call 04447h		;61a4   ; MAPEA_A_EN_8000 con 5: p05 en 0x8000 y p06 en 0xA000
@@ -260,15 +260,15 @@ PINTA_NOMBRE_CATEGORIA:		; paginas 5/6 en 8000/A000; HL = p06 0xBC6D[categoria d
 NOMBRE_CATEGORIA_INDICE:		; A = categoria de la opcion (0x6128) y sigue
 	call CATEGORIA_DE_OPCION		;61b2
 	ld hl,0bc6dh		;61b5   ; tabla de punteros en p06 (A000 = pagina 6 aqui)
-	call 04a44h		;61b8
+	call 04a44h		;61b8   ; 0x4A44 lee la palabra de una tabla que esta en la pagina mapeada
 	ld de,0e423h		;61bb   ; once columnas descomprimidas en E423: el hueco del nombre en el menu
 	ld a,00bh		;61be
 	ex de,hl			;61c0
 	call RLE_A_BUFFER		;61c1
-	jp 043feh		;61c4
+	jp 043feh		;61c4   ; 0x43FE vuelca el buffer a la VRAM
 GP_MAXIMO:		; A = 0; por cada umbral de puntos superado (0x21,0x30,0x41,0x54,0x69,0x80,0x99,0xB4) A += 2; si pasa todos A = 15
 	call PUNTOS_MENOS_21		;61c7   ; los ocho umbrales son 0x21, 0x30, 0x41, 0x54, 0x69, 0x80, 0x99 y 0xB4: la escalera de puntos que va abriendo los GP
-	ret c			;61ca
+	ret c			;61ca   ; el primer umbral que no se pasa corta la escalera
 	inc a			;61cb   ; dos GP mas por cada umbral pasado
 	inc a			;61cc
 	call PUNTOS_MENOS_30		;61cd   ; dos GP por cada umbral, y todos los umbrales van encadenados: el primero que no se pase corta
@@ -300,7 +300,7 @@ GP_MAXIMO:		; A = 0; por cada umbral de puntos superado (0x21,0x30,0x41,0x54,0x6
 	inc a			;61f5   ; y si se pasan los ocho, uno mas: 16 GP en total
 	ret			;61f6
 PUNTOS_MENOS_0C:		; DE = 0x0C y compara (0x6227)
-	ld de,0000ch		;61f7
+	ld de,0000ch		;61f7   ; cada umbral tiene su puerta, y todas caen en la misma comparacion
 	jr COMPARA_PUNTOS		;61fa
 PUNTOS_MENOS_19:		; DE = 0x19
 	ld de,00019h		;61fc
@@ -337,7 +337,7 @@ COMPARA_PUNTOS:		; si E1DF != 0: NZ y sin carry; si no carry solo si (E295) < DE
 	ld hl,(0e295h)		;622e   ; los puntos son de 16 bits y hay dos juegos, uno por jugador
 	or a			;6231
 	sbc hl,de		;6232
-	ret nc			;6234
+	ret nc			;6234   ; con los puntos por encima del umbral, carry a cero: abierto
 	ld hl,(0e355h)		;6235   ; basta con que UNO de los dos llegue al umbral para abrirlo
 	or a			;6238
 	sbc hl,de		;6239
@@ -356,18 +356,18 @@ MUEVE_GP:		; flancos de los dos mandos: izquierda (bit 2) -> E29D-- (0x6255); de
 	ld a,(0e29dh)		;624d
 	cp (hl)			;6250
 	ret z			;6251
-	inc a			;6252
+	inc a			;6252   ; y si no, uno mas
 	jr GP_NUEVO		;6253
 GP_ANTERIOR:		; E29D-- si no es 0
 	ld a,(0e29dh)		;6255
 	or a			;6258   ; y a la izquierda no se baja del primero
 	ret z			;6259
-	dec a			;625a
+	dec a			;625a   ; a la izquierda, uno menos
 GP_NUEVO:		; E29D = A; 0x61A2, 0x60D1 y sonido 0x25 (0x62A2)
 	ld (0e29dh),a		;625b
 	call PINTA_NOMBRE_CATEGORIA		;625e
 	call PINTA_GP_ELEGIDO		;6261
-	jr SONIDO_25		;6264
+	jr SONIDO_25		;6264   ; y suena el 0x25 al cambiar
 MUEVE_CURSOR_MANDO_ACTIVO:		; como 0x626C pero con los flancos del mando de E25F (0x62C5)
 	ex de,hl			;6266
 	call FLANCOS_MANDO_ACTIVO		;6267   ; aqui solo manda el mando del jugador que este eligiendo (E25F)
@@ -383,7 +383,7 @@ MUEVE_CURSOR_FLANCOS:		; A = flancos: bit 0 arriba, bit 1 abajo
 	jr c,CURSOR_ARRIBA		;6278
 	rra			;627a
 	ret nc			;627b
-	inc (hl)			;627c
+	inc (hl)			;627c   ; hacia abajo, uno mas
 	ld a,(0e27fh)		;627d   ; E27F es la ultima opcion valida: por debajo de ella el cursor se queda clavado
 	cp (hl)			;6280
 	jr nc,CURSOR_ABAJO_OK		;6281
@@ -402,7 +402,7 @@ CURSOR_A_POSICION:		; EA88/EA89 = el par E27E de la tabla DE; sonido 0x25 si E25
 	ld a,(hl)			;628e   ; la opcion por dos: la tabla son parejas de (Y, X)
 	ex de,hl			;628f
 	add a,a			;6290
-	call 040d0h		;6291
+	call 040d0h		;6291   ; 0x40D0 es el SUMA_A_HL de p00
 	ld de,0ea88h		;6294
 	ld bc,00002h		;6297   ; solo se copian dos bytes -la posicion-, que el patron y el color del cursor ya estaban puestos
 	ldir		;629a
@@ -411,7 +411,7 @@ CURSOR_A_POSICION:		; EA88/EA89 = el par E27E de la tabla DE; sonido 0x25 si E25
 	ret z			;62a1
 SONIDO_25:		; ENCOLA_SONIDO 0x25 (cursor)
 	ld a,025h		;62a2
-	jp 04174h		;62a4
+	jp 04174h		;62a4   ; 0x4174 es el que pide sonido en p00
 BOTON_MANDO_ACTIVO:		; como 0x62AC con los flancos del mando de E25F
 	call FLANCOS_MANDO_ACTIVO		;62a7
 	jr BOTON_FLANCO		;62aa
@@ -425,10 +425,10 @@ BOTON_FLANCO:		; bit 4 de A
 	ld a,(0e250h)		;62b6
 	cp 018h		;62b9
 	jr z,BOTON_SI		;62bb
-	ld a,026h		;62bd
+	ld a,026h		;62bd   ; el 0x26 es el sonido de elegir
 	call 04174h		;62bf
 BOTON_SI:		; A = 0xFF, NZ
-	or 0ffh		;62c2
+	or 0ffh		;62c2   ; y se vuelve con A distinto de cero: hay boton
 	ret			;62c4
 FLANCOS_MANDO_ACTIVO:		; A = E1C8 (mando 1) si E25F = 0, si no E1CB (mando 2)
 	ld a,(0e25fh)		;62c5   ; en la eleccion de coche cada jugador manda sobre lo suyo, y E25F dice de quien es el turno
@@ -451,7 +451,7 @@ PINTA_TEXTOS_CATEGORIAS:		; p09 en A000; texto 0xAC0F -> EC02 -> E501 (7x11, fue
 	ld a,009h		;62d4
 	call 04457h		;62d6   ; MAPEA_A_EN_A000 con 9: el texto 0xAC0F esta en la pagina 9
 	ld hl,0ac0fh		;62d9
-	call EXPANDE_TEXTO_5F		;62dc
+	call EXPANDE_TEXTO_5F		;62dc   ; el texto va comprimido con el 0x5F por delante
 	call 043feh		;62df
 	ld de,0ec02h		;62e2
 	ld bc,0070bh		;62e5   ; siete filas de once columnas: el hueco de la tabla de la izquierda
@@ -463,7 +463,7 @@ PINTA_TEXTOS_CATEGORIAS:		; p09 en A000; texto 0xAC0F -> EC02 -> E501 (7x11, fue
 	ld iy,0e2c0h		;62f2   ; los totales de los dos jugadores, uno debajo del otro
 	call TOTAL_A_BCD		;62f6
 	ld hl,0e5abh		;62f9
-	ld b,060h		;62fc
+	ld b,060h		;62fc   ; B es la fuente que se usa para los digitos
 	call PINTA_BCD_4_DIGITOS		;62fe
 	ld iy,0e380h		;6301
 	call TOTAL_A_BCD		;6305
@@ -490,7 +490,7 @@ VALOR_COCHE_LEE:		; HL = DE - 0x40 + A: el byte del coche
 	ld a,(hl)			;6335
 	ld l,a			;6336
 	ld h,000h		;6337
-	call 04b28h		;6339
+	call 04b28h		;6339   ; 0x4B28 pasa el binario a decimal
 	pop hl			;633c
 	ld b,060h		;633d   ; B = 0x60 es la fuente de los digitos de esta pantalla
 	jp PINTA_BCD_2_DIGITOS		;633f
@@ -498,11 +498,11 @@ CARGA_TILES_MENU:		; listas de tiles p04 0x6D6B, 0x6C7C y 0x620A (CARGA_LISTA_TI
 	ld hl,06d6bh		;6342
 	call 04ccdh		;6345   ; tres listas de tiles y una de sprites: todo lo que hace falta para los menus
 	ld hl,06c7ch		;6348
-	call 04ccdh		;634b
+	call 04ccdh		;634b   ; 0x4CCD es el cargador de listas de tiles de p00
 	ld hl,0620ah		;634e
 	call 04ccdh		;6351
 	ld hl,074efh		;6354
-	jp 04f11h		;6357
+	jp 04f11h		;6357   ; 0x4F11 es el cargador de la lista de sprites
 
 ; ----------------------------------------------------------------------
 ; DATOS tabla_nombres_gp: 16 punteros (E29D) a los flujos de tiles de los
@@ -563,13 +563,13 @@ RLE_BUFFER_COPIA:		; n bytes tal cual (n < 0x80)
 	cp c			;6399
 	exx			;639a
 	call z,RLE_BUFFER_FILA_SIGUIENTE		;639b
-	djnz RLE_BUFFER_COPIA		;639e
+	djnz RLE_BUFFER_COPIA		;639e   ; tantos bytes como diga el codigo
 	jr RLE_BUFFER_CODIGO		;63a0
 RLE_BUFFER_MAS:		; codigos >= 0x81: repetir (< 0xE1), serie creciente (< 0xF1) o decreciente
 	ld a,b			;63a2
 	sub 0e1h		;63a3   ; de 0x81 a 0xE0 es repetir; de 0xE1 arriba, series
 	jr nc,RLE_BUFFER_SERIES		;63a5
-	res 7,b		;63a7
+	res 7,b		;63a7   ; el bit 7 se quita: lo que queda es la cuenta
 	ld a,(de)			;63a9   ; el byte que se repite viene detras del codigo
 	inc de			;63aa
 RLE_BUFFER_REPITE:		; el mismo byte n&0x7F veces
@@ -583,13 +583,13 @@ RLE_BUFFER_REPITE:		; el mismo byte n&0x7F veces
 	exx			;63b2
 	call z,RLE_BUFFER_FILA_SIGUIENTE		;63b3
 	pop af			;63b6
-	djnz RLE_BUFFER_REPITE		;63b7
+	djnz RLE_BUFFER_REPITE		;63b7   ; tantas veces como diga la cuenta
 	jr RLE_BUFFER_CODIGO		;63b9
 RLE_BUFFER_SERIES:		; n = codigo - 0xE1: < 0x10 creciente, si no decreciente
 	ld b,a			;63bb
 	sub 010h		;63bc   ; por debajo de 0x10 la serie sube y de ahi arriba baja
 	jr nc,RLE_BUFFER_DECRECIENTE		;63be
-	inc b			;63c0
+	inc b			;63c0   ; el `inc b` es porque la cuenta viene con uno menos
 	ld a,(de)			;63c1
 	inc de			;63c2
 	ld c,a			;63c3
@@ -603,8 +603,8 @@ RLE_BUFFER_CRECIENTE:		; t, t+1, t+2... (n+1 valores)
 	cp c			;63ca
 	exx			;63cb
 	call z,RLE_BUFFER_FILA_SIGUIENTE		;63cc
-	inc c			;63cf
-	djnz RLE_BUFFER_CRECIENTE		;63d0
+	inc c			;63cf   ; el tile sube de uno en uno
+	djnz RLE_BUFFER_CRECIENTE		;63d0   ; tantos tiles como diga la cuenta
 	jr RLE_BUFFER_CODIGO		;63d2
 RLE_BUFFER_DECRECIENTE:		; t, t-1, t-2... (n+1 valores)
 	ld b,a			;63d4
@@ -622,8 +622,8 @@ RLE_BUFFER_DECRECIENTE_BUCLE:		; un valor por vuelta
 	cp c			;63df
 	exx			;63e0
 	call z,RLE_BUFFER_FILA_SIGUIENTE		;63e1
-	dec c			;63e4
-	djnz RLE_BUFFER_DECRECIENTE_BUCLE		;63e5
+	dec c			;63e4   ; y el tile baja de uno en uno
+	djnz RLE_BUFFER_DECRECIENTE_BUCLE		;63e5   ; tantos tiles como diga la cuenta
 	jr RLE_BUFFER_CODIGO		;63e7
 RLE_BUFFER_FILA_SIGUIENTE:		; EA69 = 0 y HL += 32 - C' (fin de fila del rectangulo)
 	push bc			;63e9   ; fin de fila: la columna vuelve a cero y el puntero salta lo que falte hasta las 32 casillas del buffer
@@ -645,7 +645,7 @@ ENTRA_ELECCION_COCHE:		; E250 = 6: limpia (p00 0x465B, 0x5F8D), tiles 16..58 con
 	call 04476h		;63ff   ; los tiles 16 a 58 en blanco (0xE0) y los 0 a 15 macizos: el marco de las fichas
 	call 04496h		;6402
 	ld de,0abadh		;6405
-	call 04b8fh		;6408
+	call 04b8fh		;6408   ; 0x4B8F escribe el rotulo
 	ld hl,0e250h		;640b
 	inc (hl)			;640e
 	ld a,001h		;640f
@@ -654,10 +654,10 @@ ENTRA_ELECCION_COCHE:		; E250 = 6: limpia (p00 0x465B, 0x5F8D), tiles 16..58 con
 PINTA_PANTALLA_COCHE:		; cursor HL (4 bytes) a EA88; borra E400 (0x21F bytes); VRAM (0x6635); tiles (0x6781); hasta 3 valores de la fila E251 de la tabla p03 0xBC45 (0x676C) pintados en E422/E42C/E436 (0x6611); 0xFF acaba
 	ld de,0ea88h		;6417
 	ld bc,00004h		;641a
-	ldir		;641d
+	ldir		;641d   ; cuatro bytes: el atributo entero del cursor
 	ld hl,0e400h		;641f   ; 0x21F bytes del buffer a cero: las 17 filas de arriba
 	ld bc,0021fh		;6422
-	call 04b87h		;6425
+	call 04b87h		;6425   ; 0x4B87 es el borrado de memoria de p00
 	call VUELCA_544_NOMBRES		;6428
 	call CARGA_TILES_FICHAS		;642b
 	call FILA_TABLA_BC45		;642e   ; cada paso de la eleccion tiene su fila en la tabla p03 0xBC45, con hasta tres fichas
@@ -702,7 +702,7 @@ ELECCION_MANDO:		; flancos del mando activo: izquierda (bit 2) -> 0x6580, derech
 	jp c,ELECCION_DERECHA		;6473
 	rra			;6476
 	ret nc			;6477
-	ld a,026h		;6478
+	ld a,026h		;6478   ; el 0x26 es el sonido de elegir
 	call 04174h		;647a
 	call BLOQUE_ELECCION		;647d   ; HL = E297 (jugador 1) o E357 (jugador 2): donde se apuntan las elecciones
 	ld a,(0e251h)		;6480   ; el paso 0 es el coche entero; del 1 en adelante se elige pieza a pieza
@@ -714,7 +714,7 @@ ELECCION_MANDO:		; flancos del mando activo: izquierda (bit 2) -> 0x6580, derech
 	call FILA_TABLA_BC45		;648b
 	call VALOR_FILA_E27E		;648e   ; A = el valor elegido (fila E251 de p03 0xBC45, columna E27E)
 	pop hl			;6491
-	ld (hl),a			;6492
+	ld (hl),a			;6492   ; y el valor elegido se guarda
 	ld a,(0e251h)		;6493
 	cp 005h		;6496   ; el paso 5 es el ultimo: la caja de cambios
 	jr z,CONFIRMA_ELECCION		;6498
@@ -743,11 +743,11 @@ ELECCION_FIN:		; E251 = A; cursor p03 0xBBBB a EA88; E27E = 0, E27F = 1
 	ld hl,0bbbbh		;64bf
 	ld de,0ea88h		;64c2   ; el cursor cambia de sitio para la pregunta de si o no
 	ld bc,00004h		;64c5
-	ldir		;64c8
+	ldir		;64c8   ; cuatro bytes: el atributo entero del cursor
 	xor a			;64ca
 	ld (0e27eh),a		;64cb
 	inc a			;64ce
-	ld (0e27fh),a		;64cf
+	ld (0e27fh),a		;64cf   ; una sola opcion mas: si o no
 	ret			;64d2
 ELECCION_PASO_0:		; copia los 5 bytes del coche elegido (0x6568) y confirma (0x64AC)
 	call COPIA_5_BYTES_COCHE		;64d3   ; el coche predefinido trae sus cinco bytes hechos: no hay nada que elegir
@@ -757,7 +757,7 @@ SIGUIENTE_JUGADOR:		; con dos jugadores (bit 5 de E1C2): E25F++ y si != 2 vuelve
 	bit 5,a		;64db   ; con un solo jugador no hay turno que pasar
 	jr z,A_ESTADO_0A		;64dd
 	ld hl,0e25fh		;64df
-	inc (hl)			;64e2
+	inc (hl)			;64e2   ; y le toca al otro jugador
 	ld a,(hl)			;64e3
 	cp 002h		;64e4   ; con dos jugadores se vuelve al estado 6 para que elija el segundo; cuando E25F llega a 2 ya han elegido los dos
 	ld a,006h		;64e6
@@ -770,12 +770,12 @@ ELECCION_SI_NO:		; E251 >= 6: cursor por p03 0xBBE1 (0x6266); boton: E27E = 0 ->
 	ld hl,0bbe1h		;64f3   ; esta es la pregunta de si o no, con su propia tabla de cursor
 	call MUEVE_CURSOR_MANDO_ACTIVO		;64f6
 	call BOTON_MANDO_ACTIVO		;64f9
-	ret z			;64fc
+	ret z			;64fc   ; sin boton no hay respuesta
 	ld a,(0e27eh)		;64fd   ; la opcion 0 es "si": se da por buena la eleccion
 	and a			;6500
 	jr z,SIGUIENTE_JUGADOR		;6501
 	ld de,0ac07h		;6503
-	call 04b99h		;6506
+	call 04b99h		;6506   ; el rotulo se borra antes de volver a empezar
 	ld a,(0e251h)		;6509   ; y con la 1 se vuelve a empezar; el paso 7 -el coche predefinido- vuelve al estado 6 entero
 	cp 007h		;650c
 	ld a,000h		;650e
@@ -793,7 +793,7 @@ ELECCION_POR_E252:		; E252: 1 -> 0x6469; >= 2 -> 0x65DE; 0 -> cursor por p03 0xB
 	ld hl,0bbddh		;652b
 	call MUEVE_CURSOR_MANDO_ACTIVO		;652e
 	call BOTON_MANDO_ACTIVO		;6531
-	ret z			;6534
+	ret z			;6534   ; sin boton no hay eleccion
 	ld a,(0e27eh)		;6535   ; la opcion 0 es el coche predefinido y la 1 montarlo pieza a pieza
 	and a			;6538
 	jr z,ELECCION_OPCION_0		;6539
@@ -809,7 +809,7 @@ ELECCION_OPCION_0:		; borra 0xABAD, pinta 0xABCA, cursor 0xBBB3, E252++, 0x67CF
 	ld hl,0bbb3h		;6553
 	ld de,0ea88h		;6556
 	ld bc,00004h		;6559   ; el cursor entero, cuatro bytes
-	ldir		;655c
+	ldir		;655c   ; cuatro bytes: el atributo entero
 	ld hl,0e252h		;655e
 	inc (hl)			;6561
 	jp PINTA_JUGADOR		;6562
@@ -826,7 +826,7 @@ COPIA_5_BYTES_COCHE:		; copia a (HL) los 5 bytes de la entrada (valor de p03 0xB
 	add a,b			;6575
 	call 040d0h		;6576
 	pop de			;6579
-	ld bc,00005h		;657a
+	ld bc,00005h		;657a   ; cinco bytes: el coche entero
 	ldir		;657d
 	ret			;657f
 ELECCION_IZQUIERDA:		; E27E--; si pasa de 0 lo deja en 0; si no, EA89 (x del cursor): si es 0x48 -> panel desde la izquierda (C = 0) (0x65B8), si no EA89 -= 0x50 y sonido 0x25
@@ -859,25 +859,25 @@ ELECCION_DER_CURSOR:		; EA89 == 0xE8: entra el panel; si no, EA89 += 0x50
 	ld hl,0ea89h		;65ab
 	ld a,(hl)			;65ae
 	cp 0e8h		;65af   ; 0xE8 es el borde derecho
-	ld c,050h		;65b1
+	ld c,050h		;65b1   ; 0x50 es lo que avanza el cursor de una ficha a la siguiente
 	jp nz,CURSOR_SUMA_C		;65b3
 	ld c,001h		;65b6
 ARRANCA_PANEL:		; E25D = C (lado), E25E = 10 (pasos), E252 = 2; borra E920.. (0xFF bytes); pinta en E821 el valor (E251, E27E) (0x6611); sonido 0x25
 	ld a,c			;65b8
 	ld (0e25dh),a		;65b9   ; E25D dice por que lado entra el panel y E25E cuantos pasos le quedan
 	ld a,00ah		;65bc
-	ld (0e25eh),a		;65be
+	ld (0e25eh),a		;65be   ; diez pasos de deslizamiento
 	ld a,002h		;65c1
 	ld (0e252h),a		;65c3
 	ld hl,0e920h		;65c6   ; 0xFF bytes de E920 a cero: el sitio donde se monta la ficha que entra
 	ld bc,000ffh		;65c9
-	call 04b87h		;65cc
+	call 04b87h		;65cc   ; 0x4B87 es el borrado de memoria de p00
 	call FILA_TABLA_BC45		;65cf
 	call VALOR_FILA_E27E		;65d2
 	ld de,0e821h		;65d5
 	inc a			;65d8   ; el `inc a` es lo que convierte el indice en el de la ficha siguiente
 	call PINTA_FICHA		;65d9
-	jr SONIDO_25_B		;65dc
+	jr SONIDO_25_B		;65dc   ; y suena el 0x25 al cambiar de ficha
 DESLIZA_PANEL:		; un paso por fotograma: E25D = 1 -> 0x671C (hacia la derecha), si no 0x66E7 (hacia la izquierda); E25E--; al llegar a 0, E252 = 1 (o 0 si E251 = 0)
 	ld a,(0e25dh)		;65de   ; un paso de deslizamiento por fotograma, diez en total
 	dec a			;65e1
@@ -893,7 +893,7 @@ DESLIZA_IZQUIERDA:		; ventana E401.. desplazada a la izquierda
 DESLIZA_CUENTA:		; E25E--; al acabar E252 = 1 (0 si E251 = 0)
 	ld hl,0e25eh		;65f8
 	dec (hl)			;65fb
-	ret nz			;65fc
+	ret nz			;65fc   ; hasta que se agoten los diez pasos
 	ld a,(0e251h)		;65fd   ; al acabar, el paso 0 vuelve a 0 y los demas a 1
 	and a			;6600
 	ld a,001h		;6601
@@ -907,7 +907,7 @@ CURSOR_SUMA_C:		; EA89 += C y sonido 0x25
 	ld (hl),a			;660b
 SONIDO_25_B:		; ENCOLA_SONIDO 0x25
 	ld a,025h		;660c
-	jp 04174h		;660e
+	jp 04174h		;660e   ; el 0x25 es el sonido de mover el cursor
 
 ; ----------------------------------------------------------------------
 ; Pinta en el buffer (DE) la ficha A de la fila E251: el grafico de
@@ -930,7 +930,7 @@ PINTA_FICHA:		; texto de la ficha A a EA6B (0x67A2); DE = grafico (0x6644); 0x66
 	sbc hl,de		;6625
 	jp PINTA_MARCO_FICHA		;6627
 VUELCA_512_NOMBRES:		; p00 0x477C (pendiente) y copia E400.. (0x200 bytes) a la tabla de nombres 0x3800
-	call 0477ch		;662a
+	call 0477ch		;662a   ; 0x477C prepara el volcado del buffer
 VUELCA_512_NOMBRES_SIN:		; idem sin el 0x477C
 	ld hl,03800h		;662d   ; 0x200 bytes son las 16 filas de arriba de la tabla de nombres
 	ld bc,00200h		;6630
@@ -938,15 +938,15 @@ VUELCA_512_NOMBRES_SIN:		; idem sin el 0x477C
 VUELCA_544_NOMBRES:		; p00 0x477C y copia E400.. (0x220 bytes) a VRAM 0x38E0 (desde la fila 7)
 	call 0477ch		;6635
 	ld hl,038e0h		;6638   ; 0x38E0 es la fila 7: las de arriba las deja quietas quien pinta el rotulo
-	ld bc,00220h		;663b
+	ld bc,00220h		;663b   ; 0x220 bytes: diecisiete filas
 COPIA_BUFFER_VRAM:		; LDIRVM de E400 (BC bytes) a VRAM HL
 	ld de,0e400h		;663e   ; el origen es siempre el buffer de E400; lo que cambia es cuanto y a donde
-	jp 047cfh		;6641
+	jp 047cfh		;6641   ; 0x47CF es el volcado a la VRAM de p00
 GRAFICO_FICHA:		; HL = tabla 0x67C3[E251] (punteros por paso); DE = entrada (A-1)&0x7F de esa tabla (flujo RLE en p08/p09)
 	push af			;6644
 	ld de,067c3h		;6645   ; dos tablas encadenadas: primero el paso (E251) y luego la ficha dentro del paso
 	ld a,(0e251h)		;6648
-	call 04a3bh		;664b
+	call 04a3bh		;664b   ; 0x4A3B lee la palabra numero A de la tabla
 	pop af			;664e
 	dec a			;664f
 	and 07fh		;6650   ; el `dec a` y el `and 0x7f` son porque la ficha llega contada desde 1 y con el bit 7 puesto en algunos sitios
@@ -986,7 +986,7 @@ PINTA_TEXTO_CARACTER:		; un caracter por vuelta
 	add a,b			;6689   ; a cada letra se le suma la fuente, que es lo unico que cambia entre una pantalla y otra
 	jr PINTA_TEXTO_ESCRIBE		;668a
 PINTA_TEXTO_ESPACIO:		; el espacio (0x20) es el tile 0
-	sub 020h		;668c
+	sub 020h		;668c   ; el espacio se convierte en el tile 0, que es el fondo
 PINTA_TEXTO_ESCRIBE:		; (HL) = tile; EA69++; al llegar a C, fila nueva
 	exx			;668e
 	ld (hl),a			;668f
@@ -1004,7 +1004,7 @@ PINTA_TEXTO_FILA:		; HL += 32 - columna (fila siguiente del buffer); EA6A++; al 
 	ld (hl),000h		;669e
 	inc hl			;66a0
 	exx			;66a1
-	call 040d0h		;66a2
+	call 040d0h		;66a2   ; 0x40D0 es el SUMA_A_HL de p00
 	exx			;66a5
 	inc (hl)			;66a6   ; y EA6A cuenta las filas: al llegar al alto, se acabo
 	ld a,(hl)			;66a7
@@ -1012,7 +1012,7 @@ PINTA_TEXTO_FILA:		; HL += 32 - columna (fila siguiente del buffer); EA6A++; al 
 	exx			;66a9
 	cp b			;66aa
 	jr nz,PINTA_TEXTO_CARACTER		;66ab
-	jp 043feh		;66ad
+	jp 043feh		;66ad   ; 0x43FE vuelca el buffer a la VRAM
 INICIA_CONTADORES_BUFFER:		; EA69 = EA6A = 0; C' = A
 	exx			;66b0   ; C' guarda el ancho durante todo el recorrido, que es lo unico que no cabe en la memoria de los contadores
 	ld hl,0ea6ah		;66b1
@@ -1025,7 +1025,7 @@ INICIA_CONTADORES_BUFFER:		; EA69 = EA6A = 0; C' = A
 PINTA_MARCO_FICHA:		; marco de tiles en el buffer HL: esquinas 0x0C/0x0D y 0x0E/0x0F, lados 0x0A (horizontal) y 0x0B (vertical, 15 filas), 8 de ancho
 	ld c,00ch		;66bc   ; el marco son seis tiles: dos esquinas arriba, dos abajo, uno horizontal y uno vertical
 	call MARCO_HORIZONTAL		;66be
-	ld a,00bh		;66c1
+	ld a,00bh		;66c1   ; el 0x0B es el tile del lado vertical
 	ld b,00fh		;66c3   ; quince filas de alto
 MARCO_LADOS:		; una fila de lados (0x0B en HL y HL+9) por vuelta
 	ld (hl),a			;66c5
@@ -1037,17 +1037,17 @@ MARCO_LADOS:		; una fila de lados (0x0B en HL y HL+9) por vuelta
 	ld d,000h		;66ce
 	add hl,de			;66d0
 	djnz MARCO_LADOS		;66d1
-	ld c,00eh		;66d3
+	ld c,00eh		;66d3   ; el 0x0E y el 0x0F son las dos esquinas
 MARCO_HORIZONTAL:		; esquina C, 8 tiles 0x0A y esquina C+1; HL += 0x17
 	ld b,008h		;66d5   ; ocho tiles horizontales entre las dos esquinas
-	ld a,00ah		;66d7
+	ld a,00ah		;66d7   ; y el 0x0A el tile horizontal
 	ld (hl),c			;66d9
 	inc c			;66da
 	inc hl			;66db
 MARCO_HORIZONTAL_BUCLE:		; un tile 0x0A por vuelta
 	ld (hl),a			;66dc   ; ocho tiles horizontales entre las esquinas
 	inc hl			;66dd
-	djnz MARCO_HORIZONTAL_BUCLE		;66de
+	djnz MARCO_HORIZONTAL_BUCLE		;66de   ; ocho tiles de ancho
 	ld (hl),c			;66e0
 	ld e,017h		;66e1
 	ld d,000h		;66e3
@@ -1079,7 +1079,7 @@ DESPLAZA_IZQ_FILA:		; una fila por vuelta
 	ld b,a			;6706
 	ld a,00ah		;6707   ; y la columna que toca es 10 menos lo que quede de deslizamiento
 	sub b			;6709
-	call 040d0h		;670a
+	call 040d0h		;670a   ; 0x40D0 es el SUMA_A_HL de p00
 	ldi		;670d   ; un solo `ldi`: la columna que entra es una casilla por fila
 	pop hl			;670f
 	inc hl			;6710   ; y de una fila a la siguiente hay que saltar dos casillas mas
@@ -1089,7 +1089,7 @@ DESPLAZA_IZQ_FILA:		; una fila por vuelta
 	add hl,bc			;6716
 	ex de,hl			;6717
 	pop bc			;6718
-	djnz DESPLAZA_IZQ_FILA		;6719
+	djnz DESPLAZA_IZQ_FILA		;6719   ; diecisiete filas
 	ret			;671b
 DESPLAZA_VENTANA_DER:		; 17 filas de 29 bytes con lddr (hacia la derecha); la columna nueva de E800 + fila*32 + E25E - 1
 	ld b,011h		;671c   ; la misma faena al reves, con `lddr`, y la columna nueva por el otro lado
@@ -1117,7 +1117,7 @@ DESPLAZA_DER_FILA:		; una fila por vuelta
 	dec a			;673b
 	call 040d0h		;673c
 	ldd		;673f   ; un solo `ldd`: el byte que entra por la derecha
-	pop hl			;6741
+	pop hl			;6741   ; y se recupera el destino
 	dec hl			;6742
 	ld bc,0003eh		;6743   ; 0x3E son las dos filas que hay que subir para caer en la siguiente, ya contando el byte que se acaba de escribir
 	add hl,bc			;6746
@@ -1125,11 +1125,11 @@ DESPLAZA_DER_FILA:		; una fila por vuelta
 	add hl,bc			;6748
 	ex de,hl			;6749
 	pop bc			;674a
-	djnz DESPLAZA_DER_FILA		;674b
+	djnz DESPLAZA_DER_FILA		;674b   ; diecisiete filas
 	ret			;674d
 VALOR_FILA_E27E:		; A = byte E27E de la fila HL (la entrada de la tabla p03 0xBC45 que dejo 0x676C)
 	ld a,(0e27eh)		;674e   ; la columna del cursor es la que elige el valor dentro de la fila
-	call 040d0h		;6751
+	call 040d0h		;6751   ; 0x40D0 es el SUMA_A_HL de p00
 	ld a,(hl)			;6754
 	ret			;6755
 CAMBIA_TEXTOS:		; borra el texto HL, pinta el DE, E27E = 0, E251++, cursor p03 0xBBB3 y repinta (0x6417)
@@ -1138,7 +1138,7 @@ CAMBIA_TEXTOS:		; borra el texto HL, pinta el DE, E27E = 0, E251++, cursor p03 0
 	pop de			;675a
 	call 04b8fh		;675b
 	xor a			;675e
-	ld (0e27eh),a		;675f
+	ld (0e27eh),a		;675f   ; y la opcion vuelve a la primera
 	ld hl,0e251h		;6762
 	inc (hl)			;6765   ; y de paso se avanza el paso y se vuelve a montar la pantalla
 	ld hl,0bbb3h		;6766
@@ -1417,7 +1417,7 @@ EXPANDE_TEXTO_FF:		; pagina 9 en A000; expande (HL) en EC02, cierra con 0xFF (pa
 	call EXPANDE_TEXTO		;6912
 	ld a,0ffh		;6915   ; el 0xFF cierra el texto para el pintador de tiles de p00
 	ld (de),a			;6917
-	jp 043feh		;6918
+	jp 043feh		;6918   ; 0x43FE vuelca el buffer a la VRAM
 EXPANDE_TEXTO_5F:		; expande (HL) en EC02 y cierra con 0x5F (para 0x6675); la pagina 9 la mapea el llamador
 	ld de,0ec02h		;691b
 	call EXPANDE_TEXTO		;691e
@@ -1435,7 +1435,7 @@ EXPANDE_BUCLE:		; un byte por vuelta: 0x5F fin; >= 0x60 macro (0x6943); si no lo
 	inc hl			;692d
 	cp 060h		;692e   ; de 0x60 en adelante no es una letra, es una macro: un trozo de texto que se repite
 	call nc,EXPANDE_MACRO		;6930
-	jr nc,EXPANDE_BUCLE		;6933
+	jr nc,EXPANDE_BUCLE		;6933   ; y si no era macro, el byte se copia tal cual
 	ld (de),a			;6935
 	inc de			;6936
 	ld a,d			;6937   ; y el texto expandido no puede pasar de 0xEE02: ahi se corta
@@ -1471,7 +1471,7 @@ EXPANDE_MACRO:		; si quedan niveles: HL = p09 0xA6DE[A-0x60] y se expande recurs
 	ret			;6961
 EXPANDE_MACRO_TOPE:		; sin niveles: A = 0 y carry (el byte se copia como 0)
 	xor a			;6962   ; sin niveles que gastar la macro se copia como un cero, o sea como nada
-	scf			;6963
+	scf			;6963   ; con carry puesto el que llama sabe que no se ha expandido
 	ret			;6964
 EXPANDE_NIVEL:		; Z si C' = 0; si no C'--
 	exx			;6965
@@ -1490,7 +1490,7 @@ RANKING:		; E251 = 0: E252 = 0x10, (E27E) = 0x1E0 (contador de 16 bits), oculta 
 	and a			;6973
 	jp nz,RANKING_PASOS		;6974
 	ld a,010h		;6977
-	ld (0e252h),a		;6979
+	ld (0e252h),a		;6979   ; E252 a 0x10: la espera del ranking
 	ld hl,001e0h		;697c   ; 0x1E0 es la cuenta larga que la deja puesta un rato aunque nadie toque nada
 	ld (0e27eh),hl		;697f
 	ld hl,03b00h		;6982   ; el 0xD0 en el primer atributo apaga todos los sprites de golpe
@@ -1509,10 +1509,10 @@ RANKING:		; E251 = 0: E252 = 0x10, (E27E) = 0x1E0 (contador de 16 bits), oculta 
 	ld (0ea70h),hl		;69a8   ; EA70 dice en que buffer se esta pintando: E400 el jugador 1 y EC00 el 2
 	call PINTA_FICHA_RANKING		;69ab
 	ld hl,0e251h		;69ae
-	inc (hl)			;69b1
+	inc (hl)			;69b1   ; y se pasa al paso siguiente
 	ld a,(0e1c2h)		;69b2
 	bit 5,a		;69b5
-	ret z			;69b7
+	ret z			;69b7   ; con un solo jugador aqui se acaba
 	ld iy,0e380h		;69b8
 	call PUNTOS_POR_POSICION		;69bc
 	ld hl,0ec00h		;69bf
@@ -1523,7 +1523,7 @@ PINTA_FICHA_RANKING:		; total (0x6BFC); buffer (EA70) de tile 5 (0x6B81) con una
 	call RELLENA_BUFFER_TILE_5		;69cb   ; el fondo de la ficha es el tile 5...
 	ld hl,(0ea70h)		;69ce
 	ld a,021h		;69d1
-	call 040d0h		;69d3
+	call 040d0h		;69d3   ; 0x40D0 es el SUMA_A_HL de p00
 	ld bc,00f16h		;69d6   ; ...y por dentro una ventana de 22 x 15 casillas en blanco
 	xor a			;69d9
 	ex af,af'			;69da
@@ -1541,7 +1541,7 @@ PINTA_FICHA_RANKING:		; total (0x6BFC); buffer (EA70) de tile 5 (0x6B81) con una
 	ld (hl),a			;69f4
 	call 05339h		;69f5   ; p00 0x5339: los 3 bytes del tiempo EA57..EA59 a digitos en EA50..
 	ld hl,(0ea70h)		;69f8
-	ld de,00166h		;69fb
+	ld de,00166h		;69fb   ; 0x166 casillas: fila 11, columna 6
 	add hl,de			;69fe
 	bit 1,(iy+001h)		;69ff   ; y solo se pinta si el coche llego a meta: el bit 1 de sus banderas
 	call nz,052d5h		;6a03   ; p00 0x52D5: escribe el tiempo en (EA70)+0x166 (fila 11, col 6)
@@ -1549,7 +1549,7 @@ PINTA_FICHA_RANKING:		; total (0x6BFC); buffer (EA70) de tile 5 (0x6B81) con una
 	bit 1,(iy+001h)		;6a09
 	jp z,PINTA_RETIRE		;6a0d   ; el que no termino no tiene tiempo ni puesto: le sale RETIRE
 	ld de,000ebh		;6a10
-	add hl,de			;6a13
+	add hl,de			;6a13   ; 0xEB casillas: fila 7, columna 11
 	push hl			;6a14
 	ld a,(0e1c2h)		;6a15   ; con dos jugadores y el mismo tiempo (E30D..F = E3CD..F): intercambia las posiciones E331/E3F1 segun E2D6/E396
 	bit 5,a		;6a18
@@ -1586,7 +1586,7 @@ RANKING_INTERCAMBIA_POSICIONES:		; E331 <-> E3F1
 RANKING_POSICION:		; (iy+71) -> BCD -> 2 digitos en +0xEB si E240 = 0
 	ld l,(iy+071h)		;6a50   ; (iy+71) = posicion final -> BCD -> 2 digitos en +0xEB (fila 7, col 11) si E240 = 0
 	ld h,000h		;6a53
-	call 04b28h		;6a55
+	call 04b28h		;6a55   ; 0x4B28 pasa el binario a decimal
 	pop hl			;6a58
 	ld b,010h		;6a59
 	ld a,(0e240h)		;6a5b   ; con E240 encendido -la tercera opcion de jugadores- el puesto no se pinta
@@ -1594,7 +1594,7 @@ RANKING_POSICION:		; (iy+71) -> BCD -> 2 digitos en +0xEB si E240 = 0
 	call z,PINTA_BCD_4_DIGITOS		;6a5f
 	ld hl,(0ea70h)		;6a62
 	ld de,0010bh		;6a65
-	add hl,de			;6a68
+	add hl,de			;6a68   ; 0x10B casillas: fila 8, columna 11
 	push hl			;6a69
 	ld hl,(0ea72h)		;6a6a   ; (EA72) -> los puntos ganados -> 4 digitos en +0x10B (fila 8, col 11)
 	ld a,(hl)			;6a6d
@@ -1608,7 +1608,7 @@ RANKING_POSICION:		; (iy+71) -> BCD -> 2 digitos en +0xEB si E240 = 0
 PINTA_TOTAL_RANKING:		; (iy-2B) -> BCD -> 4 digitos en (EA70)+0x1CB (fila 14, col 11)
 	ld hl,(0ea70h)		;6a7a   ; el total del campeonato vive en (iy-0x2B), justo por delante del bloque del coche
 	ld de,001cbh		;6a7d
-	add hl,de			;6a80
+	add hl,de			;6a80   ; 0x1CB casillas: fila 14, columna 11
 	push hl			;6a81
 	ld l,(iy-02bh)		;6a82
 	ld h,000h		;6a85
@@ -1620,7 +1620,7 @@ PINTA_RETIRE:		; no termino: los 12 tiles de 0x6ECC ("RETIRE EMPTY") en (EA70)+0
 	ld de,00103h		;6a90   ; los doce tiles de 0x6ECC son "RETIRE EMPTY" ya hechos, sin pasar por el expansor de textos
 	add hl,de			;6a93
 	ld de,06ecch		;6a94
-	ld bc,0000ch		;6a97
+	ld bc,0000ch		;6a97   ; doce tiles: el rotulo entero
 	ex de,hl			;6a9a
 	ldir		;6a9b
 	jr PINTA_TOTAL_RANKING		;6a9d
@@ -1629,7 +1629,7 @@ PANEL_RANKING_1J:		; con dos jugadores nada; si no: colores de los tiles 252-255
 	bit 5,a		;6aa2
 	ret nz			;6aa4
 	ld hl,007e0h		;6aa5   ; los colores de los cuatro ultimos tiles a cero antes de cargar el panel
-	ld bc,00020h		;6aa8
+	ld bc,00020h		;6aa8   ; 0x20 bytes: los cuatro ultimos tiles
 	xor a			;6aab
 	call 00056h		;6aac   ; BIOS FILVRM - Fills VRAM with value
 	call 04c12h		;6aaf
@@ -1646,7 +1646,7 @@ RANKING_PASOS:		; E251 = 1: vuelca (0x6AF6) y p02 0x8406 con C = 7 hasta E252 = 
 	cp 014h		;6ac7   ; hasta que E252 no llega a 0x14 no se pasa de paso
 	ret nz			;6ac9
 	ld hl,0e251h		;6aca
-	inc (hl)			;6acd
+	inc (hl)			;6acd   ; y se pasa al paso siguiente
 	ret			;6ace
 RANKING_PASO_2:		; (E27E) 16 bits --; a cero -> 0x6B02; DE = 0x1DF si nadie termino (0x6D31), 0x1C8 si no; mientras (E27E) >= DE sigue volcando; luego el boton (bit 4 de E1C8) -> 0x6B02
 	dec a			;6acf   ; el paso 2 es la espera larga, con su contador de 16 bits
@@ -1666,7 +1666,7 @@ RANKING_COMPARA:		; (E27E) - DE
 	sbc hl,de		;6aea
 	jr nc,VUELCA_RANKING		;6aec
 	ld a,(0e1c8h)		;6aee   ; y el boton se la salta
-	and 010h		;6af1
+	and 010h		;6af1   ; el bit 4 es el boton
 	jp nz,RANKING_PASO_3_ENTRA		;6af3
 VUELCA_RANKING:		; E400 -> VRAM 0x3801 (0x6CB6) y, con dos jugadores, EC00 -> 0x3800 (0x6CD1)
 	call VUELCA_E400_RANKING		;6af6
@@ -1678,7 +1678,7 @@ RANKING_PASO_3_ENTRA:		; E27E = 0x8C, E251++, sonido 0x81
 	ld a,08ch		;6b02   ; 0x8C fotogramas para el paso siguiente, y el sonido 0x81 para abrirlo
 	ld (0e27eh),a		;6b04
 	ld hl,0e251h		;6b07
-	inc (hl)			;6b0a
+	inc (hl)			;6b0a   ; y se pasa al paso siguiente
 	ld a,081h		;6b0b
 	jp 04174h		;6b0d
 RANKING_PASO_3:		; boton (bit 4 de E1C8) o E27E-- a cero -> E251++ y sonido 0x80
@@ -1688,11 +1688,11 @@ RANKING_PASO_3:		; boton (bit 4 de E1C8) o E27E-- a cero -> E251++ y sonido 0x80
 	and 010h		;6b16
 	jp nz,RANKING_PASO_4_ENTRA		;6b18
 	ld hl,0e27eh		;6b1b
-	dec (hl)			;6b1e
+	dec (hl)			;6b1e   ; y si no, la cuenta baja un punto
 	ret nz			;6b1f
 RANKING_PASO_4_ENTRA:		; E251++ y sonido 0x80
 	ld hl,0e251h		;6b20
-	inc (hl)			;6b23
+	inc (hl)			;6b23   ; y se pasa al paso siguiente
 	ld a,080h		;6b24   ; el sonido 0x80 cierra la pantalla
 	jp 04174h		;6b26
 RANKING_PASO_4:		; bit 6 de E1C2: sonido 0x46 y E250 = 2; si no E1F3 = 0
@@ -1732,11 +1732,11 @@ FIN_DE_CAMPEONATO:		; C si E25C < 20; si el coche 1 termino (bit 1 de E2C1) y E3
 FIN_CAMPEONATO_COCHE_2:		; coche 2 terminado -> C; posicion E3F1 < 2 -> 0x6B6B, si no C
 	ld a,(0e381h)		;6b5d   ; si el coche 1 no vale, se prueba con el 2
 	bit 1,a		;6b60
-	scf			;6b62
+	scf			;6b62   ; el `scf` deja carry puesto: no se cierra el campeonato
 	ret nz			;6b63
 	ld a,(0e3f1h)		;6b64
 	cp 002h		;6b67
-	ccf			;6b69
+	ccf			;6b69   ; el `ccf` da la vuelta al resultado
 	ret c			;6b6a
 PUNTOS_0xB4:		; D = 0xB4 y 0x6B71 (salta el `ld d,0xBD` de 0x6B6F, que no usa nadie)
 	ld d,0b4h		;6b6b   ; 0xB4 es el ultimo umbral de la escalera de puntos, el mismo que abre el GP 16
@@ -1755,14 +1755,14 @@ COMPARA_PUNTOS_D:		; NC si el byte bajo de E295 >= D; si no, con dos jugadores, 
 	ret			;6b80
 RELLENA_BUFFER_TILE_5:		; 24 filas x 32 de tile 5 desde HL (fondo del ranking)
 	ld c,018h		;6b81   ; el fondo del ranking es el tile 5, la pantalla entera
-	ld a,005h		;6b83
+	ld a,005h		;6b83   ; el 5 es el tile del fondo
 RELLENA_FILA_5:		; una fila
-	ld b,020h		;6b85
+	ld b,020h		;6b85   ; 32 tiles por fila
 RELLENA_FILA_5_BUCLE:		; un tile
 	ld (hl),a			;6b87   ; 32 tiles por fila
 	inc hl			;6b88
 	djnz RELLENA_FILA_5_BUCLE		;6b89
-	dec c			;6b8b
+	dec c			;6b8b   ; 24 filas
 	jr nz,RELLENA_FILA_5		;6b8c
 	ret			;6b8e
 PINTA_PUNTOS_CATEGORIAS:		; los 5 bytes (iy-3F,-40,-3D,-3C,-3E: STOCK, RALLY, F3, F3000, ENDURANCE) a BCD y 2 digitos cada uno en (EA70)+0x20B (fila 16, col 11) y filas siguientes; y la suma de los 16 GP (iy-3B..-2C) en la fila 21 (F1)
@@ -1785,7 +1785,7 @@ PINTA_PUNTOS_CATEGORIAS:		; los 5 bytes (iy-3F,-40,-3D,-3C,-3E: STOCK, RALLY, F3
 	ld hl,(0ea70h)		;6bad
 	ld bc,0020bh		;6bb0
 	add hl,bc			;6bb3   ; 0x20B es la fila 16, columna 11 del buffer
-	ld b,005h		;6bb4
+	ld b,005h		;6bb4   ; cinco categorias
 PINTA_PUNTOS_CATEGORIA:		; una categoria por vuelta (EA50.. guarda los 5 valores)
 	push bc			;6bb6
 	push de			;6bb7
@@ -1794,7 +1794,7 @@ PINTA_PUNTOS_CATEGORIA:		; una categoria por vuelta (EA50.. guarda los 5 valores
 	ld a,(de)			;6bba
 	ld l,a			;6bbb
 	ld h,000h		;6bbc
-	call 04b28h		;6bbe
+	call 04b28h		;6bbe   ; 0x4B28 pasa el binario a decimal
 	pop hl			;6bc1
 	ld b,010h		;6bc2
 	call PINTA_BCD_4_DIGITOS		;6bc4   ; cuatro digitos por categoria
@@ -1804,14 +1804,14 @@ PINTA_PUNTOS_CATEGORIA:		; una categoria por vuelta (EA50.. guarda los 5 valores
 	pop de			;6bcc
 	inc de			;6bcd
 	pop bc			;6bce
-	djnz PINTA_PUNTOS_CATEGORIA		;6bcf
+	djnz PINTA_PUNTOS_CATEGORIA		;6bcf   ; cinco categorias
 	push hl			;6bd1
 	push iy		;6bd2
 	pop hl			;6bd4
 	ld de,0ffc5h		;6bd5   ; 0xFFC5 es -0x3B: los 16 bytes de los GP de F1
 	add hl,de			;6bd8
 	ex de,hl			;6bd9
-	ld b,010h		;6bda
+	ld b,010h		;6bda   ; dieciseis GP
 	ld hl,0ea78h		;6bdc
 	ld (hl),000h		;6bdf
 SUMA_PUNTOS_GP:		; EA78 += (DE), 16 bytes
@@ -1836,7 +1836,7 @@ SUMA_TOTAL_PUNTOS:		; (iy-2B,-2A) = suma de los 21 bytes desde iy-0x40 (la mejor
 	pop hl			;6bff
 	ld de,0ffc0h		;6c00   ; -0x40 es donde empieza la tabla de las 21 carreras
 	add hl,de			;6c03
-	ld b,015h		;6c04
+	ld b,015h		;6c04   ; 21 carreras
 	exx			;6c06
 	ld hl,00000h		;6c07
 	exx			;6c0a
@@ -1848,7 +1848,7 @@ SUMA_TOTAL_BUCLE:		; un byte por vuelta
 	add hl,de			;6c10
 	exx			;6c11
 	inc hl			;6c12
-	djnz SUMA_TOTAL_BUCLE		;6c13
+	djnz SUMA_TOTAL_BUCLE		;6c13   ; tantas carreras como diga B
 	exx			;6c15
 	ld (iy-02bh),l		;6c16   ; y el total se guarda en el bloque del coche, dos bytes
 	ld (iy-02ah),h		;6c19
@@ -1859,7 +1859,7 @@ PINTA_TEXTOS_RANKING:		; 9 textos de 0x6D8E (10 si termino: + "POINT"), el numer
 	ld b,009h		;6c21
 	bit 1,(iy+001h)		;6c23
 	jr z,PINTA_TEXTOS_LISTA		;6c27
-	inc b			;6c29
+	inc b			;6c29   ; y con tiempo, uno mas
 PINTA_TEXTOS_LISTA:		; entrada
 	call PINTA_TEXTOS_TILES		;6c2a   ; nueve o diez textos de golpe, y los que dependen de algo se pintan aparte
 	call PINTA_NUMERO_JUGADOR		;6c2d
@@ -1907,9 +1907,9 @@ PINTA_TEXTO_TILES_BUCLE:		; un tile por vuelta
 	exx			;6c71
 	ld (hl),a			;6c72   ; el tile va tal cual al buffer
 	inc hl			;6c73
-	djnz PINTA_TEXTO_TILES_BUCLE		;6c74
+	djnz PINTA_TEXTO_TILES_BUCLE		;6c74   ; tantos tiles como diga la cuenta
 	exx			;6c76
-	djnz PINTA_TEXTOS_TILES		;6c77
+	djnz PINTA_TEXTOS_TILES		;6c77   ; y el texto siguiente
 	exx			;6c79
 	ret			;6c7a
 PINTA_TEXTO_SI_NZ:		; pinta el texto solo si NZ
@@ -1928,7 +1928,7 @@ PINTA_CATEGORIA_RANKING:		; el nombre de la categoria (0x6E0A[E25B]) en +0x83 (f
 	exx			;6c8e
 	ld hl,06e0ah		;6c8f
 	ld a,(0e25bh)		;6c92
-	call 04a44h		;6c95
+	call 04a44h		;6c95   ; 0x4A44 lee la palabra de la tabla mapeada
 	exx			;6c98
 	ld de,00083h		;6c99   ; 0x83 es la fila 4, columna 3
 	call PINTA_UN_TEXTO		;6c9c
@@ -1939,7 +1939,7 @@ PINTA_CATEGORIA_RANKING:		; el nombre de la categoria (0x6E0A[E25B]) en +0x83 (f
 	ld hl,06e16h		;6ca6
 	call 04a44h		;6ca9
 	exx			;6cac
-	ld de,000a3h		;6cad
+	ld de,000a3h		;6cad   ; 0xA3 es la fila 5, columna 3
 PINTA_UN_TEXTO:		; B' = 1 y 0x6C65
 	exx			;6cb0   ; un solo texto, y por el mismo camino que los demas
 	ld b,001h		;6cb1
@@ -1959,7 +1959,7 @@ VUELCA_E400_RANKING:		; E400 -> VRAM 0x3801, 17 columnas x 24 filas (p00 0x522D)
 	exx			;6ccc
 VUELCA_RANKING_VA:		; p00 0x522D: B' columnas x 24 filas
 	exx			;6ccd
-	jp 0522dh		;6cce
+	jp 0522dh		;6cce   ; 0x522D es el volcado por columnas de p00
 VUELCA_EC00_RANKING:		; EC00 -> VRAM 0x3800, 16 columnas x 24 filas (p00 0x522D)
 	ld de,0ec00h		;6cd1
 	ld hl,03800h		;6cd4
@@ -1970,7 +1970,7 @@ VUELCA_EC00_RANKING:		; EC00 -> VRAM 0x3800, 16 columnas x 24 filas (p00 0x522D)
 BORRA_E400_EC00:		; los dos buffers de nombres a cero (0x300 cada uno)
 	ld hl,0e400h		;6cde   ; 0x300 bytes son las 24 filas de un buffer
 	ld bc,00300h		;6ce1
-	call 04b87h		;6ce4
+	call 04b87h		;6ce4   ; 0x4B87 es el borrado de memoria de p00
 	ld hl,0ec00h		;6ce7
 	ld bc,00300h		;6cea
 	jp 04b87h		;6ced
@@ -1980,7 +1980,7 @@ PINTA_BCD_2_DIGITOS:		; E = 2 digitos BCD -> tiles B+digito en (HL), decena 0 en
 PINTA_BCD_4_DIGITOS:		; D,E = 4 digitos BCD -> tiles B+digito en (HL..HL+3), ceros a la izquierda en blanco (C)
 	ld c,000h		;6cf4   ; C es el interruptor de los ceros de delante, igual que en el escritor de p00: mientras siga a cero, el `and c` deja el tile 0
 	ld a,d			;6cf6
-	rra			;6cf7
+	rra			;6cf7   ; cuatro rotaciones para bajar el nibble alto
 	rra			;6cf8
 	rra			;6cf9
 	rra			;6cfa
@@ -2022,7 +2022,7 @@ PINTA_BCD_UNIDAD:		; la unidad siempre
 	ret			;6d24
 CARGA_TILES_RANKING:		; lista p04 0x6E06 (CARGA_LISTA_TILES) y tiles 16..58 con 0x10 (p00 0x4476)
 	ld hl,06e06h		;6d25
-	call 04ccdh		;6d28
+	call 04ccdh		;6d28   ; 0x4CCD es el cargador de listas de tiles
 	ld a,010h		;6d2b   ; los tiles 16 a 58 con 0x10: el fondo del ranking
 	call 04476h		;6d2d
 	ret			;6d30
@@ -2207,7 +2207,7 @@ SPRITES_CARRERA:		; E216 = 0; un jugador -> 0x6FB4; dos: HL = tabla de atributos
 	ld a,(ix+031h)		;6f1a   ; bit 6 de (ix+31) = bit 7 anterior (parpadeo)
 	ld d,a			;6f1d
 	and 080h		;6f1e
-	rrca			;6f20
+	rrca			;6f20   ; el `rrca` es lo que pasa el bit 7 al 6: el estado de antes
 	or d			;6f21
 	ld (ix+031h),a		;6f22
 	call SPRITE_OBJETO		;6f25
@@ -2229,7 +2229,7 @@ SPRITES_CARRERA:		; E216 = 0; un jugador -> 0x6FB4; dos: HL = tabla de atributos
 	ld e,(ix+05ah)		;6f4b   ; x = (ix+5A): el coche 2 visto desde la vista del 1
 	ld a,(ix+006h)		;6f4e
 	sub (iy+04bh)		;6f51
-	sub 008h		;6f54
+	sub 008h		;6f54   ; los ocho pixeles de mas son el alto del sprite
 	bit 6,(ix+031h)		;6f56   ; y solo se pinta si el parpadeo lo deja
 	call z,SPRITE_OBJETO_XY		;6f5a
 	exx			;6f5d
@@ -2262,7 +2262,7 @@ OCULTA_SPRITE_BUCLE:		; un atributo (4 bytes) por vuelta
 	cp 078h		;6fa2
 	ret nc			;6fa4
 	ld (hl),d			;6fa5
-	inc l			;6fa6
+	inc l			;6fa6   ; cuatro bytes por atributo
 	inc l			;6fa7
 	inc l			;6fa8
 	inc l			;6fa9
@@ -2270,7 +2270,7 @@ OCULTA_SPRITE_BUCLE:		; un atributo (4 bytes) por vuelta
 SPRITES_SEMAFORO:		; si E1D7 != 0 (luces de salida) los monta 0x7EFA
 	ld a,(0e1d7h)		;6fac   ; las luces de salida se montan aparte, que no son de ningun coche
 	or a			;6faf
-	call nz,SPRITES_SEMAFORO_MONTA		;6fb0
+	call nz,SPRITES_SEMAFORO_MONTA		;6fb0   ; y solo si hay semaforo encendido
 	ret			;6fb3
 SPRITES_1_JUGADOR:		; vista (0x10,0xF8) de 0x76 x 0xC0: el coche 1 (E2C0) y sus 5 objetos (E800); oculta el resto
 	call TABLA_ATRIBUTOS		;6fb4
@@ -2304,9 +2304,9 @@ SPRITES_OBJETO_BUCLE:		; un objeto por vuelta
 	call SPRITE_OBJETO		;6ff0
 	pop bc			;6ff3
 SPRITES_OBJETO_SIGUIENTE:		; IX += 0x38
-	ld de,00038h		;6ff4
+	ld de,00038h		;6ff4   ; 0x38 bytes por ficha de objeto
 	add ix,de		;6ff7
-	djnz SPRITES_OBJETO_BUCLE		;6ff9
+	djnz SPRITES_OBJETO_BUCLE		;6ff9   ; cinco objetos
 	ret			;6ffb
 SPRITE_FUERA:		; fuera de la vista: exx y vuelve
 	exx			;6ffc
@@ -2315,9 +2315,9 @@ SPRITE_OBJETO:		; E = (ix+4) x; A = (ix+6) - (iy+4B) - 8 (y relativa a la camara
 	ld e,(ix+004h)		;6ffe
 	ld a,(ix+006h)		;7001
 	sub (iy+04bh)		;7004   ; (iy+4B) es la camara: al eje que cuenta el desplazamiento hay que restarsela
-	sub 008h		;7007
+	sub 008h		;7007   ; los ocho pixeles de mas son el alto del sprite
 SPRITE_OBJETO_XY:		; bit 0 de (ix+31) = 0; fuera si y >= B' o x >= C'; suma D'E'; bit 0 = 1 (visible); si bit 7 no hay sprite; si no dos sprites (y, x, patron, color) y (y, x, patron+4, color 1); con el bit 6: sprite extra por (ix+2F) si E216 < 4
-	res 0,(ix+031h)		;7009
+	res 0,(ix+031h)		;7009   ; el bit 0 se apaga: por defecto el objeto no se pinta
 	exx			;700d
 	cp b			;700e   ; B' y C' son el alto y el ancho de la vista: lo que se salga no se pinta
 	jr nc,SPRITE_FUERA		;700f
@@ -2341,14 +2341,14 @@ SPRITE_OBJETO_XY:		; bit 0 de (ix+31) = 0; fuera si y >= B' o x >= C'; suma D'E'
 	ld a,(0e1deh)		;702a   ; E1DE = 1: patron 0 en vez de (ix+33)
 	cp 001h		;702d
 	jr nz,SPRITE_PATRON		;702f
-	xor a			;7031
+	xor a			;7031   ; el patron 0 es el que no se ve
 	jr SPRITE_ESCRIBE_PAR		;7032
 SPRITE_PATRON:		; A = (ix+33)
 	ld a,(ix+033h)		;7034
 SPRITE_ESCRIBE_PAR:		; los dos sprites del objeto
 	ld c,(ix+00fh)		;7037   ; el color sale de (ix+0F)
 	ld (hl),e			;703a   ; el atributo va en el orden del VDP: Y, X, patron y color
-	inc l			;703b
+	inc l			;703b   ; los cuatro bytes van seguidos
 	ld (hl),d			;703c
 	inc l			;703d
 	ld (hl),a			;703e
@@ -2383,7 +2383,7 @@ SPRITE_ESCRIBE_PAR:		; los dos sprites del objeto
 	push hl			;706f
 	push de			;7070
 	ld b,a			;7071   ; por tres: las entradas de la tabla son (dx, dy, patron)
-	add a,a			;7072
+	add a,a			;7072   ; por tres: dos veces sumado
 	add a,b			;7073
 	ld l,a			;7074
 	ld h,000h		;7075
@@ -2398,7 +2398,7 @@ SPRITE_ESCRIBE_PAR:		; los dos sprites del objeto
 	add a,d			;7081
 	inc hl			;7082
 	ld d,a			;7083
-	ld c,00fh		;7084
+	ld c,00fh		;7084   ; el color 15, blanco
 	ld b,(hl)			;7086
 	pop hl			;7087
 ESCRIBE_SPRITE:		; (HL) = y, x, patron B, color C
@@ -2440,12 +2440,12 @@ SPRITE_EXTRA_ESCRIBE:		; solo con (ix+0E) = 2: x += 0x10 y lo escribe (0x7088)
 	cp 002h		;70b5
 	ret nz			;70b7
 	ld a,e			;70b8
-	add a,010h		;70b9
+	add a,010h		;70b9   ; 0x10 pixeles mas abajo
 	ld e,a			;70bb
 	jr $-52		;70bc
 SPRITE_EXTRA_3:		; patron 0xE0 o 0xE4 (parpadeo por E1C3), color 0x0F
 	ld c,00fh		;70be
-	ld b,0e0h		;70c0
+	ld b,0e0h		;70c0   ; el 0xE0 y el 0xE4 son los dos patrones que se alternan
 	ld a,(0e1c3h)		;70c2   ; el bit 0 del contador de fotogramas: el dibujo cambia en cada uno, y eso es el parpadeo
 	rrca			;70c5
 	jr c,SPRITE_EXTRA_3_VA		;70c6
@@ -2467,7 +2467,7 @@ PINTA_OBJETOS_TILES:		; E1D5 = 0 y 0x70E6
 PINTA_OBJETOS_TILES_B:		; E1D5 = 0, p00 0x4760 y 0x70E6 (desde el bucle de carrera p00 0x5C96)
 	xor a			;70df
 	ld (0e1d5h),a		;70e0
-	call 04760h		;70e3
+	call 04760h		;70e3   ; 0x4760 prepara el buffer de tiles
 PINTA_OBJETOS_TILES_VA:		; paginas 5/6 en 8000/A000; recorre la lista E928 (0x70EE); vuelve a 1/2/3
 	ld a,005h		;70e6
 	call 04447h		;70e8   ; MAPEA_A_EN_8000 con 5: la plantilla 0xAF57 es de la pagina 6
