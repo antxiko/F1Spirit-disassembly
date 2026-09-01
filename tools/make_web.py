@@ -43,6 +43,23 @@ def img64(ruta):
 
 
 GALERIA = [
+    ("titulo.png",
+     "La pantalla del título, montada con los pasos de MONTA_PRESENTACION "
+     "(0x5CB5): los tiles 16 a 58 desde p15 0xB777, la lista de tiles de "
+     "0x6D34 -que mezcla registros de seis bytes con ordenes 0x17 que tiran de "
+     "la tabla de 85 recursos- y el dibujo de p08 0x8280, descomprimido con el "
+     "RLE de buffer de p01 0x637A, que además de copiar y repetir sabe escribir "
+     "series de tiles crecientes y decrecientes. Los colores son los que deja "
+     "el desvanecido de 0x5E4A al acabar: en un MSX1 no hay paleta que tocar, "
+     "así que el dibujo aparece pintando los colores tile a tile.",
+     "The title screen, built with the steps of MONTA_PRESENTACION (0x5CB5): "
+     "tiles 16 to 58 from p15 0xB777, the tile list at 0x6D34 -which mixes "
+     "six-byte records with 0x17 orders that pull from the table of 85 "
+     "resources- and the picture at p08 0x8280, decompressed with the buffer "
+     "RLE at p01 0x637A, which on top of copying and repeating can write runs "
+     "of ascending and descending tile numbers. The colours are the ones the "
+     "fade at 0x5E4A leaves behind: on an MSX1 there is no palette to touch, so "
+     "the picture appears by painting the tile colours one at a time."),
     ("circuito_rally.png",
      "El principio del circuito de RALLY, pintado siguiendo la cadena del "
      "cartucho: la secuencia de piezas, sus metatiles y los tiles de los tres "
@@ -211,6 +228,14 @@ def main(argv):
     halls = "".join(f'<div class="hall"><h3>{tit}</h3>{cuerpo}</div>'
                     for tit, cuerpo in HALLAZGOS[idioma])
 
+    # El "logotipo" de la cabecera no es un montaje ni una captura: es el dibujo
+    # que el propio cartucho descomprime de p08 0x8280 en su pantalla del
+    # titulo, sacado desde la ROM por imagenes_web.py. Si el PNG no esta, se cae
+    # al texto.
+    ruta_logo = os.path.join(imgdir, "rotulo.png")
+    cabecera = (f'<img src="{img64(ruta_logo)}" alt="F-1 Spirit">'
+                if os.path.exists(ruta_logo) else "<h1>F-1 Spirit (1987)</h1>")
+
     imgs, faltan = "", []
     for fich, es, en in GALERIA:
         ruta = os.path.join(imgdir, fich)
@@ -228,7 +253,7 @@ def main(argv):
 <title>{t['titulo']}</title>
 <style>{ESTILO}</style>
 <header class="top">
-  <h1>F-1 Spirit (1987)</h1>
+  {cabecera}
   <p class="claim">{t['claim']}</p>
   <p class="ficha">{' · '.join(t['ficha'])}</p>
 </header>
