@@ -43,13 +43,17 @@ for a variation that never happened.
 Eight bytes (04 01 04 01 02 04 02 01) between two routines with no caller, which
 nothing in the cartridge references.
 
-## Konami's hidden mark
+## ~~Konami's hidden mark~~
 
-Manuel Pazos documented that Konami cartridges hide their RC7xx catalogue number
-and the katakana title at the end of the ROM. In this dump it **does not show
-up**: the ends of all sixteen pages are either 0xFF padding or graphics data.
-Either this cartridge does not carry it, or it is somewhere other than where we
-looked.
+**CLOSED** on 2026-09-15: **this cartridge does not carry it.** Manuel Pazos
+documented that Konami cartridges hide their RC7xx catalogue number and the
+katakana title at the end of the ROM. The question left open was whether it
+might be somewhere other than where we had looked, so this time every position
+was checked, not just the page ends: of the 201 `0xAA` bytes in the 131,072,
+**none** closes a block with the shape of the mark -a length of 4 to 32, an RC in
+BCD and a title in the house's katakana-, and the 52 of RC-752 does not turn up
+anywhere either. The same search does find it in the seventeen cartridges of the
+series that carry it.
 
 ## What has not been measured in the emulator
 

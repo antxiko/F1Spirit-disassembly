@@ -44,13 +44,17 @@ que no llegó a usarse.
 Ocho bytes (04 01 04 01 02 04 02 01) entre dos rutinas sin llamador, que no
 referencia nadie en el cartucho.
 
-## La marca oculta de Konami
+## ~~La marca oculta de Konami~~
 
-Manuel Pazos documentó que los cartuchos de Konami llevan escondido, al final
-de la ROM, su número de catálogo RC7xx y el título en katakana. En este volcado
-**no aparece**: los finales de las dieciséis páginas son relleno 0xFF o datos
-gráficos. O este cartucho no la lleva, o está en un sitio distinto del que se ha
-mirado.
+**CERRADA** el 2026-09-15: **este cartucho no la lleva.** Manuel Pazos documentó
+que los cartuchos de Konami llevan escondido, al final de la ROM, su número de
+catálogo RC7xx y el título en katakana. Lo que quedaba abierto era si podía
+estar en otro sitio del que se había mirado, así que esta vez se miraron todas
+las posiciones y no solo los finales de página: de los 201 bytes `0xAA` que hay
+en los 131.072, **ninguno** cierra un bloque con la forma de la marca -una
+longitud de 4 a 32, un RC en BCD y un título en el katakana de la casa-, y el 52
+del RC-752 tampoco aparece por ninguna parte. La misma búsqueda sí la encuentra
+en los diecisiete cartuchos de la serie que la llevan.
 
 ## Lo que no se ha medido en el emulador
 
